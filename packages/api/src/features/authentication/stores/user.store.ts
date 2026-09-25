@@ -1,35 +1,55 @@
 import { Injectable } from '@nestjs/common';
-import { DatabaseConnectionService } from '../../../database/service/database-connection.service';
-import { User, UserAttributes, UserCreationAttributes } from '../models/user.entity';
+import { NamedQueryAddingOptions } from '../../../shared/datastore/query-options.type';
+import { User } from '../models/user.entity';
+import { BaseCrudStore } from '../../../shared/datastore/base-crud.store';
 
+/**
+ * Find user by email
+ * Used for login and email lookups
+ */
+const findByEmail: NamedQueryAddingOptions<User> = {
+  name: 'findByEmail',
+  findOptions: {
+    where: { email: '$email' },
+  },
+};
+
+/**
+ * Find all active users
+ * Excludes inactive/disabled accounts
+ */
+const findActiveUsers: NamedQueryAddingOptions<User> = {
+  name: 'findActiveUsers',
+  findOptions: {
+    where: { isActive: true },
+  },
+};
+
+/**
+ * User Store
+ * Data access layer for User model
+ * Provides CRUD operations and named queries for user lookups
+ *
+ * Named Queries:
+ * - findByEmail: Find user by email (for login)
+ * - findActiveUsers: Find all active users (for admin operations)
+ */
 @Injectable()
-export class UserStore {
-  constructor(private readonly database: DatabaseConnectionService) {
-
+export class UserStore extends BaseCrudStore<User> {
+  constructor() {
+    super(User);
+    this.registerIdField('uuid');
   }
 
-  count(): Promise<number> {
-    return this.database.executeWithConnection(() => User.count());
-  }
-
-  findById(id: string): Promise<User | null> {
-    return this.database.executeWithConnection(() => User.findByPk(id));
-  }
-
-  findByUsername(username: string): Promise<User | null> {
-    return this.database.executeWithConnection(() =>
-      User.findOne({ where: { username: username.trim().toLowerCase() } })
-    );
-  }
-
-  create(values: UserCreationAttributes): Promise<User> {
-    return this.database.executeWithConnection(() => User.create(values));
-  }
-
-  update(user: User, values: Partial<UserAttributes>): Promise<User> {
-    return this.database.executeWithConnection(async () => {
-      await user.update(values);
-      return user;
-    });
+  protected registerNamedQueries(): void {
+    this.addNamedQueryWithOptions(findByEmail);
+    this.addNamedQueryWithOptions(findActiveUsers);
+    this.addNamedQueryWithOptions({
+      name: 'findByUsername',
+      findOptions: {
+        where: {username : "$username" },
+      },
+      parameters:[{name:"username",type:"string"}]
+    })
   }
 }

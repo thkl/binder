@@ -11,9 +11,9 @@ import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import { Pool } from 'pg';
 import { BinderConfig, ConfigKeys } from './shared/config/config.keys';
-import { AuthenticationService } from './features/authentication/authentication.service';
 import { DatabaseConnectionService } from './database/service/database-connection.service';
 import { DatabaseMigrationService } from './database/service/database-migration.service';
+import { AuthenticationService } from './features/authentication/service/authentication.service';
 
 const mainlogger = new Logger('MAIN');
 
@@ -88,10 +88,9 @@ async function bootstrap(): Promise<void> {
   // Complete Nest initialization, including event subscriber registration,
   // before starting the database connection and opening the HTTP listener.
   await app.init();
-  console.log("Init Database");
+  logger.log("Initialization is done. Start App")
   await app.get(DatabaseConnectionService).start();
   await app.get(DatabaseMigrationService).waitUntilInitialized();
-  console.log("Listen to port whatever");
   await app.listen(Number(nestConfigService.get<string>(ConfigKeys.API_PORT) ?? 3000));
 
   void app.get(AuthenticationService).ensureBootstrapAdmin().catch((error: unknown) => {

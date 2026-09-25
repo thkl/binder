@@ -9,6 +9,11 @@
                "created": [
                     "user_sessions"
                ]
+          },
+           "3": {
+               "created": [
+                    "settings"
+               ]
           }
      }
 }

@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { BinderConfig, ConfigKeys } from '../../shared/config/config.keys';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { User } from '../../features/authentication/models/user.entity';
+import { ApplicationSetting } from '../../features/settings/models/settings.model';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -35,7 +36,7 @@ export class DatabaseConnectionService {
             return;
         }
 
-        this.registerModels([User]);
+        this.registerModels([User,ApplicationSetting]);
         await this.initialize();
     }
 

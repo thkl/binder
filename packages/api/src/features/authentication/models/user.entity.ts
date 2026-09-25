@@ -12,7 +12,7 @@ import {
 } from 'sequelize-typescript';
 
 export interface UserAttributes {
-  id: string;
+  uuid: string;
   username: string;
   passwordHash: string | null;
   email: string | null;
@@ -38,8 +38,8 @@ export type UserCreationAttributes = {
 export class User extends Model<UserAttributes, UserCreationAttributes> {
   @PrimaryKey
   @Default(DataType.UUIDV4)
-  @Column(DataType.UUID)
-  declare id: string;
+  @Column({ field: 'id', type:  DataType.UUID })
+  declare uuid: string;
 
   @Column({ type: DataType.STRING(100), unique: true })
   declare username: string;

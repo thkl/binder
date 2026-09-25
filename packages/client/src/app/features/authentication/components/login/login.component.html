@@ -1,0 +1,33 @@
+<main class="centered">
+  <section class="card auth-card">
+    <div class="eyebrow">BINDER</div>
+    <h1>Welcome back</h1>
+    <p class="muted">Sign in to manage your documents securely.</p>
+
+    <form (submit)="submit($event)">
+      <label>
+        Username
+        <input type="text" autocomplete="username" [value]="username()" (input)="username.set(inputValue($event))"
+          required>
+      </label>
+
+      <label>
+        Password
+        <input type="password" autocomplete="current-password" [value]="password()"
+          (input)="password.set(inputValue($event))" required>
+      </label>
+
+      @if (auth.error(); as error) {
+      <p class="error" role="alert">{{ error }}</p>
+      }
+
+      <button type="submit" [disabled]="auth.submitting()">
+        {{ auth.submitting() ? 'Signing in…' : 'Sign in' }}
+      </button>
+      @if(ssoActive()) {
+      <div class="separator"><span>or</span></div>
+      <a class="oidc-button" href="/api/v1/ssoauth/login">Continue with SSO</a>
+      }
+    </form>
+  </section>
+</main>

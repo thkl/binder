@@ -1,0 +1,12 @@
+:host { display: block; min-height: 100vh; }
+.loading { min-height: 100vh; display: grid; place-items: center; color: #697a78; }
+.workspace { width: min(100%, 72rem); margin: 0 auto; padding: 2rem 1.5rem; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; }
+.eyebrow { color: #2d8068; font-size: .75rem; font-weight: 800; letter-spacing: .16em; }
+h1 { margin: .35rem 0 0; font-size: clamp(1.8rem, 4vw, 2.35rem); letter-spacing: -.04em; }
+.card { background: rgba(255,255,255,.92); border: 1px solid #dbe4df; border-radius: 1.25rem; box-shadow: 0 1rem 3rem rgba(29,42,53,.08); }
+.empty-state { min-height: 22rem; display: grid; place-content: center; padding: 2rem; text-align: center; }
+.empty-icon { display: inline-grid; place-items: center; width: 3rem; height: 3rem; margin: 0 auto 1rem; border-radius: 1rem; color: #236c59; background: #e5f0eb; font-size: 1.5rem; }
+.muted { color: #697a78; line-height: 1.55; }
+button { border: 0; border-radius: .7rem; padding: .8rem 1rem; cursor: pointer; font: inherit; font-weight: 750; }
+.secondary { color: #236c59; background: #e5f0eb; }

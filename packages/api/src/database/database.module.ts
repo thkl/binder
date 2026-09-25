@@ -5,6 +5,7 @@ import { BinderConfig, ConfigKeys } from '../shared/config/config.keys';
 import { DatabaseConnectionService } from './service/database-connection.service';
 import { DatabaseMigrationService } from './service/database-migration.service';
 import { User } from '../features/authentication/models/user.entity';
+import { ApplicationSetting } from '../features/settings/models/settings.model';
 
 @Global()
 @Module({
@@ -53,7 +54,7 @@ import { User } from '../features/authentication/models/user.entity';
         };
       }
     }),
-    SequelizeModule.forFeature([User]),
+    SequelizeModule.forFeature([User,ApplicationSetting]),
   ],
   providers: [DatabaseConnectionService,DatabaseMigrationService],
   exports: [DatabaseConnectionService]

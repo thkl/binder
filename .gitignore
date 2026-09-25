@@ -9,3 +9,4 @@ storage/
 logs/
 *.local
 graphify-out/
+.DS_Store

@@ -28,9 +28,11 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
           throw new Error(`Missing required configuration key: ${ConfigKeys.CLIENT_PATH}`);
         }
 
+        const escapedApiPrefix = apiPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
         return [{
           rootPath: resolve(process.cwd(), clientPath),
-          exclude: [`/${apiPrefix}/(.*)`]
+          exclude: new RegExp(`^/${escapedApiPrefix}(?:/.*)?$`)
         }];
       }
     })
