@@ -1,0 +1,14 @@
+{
+     "migrations": {
+          "1": {
+               "created": [
+                    "users"
+               ]
+          },
+          "2": {
+               "created": [
+                    "user_sessions"
+               ]
+          }
+     }
+}

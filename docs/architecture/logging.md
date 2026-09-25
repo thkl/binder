@@ -1,0 +1,76 @@
+# Logging
+
+## Decision
+
+The API uses Winston for structured application logging. `LoggingService.initializeLogging()` is installed during Nest bootstrap and passed into `NestFactory.create`, so Nest's own logs use the same rotating/console transports. Logging supports console output for Docker and rotating files for deployments that retain local logs.
+
+The frontend should use a small environment-aware logging facade rather than writing directly to `console` throughout feature code. Browser logs must never contain credentials, session identifiers, document contents, or extracted personal data.
+
+## API transports
+
+The initial Winston setup should provide:
+
+- Console transport for Docker and local development.
+- Rotating file transport for persistent application logs.
+- Configurable log level and log directory.
+- JSON output for machine-readable production logs.
+- Human-readable output as an optional development format.
+
+Suggested environment configuration:
+
+```text
+LOG_LEVEL=info
+LOG_DIR=./logs
+LOG_FILE_MAX_SIZE=20m
+LOG_FILE_MAX_FILES=14d
+LOG_CONSOLE=true
+LOG_JSON=true
+```
+
+Use a rotating-file transport with bounded size and retention. The log directory must be separate from document storage and must have appropriate filesystem permissions.
+
+## Structured fields
+
+Where available, API log entries should include:
+
+- Timestamp
+- Log level
+- Service/package name
+- Request or correlation ID
+- HTTP method and route template
+- Response status and duration
+- Internal user ID, without sensitive identity claims
+- Document ID, without document contents
+- Pipeline job ID and step
+- Error name and safe message
+
+Use route templates such as `/api/v1/documents/:id`, not raw URLs containing query strings or potentially sensitive values.
+
+## Sensitive-data rules
+
+Never log:
+
+- Passwords or password hashes
+- Temporary bootstrap passwords except through the dedicated one-time bootstrap event
+- Session IDs, cookies, access tokens, refresh tokens, or authorization headers
+- OIDC client secrets
+- Full document contents, OCR text, embeddings, or uploaded binary data
+- Unredacted LLM prompts or responses containing document data
+- Unnecessary personal data
+
+The bootstrap administrator password is a special one-time secret: emit it only when the account is created, at warning level, with a clear first-run marker. Do not log it during subsequent startups, requests, authentication attempts, or password changes.
+
+## Error handling
+
+- Log detailed stack traces on the server where appropriate.
+- Return stable, sanitized `ApiError` responses to clients.
+- Do not expose stack traces, SQL fragments, filesystem paths, or internal identifiers in production responses.
+- Attach the correlation ID to the API error response so an administrator can locate the corresponding server log entry.
+
+## Operational requirements
+
+- Handle file-transport failures without taking down the API.
+- Prevent unbounded log growth through rotation and retention.
+- Document how logs are backed up, shipped, and deleted.
+- Add tests that verify sensitive fields are redacted.
+- Add tests that verify the bootstrap password is emitted only during account creation.

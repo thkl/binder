@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.angular/
+coverage/
+.env
+.env.*
+!.env.example
+storage/
+logs/
+*.local
+graphify-out/

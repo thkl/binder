@@ -1,0 +1,39 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { resolve } from 'node:path';
+import { HealthController } from './health.controller';
+import { SharedModule } from './shared/shared.service.module';
+import { DatabaseModule } from './database/database.module';
+import { BinderConfig, ConfigKeys } from './shared/config/config.keys';
+import { AuthenticationModule } from './features/authentication/authentication.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+
+@Module({
+  controllers: [HealthController],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, cache: true }),
+    EventEmitterModule.forRoot(),
+    DatabaseModule,
+    SharedModule,
+    AuthenticationModule,
+    ServeStaticModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<BinderConfig>) => {
+        const clientPath = config.get<string>(ConfigKeys.CLIENT_PATH);
+        const apiPrefix = config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
+
+        if (!clientPath) {
+          throw new Error(`Missing required configuration key: ${ConfigKeys.CLIENT_PATH}`);
+        }
+
+        return [{
+          rootPath: resolve(process.cwd(), clientPath),
+          exclude: [`/${apiPrefix}/(.*)`]
+        }];
+      }
+    })
+  ]
+})
+export class AppModule { }

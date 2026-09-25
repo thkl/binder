@@ -1,0 +1,8 @@
+packages:
+  - packages/*
+allowBuilds:
+  '@parcel/watcher': true
+  argon2: true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true

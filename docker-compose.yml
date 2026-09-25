@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: binder
+      POSTGRES_PASSWORD: binder
+      POSTGRES_DB: binder
+    ports:
+      - "5432:5432"
+    volumes:
+      - binder-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  binder-postgres-data:

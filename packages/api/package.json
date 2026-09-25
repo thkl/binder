@@ -1,0 +1,46 @@
+{
+  "name": "@binder/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "dotenv run -f ../../.env -- node --watch dist/main.js",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start:debug": "dotenv run -f ../../.env -- nest start --debug --watch"
+  },
+  "dependencies": {
+    "@binder/common": "workspace:*",
+    "@nestjs/common": "^12.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^12.0.0",
+    "@nestjs/platform-express": "^12.0.0",
+    "@nestjs/sequelize": "^12.0.0",
+    "@nestjs/event-emitter": "12.0.0",
+    "@nestjs/serve-static": "^12.0.0",
+    "@nestjs/throttler": "6.7.1",
+    "argon2": "^0.44.0",
+    "nest-winston": "2.0.0",
+    "express": "5.2.1",
+    "connect-pg-simple": "^10.0.0",
+    "dotenv": "18.0.3",
+    "express-session": "^1.18.0",
+    "pg": "^8.0.0",
+    "reflect-metadata": "^0.2.0",
+    "rxjs": "^7.0.0",
+    "sequelize": "^6.0.0",
+    "sequelize-typescript": "^2.1.0",
+    "winston": "^3.0.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.0",
+    "@types/express-session": "^1.18.0",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "@types/express": "5.0.6",
+    "typescript": "^6.0.0"
+  }
+}
