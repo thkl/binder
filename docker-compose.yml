@@ -26,20 +26,24 @@ services:
     environment:
       NODE_ENV: production
       API_PORT: 3000
-      CLIENT_PATH: /app/client
+      APP_ROOT_PATH: /app
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: binder
       DATABASE_USER: binder
       DATABASE_PASSWORD: binder
-      DOCUMENT_STORAGE_ROOT: /data/storage
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     ports:
       - "3000:3000"
     volumes:
-      - binder-document-storage:/data/storage
+      - binder-document-storage:/app/storage
       - binder-api-logs:/app/logs
 
   worker:
@@ -56,12 +60,12 @@ services:
       DATABASE_NAME: binder
       DATABASE_USER: binder
       DATABASE_PASSWORD: binder
-      DOCUMENT_STORAGE_ROOT: /data/storage
+      APP_ROOT_PATH: /app
     depends_on:
-      postgres:
+      api:
         condition: service_healthy
     volumes:
-      - binder-document-storage:/data/storage
+      - binder-document-storage:/app/storage
       - binder-worker-logs:/app/logs
 
 volumes:

@@ -95,7 +95,7 @@ export class DocumentService {
     if (!document) {
       throw new NotFoundException('Document not found');
     }
-    return { document: this.toDocumentResponse(document), stream: this.storage.openReadStream(document.storageKey) };
+    return { document: this.toDocumentResponse(document), stream: await this.storage.openReadStream(document.storageKey) };
   }
 
   async getThumbnail(ownerUuid: string, uuid: string) {
@@ -117,7 +117,7 @@ export class DocumentService {
 
     return {
       document: this.toDocumentResponse(document),
-      stream: this.storage.openReadStream(thumbnailKey)
+      stream: await this.storage.openReadStream(thumbnailKey)
     };
   }
 

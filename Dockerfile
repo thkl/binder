@@ -19,20 +19,19 @@ RUN pnpm install --frozen-lockfile
 COPY packages ./packages
 
 RUN pnpm build
-RUN pnpm deploy --filter @binder/api --prod /out/api
-RUN pnpm deploy --filter @binder/worker --prod /out/worker
+RUN pnpm deploy --legacy --filter @binder/api --prod /out/api
+RUN pnpm deploy --legacy --filter @binder/worker --prod /out/worker
 
 FROM node:24-bookworm-slim AS api
 
 ENV NODE_ENV=production
-ENV CLIENT_PATH=/app/client
-ENV DOCUMENT_STORAGE_ROOT=/data/storage
+ENV APP_ROOT_PATH=/app
 WORKDIR /app
 
 COPY --from=builder /out/api ./
 COPY --from=builder /workspace/packages/client/dist/client ./client
 
-RUN mkdir -p /data/storage /app/logs
+RUN mkdir -p /app/storage /app/logs
 
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
@@ -40,11 +39,11 @@ CMD ["node", "dist/main.js"]
 FROM node:24-bookworm-slim AS worker
 
 ENV NODE_ENV=production
-ENV DOCUMENT_STORAGE_ROOT=/data/storage
+ENV APP_ROOT_PATH=/app
 WORKDIR /app
 
 COPY --from=builder /out/worker ./
 
-RUN mkdir -p /data/storage /app/logs
+RUN mkdir -p /app/storage /app/logs
 
 CMD ["node", "dist/main.js"]

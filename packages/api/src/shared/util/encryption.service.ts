@@ -5,6 +5,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { BinderLogger } from '../service/logger.helper';
+import { BinderConfig, ConfigKeys } from '../config/config.keys';
  
 
 /**
@@ -34,7 +35,7 @@ export class EncryptionService implements OnModuleInit {
   private readonly KEY_LENGTH = 32; // 256 bits for AES-256
   private masterKey: Buffer = Buffer.from([]);
 
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService<BinderConfig>) {}
 
   /**
    * Initialize and validate master encryption key on module startup
@@ -58,7 +59,7 @@ export class EncryptionService implements OnModuleInit {
    * @throws {Error} If ENCRYPTION_KEY is missing or invalid length
    */
   private validateMasterKey(): void {
-    const encryptionKey = this.configService.get<string>('ENCRYPTION_KEY');
+    const encryptionKey = this.configService.get<string>(ConfigKeys.ENCRYPTION_KEY);
 
     if (!encryptionKey) {
       throw new Error(

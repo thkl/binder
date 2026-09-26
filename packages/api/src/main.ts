@@ -18,18 +18,18 @@ import { AuthenticationService } from './features/authentication/service/authent
 const mainlogger = new Logger('MAIN');
 
 function checkConfiguration(config: ConfigService<BinderConfig>): void {
-  const clientPath = config.get<string>(ConfigKeys.CLIENT_PATH);
+  const appRootPath = config.get<string>(ConfigKeys.APP_ROOT_PATH);
   const rootUri = config.get<string>(ConfigKeys.ROOT_URI);
 
   if (!rootUri) {
     throw new Error(`Missing required configuration key: ${ConfigKeys.ROOT_URI}`);
   }
 
-  if (!clientPath) {
-    throw new Error(`Missing required configuration key: ${ConfigKeys.CLIENT_PATH}`);
+  if (!appRootPath) {
+    throw new Error(`Missing required configuration key: ${ConfigKeys.APP_ROOT_PATH}`);
   }
 
-  const resolvedClientPath = resolve(process.cwd(), clientPath);
+  const resolvedClientPath = resolve(appRootPath, 'client');
   if (!fs.existsSync(resolvedClientPath)) {
     console.warn(`Configured client path does not exist: ${resolvedClientPath}`);
   }

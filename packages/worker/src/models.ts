@@ -15,6 +15,19 @@ export type JobKind = 'thumbnail' | 'text-extraction' | 'ocr' | 'embedding';
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 export type DocumentStatus = 'uploaded' | 'scanning' | 'processing' | 'ready' | 'failed';
 
+@Table({ tableName: 'settings', timestamps: true })
+export class ApplicationSetting extends Model {
+  @PrimaryKey
+  @Column({ type: DataType.STRING(255) })
+  declare key: string;
+
+  @Column({ type: DataType.TEXT })
+  declare value: string;
+
+  @Column({ field: 'is_encrypted', type: DataType.BOOLEAN })
+  declare isEncrypted: boolean;
+}
+
 @Table({ tableName: 'documents', underscored: true, timestamps: true })
 export class Document extends Model {
   @PrimaryKey

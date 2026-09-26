@@ -29,17 +29,13 @@ import { MetadataModule } from './features/metadata/metadata.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService<BinderConfig>) => {
-        const clientPath = config.get<string>(ConfigKeys.CLIENT_PATH);
+        const appRootPath = config.get<string>(ConfigKeys.APP_ROOT_PATH) ?? process.cwd();
         const apiPrefix = config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
-
-        if (!clientPath) {
-          throw new Error(`Missing required configuration key: ${ConfigKeys.CLIENT_PATH}`);
-        }
 
         const escapedApiPrefix = apiPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
         return [{
-          rootPath: resolve(process.cwd(), clientPath),
+          rootPath: resolve(appRootPath, 'client'),
           exclude: new RegExp(`^/${escapedApiPrefix}(?:/.*)?$`)
         }];
       }

@@ -5,7 +5,7 @@ import { hostname } from 'node:os';
 import { dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path';
 import { Op, Transaction } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { Document, PipelineJob, PipelineJobEvent, JobKind } from './models.js';
+import { ApplicationSetting, Document, PipelineJob, PipelineJobEvent, JobKind } from './models.js';
 import { createLogger, format, transports, Logger } from 'winston';
 
 interface ClaimedJob {
@@ -33,11 +33,11 @@ const logger: Logger = createLogger({
 });
 
 const config: WorkerConfig = {
-  storageRoot: getStorageRoot(),
+  storageRoot: getDefaultStorageRoot(),
   workerId: process.env.PIPELINE_WORKER_ID ?? `${hostname()}-${process.pid}`,
-  pollIntervalMs: readPositiveInteger('PIPELINE_POLL_INTERVAL_MS', 2_000),
-  lockTimeoutMs: readPositiveInteger('PIPELINE_LOCK_TIMEOUT_MS', 15 * 60 * 1_000),
-  reconcileIntervalMs: readPositiveInteger('PIPELINE_RECONCILE_INTERVAL_MS', 30_000)
+  pollIntervalMs: 2_000,
+  lockTimeoutMs: 15 * 60 * 1_000,
+  reconcileIntervalMs: 30_000
 };
 
 const sequelize = new Sequelize({
@@ -50,7 +50,7 @@ const sequelize = new Sequelize({
   logging: false,
   pool: { max: 4, min: 0, idle: 10_000 }
 });
-sequelize.addModels([Document, PipelineJob, PipelineJobEvent]);
+sequelize.addModels([ApplicationSetting, Document, PipelineJob, PipelineJobEvent]);
 
 let stopping = false;
 
@@ -65,6 +65,13 @@ async function main(): Promise<void> {
 
   await sequelize.authenticate();
   logger.info('Pipeline worker database connection established');
+  await loadRuntimeConfiguration();
+  logger.info('Pipeline worker runtime configuration loaded', {
+    storageRoot: config.storageRoot,
+    pollIntervalMs: config.pollIntervalMs,
+    lockTimeoutMs: config.lockTimeoutMs,
+    reconcileIntervalMs: config.reconcileIntervalMs
+  });
   await recoverStaleJobs();
   await reconcileUploadedDocuments();
   await logQueueStatus();
@@ -369,9 +376,33 @@ function resolveStoragePath(storageKey: string): string {
   return absolutePath;
 }
 
-function getStorageRoot(): string {
-  const configured = process.env.DOCUMENT_STORAGE_ROOT ?? './storage';
-  return isAbsolute(configured) ? configured : resolve(process.cwd(), configured);
+async function loadRuntimeConfiguration(): Promise<void> {
+  const settings = await ApplicationSetting.findAll({
+    where: { key: { [Op.in]: ['documents.storageRoot', 'pipeline.pollIntervalMs', 'pipeline.lockTimeoutMs', 'pipeline.reconcileIntervalMs'] } }
+  });
+  const values = new Map(settings.map((setting) => [setting.key, setting.value]));
+  const appRoot = process.env.APP_ROOT_PATH ?? process.cwd();
+  const configuredStorageRoot = values.get('documents.storageRoot') ?? join(appRoot, 'storage');
+  config.storageRoot = isAbsolute(configuredStorageRoot) ? configuredStorageRoot : resolve(appRoot, configuredStorageRoot);
+  config.pollIntervalMs = readSettingInteger(values, 'pipeline.pollIntervalMs', config.pollIntervalMs);
+  config.lockTimeoutMs = readSettingInteger(values, 'pipeline.lockTimeoutMs', config.lockTimeoutMs);
+  config.reconcileIntervalMs = readSettingInteger(values, 'pipeline.reconcileIntervalMs', config.reconcileIntervalMs);
+}
+
+function getDefaultStorageRoot(): string {
+  const appRoot = process.env.APP_ROOT_PATH ?? process.cwd();
+  return resolve(appRoot, 'storage');
+}
+
+function readSettingInteger(values: Map<string, string>, key: string, fallback: number): number {
+  const value = values.get(key);
+  if (value === undefined) return fallback;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+    logger.warn('Ignoring invalid database runtime setting', { key });
+    return fallback;
+  }
+  return parsed;
 }
 
 function readPositiveInteger(name: string, fallback: number): number {

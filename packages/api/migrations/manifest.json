@@ -54,6 +54,11 @@
                     "document_types",
                     "document_categories"
                ]
+          },
+          "9": {
+               "required": [
+                    "settings"
+               ]
           }
      }
 }

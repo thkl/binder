@@ -1,7 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { BinderLogger } from "../../../shared/service/logger.helper";
-import { ConfigService } from "@nestjs/config";
-import { BinderConfig } from "../../../shared/config/config.keys";
 import { ApplicationSettingStore } from "../store/application-setting.store";
 import { EncryptionService } from "../../../shared/util/encryption.service";
 import { ApplicationSettingExported, ApplicationSettingsData } from "../models/settings";
@@ -15,7 +13,6 @@ export class ApplicationSettingsService {
 
   constructor(
     private readonly appSettingsStore: ApplicationSettingStore,
-    private readonly configService: ConfigService<BinderConfig | string>,
     private readonly encryptionService: EncryptionService
   ) {
     this.logger.debug("ApplicationSettingsService initialized")
@@ -23,7 +20,7 @@ export class ApplicationSettingsService {
 
   /**
     * Get a setting value
-    * Falls back to environment variable if not found in database
+   * Returns the database value, or the supplied default when not configured.
     *
     * @param key - Setting key (e.g., 'mail.host')
     * @param defaultValue - Default value if not found in DB or env
@@ -41,17 +38,6 @@ export class ApplicationSettingsService {
         return setting.value;
       }
 
-      // Fallback to environment variable
-      const envKey = this.keyToEnvVar(key);
-      const envValue = this.configService.get<string>(envKey);
-      if (envValue) {
-        this.logger.debug(
-          `Setting '${key}' not found in database, using env var '${envKey}'`,
-        );
-        return envValue;
-      }
-
-      // Return default value
       return defaultValue;
     } catch (error) {
       this.logger.error(
@@ -175,11 +161,4 @@ export class ApplicationSettingsService {
     }
   }
 
-  /**
- * Convert setting key to environment variable name
- * @example 'mail.host' -> 'MAIL_HOST'
- */
-  private keyToEnvVar(key: string): string {
-    return key.toUpperCase().replace(/\./g, '_');
-  }
 }
