@@ -32,6 +32,9 @@ export class DocumentPage extends Model {
   @Column({ type: DataType.TEXT, allowNull: false, defaultValue: '' })
   declare text: string;
 
+  @Column({ field: 'search_vector', type: DataType.TSVECTOR })
+  declare searchVector: unknown;
+
   @CreatedAt
   @Column({ field: 'created_at', type: DataType.DATE })
   declare createdAt: Date;

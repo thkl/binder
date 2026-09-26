@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Op, Order, WhereOptions } from 'sequelize';
+import { fn, Op, Order, WhereOptions } from 'sequelize';
 import { BaseCrudStore } from '../../../shared/datastore/base-crud.store';
 import { Document } from '../models/document.entity';
 import { DocumentPage } from '../models/document-page.entity';
-import { DocumentListQuery } from '@binder/common';
+import { DocumentListQuery, DocumentSearchQuery } from '@binder/common';
+import { DocumentTagAssignment, DocumentMetadataValue, MetadataDefinition } from '../../metadata/models/vocabulary.entity';
 
 @Injectable()
 export class DocumentStore extends BaseCrudStore<Document> {
@@ -51,22 +52,27 @@ export class DocumentStore extends BaseCrudStore<Document> {
     };
   }
 
-  async searchOwned(ownerUuid: string, query: { q: string; limit: number }) {
+  async searchOwned(ownerUuid: string, query: DocumentSearchQuery) {
+    const allowedUuids = await this.findMetadataMatches(ownerUuid, query);
+    if (allowedUuids && allowedUuids.length === 0) return [];
+    const documentWhere: WhereOptions<Document> = {
+      ownerUuid,
+      ...(query.status ? { status: query.status } : {}),
+      ...(allowedUuids ? { uuid: { [Op.in]: allowedUuids } } : {})
+    };
     const tokens = this.searchTokens(query.q);
     if (tokens.length === 0) return [];
+    const textQuery = fn('websearch_to_tsquery', 'simple', tokens.join(' OR '));
     const pageRows = await DocumentPage.findAll({
-      where: { [Op.or]: tokens.map((token) => ({ text: { [Op.iLike]: `%${token}%` } })) },
-      include: [{ model: Document, required: true, where: { ownerUuid } }],
+      where: { searchVector: { [Op.match]: textQuery } },
+      include: [{ model: Document, required: true, where: documentWhere }],
       order: [['pageNumber', 'ASC']],
       limit: Math.min(250, Math.max(query.limit * 8, 25))
     });
     const titleRows = await this.model.findAll({
       where: {
-        ownerUuid,
-        [Op.or]: tokens.flatMap((token) => [
-          { title: { [Op.iLike]: `%${token}%` } },
-          { originalFilename: { [Op.iLike]: `%${token}%` } }
-        ])
+        ...documentWhere,
+        searchVector: { [Op.match]: textQuery }
       },
       order: [['updatedAt', 'DESC']],
       limit: query.limit
@@ -78,7 +84,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
         document: page.document!,
         pageNumber: page.pageNumber,
         text: page.text,
-        score: this.scoreText(page.text, tokens)
+        score: 0.5
       }))
       .sort((left, right) => right.score - left.score);
     const pageDocumentUuids = new Set(pageHits.map((hit) => hit.document.uuid));
@@ -89,10 +95,39 @@ export class DocumentStore extends BaseCrudStore<Document> {
     return [...pageHits, ...titleHits].slice(0, query.limit);
   }
 
-  private scoreText(text: string, tokens: string[]): number {
-    const normalized = text.toLocaleLowerCase();
-    const matches = tokens.reduce((score, token) => score + (normalized.includes(token) ? 1 : 0), 0);
-    return matches / tokens.length;
+  private async findMetadataMatches(ownerUuid: string, query: DocumentSearchQuery): Promise<string[] | null> {
+    const hasFilters = Boolean(query.status || query.documentTypeUuid || query.categoryUuid || query.tagUuids?.length || query.metadata);
+    if (!hasFilters) return null;
+    const documents = await this.model.findAll({ where: { ownerUuid, ...(query.status ? { status: query.status } : {}) }, attributes: ['uuid'] });
+    let allowed = new Set(documents.map((document) => document.uuid));
+    if (query.documentTypeUuid || query.categoryUuid) {
+      const matching = documents.filter((document) =>
+        (!query.documentTypeUuid || document.documentTypeUuid === query.documentTypeUuid) &&
+        (!query.categoryUuid || document.categoryUuid === query.categoryUuid)
+      );
+      allowed = new Set(matching.map((document) => document.uuid));
+    }
+    if (query.tagUuids?.length && allowed.size > 0) {
+      const assignments = await DocumentTagAssignment.findAll({ where: { documentUuid: { [Op.in]: [...allowed] }, tagUuid: { [Op.in]: query.tagUuids } } });
+      const tagsByDocument = new Map<string, Set<string>>();
+      for (const assignment of assignments) {
+        const tags = tagsByDocument.get(assignment.documentUuid) ?? new Set<string>();
+        tags.add(assignment.tagUuid);
+        tagsByDocument.set(assignment.documentUuid, tags);
+      }
+      allowed = new Set([...allowed].filter((uuid) => query.tagUuids!.every((tagUuid) => tagsByDocument.get(uuid)?.has(tagUuid))));
+    }
+    if (query.metadata && allowed.size > 0) {
+      const definitions = await MetadataDefinition.findAll({ where: { key: { [Op.in]: Object.keys(query.metadata) }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } });
+      const definitionByKey = new Map(definitions.map((definition) => [definition.key, definition.uuid]));
+      for (const [key, value] of Object.entries(query.metadata)) {
+        const definitionUuid = definitionByKey.get(key);
+        if (!definitionUuid) { allowed.clear(); break; }
+        const values = await DocumentMetadataValue.findAll({ where: { documentUuid: { [Op.in]: [...allowed] }, definitionUuid, value } });
+        allowed = new Set(values.map((item) => item.documentUuid));
+      }
+    }
+    return [...allowed];
   }
 
   private searchTokens(query: string): string[] {
@@ -100,6 +135,8 @@ export class DocumentStore extends BaseCrudStore<Document> {
       'a', 'an', 'and', 'about', 'are', 'find', 'for', 'from', 'get', 'i', 'in', 'me', 'my', 'of', 'on', 'show', 'the', 'to', 'with',
       'ein', 'eine', 'einen', 'einer', 'einem', 'eines', 'und', 'über', 'finde', 'für', 'mir', 'meine', 'von', 'der', 'die', 'das', 'den', 'dem', 'zu', 'mit'
     ]);
-    return [...new Set(query.toLocaleLowerCase().split(/\s+/).map((token) => token.replace(/[^\p{L}\p{N}-]/gu, '')).filter((token) => token.length >= 3 && !stopWords.has(token)))];
+    return [...new Set(query.toLocaleLowerCase().split(/\s+/)
+      .map((token) => token.replace(/[^\p{L}\p{N}-]/gu, ''))
+      .filter((token) => token.length >= 3 && !stopWords.has(token)))];
   }
 }

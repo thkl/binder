@@ -17,6 +17,28 @@
         {{ search.loading() ? 'Searching…' : 'Search' }}
       </button>
     </form>
+    @if (search.vocabulary(); as vocabulary) {
+      <div class="search-filters" aria-label="Search filters">
+        <label>Type
+          <select [value]="selectedType()" (change)="selectedType.set($any($event.target).value)">
+            <option value="">Any type</option>
+            @for (item of vocabulary.documentTypes; track item.uuid) { <option [value]="item.uuid">{{ item.name }}</option> }
+          </select>
+        </label>
+        <label>Category
+          <select [value]="selectedCategory()" (change)="selectedCategory.set($any($event.target).value)">
+            <option value="">Any category</option>
+            @for (item of vocabulary.categories; track item.uuid) { <option [value]="item.uuid">{{ item.name }}</option> }
+          </select>
+        </label>
+        <label>Tag
+          <select [value]="selectedTag()" (change)="selectedTag.set($any($event.target).value)">
+            <option value="">Any tag</option>
+            @for (item of vocabulary.tags; track item.uuid) { <option [value]="item.uuid">{{ item.name }}</option> }
+          </select>
+        </label>
+      </div>
+    }
     <p class="search-hint">Try a title, filename, or a phrase from the document.</p>
   </div>
 

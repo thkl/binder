@@ -344,7 +344,6 @@ export class DatabaseMigrator {
                     const existingTablesResult = await this.sequelize.query("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' ORDER BY tablename", {
                     type: QueryTypes.RAW
                 });
-                this.logger.debug(`existingTablesResult ${existingTablesResult}`);
                 let existingTables = [];
                 if (Array.isArray(existingTablesResult)) {
                     this.logger.debug(`existing table List found`);

@@ -66,7 +66,21 @@ export type DocumentListResponse = z.infer<typeof DocumentListResponseSchema>;
 
 export const DocumentSearchQuerySchema = z.object({
   q: z.string().trim().min(1).max(200),
-  limit: z.coerce.number().int().min(1).max(50).default(20)
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+  status: DocumentStatusSchema.optional(),
+  documentTypeUuid: z.uuid().optional(),
+  categoryUuid: z.uuid().optional(),
+  tagUuids: z.preprocess(
+    (value) => typeof value === 'string' ? value.split(',').map((item) => item.trim()).filter(Boolean) : value,
+    z.array(z.uuid()).max(20).optional()
+  ),
+  metadata: z.preprocess(
+    (value) => {
+      if (typeof value !== 'string' || value.trim() === '') return value;
+      try { return JSON.parse(value); } catch { return value; }
+    },
+    z.record(z.string(), z.string()).optional()
+  )
 });
 export type DocumentSearchQuery = z.infer<typeof DocumentSearchQuerySchema>;
 

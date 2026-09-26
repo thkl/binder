@@ -14,9 +14,16 @@ import { SearchService } from '../../services/search.service';
 export class HomeComponent {
   readonly search = inject(SearchService);
   readonly searchQuery = signal('');
+  readonly selectedType = signal('');
+  readonly selectedCategory = signal('');
+  readonly selectedTag = signal('');
 
   async submitSearch(event: Event): Promise<void> {
     event.preventDefault();
-    await this.search.search(this.searchQuery());
+    await this.search.search(this.searchQuery(), {
+      documentTypeUuid: this.selectedType() || undefined,
+      categoryUuid: this.selectedCategory() || undefined,
+      tagUuids: this.selectedTag() ? [this.selectedTag()] : undefined
+    });
   }
 }

@@ -22,6 +22,7 @@ export interface DocumentAttributes {
   checksumSha256: string;
   storageKey: string;
   thumbnailKey: string | null;
+  searchVector: unknown;
   status: DocumentStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -71,6 +72,9 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
 
   @AllowNull @Column({ field: 'category_id', type: DataType.UUID })
   declare categoryUuid: string | null;
+
+  @Column({ field: 'search_vector', type: DataType.TSVECTOR })
+  declare searchVector: unknown;
 
   @Column({
     type: DataType.ENUM('uploaded', 'scanning', 'processing', 'ready', 'failed'),
