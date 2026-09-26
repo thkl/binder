@@ -31,16 +31,12 @@ export class DocumentMetadataEditorComponent implements OnChanges {
 
   async load(): Promise<void> {
     this.loaded.set(false);
-    const [vocabulary, current] = await Promise.all([
+    const [vocabulary, , current] = await Promise.all([
       this.metadata.vocabulary() ? Promise.resolve(this.metadata.vocabulary()) : this.metadata.loadVocabulary(),
+      this.metadata.definitions().length > 0 ? Promise.resolve(this.metadata.definitions()) : this.metadata.loadDefinitions(),
       this.metadata.getDocumentMetadata(this.documentUuid)
     ]);
-    if (vocabulary && current) {
-      this.documentTypeUuid.set(current.documentType?.uuid ?? '');
-      this.categoryUuid.set(current.category?.uuid ?? '');
-      this.selectedTags.set(new Set(current.tags.map((tag) => tag.uuid)));
-      this.customValues.set({ ...current.custom });
-    }
+    if (vocabulary && current) this.applyMetadata(current);
     this.loaded.set(true);
   }
 
@@ -62,7 +58,17 @@ export class DocumentMetadataEditorComponent implements OnChanges {
       tagUuids: [...this.selectedTags()],
       custom: this.customValues()
     });
-    if (result) this.saved.set(true);
+    if (result) {
+      this.applyMetadata(result);
+      this.saved.set(true);
+    }
+  }
+
+  private applyMetadata(current: { documentType: { uuid: string } | null; category: { uuid: string } | null; tags: { uuid: string }[]; custom: Record<string, unknown> }): void {
+    this.documentTypeUuid.set(current.documentType?.uuid ?? '');
+    this.categoryUuid.set(current.category?.uuid ?? '');
+    this.selectedTags.set(new Set(current.tags.map((tag) => tag.uuid)));
+    this.customValues.set({ ...current.custom });
   }
 
   async addTag(event: Event): Promise<void> {
