@@ -5,12 +5,15 @@ import { Throttle } from '@nestjs/throttler';
 import { SessionRequest } from '../models/request.model';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { AuthenticationService } from '../service/authentication.service';
+import { ConfigService } from '@nestjs/config';
+import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 
 @Controller('ssoauth')
 export class AuthenticationController {
     constructor(
         private readonly ssoAuthenticationService: SSOAuthenticationService,
         private readonly settingsService: ApplicationSettingsService,
+        private readonly appConfig: ConfigService<BinderConfig>,
         private readonly authenticationService: AuthenticationService) { }
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
@@ -73,11 +76,12 @@ export class AuthenticationController {
                 request.session.save((error) => error ? reject(error) : resolve());
             });
 
-            const url = await this.settingsService.get('frontend.url');
-            if (!url) {
-                throw new HttpException('Frontend URL not set', 500);
+            const rootUrl = this.appConfig.get<string>(ConfigKeys.ROOT_URI);
+
+            if (!rootUrl) {
+                throw new HttpException('ROOT_URI not set', 500);
             }
-            return res.redirect(url);
+            return res.redirect(rootUrl);
         }
     }
 }

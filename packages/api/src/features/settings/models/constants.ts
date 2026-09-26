@@ -105,16 +105,6 @@ export const settingsMap: SettingsMapItem[] = [
     section: 'oidc',
   },
   {
-    key: 'oidc.REDIRECT_URI',
-    valueFrom: 'OIDC_REDIRECT_URI',
-    encrypted: false,
-    default: '',
-    label: 'Redirect URL',
-    type: 'text',
-    required: true,
-    section: 'oidc',
-  },
-  {
     key: 'oidc.email_verified',
     valueFrom: 'email_verified',
     encrypted: false,
@@ -131,14 +121,5 @@ export const settingsMap: SettingsMapItem[] = [
     label: 'Pass ACR Values if needed',
     type: 'text',
     section: 'oidc',
-  },
-   {
-    key: 'frontend.url',
-    valueFrom: 'frontendurl',
-    encrypted: false,
-    default: '',
-    label: 'URL of the Application',
-    type: 'text',
-    section: 'common',
-  },
+  }
 ]
