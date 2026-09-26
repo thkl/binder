@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "dotenv run -f ../../.env -- node --watch dist/main.js",
-    "start": "dotenv run -f ../../.env -- node dist/main.js",
+    "start": "pnpm build && dotenv run -f ../../.env -- node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

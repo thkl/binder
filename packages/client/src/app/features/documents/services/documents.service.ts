@@ -45,6 +45,20 @@ export class DocumentsService {
     }
   }
 
+  async requeueDocument(uuid:string): Promise<boolean> {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/${uuid}/pipeline/requeue`, { withCredentials: true })
+      );
+      this.page.set(DocumentListResponseSchema.parse(response.data));
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+    } finally {
+      this.loading.set(false);
+    }
+    return true;
+  }
+
   async upload(file: File): Promise<boolean> {
     this.uploading.set(true);
     this.error.set(null);

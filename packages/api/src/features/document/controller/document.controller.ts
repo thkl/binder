@@ -62,6 +62,12 @@ export class DocumentController {
     return { data: await this.documents.getPipeline(user.userId, uuid) };
   }
 
+  @Post(':uuid/pipeline/requeue')
+  async requeue(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    this.logger.info(`Requeue pipeline for document ${uuid}`);
+    return { data: await this.documents.requeue(user.userId, uuid) };
+  }
+
   @Get(':uuid/thumbnail')
   async thumbnail(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
     this.logger.debug(`Get thumbnail ${uuid}`);

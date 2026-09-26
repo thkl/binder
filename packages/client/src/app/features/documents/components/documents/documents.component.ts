@@ -66,6 +66,11 @@ export class DocumentsComponent implements OnInit {
     localStorage.setItem('binder.documents.view-mode', mode);
   }
 
+
+  async requeueDocument(uuid:string) {
+    await this.documents.requeueDocument(uuid);
+  }
+  
   private readViewMode(): DocumentViewMode {
     const stored = localStorage.getItem('binder.documents.view-mode');
     return stored === 'details' || stored === 'small-icons' || stored === 'large-icons'

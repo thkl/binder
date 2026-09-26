@@ -22,6 +22,14 @@ The document API exposes the authenticated owner's pipeline state:
 GET /api/v1/documents/:uuid/pipeline
 ```
 
+Failed or previously uploaded documents can be queued again by their owner:
+
+```text
+POST /api/v1/documents/:uuid/pipeline/requeue
+```
+
+The API verifies ownership and that the original file exists in configured storage before creating a new text-extraction job.
+
 The endpoint returns jobs and their safe event messages. It never returns document contents or worker internals.
 
 ## Worker boundary

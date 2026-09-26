@@ -6,13 +6,14 @@
       <p class="muted">Your originals stay in your controlled storage, ready for the processing pipeline.</p>
     </div>
     <label class="upload-button">
-      <input type="file" accept="application/pdf,.pdf" (change)="fileSelected($event)" [disabled]="documents.uploading()">
+      <input type="file" accept="application/pdf,.pdf" (change)="fileSelected($event)"
+        [disabled]="documents.uploading()">
       <span>＋</span> {{ documents.uploading() ? 'Uploading…' : 'Add PDF' }}
     </label>
   </div>
 
   @if (documents.error(); as error) {
-    <div class="notice error" role="alert">{{ error }}</div>
+  <div class="notice error" role="alert">{{ error }}</div>
   }
 
   <section class="document-card glass-card">
@@ -21,70 +22,107 @@
       <div class="list-header-actions">
         @if (documents.page(); as page) { <small>{{ page.total }} total</small> }
         <div class="view-switcher" aria-label="Document view">
-          <button type="button" [class.active]="viewMode() === 'list'" (click)="setViewMode('list')" aria-label="List view" title="List view">☷</button>
-          <button type="button" [class.active]="viewMode() === 'details'" (click)="setViewMode('details')" aria-label="Details view" title="Details view">☰</button>
-          <button type="button" [class.active]="viewMode() === 'small-icons'" (click)="setViewMode('small-icons')" aria-label="Small icon view" title="Small icons">▦</button>
-          <button type="button" [class.active]="viewMode() === 'large-icons'" (click)="setViewMode('large-icons')" aria-label="Large icon view" title="Large icons">⊞</button>
+          <button type="button" [class.active]="viewMode() === 'list'" (click)="setViewMode('list')"
+            aria-label="List view" title="List view">☷</button>
+          <button type="button" [class.active]="viewMode() === 'details'" (click)="setViewMode('details')"
+            aria-label="Details view" title="Details view">☰</button>
+          <button type="button" [class.active]="viewMode() === 'small-icons'" (click)="setViewMode('small-icons')"
+            aria-label="Small icon view" title="Small icons">▦</button>
+          <button type="button" [class.active]="viewMode() === 'large-icons'" (click)="setViewMode('large-icons')"
+            aria-label="Large icon view" title="Large icons">⊞</button>
         </div>
       </div>
     </header>
 
     @if (documents.loading()) {
-      <div class="empty-state"><span class="spinner"></span><p>Loading documents…</p></div>
+    <div class="empty-state"><span class="spinner"></span>
+      <p>Loading documents…</p>
+    </div>
     } @else if (documents.page()?.items?.length === 0) {
-      <div class="empty-state"><span class="empty-icon">▱</span><h3>Your vault is ready</h3><p>Upload your first PDF to start building your document history.</p></div>
+    <div class="empty-state"><span class="empty-icon">▱</span>
+      <h3>Your vault is ready</h3>
+      <p>Upload your first PDF to start building your document history.</p>
+    </div>
     } @else {
-      @switch (viewMode()) {
-        @case ('list') {
-          <div class="document-list">
-            @for (document of documents.page()?.items; track document.uuid) {
-              <article class="document-row">
-                @if (!hasThumbnailFailed(document.uuid)) { <img class="thumbnail" [src]="thumbnailUrl(document.uuid)" [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
-                <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
-                <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
-                <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open ↗</a>
-              </article>
-            }
-          </div>
+    @switch (viewMode()) {
+    @case ('list') {
+    <div class="document-list">
+      @for (document of documents.page()?.items; track document.uuid) {
+      <article class="document-row">
+        @if (!hasThumbnailFailed(document.uuid)) { <img class="thumbnail" [src]="thumbnailUrl(document.uuid)"
+          [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
+        <span class="file-icon">PDF</span> }
+        <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number
+            }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
+        <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
+        @if (document.status === 'failed') {
+        <button (click)="requeueDocument(document.uuid)"><svg xmlns="http://www.w3.org/2000/svg" height="24px"
+            viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
+            <path
+              d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z" />
+          </svg></button>
         }
-        @case ('details') {
-          <div class="details-list">
-            <div class="details-heading"><span>Name</span><span>Type</span><span>Size</span><span>Status</span><span>Added</span><span></span></div>
-            @for (document of documents.page()?.items; track document.uuid) {
-              <article class="details-row">
-                <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.checksumSha256 }}</small></div>
-                <span>PDF</span><span>{{ document.sizeBytes | number }} bytes</span>
-                <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
-                <span>{{ document.createdAt | date:'mediumDate' }}</span>
-                <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open ↗</a>
-              </article>
-            }
-          </div>
-        }
-        @case ('small-icons') {
-          <div class="icon-grid small-icons">
-            @for (document of documents.page()?.items; track document.uuid) {
-              <a class="icon-card" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">
-                @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)" [alt]="''" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
-                <strong>{{ document.originalFilename }}</strong><small>{{ document.status }}</small>
-              </a>
-            }
-          </div>
-        }
-        @case ('large-icons') {
-          <div class="icon-grid large-icons">
-            @for (document of documents.page()?.items; track document.uuid) {
-              <a class="icon-card" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">
-                @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)" [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
-                <strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number }} bytes · {{ document.status }}</small>
-              </a>
-            }
-          </div>
-        }
+        <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open
+          ↗</a>
+      </article>
       }
-      @if (documents.page(); as page) {
-        <footer class="pagination"><button type="button" (click)="previousPage()" [disabled]="!page.hasPrev">← Previous</button><span>Page {{ page.page }} of {{ page.totalPages || 1 }}</span><button type="button" (click)="nextPage()" [disabled]="!page.hasNext">Next →</button></footer>
+    </div>
+    }
+    @case ('details') {
+    <div class="details-list">
+      <div class="details-heading">
+        <span>Name</span><span>Type</span><span>Size</span><span>Status</span><span>Added</span><span></span>
+      </div>
+      @for (document of documents.page()?.items; track document.uuid) {
+      <article class="details-row">
+        <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.checksumSha256
+            }}</small></div>
+        <span>PDF</span><span>{{ document.sizeBytes | number }} bytes</span>
+        <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
+        @if (document.status === 'failed') {
+        <button (click)="requeueDocument(document.uuid)"><svg xmlns="http://www.w3.org/2000/svg" height="24px"
+            viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
+            <path
+              d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z" />
+          </svg></button>
+        }
+        <span>{{ document.createdAt | date:'mediumDate' }}</span>
+        <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open
+          ↗</a>
+      </article>
       }
+    </div>
+    }
+    @case ('small-icons') {
+    <div class="icon-grid small-icons">
+      @for (document of documents.page()?.items; track document.uuid) {
+      <a class="icon-card" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">
+        @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
+          [alt]="''" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
+        <strong>{{ document.originalFilename }}</strong><small>{{ document.status }}</small>
+      </a>
+      }
+    </div>
+    }
+    @case ('large-icons') {
+    <div class="icon-grid large-icons">
+      @for (document of documents.page()?.items; track document.uuid) {
+      <a class="icon-card" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">
+        @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
+          [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
+        <span class="file-icon">PDF</span> }
+        <strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number }} bytes · {{
+          document.status }}</small>
+      </a>
+      }
+    </div>
+    }
+    }
+    @if (documents.page(); as page) {
+    <footer class="pagination"><button type="button" (click)="previousPage()" [disabled]="!page.hasPrev">←
+        Previous</button><span>Page {{ page.page }} of {{ page.totalPages || 1 }}</span><button type="button"
+        (click)="nextPage()" [disabled]="!page.hasNext">Next →</button></footer>
+    }
     }
   </section>
 </section>

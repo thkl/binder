@@ -23,6 +23,7 @@ interface WorkerConfig {
   workerId: string;
   pollIntervalMs: number;
   lockTimeoutMs: number;
+  reconcileIntervalMs: number;
 }
 
 const logger: Logger = createLogger({
@@ -35,7 +36,8 @@ const config: WorkerConfig = {
   storageRoot: getStorageRoot(),
   workerId: process.env.PIPELINE_WORKER_ID ?? `${hostname()}-${process.pid}`,
   pollIntervalMs: readPositiveInteger('PIPELINE_POLL_INTERVAL_MS', 2_000),
-  lockTimeoutMs: readPositiveInteger('PIPELINE_LOCK_TIMEOUT_MS', 15 * 60 * 1_000)
+  lockTimeoutMs: readPositiveInteger('PIPELINE_LOCK_TIMEOUT_MS', 15 * 60 * 1_000),
+  reconcileIntervalMs: readPositiveInteger('PIPELINE_RECONCILE_INTERVAL_MS', 30_000)
 };
 
 const sequelize = new Sequelize({
@@ -64,10 +66,16 @@ async function main(): Promise<void> {
   await sequelize.authenticate();
   logger.info('Pipeline worker database connection established');
   await recoverStaleJobs();
+  await reconcileUploadedDocuments();
   await logQueueStatus();
 
+  let lastReconciliation = Date.now();
   while (!stopping) {
     try {
+      if (Date.now() - lastReconciliation >= config.reconcileIntervalMs) {
+        await reconcileUploadedDocuments();
+        lastReconciliation = Date.now();
+      }
       const job = await claimNextJob();
       if (job) {
         await processJob(job);
@@ -83,6 +91,53 @@ async function main(): Promise<void> {
 
     await delay(config.pollIntervalMs);
   }
+}
+
+async function reconcileUploadedDocuments(): Promise<void> {
+  const documents = await Document.findAll({ where: { status: 'uploaded' } });
+  let created = 0;
+
+  for (const candidate of documents) {
+    await sequelize.transaction(async (transaction) => {
+      const document = await Document.findByPk(candidate.uuid, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!document || document.status !== 'uploaded') return;
+
+      const existingJob = await PipelineJob.findOne({
+        where: {
+          documentUuid: document.uuid,
+          kind: 'text-extraction',
+          status: { [Op.in]: ['queued', 'running', 'succeeded'] }
+        },
+        transaction
+      });
+      if (existingJob) return;
+
+      const job = await PipelineJob.create({
+        uuid: randomUUID(),
+        documentUuid: document.uuid,
+        ownerUuid: document.ownerUuid,
+        kind: 'text-extraction',
+        status: 'queued',
+        attempts: 0,
+        maxAttempts: 3,
+        availableAt: new Date(),
+        lockedAt: null,
+        lockedBy: null,
+        startedAt: null,
+        completedAt: null,
+        lastError: null
+      }, { transaction });
+      await PipelineJobEvent.create({
+        uuid: randomUUID(),
+        jobUuid: job.uuid,
+        type: 'queued',
+        message: 'Queued by worker reconciliation'
+      }, { transaction });
+      created += 1;
+    });
+  }
+
+  logger.info('Reconciled uploaded documents', { uploaded: documents.length, jobsCreated: created });
 }
 
 async function claimNextJob(): Promise<ClaimedJob | null> {

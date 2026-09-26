@@ -24,6 +24,9 @@ export class Document extends Model {
   @Column({ field: 'storage_key', type: DataType.STRING })
   declare storageKey: string;
 
+  @Column({ field: 'owner_id', type: DataType.UUID })
+  declare ownerUuid: string;
+
   @Column({ field: 'thumbnail_key', type: DataType.STRING, allowNull: true })
   declare thumbnailKey: string | null;
 

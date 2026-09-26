@@ -126,6 +126,28 @@ export class DocumentService {
     return this.pipeline.getForDocument(ownerUuid, uuid);
   }
 
+  async requeue(ownerUuid: string, uuid: string) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+
+    if (!(await this.storage.exists(document.storageKey))) {
+      throw new BadRequestException('The original document file is not available in storage');
+    }
+
+    const updated = await this.documents.update(document.uuid, { status: 'uploaded' });
+    if (!updated) {
+      throw new NotFoundException('Document not found');
+    }
+
+    const job = await this.pipeline.enqueue(updated.uuid, ownerUuid, 'text-extraction');
+    return {
+      document: this.toDocumentResponse(updated),
+      job
+    };
+  }
+
   private toDocumentResponse(document: import('../models/document.entity').Document): DocumentResponse {
     return {
       uuid: document.uuid,
