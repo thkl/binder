@@ -69,6 +69,11 @@
                     "users",
                     "documents"
                ]
+          },
+          "11": {
+               "required": [
+                    "settings"
+               ]
           }
      }
 }

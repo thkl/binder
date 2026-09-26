@@ -21,6 +21,7 @@ export const ConfigKeys = {
   SESSION_TTL_MS: 'SESSION_TTL_MS',
   ROOT_URI: 'ROOT_URI',
   NODE_ENV: 'NODE_ENV',
+  DOCUMENT_STORAGE_ROOT:'DOCUMENT_STORAGE_ROOT', // this only exists in dev
   
   
 } as const;
@@ -48,4 +49,5 @@ export interface BinderConfig {
   INITIAL_ADMIN_USERNAME?: string;
   SESSION_SECRET: string;
   SESSION_TTL_MS?: string;
+  DOCUMENT_STORAGE_ROOT?:string;
 }

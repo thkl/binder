@@ -42,6 +42,15 @@ CMD ["node", "dist/main.js"]
 
 FROM node:24-bookworm-slim AS worker
 
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    ghostscript \
+    ocrmypdf \
+    tesseract-ocr \
+    tesseract-ocr-deu \
+    tesseract-ocr-eng \
+  && rm -rf /var/lib/apt/lists/*
+
 ENV NODE_ENV=production
 ENV APP_ROOT_PATH=/app
 WORKDIR /app

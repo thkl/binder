@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import { hostname } from 'node:os';
 import { dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path';
+import { spawn } from 'node:child_process';
 import { Op, Transaction } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ApplicationSetting, Document, PipelineJob, PipelineJobEvent, JobKind } from './models.js';
@@ -20,6 +21,7 @@ interface ClaimedJob {
 
 interface WorkerConfig {
   storageRoot: string;
+  ocrLanguages: string;
   workerId: string;
   pollIntervalMs: number;
   lockTimeoutMs: number;
@@ -34,6 +36,7 @@ const logger: Logger = createLogger({
 
 const config: WorkerConfig = {
   storageRoot: getDefaultStorageRoot(),
+  ocrLanguages: 'deu+eng',
   workerId: process.env.PIPELINE_WORKER_ID ?? `${hostname()}-${process.pid}`,
   pollIntervalMs: 2_000,
   lockTimeoutMs: 15 * 60 * 1_000,
@@ -68,6 +71,7 @@ async function main(): Promise<void> {
   await loadRuntimeConfiguration();
   logger.info('Pipeline worker runtime configuration loaded', {
     storageRoot: config.storageRoot,
+    ocrLanguages: config.ocrLanguages,
     pollIntervalMs: config.pollIntervalMs,
     lockTimeoutMs: config.lockTimeoutMs,
     reconcileIntervalMs: config.reconcileIntervalMs
@@ -208,6 +212,14 @@ async function processJob(job: ClaimedJob): Promise<void> {
         await completeJob(job, false);
         break;
       case 'ocr':
+        {
+          const ocrStorageKey = await runOcr(job.storageKey, job.documentUuid);
+          const text = await extractPdfText(ocrStorageKey);
+          if (!text.trim()) throw new Error('OCR completed but produced no searchable text');
+          await writeDerivedText(job.documentUuid, text);
+          await completeJob(job, false);
+          break;
+        }
       case 'embedding':
         throw new Error(`${job.kind} processing is not configured yet`);
     }
@@ -278,6 +290,62 @@ async function writeDerivedText(documentUuid: string, text: string): Promise<voi
   await fs.mkdir(dirname(target), { recursive: true, mode: 0o750 });
   await fs.writeFile(temporaryPath, text, { encoding: 'utf8', mode: 0o640 });
   await fs.rename(temporaryPath, target);
+}
+
+async function runOcr(storageKey: string, documentUuid: string): Promise<string> {
+  const inputPath = resolveStoragePath(storageKey);
+  const outputKey = `derived/${documentUuid}/ocr.pdf`;
+  const outputPath = resolveStoragePath(outputKey);
+  const temporaryPath = `${outputPath}.${randomUUID()}.tmp.pdf`;
+
+  await fs.mkdir(dirname(outputPath), { recursive: true, mode: 0o750 });
+  logger.info('Starting OCR', {
+    documentUuid,
+    languages: config.ocrLanguages,
+    input: storageKey,
+    output: outputKey
+  });
+
+  try {
+    await runExternalCommand('ocrmypdf', [
+      '--skip-text',
+      '--rotate-pages',
+      '--deskew',
+      '--language', config.ocrLanguages,
+      '--output-type', 'pdf',
+      inputPath,
+      temporaryPath
+    ], documentUuid);
+    await fs.rename(temporaryPath, outputPath);
+    logger.info('OCR completed', { documentUuid, output: outputKey });
+    return outputKey;
+  } finally {
+    await fs.rm(temporaryPath, { force: true }).catch(() => undefined);
+  }
+}
+
+function runExternalCommand(command: string, args: string[], documentUuid: string): Promise<void> {
+  return new Promise((resolveCommand, rejectCommand) => {
+    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stderr = '';
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr = `${stderr}${chunk.toString('utf8')}`.slice(-4000);
+    });
+    child.stdout.on('data', (chunk: Buffer) => {
+      logger.debug('OCR tool output', { documentUuid, output: chunk.toString('utf8').trim().slice(-1000) });
+    });
+    child.once('error', (error) => {
+      rejectCommand(new Error(`Unable to start ${command}: ${error.message}`));
+    });
+    child.once('close', (code, signal) => {
+      if (code === 0) {
+        resolveCommand();
+        return;
+      }
+      const details = stderr.trim() || `process exited with code ${code ?? 'unknown'}${signal ? ` (${signal})` : ''}`;
+      rejectCommand(new Error(`${command} failed: ${details}`));
+    });
+  });
 }
 
 async function completeJob(job: ClaimedJob, needsOcr: boolean): Promise<void> {
@@ -378,12 +446,18 @@ function resolveStoragePath(storageKey: string): string {
 
 async function loadRuntimeConfiguration(): Promise<void> {
   const settings = await ApplicationSetting.findAll({
-    where: { key: { [Op.in]: ['documents.storageRoot', 'pipeline.pollIntervalMs', 'pipeline.lockTimeoutMs', 'pipeline.reconcileIntervalMs'] } }
+    where: { key: { [Op.in]: ['documents.storageRoot', 'pipeline.ocrLanguages', 'pipeline.pollIntervalMs', 'pipeline.lockTimeoutMs', 'pipeline.reconcileIntervalMs'] } }
   });
   const values = new Map(settings.map((setting) => [setting.key, setting.value]));
   const appRoot = process.env.APP_ROOT_PATH ?? process.cwd();
   const configuredStorageRoot = values.get('documents.storageRoot') ?? join(appRoot, 'storage');
   config.storageRoot = isAbsolute(configuredStorageRoot) ? configuredStorageRoot : resolve(appRoot, configuredStorageRoot);
+  const configuredLanguages = values.get('pipeline.ocrLanguages');
+  if (configuredLanguages && /^[a-z]{3}(?:\+[a-z]{3})*$/.test(configuredLanguages)) {
+    config.ocrLanguages = configuredLanguages;
+  } else if (configuredLanguages) {
+    logger.warn('Ignoring invalid OCR language setting', { key: 'pipeline.ocrLanguages' });
+  }
   config.pollIntervalMs = readSettingInteger(values, 'pipeline.pollIntervalMs', config.pollIntervalMs);
   config.lockTimeoutMs = readSettingInteger(values, 'pipeline.lockTimeoutMs', config.lockTimeoutMs);
   config.reconcileIntervalMs = readSettingInteger(values, 'pipeline.reconcileIntervalMs', config.reconcileIntervalMs);

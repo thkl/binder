@@ -56,4 +56,8 @@ Start with:
 - One retry policy with visible failure status.
 - Derived `ocr.pdf` and `extracted.txt` artifacts.
 
+The worker now invokes the `ocrmypdf` executable for queued OCR jobs. It uses German and English (`deu+eng`) by default, configurable through the `pipeline.ocrLanguages` database setting. OCR output is written to `derived/<document-uuid>/ocr.pdf`; MuPDF then extracts the searchable text into `derived/<document-uuid>/extracted.txt`. The original PDF is never replaced.
+
+The production worker image installs OCRmyPDF, Ghostscript, Tesseract, and the German/English language data. Local worker runs require the same tools to be installed on the host; if `ocrmypdf` is missing, the job fails visibly and follows the normal retry policy.
+
 Image-only input formats can be converted to PDF as part of a later pipeline step if the first vertical slice supports PDF uploads only.

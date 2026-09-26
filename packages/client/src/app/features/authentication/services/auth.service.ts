@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   AuthenticatedUser,
@@ -7,6 +7,7 @@ import {
   ChangePasswordInputSchema,
   LoginInputSchema
 } from '@binder/common';
+import { ApplicationService } from '../../../common/application.service';
 
 type ApiResponse<T> = { data: T };
 type SSOActiveResponse = {isActive:boolean};
@@ -17,7 +18,7 @@ export class AuthService {
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
-  private readonly apiUrl = '/api/v1';
+  readonly appService = inject(ApplicationService);
 
   constructor(private readonly http: HttpClient) {}
 
@@ -26,7 +27,7 @@ export class AuthService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(`${this.apiUrl}/auth/session`, { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1','auth/session'), { withCredentials: true })
       );
       this.user.set(response.data === null ? null : AuthenticatedUserSchema.parse(response.data));
     } catch (error) {
@@ -39,7 +40,7 @@ export class AuthService {
 
   async isSSOActive(): Promise<boolean> {
     const response = await firstValueFrom(
-        this.http.get<ApiResponse<SSOActiveResponse>>(`${this.apiUrl}/ssoauth/active`)
+        this.http.get<ApiResponse<SSOActiveResponse>>(this.appService.getApiUrl('v1','ssoauth/active'))
       );
     return response.data.isActive;
   }
@@ -54,7 +55,7 @@ export class AuthService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/auth/login`, input.data, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1','auth/login'), input.data, { withCredentials: true })
       );
       this.user.set(AuthenticatedUserSchema.parse(response.data));
       return true;
@@ -76,7 +77,7 @@ export class AuthService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/auth/password`, input.data, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1','auth/password'), input.data, { withCredentials: true })
       );
       this.user.set(AuthenticatedUserSchema.parse(response.data));
       return true;
@@ -90,7 +91,7 @@ export class AuthService {
 
   async logout(): Promise<void> {
     await firstValueFrom(
-      this.http.post<ApiResponse<null>>(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true })
+      this.http.post<ApiResponse<null>>(this.appService.getApiUrl('v1','auth/logout'), {}, { withCredentials: true })
     );
     this.user.set(null);
   }

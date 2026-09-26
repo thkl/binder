@@ -14,8 +14,8 @@
     "lint": "pnpm -r --if-present run lint",
     "test": "pnpm -r --if-present run test",
     "typecheck": "pnpm -r --workspace-concurrency=1 --if-present run typecheck",
-    "start:debug": "pnpm -r --workspace-concurrency=1 --if-present run start:debug"
-
+    "start:debug": "pnpm -r --workspace-concurrency=1 --if-present run start:debug",
+    "start:client": "pnpm --filter @binder/client start"
   },
   "devDependencies": {
     "typescript": "^6.0.0"

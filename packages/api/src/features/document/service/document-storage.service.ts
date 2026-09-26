@@ -113,12 +113,13 @@ export class DocumentStorageService {
   private async getStorageRoot(): Promise<string> {
     if (this.storageRoot) return this.storageRoot;
     const appRoot = this.config.get<string>(ConfigKeys.APP_ROOT_PATH) ?? process.cwd();
-    const configuredRoot = await this.settings.get('documents.storageRoot', join(appRoot, 'storage')) ?? join(appRoot, 'storage');
+    const envStorageRoot = this.config.get<string>(ConfigKeys.DOCUMENT_STORAGE_ROOT);
+    const configuredRoot = envStorageRoot ?? await this.settings.get('documents.storageRoot', join(appRoot, 'storage')) ?? join(appRoot, 'storage');
     this.storageRoot = isAbsolute(configuredRoot) ? configuredRoot : resolve(appRoot, configuredRoot);
     return this.storageRoot;
   }
 
-  private async resolveStoragePath(storageKey: string): Promise<string> {
+  async resolveStoragePath(storageKey: string): Promise<string> {
     const root = await this.getStorageRoot();
     const absolutePath = normalize(join(root, storageKey));
     const relativePath = relative(root, absolutePath);

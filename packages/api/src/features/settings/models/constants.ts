@@ -74,6 +74,16 @@ export const settingsMap: SettingsMapItem[] = [
     required: true,
     section: 'pipeline',
   },
+  {
+    key: 'pipeline.ocrLanguages',
+    valueFrom: 'pipeline.ocrLanguages',
+    encrypted: false,
+    default: 'deu+eng',
+    label: 'OCR languages',
+    type: 'text',
+    required: true,
+    section: 'pipeline',
+  },
     {
     key: 'oidc.ISSUER_URL',
     valueFrom: 'OIDC_ISSUER_URL',

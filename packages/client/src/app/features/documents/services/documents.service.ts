@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import {
   ApiResponse,
   DocumentListQuery,
@@ -9,6 +9,7 @@ import {
   SetDocumentTitleInputSchema
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
+import { ApplicationService } from '../../../common/application.service';
 
 @Injectable({ providedIn: 'root' })
 export class DocumentsService {
@@ -16,8 +17,7 @@ export class DocumentsService {
   readonly loading = signal(false);
   readonly uploading = signal(false);
   readonly error = signal<string | null>(null);
-
-  private readonly apiUrl = '/api/v1/documents';
+  readonly appService = inject(ApplicationService);
 
   constructor(private readonly http: HttpClient) {}
 
@@ -36,7 +36,7 @@ export class DocumentsService {
 
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(`${this.apiUrl}?${params.toString()}`, { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1','documents',`?${params.toString()}`), { withCredentials: true })
       );
       this.page.set(DocumentListResponseSchema.parse(response.data));
     } catch (error) {
@@ -49,7 +49,7 @@ export class DocumentsService {
   async requeueDocument(uuid:string): Promise<boolean> {
     try {
       await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/${uuid}/pipeline/requeue`, {}, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1',`documents/${uuid}/pipeline/requeue`) , {}, { withCredentials: true })
       );
       await this.load();
     } catch (error) {
@@ -69,7 +69,7 @@ export class DocumentsService {
     this.error.set(null);
     try {
       await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/${uuid}/title`, input.data, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1', `documents/${uuid}/title`), input.data, { withCredentials: true })
       );
       await this.load();
       return true;
@@ -87,7 +87,7 @@ export class DocumentsService {
 
     try {
       await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(this.apiUrl, body, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1','documents'), body, { withCredentials: true })
       );
       await this.load();
       return true;

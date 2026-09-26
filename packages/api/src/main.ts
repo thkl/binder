@@ -60,7 +60,11 @@ async function bootstrap(): Promise<void> {
     credentials: true
   };
 
-  app.enableCors(corsOptions);
+  if (nestConfigService.get<string>(ConfigKeys.NODE_ENV)!=='development') {
+    app.enableCors(corsOptions);
+  } else {
+    logger.debug!('Skip Cors');
+  }
 
   const sessionSecret = nestConfigService.get<string>(ConfigKeys.SESSION_SECRET);
   if (!sessionSecret) {

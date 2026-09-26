@@ -15,6 +15,7 @@ import { BinderLogger } from '../../../shared/service/logger.helper';
 import { MetadataService } from '../../metadata/service/metadata.service';
 import { SetDocumentMetadataInput } from '@binder/common';
 import { SetDocumentTitleInput } from '@binder/common';
+import { th } from 'zod/locales';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -31,7 +32,7 @@ export class DocumentService {
     private readonly storage: DocumentStorageService,
     private readonly pipeline: PipelineService,
     private readonly metadata: MetadataService
-  ) {}
+  ) { }
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
     if (!file || file.mimetype !== 'application/pdf') {
