@@ -11,12 +11,16 @@ import {
 } from 'openid-client';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { OnEvent } from '@nestjs/event-emitter';
+import { ConfigService } from '@nestjs/config';
+import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 
 @Injectable()
 export class SSOAuthenticationService {
   private config!: Configuration;
 
-  constructor(private readonly settingsService: ApplicationSettingsService) {}
+  constructor(private readonly settingsService: ApplicationSettingsService, 
+    
+    private readonly appConfig: ConfigService<BinderConfig>) {}
  
   @OnEvent('database.connected')
   async initialize(): Promise<boolean> {
@@ -53,7 +57,8 @@ export class SSOAuthenticationService {
     if (!(await this.initialize())) {
       return;
     }
-    const redirect_uri = await this.settingsService.get('oidc.REDIRECT_URI');
+    const rootUrl = this.appConfig.get<string>(ConfigKeys.ROOT_URI);
+    const redirect_uri = `${rootUrl}/api/v1/ssoauth/callback`
     if (!redirect_uri) {
       return;
     }
