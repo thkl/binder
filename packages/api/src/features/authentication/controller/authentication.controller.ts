@@ -17,6 +17,9 @@ export class AuthenticationController {
     });
     request.session.userId = result.uuid;
     request.session.mustChangePassword = result.mustChangePassword;
+    await new Promise<void>((resolve, reject) => {
+      request.session.save((error) => error ? reject(error) : resolve());
+    });
     return { data: result };
   }
 

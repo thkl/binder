@@ -69,6 +69,9 @@ export class AuthenticationController {
                 request.session.regenerate((error) => error ? reject(error) : resolve());
             });
             request.session.userId = result.user.uuid;
+            await new Promise<void>((resolve, reject) => {
+                request.session.save((error) => error ? reject(error) : resolve());
+            });
 
             const url = await this.settingsService.get('frontend.url');
             if (!url) {

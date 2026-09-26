@@ -45,8 +45,17 @@ async function bootstrap(): Promise<void> {
   const nestConfigService = app.get(ConfigService<BinderConfig>);
   checkConfiguration(nestConfigService);
 
+  const rootUri = nestConfigService.get<string>(ConfigKeys.ROOT_URI)!;
+  const secureCookies = rootUri.startsWith('https://');
+  if (secureCookies) {
+    // Traefik terminates TLS and forwards the original protocol in
+    // X-Forwarded-Proto. Trust the proxy chain so express-session can safely
+    // determine that the external request is HTTPS.
+    app.getHttpAdapter().getInstance().set('trust proxy', true);
+  }
+
   const corsOptions = {
-    origin: nestConfigService.get<string>(ConfigKeys.ROOT_URI),
+    origin: rootUri,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true
   };
@@ -68,6 +77,7 @@ async function bootstrap(): Promise<void> {
   const PgSession = connectPgSimple(session);
 
   app.use(session({
+    proxy: secureCookies,
     store: new PgSession({
       pool: pgPool,
       tableName: 'user_sessions'
@@ -77,11 +87,12 @@ async function bootstrap(): Promise<void> {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: nestConfigService.get<string>(ConfigKeys.NODE_ENV) === 'production',
+      secure: secureCookies,
       sameSite: 'lax',
       maxAge: Number(nestConfigService.get<string>(ConfigKeys.SESSION_TTL_MS) ?? 86_400_000)
     }
   }));
+  logger.log(`Session cookies configured as ${secureCookies ? 'secure HTTPS' : 'HTTP-compatible'}`);
 
   app.setGlobalPrefix(nestConfigService.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1');
 
