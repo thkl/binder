@@ -36,6 +36,24 @@
                "required": [
                     "documents"
                ]
+          },
+          "7": {
+               "created": [
+                    "document_types",
+                    "document_categories",
+                    "document_tags",
+                    "document_tag_assignments"
+               ],
+               "required": [
+                    "users",
+                    "documents"
+               ]
+          },
+          "8": {
+               "required": [
+                    "document_types",
+                    "document_categories"
+               ]
           }
      }
 }

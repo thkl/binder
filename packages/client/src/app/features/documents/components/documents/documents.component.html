@@ -55,6 +55,7 @@
         <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number
             }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
         <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
+        <button class="metadata-button" type="button" (click)="toggleMetadata(document.uuid)" [attr.aria-expanded]="metadataDocumentUuid() === document.uuid">Metadata</button>
         @if (document.status === 'failed') {
         <button (click)="requeueDocument(document.uuid)"><svg xmlns="http://www.w3.org/2000/svg" height="24px"
             viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
@@ -65,6 +66,9 @@
         <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open
           ↗</a>
       </article>
+      @if (metadataDocumentUuid() === document.uuid) {
+        <binder-document-metadata-editor [documentUuid]="document.uuid" />
+      }
       }
     </div>
     }

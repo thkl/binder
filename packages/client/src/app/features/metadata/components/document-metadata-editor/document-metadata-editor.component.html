@@ -1,0 +1,13 @@
+@if (!loaded()) {
+  <div class="editor-loading"><span class="spinner"></span> Loading classification options…</div>
+} @else if (metadata.vocabulary(); as vocabulary) {
+  <section class="metadata-editor" aria-labelledby="metadata-editor-title">
+    <header class="editor-heading"><div><p class="section-kicker">DOCUMENT CLASSIFICATION</p><h3 id="metadata-editor-title">Metadata</h3></div><span class="helper">Controlled values only</span></header>
+    <div class="editor-fields">
+      <label class="field"><span>Document type</span><select [value]="documentTypeUuid()" (change)="documentTypeUuid.set($any($event.target).value)"><option value="">Not classified</option>@for (item of vocabulary.documentTypes; track item.uuid) { <option [value]="item.uuid">{{ item.name }}{{ item.scope === 'system' ? ' · Workspace' : '' }}</option> }</select></label>
+      <label class="field"><span>Category</span><select [value]="categoryUuid()" (change)="categoryUuid.set($any($event.target).value)"><option value="">No category</option>@for (item of vocabulary.categories; track item.uuid) { <option [value]="item.uuid">{{ item.name }}{{ item.scope === 'system' ? ' · Workspace' : '' }}</option> }</select></label>
+    </div>
+    <div class="tag-section"><div class="tag-label"><span>Tags</span><small>{{ selectedTags().size }} selected</small></div><div class="tag-list">@for (tag of vocabulary.tags; track tag.uuid) { <label class="tag-option" [class.selected]="isTagSelected(tag.uuid)"><input type="checkbox" [checked]="isTagSelected(tag.uuid)" (change)="toggleTag(tag.uuid)"><span>{{ tag.name }}</span></label> } @empty { <small class="no-tags">Add tags in Metadata library first.</small> }</div></div>
+    <footer class="editor-footer">@if (saved()) { <span class="saved">✓ Saved</span> }<button type="button" class="save-button" [disabled]="metadata.saving()" (click)="save()">{{ metadata.saving() ? 'Saving…' : 'Save metadata' }}</button></footer>
+  </section>
+}

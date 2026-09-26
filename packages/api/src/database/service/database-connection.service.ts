@@ -12,6 +12,7 @@ import { ApplicationSetting } from '../../features/settings/models/settings.mode
 import { Document } from '../../features/document/models/document.entity';
 import { PipelineJob } from '../../features/pipeline/models/pipeline-job.entity';
 import { PipelineJobEvent } from '../../features/pipeline/models/pipeline-job-event.entity';
+import { DocumentCategory, DocumentTag, DocumentTagAssignment, DocumentType } from '../../features/metadata/models/vocabulary.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -39,7 +40,10 @@ export class DatabaseConnectionService {
             return;
         }
 
-        this.registerModels([User, ApplicationSetting, Document, PipelineJob, PipelineJobEvent]);
+        this.registerModels([
+            User, ApplicationSetting, Document, PipelineJob, PipelineJobEvent,
+            DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment
+        ]);
         await this.initialize();
     }
 

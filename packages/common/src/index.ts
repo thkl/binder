@@ -222,3 +222,46 @@ export const SaveAllApplicationSettingsInputSchema = z.array(SetApplicationSetti
 export type SaveAllApplicationSettingsInput = z.infer<typeof SaveAllApplicationSettingsInputSchema>;
 
 export type ApiResponse<T> = { data: T };
+
+export const VocabularyScopeSchema = z.enum(['system', 'personal']);
+export type VocabularyScope = z.infer<typeof VocabularyScopeSchema>;
+
+export const VocabularyItemSchema = z.object({
+  uuid: z.uuid(),
+  ownerUuid: z.uuid().nullable(),
+  name: z.string().trim().min(1).max(150),
+  description: z.string().max(500).nullable(),
+  active: z.boolean(),
+  scope: VocabularyScopeSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime()
+});
+export type VocabularyItem = z.infer<typeof VocabularyItemSchema>;
+
+export const VocabularyResponseSchema = z.object({
+  documentTypes: z.array(VocabularyItemSchema),
+  categories: z.array(VocabularyItemSchema),
+  tags: z.array(VocabularyItemSchema)
+});
+export type VocabularyResponse = z.infer<typeof VocabularyResponseSchema>;
+
+export const CreateVocabularyItemSchema = z.object({
+  name: z.string().trim().min(1).max(150),
+  description: z.string().trim().max(500).optional(),
+  scope: VocabularyScopeSchema.optional().default('personal')
+});
+export type CreateVocabularyItem = z.infer<typeof CreateVocabularyItemSchema>;
+
+export const DocumentMetadataSchema = z.object({
+  documentType: VocabularyItemSchema.nullable(),
+  category: VocabularyItemSchema.nullable(),
+  tags: z.array(VocabularyItemSchema)
+});
+export type DocumentMetadata = z.infer<typeof DocumentMetadataSchema>;
+
+export const SetDocumentMetadataInputSchema = z.object({
+  documentTypeUuid: z.uuid().nullable().optional(),
+  categoryUuid: z.uuid().nullable().optional(),
+  tagUuids: z.array(z.uuid()).optional()
+});
+export type SetDocumentMetadataInput = z.infer<typeof SetDocumentMetadataInputSchema>;

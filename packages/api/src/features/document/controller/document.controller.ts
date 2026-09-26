@@ -13,7 +13,7 @@ import {
   UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { DocumentListQuerySchema } from '@binder/common';
+import { DocumentListQuerySchema, SetDocumentMetadataInputSchema } from '@binder/common';
 import type { Response } from 'express';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
@@ -60,6 +60,16 @@ export class DocumentController {
   @Get(':uuid/pipeline')
   async pipeline(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
     return { data: await this.documents.getPipeline(user.userId, uuid) };
+  }
+
+  @Get(':uuid/metadata')
+  async metadata(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.getMetadata(user.userId, uuid) };
+  }
+
+  @Post(':uuid/metadata')
+  async setMetadata(@Param('uuid') uuid: string, @Body() body: unknown, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.setMetadata(user.userId, uuid, SetDocumentMetadataInputSchema.parse(body)) };
   }
 
   @Post(':uuid/pipeline/requeue')

@@ -12,6 +12,8 @@ import { DocumentStore } from '../store/document.store';
 import { DocumentStorageService } from './document-storage.service';
 import { PipelineService } from '../../pipeline/service/pipeline.service';
 import { BinderLogger } from '../../../shared/service/logger.helper';
+import { MetadataService } from '../../metadata/service/metadata.service';
+import { SetDocumentMetadataInput } from '@binder/common';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -26,7 +28,8 @@ export class DocumentService {
   constructor(
     private readonly documents: DocumentStore,
     private readonly storage: DocumentStorageService,
-    private readonly pipeline: PipelineService
+    private readonly pipeline: PipelineService,
+    private readonly metadata: MetadataService
   ) {}
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -146,6 +149,14 @@ export class DocumentService {
       document: this.toDocumentResponse(updated),
       job
     };
+  }
+
+  async getMetadata(ownerUuid: string, uuid: string) {
+    return this.metadata.getDocumentMetadata(ownerUuid, uuid);
+  }
+
+  async setMetadata(ownerUuid: string, uuid: string, input: SetDocumentMetadataInput) {
+    return this.metadata.setDocumentMetadata(ownerUuid, uuid, input);
   }
 
   private toDocumentResponse(document: import('../models/document.entity').Document): DocumentResponse {

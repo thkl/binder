@@ -1,0 +1,70 @@
+<section class="metadata-page">
+  <header class="page-heading">
+    <div>
+      <p class="section-kicker">CLASSIFICATION / CONTROLLED VOCABULARY</p>
+      <h2>Metadata library</h2>
+      <p class="muted">Keep classification consistent so search and future AI suggestions stay precise.</p>
+    </div>
+    <button class="primary-button" type="button" (click)="showCreate.set(!showCreate())">
+      <span aria-hidden="true">＋</span> Add {{ kindLabel(activeKind()).replace('Document ', '') }}
+    </button>
+  </header>
+
+  @if (metadata.error(); as error) {
+    <div class="notice error" role="alert">{{ error }}</div>
+  }
+
+  <div class="metadata-layout">
+    <aside class="library-nav glass-card" aria-label="Metadata categories">
+      <p class="sidebar-label">VOCABULARY</p>
+      <button type="button" class="nav-item" [class.active]="activeKind() === 'documentTypes'" (click)="selectKind('documentTypes')">
+        <span class="nav-icon type-icon" aria-hidden="true">D</span><span>Document types</span>
+        <small>{{ metadata.vocabulary()?.documentTypes?.length ?? 0 }}</small>
+      </button>
+      <button type="button" class="nav-item" [class.active]="activeKind() === 'categories'" (click)="selectKind('categories')">
+        <span class="nav-icon category-icon" aria-hidden="true">C</span><span>Categories</span>
+        <small>{{ metadata.vocabulary()?.categories?.length ?? 0 }}</small>
+      </button>
+      <button type="button" class="nav-item" [class.active]="activeKind() === 'tags'" (click)="selectKind('tags')">
+        <span class="nav-icon tag-icon" aria-hidden="true">#</span><span>Tags</span>
+        <small>{{ metadata.vocabulary()?.tags?.length ?? 0 }}</small>
+      </button>
+      <div class="nav-note"><span class="status-dot" aria-hidden="true"></span> System entries are shared across your workspace.</div>
+    </aside>
+
+    <main class="library-content glass-card">
+      <header class="content-heading">
+        <div><p class="section-kicker">AVAILABLE VALUES</p><h3>{{ kindLabel(activeKind()) }}</h3></div>
+        <span class="count-badge">{{ activeItems().length }} entries</span>
+      </header>
+
+      @if (showCreate()) {
+        <form class="create-form" (submit)="$event.preventDefault(); create()">
+          <div class="form-title"><strong>Create a controlled value</strong><small>It will be available for document classification immediately.</small></div>
+          <label><span>Name</span><input [value]="name()" (input)="name.set($any($event.target).value)" maxlength="150" required autocomplete="off"></label>
+          <label><span>Description <em>Optional</em></span><input [value]="description()" (input)="description.set($any($event.target).value)" maxlength="500"></label>
+          @if (auth.user()?.isAdmin) {
+            <label class="scope-toggle"><input type="checkbox" [checked]="systemScope()" (change)="systemScope.set($any($event.target).checked)"><span><strong>Workspace-wide value</strong><small>Make this available to every user.</small></span></label>
+          }
+          <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreate.set(false)">Cancel</button><button type="submit" class="primary-button" [disabled]="metadata.saving() || !name().trim()">{{ metadata.saving() ? 'Creating…' : 'Create value' }}</button></div>
+        </form>
+      }
+
+      @if (metadata.loading()) {
+        <div class="empty-state"><span class="spinner"></span><p>Loading vocabulary…</p></div>
+      } @else if (activeItems().length === 0) {
+        <div class="empty-state"><span class="empty-symbol" aria-hidden="true">＋</span><h4>No {{ kindLabel(activeKind()).toLowerCase() }} yet</h4><p>Create your first controlled value to make classification more precise.</p><button class="secondary-button" type="button" (click)="showCreate.set(true)">Create one</button></div>
+      } @else {
+        <div class="value-list">
+          @for (item of activeItems(); track item.uuid) {
+            <article class="value-row">
+              <span class="value-mark" [class.system]="item.scope === 'system'" aria-hidden="true">{{ item.scope === 'system' ? '◆' : '●' }}</span>
+              <div class="value-copy"><strong>{{ item.name }}</strong><small>{{ item.description || 'No description added' }}</small></div>
+              <span class="scope-badge" [class.system]="item.scope === 'system'">{{ item.scope === 'system' ? 'Workspace' : 'Personal' }}</span>
+            </article>
+          }
+        </div>
+      }
+    </main>
+  </div>
+</section>

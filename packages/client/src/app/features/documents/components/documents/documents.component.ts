@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
+import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
 
 type DocumentViewMode = 'list' | 'details' | 'small-icons' | 'large-icons';
 
 @Component({
   selector: 'binder-documents',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DocumentMetadataEditorComponent],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -16,6 +17,7 @@ export class DocumentsComponent implements OnInit {
   readonly documents = inject(DocumentsService);
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
   readonly viewMode = signal<DocumentViewMode>(this.readViewMode());
+  readonly metadataDocumentUuid = signal<string | null>(null);
 
   ngOnInit(): void {
     void this.documents.load();
@@ -69,6 +71,10 @@ export class DocumentsComponent implements OnInit {
 
   async requeueDocument(uuid:string) {
     await this.documents.requeueDocument(uuid);
+  }
+
+  toggleMetadata(uuid: string): void {
+    this.metadataDocumentUuid.update((current) => current === uuid ? null : uuid);
   }
   
   private readViewMode(): DocumentViewMode {

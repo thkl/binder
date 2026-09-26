@@ -88,6 +88,7 @@ h2 {
 .view-switcher { display:flex; gap:.15rem; padding:.2rem; border:1px solid rgba(157,190,232,.14); border-radius:.55rem; background:rgba(5,18,35,.35); }
 .view-switcher button { width:1.8rem; height:1.7rem; border:0; border-radius:.35rem; color:#7188a5; background:transparent; cursor:pointer; line-height:1; }
 .view-switcher button:hover, .view-switcher button.active { color:var(--cyan); background:rgba(97,215,244,.12); }
+.metadata-button { min-height:2rem; border:1px solid rgba(97,215,244,.22); border-radius:.45rem; padding:.35rem .55rem; color:#a9dfee; background:rgba(97,215,244,.06); cursor:pointer; font:inherit; font-size:.68rem; font-weight:700; }.metadata-button:hover { border-color:var(--cyan); color:var(--cyan); }
 
 .list-header small {
     color: #7188a5;

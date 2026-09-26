@@ -7,6 +7,11 @@ export const appRoutes: Routes = [
       .then(({ DocumentsComponent }) => DocumentsComponent)
   },
   {
+    path: 'metadata',
+    loadComponent: () => import('./features/metadata/components/metadata/metadata.component')
+      .then(({ MetadataComponent }) => MetadataComponent)
+  },
+  {
     path: 'settings',
     pathMatch: 'full',
     redirectTo: 'settings/common'

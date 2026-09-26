@@ -61,6 +61,12 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   @Column({ field: 'thumbnail_key', type: DataType.STRING(500), allowNull: true })
   declare thumbnailKey: string | null;
 
+  @AllowNull @Column({ field: 'document_type_id', type: DataType.UUID })
+  declare documentTypeUuid: string | null;
+
+  @AllowNull @Column({ field: 'category_id', type: DataType.UUID })
+  declare categoryUuid: string | null;
+
   @Column({
     type: DataType.ENUM('uploaded', 'scanning', 'processing', 'ready', 'failed'),
     allowNull: false,

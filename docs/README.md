@@ -15,6 +15,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Authentication and API](./architecture/authentication-and-api.md) — local login, optional OIDC, sessions, versioning, and endpoint conventions
 - [OCR architecture](./architecture/ocr.md) — OCRmyPDF/Tesseract worker design
 - [Document pipeline](./architecture/pipeline.md) — durable jobs, retries, events, and worker boundaries
+- [Controlled document metadata](./architecture/document-metadata.md) — system and personal classification vocabularies
 - [Logging](./architecture/logging.md) — Winston logging, file rotation, and sensitive-data rules
 - [Security baseline](./security.md) — continuous security checks and secure-by-default rules
 

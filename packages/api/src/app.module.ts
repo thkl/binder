@@ -11,6 +11,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SettingsModule } from './features/settings/settings.module';
 import { DocumentModule } from './features/document/document.module';
 import { PipelineModule } from './features/pipeline/pipeline.module';
+import { MetadataModule } from './features/metadata/metadata.module';
 
 @Module({
   controllers: [HealthController],
@@ -23,6 +24,7 @@ import { PipelineModule } from './features/pipeline/pipeline.module';
     SettingsModule,
     DocumentModule,
     PipelineModule,
+    MetadataModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

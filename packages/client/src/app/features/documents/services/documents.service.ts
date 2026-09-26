@@ -47,16 +47,16 @@ export class DocumentsService {
 
   async requeueDocument(uuid:string): Promise<boolean> {
     try {
-      const response = await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/${uuid}/pipeline/requeue`, { withCredentials: true })
+      await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/${uuid}/pipeline/requeue`, {}, { withCredentials: true })
       );
-      this.page.set(DocumentListResponseSchema.parse(response.data));
+      await this.load();
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
     } finally {
       this.loading.set(false);
     }
-    return true;
+    return this.error() === null;
   }
 
   async upload(file: File): Promise<boolean> {
@@ -89,4 +89,3 @@ export class DocumentsService {
     return 'The documents could not be loaded. Please try again.';
   }
 }
-
