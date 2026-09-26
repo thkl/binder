@@ -1,8 +1,18 @@
 <main class="centered">
-  <section class="card auth-card">
-    <div class="eyebrow">BINDER</div>
-    <h1>Welcome back</h1>
-    <p class="muted">Sign in to manage your documents securely.</p>
+  <section class="login-shell">
+    <div class="brand-panel">
+      <div class="brand-line"><span class="brand-mark">B</span><span>BINDER</span></div>
+      <div class="brand-copy">
+        <p class="eyebrow">PRIVATE DOCUMENT INTELLIGENCE</p>
+        <h1>Your documents.<br><span>Under control.</span></h1>
+        <p class="panel-copy">A calm, secure home for the documents that matter. Search naturally, keep ownership clear, and stay ready for what comes next.</p>
+      </div>
+      <div class="trust-row"><span class="shield">⌁</span><span><strong>Built for privacy</strong><small>Your files stay in your controlled storage.</small></span></div>
+    </div>
+    <div class="card auth-card">
+      <div class="eyebrow">SECURE ACCESS</div>
+      <h2>Welcome back</h2>
+      <p class="muted">Sign in to open your document vault.</p>
 
     <form (submit)="submit($event)">
       <label>
@@ -21,7 +31,7 @@
       <p class="error" role="alert">{{ error }}</p>
       }
 
-      <button type="submit" [disabled]="auth.submitting()">
+      <button class="submit-button" type="submit" [disabled]="auth.submitting()">
         {{ auth.submitting() ? 'Signing in…' : 'Sign in' }}
       </button>
       @if(ssoActive()) {
@@ -29,5 +39,6 @@
       <a class="oidc-button" href="/api/v1/ssoauth/login">Continue with SSO</a>
       }
     </form>
+    </div>
   </section>
 </main>

@@ -7,6 +7,8 @@ import { EncryptionService } from "../../../shared/util/encryption.service";
 import { ApplicationSettingExported, ApplicationSettingsData } from "../models/settings";
 import { settingsMap, settingsSections } from "../models/constants";
 
+const SECRET_STRIPPED_VALUE = "****";
+
 @Injectable()
 export class ApplicationSettingsService {
   private readonly logger = new BinderLogger(ApplicationSettingsService.name);
@@ -19,14 +21,14 @@ export class ApplicationSettingsService {
     this.logger.debug("ApplicationSettingsService initialized")
   }
 
- /**
-   * Get a setting value
-   * Falls back to environment variable if not found in database
-   *
-   * @param key - Setting key (e.g., 'mail.host')
-   * @param defaultValue - Default value if not found in DB or env
-   * @returns Setting value (decrypted if encrypted)
-   */
+  /**
+    * Get a setting value
+    * Falls back to environment variable if not found in database
+    *
+    * @param key - Setting key (e.g., 'mail.host')
+    * @param defaultValue - Default value if not found in DB or env
+    * @returns Setting value (decrypted if encrypted)
+    */
   async get(key: string, defaultValue?: string): Promise<string | undefined> {
     try {
       const setting = await this.appSettingsStore.findById(key);
@@ -59,15 +61,15 @@ export class ApplicationSettingsService {
     }
   }
 
-   /**
-   * Set a setting value
-   * Automatically encrypts if isEncrypted is true
-   *
-   * @param key - Setting key
-   * @param value - Setting value (will be encrypted if isEncrypted is true)
-   * @param isEncrypted - Whether to encrypt the value
-   * @param description - Human-readable description
-   */
+  /**
+  * Set a setting value
+  * Automatically encrypts if isEncrypted is true
+  *
+  * @param key - Setting key
+  * @param value - Setting value (will be encrypted if isEncrypted is true)
+  * @param isEncrypted - Whether to encrypt the value
+  * @param description - Human-readable description
+  */
   async set(
     key: string,
     value: string,
@@ -76,15 +78,17 @@ export class ApplicationSettingsService {
   ): Promise<void> {
     try {
       if (isEncrypted) {
-        // Encrypt the value
-        const { encrypted, iv } = this.encryptionService.encrypt(value);
-        await this.appSettingsStore.createOrUpdate(
-          key,
-          encrypted,
-          true,
-          iv,
-          description,
-        );
+        if (value !== SECRET_STRIPPED_VALUE) { // Do not change Values that are ****
+          // Encrypt the value
+          const { encrypted, iv } = this.encryptionService.encrypt(value);
+          await this.appSettingsStore.createOrUpdate(
+            key,
+            encrypted,
+            true,
+            iv,
+            description,
+          );
+        }
       } else {
         // Store as plain text
         await this.appSettingsStore.createOrUpdate(
@@ -149,7 +153,7 @@ export class ApplicationSettingsService {
           key: setting.key,
           isEncrypted: setting.isEncrypted,
           description: setting.description,
-          value,
+          value: (setting.isEncrypted) ? SECRET_STRIPPED_VALUE : value,
         };
         result.push(st);
       }
@@ -171,11 +175,10 @@ export class ApplicationSettingsService {
     }
   }
 
-  
-    /**
-   * Convert setting key to environment variable name
-   * @example 'mail.host' -> 'MAIL_HOST'
-   */
+  /**
+ * Convert setting key to environment variable name
+ * @example 'mail.host' -> 'MAIL_HOST'
+ */
   private keyToEnvVar(key: string): string {
     return key.toUpperCase().replace(/\./g, '_');
   }

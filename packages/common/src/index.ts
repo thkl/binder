@@ -80,10 +80,76 @@ export const ChangePasswordInputSchema = z.object({
 export type ChangePasswordInput = z.infer<typeof ChangePasswordInputSchema>;
 
 export const AuthenticatedUserSchema = z.object({
-  id: z.uuid(),
+  uuid: z.uuid(),
   username: z.string().min(1),
   isAdmin: z.boolean(),
   mustChangePassword: z.boolean()
 });
 
 export type AuthenticatedUser = z.infer<typeof AuthenticatedUserSchema>;
+
+export const SettingControlTypeSchema = z.enum(['text', 'password', 'checkbox']);
+export type SettingControlType = z.infer<typeof SettingControlTypeSchema>;
+
+export const SettingValueSchema = z.union([z.string(), z.number(), z.boolean()]);
+
+export const SettingsSectionSchema = z.object({
+  key: z.string().trim().min(1).max(100),
+  label: z.string().trim().min(1).max(200)
+});
+
+export type SettingsSection = z.infer<typeof SettingsSectionSchema>;
+
+export const SettingsMapItemSchema = z.object({
+  section: z.string().trim().min(1).max(100),
+  label: z.string().trim().min(1).max(200),
+  key: z.string().trim().min(1).max(255),
+  valueFrom: z.string().trim().min(1).max(255),
+  encrypted: z.boolean(),
+  default: SettingValueSchema,
+  type: SettingControlTypeSchema,
+  required: z.boolean().optional(),
+  requiredIf: z.string().trim().min(1).max(255).optional(),
+  requiredIfValue: SettingValueSchema.optional(),
+  pattern: z.string().max(1000).optional(),
+  patternMessage: z.string().max(500).optional()
+});
+
+export type SettingsMapItem = z.infer<typeof SettingsMapItemSchema>;
+
+export const ApplicationSettingsDataSchema = z.object({
+  key: z.string().trim().min(1).max(255),
+  value: z.string(),
+  isEncrypted: z.boolean(),
+  description: z.string().max(500).optional()
+});
+
+export type ApplicationSettingsData = z.infer<typeof ApplicationSettingsDataSchema>;
+
+export const ApplicationSettingsTemplateSchema = z.object({
+  sections: z.array(SettingsSectionSchema),
+  items: z.array(SettingsMapItemSchema)
+});
+
+export type ApplicationSettingsTemplate = z.infer<typeof ApplicationSettingsTemplateSchema>;
+
+export const ApplicationSettingsResponseSchema = z.object({
+  template: ApplicationSettingsTemplateSchema,
+  data: z.array(ApplicationSettingsDataSchema)
+});
+
+export type ApplicationSettingsResponse = z.infer<typeof ApplicationSettingsResponseSchema>;
+
+export const SetApplicationSettingInputSchema = z.object({
+  key: z.string().trim().min(1).max(255),
+  value: z.string().max(100_000),
+  isEncrypted: z.boolean().optional().default(false),
+  description: z.string().trim().max(500).optional()
+});
+
+export type SetApplicationSettingInput = z.infer<typeof SetApplicationSettingInputSchema>;
+
+export const SaveAllApplicationSettingsInputSchema = z.array(SetApplicationSettingInputSchema);
+export type SaveAllApplicationSettingsInput = z.infer<typeof SaveAllApplicationSettingsInputSchema>;
+
+export type ApiResponse<T> = { data: T };

@@ -6,6 +6,7 @@ export interface ScopedUser {
   username: string;
   jti: string;
   scope: string;
+  role: string;
   isAdmin: boolean;
 }
 

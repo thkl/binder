@@ -24,7 +24,7 @@ export const settingsMap: SettingsMapItem[] = [
     label: 'Issuer',
     type: 'text',
     required: true,
-    section: 'sso_oidc',
+    section: 'oidc',
   },
   {
     key: 'oidc.CLIENT_ID',
@@ -34,7 +34,7 @@ export const settingsMap: SettingsMapItem[] = [
     label: 'Client ID',
     type: 'text',
     required: true,
-    section: 'sso_oidc',
+    section: 'oidc',
   },
   {
     key: 'oidc.CLIENT_SECRET',
@@ -44,7 +44,7 @@ export const settingsMap: SettingsMapItem[] = [
     label: 'Client Secret',
     type: 'password',
     required: true,
-    section: 'sso_oidc',
+    section: 'oidc',
   },
   {
     key: 'oidc.REDIRECT_URI',
@@ -54,7 +54,7 @@ export const settingsMap: SettingsMapItem[] = [
     label: 'Redirect URL',
     type: 'text',
     required: true,
-    section: 'sso_oidc',
+    section: 'oidc',
   },
   {
     key: 'oidc.email_verified',
@@ -63,7 +63,7 @@ export const settingsMap: SettingsMapItem[] = [
     default: false,
     label: 'Only accept verified eMails',
     type: 'checkbox',
-    section: 'sso_oidc',
+    section: 'oidc',
   },
   {
     key: 'oidc.ACR_VALUES',
@@ -72,6 +72,6 @@ export const settingsMap: SettingsMapItem[] = [
     default: '',
     label: 'Pass ACR Values if needed',
     type: 'text',
-    section: 'sso_oidc',
+    section: 'oidc',
   },
 ]

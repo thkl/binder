@@ -8,6 +8,7 @@ import { DatabaseModule } from './database/database.module';
 import { BinderConfig, ConfigKeys } from './shared/config/config.keys';
 import { AuthenticationModule } from './features/authentication/authentication.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { SettingsModule } from './features/settings/settings.module';
 
 @Module({
   controllers: [HealthController],
@@ -17,6 +18,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     DatabaseModule,
     SharedModule,
     AuthenticationModule,
+    SettingsModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

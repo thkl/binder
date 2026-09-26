@@ -15,7 +15,7 @@ export class AuthenticationController {
     await new Promise<void>((resolve, reject) => {
       request.session.regenerate((error) => error ? reject(error) : resolve());
     });
-    request.session.userId = result.id;
+    request.session.userId = result.uuid;
     request.session.mustChangePassword = result.mustChangePassword;
     return { data: result };
   }

@@ -2397,9 +2397,7 @@ export abstract class BaseCrudStore<
             }
             if (parameters && Object.keys(parameters).length > 0) {
                 const transform = namedQuery.transform;
-                if (transform) {
-                    baseOptions = this.substituteParameters(baseOptions, parameters, transform);
-                }
+                baseOptions = this.substituteParameters(baseOptions, parameters, transform!);
             }
         }
 

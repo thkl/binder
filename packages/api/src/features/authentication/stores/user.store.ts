@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { NamedQueryAddingOptions } from '../../../shared/datastore/query-options.type';
+import { IStoreUser, NamedQueryAddingOptions } from '../../../shared/datastore/query-options.type';
 import { User } from '../models/user.entity';
 import { BaseCrudStore } from '../../../shared/datastore/base-crud.store';
+
+
+export type UserStoreQueries = {
+    findByEmail: { email: string };
+    findActiveUsers:object;
+    findByUsername: { username: string };
+};
 
 /**
  * Find user by email
@@ -35,7 +42,7 @@ const findActiveUsers: NamedQueryAddingOptions<User> = {
  * - findActiveUsers: Find all active users (for admin operations)
  */
 @Injectable()
-export class UserStore extends BaseCrudStore<User> {
+export class UserStore extends BaseCrudStore<User,IStoreUser, UserStoreQueries> {
   constructor() {
     super(User);
     this.registerIdField('uuid');

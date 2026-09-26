@@ -43,12 +43,15 @@ export class AuthenticationService {
   }
 
   async login(input: LoginInput): Promise<AuthenticatedUser> {
-    const user = await this.users.findOneNamed("findByUsername", {}, { username: input.username });
+    const user = await this.users.findOneNamed("findByUsername", {}, { username:input.username });
+    if (user === null) {
+      this.logger.debug(`user ${input.username} not found`)
+    }
     if (!user || !user.isActive || !user.passwordHash || !(await argon2.verify(user.passwordHash, input.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
     user.lastLoginAt = new Date();
-    await this.users.update(user.uuid,user);
+    await this.users.update(user.uuid, user);
     return this.toAuthenticatedUser(user);
   }
 
@@ -58,7 +61,8 @@ export class AuthenticationService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    await this.users.update(user.uuid,{...user,
+    await this.users.update(user.uuid, {
+      ...user,
       passwordHash: await argon2.hash(input.newPassword),
       mustChangePassword: false
     });
@@ -73,7 +77,7 @@ export class AuthenticationService {
 
   private toAuthenticatedUser(user: User): AuthenticatedUser {
     return {
-      id: user.id,
+      uuid: user.uuid,
       username: user.username,
       isAdmin: user.isAdmin,
       mustChangePassword: user.mustChangePassword
@@ -92,12 +96,13 @@ export class AuthenticationService {
       throw new Error('User does not exist');
     }
     const scu: ScopedUser = {
-      userId: existingUser.id,
+      userId: existingUser.uuid,
       username: existingUser.username,
       email: existingUser.email,
       isAdmin: existingUser.isAdmin,
       jti: '',
       scope: '',
+      role: existingUser.isAdmin ? 'admin' : 'user',
     };
 
     // Return user without password
@@ -110,13 +115,13 @@ export class AuthenticationService {
     };
   }
 
-    /**
-   * Exclude password from user object
-   * Removes sensitive data before sending to client
-   *
-   * @param user - User object
-   * @returns User object without passwordHash
-   */
+  /**
+ * Exclude password from user object
+ * Removes sensitive data before sending to client
+ *
+ * @param user - User object
+ * @returns User object without passwordHash
+ */
   private excludePassword(user: User): Partial<User> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unused-vars
     const { passwordHash, ...userWithoutPassword } = user.toJSON();
