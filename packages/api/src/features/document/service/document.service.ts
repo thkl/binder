@@ -92,7 +92,10 @@ export class DocumentService {
   async search(ownerUuid: string, query: DocumentSearchQuery) {
     const [keywordResult, semanticResult] = await Promise.all([
       this.documents.searchOwned(ownerUuid, query),
-      this.semanticSearch.search(ownerUuid, query.q, query.limit).catch(() => [])
+      this.semanticSearch.search(ownerUuid, query.q, query.limit).catch((error: unknown) => {
+        this.logger.warn(`Semantic search unavailable: ${error instanceof Error ? error.message : String(error)}`);
+        return [];
+      })
     ]);
     const result = this.mergeSearchResults(keywordResult, semanticResult, query.limit);
     return DocumentSearchResponseSchema.parse({
@@ -116,7 +119,11 @@ export class DocumentService {
     for (const hit of keywordResult) merged.set(hit.document.uuid, { ...hit, matchType: hit.pageNumber === null ? 'title' : 'text' });
     for (const hit of semanticResult) {
       const existing = merged.get(hit.document.uuid);
-      if (!existing || hit.score > existing.score) merged.set(hit.document.uuid, { ...hit, matchType: 'semantic' });
+      if (!existing || hit.score > existing.score) {
+        merged.set(hit.document.uuid, { ...hit, matchType: 'semantic' });
+      } else {
+        merged.set(hit.document.uuid, { ...existing, matchType: 'semantic' });
+      }
     }
     return [...merged.values()].sort((left, right) => right.score - left.score).slice(0, limit);
   }
