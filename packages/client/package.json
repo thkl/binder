@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "build": "ng build",
-    "dev": "ng serve",
-    "start": "ng serve",
+    "dev": "pnpm --filter @binder/common build && ng serve",
+    "start": "pnpm --filter @binder/common build && ng serve",
     "typecheck": "ngc -p tsconfig.app.json --noEmit"
   },
   "dependencies": {

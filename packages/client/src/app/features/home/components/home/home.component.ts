@@ -1,21 +1,22 @@
 
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { SearchService } from '../../services/search.service';
 
 @Component({
   selector: 'binder-home',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class HomeComponent implements OnInit {
-  constructor() {}
+export class HomeComponent {
+  readonly search = inject(SearchService);
+  readonly searchQuery = signal('');
 
-  ngOnInit(): void {
- 
+  async submitSearch(event: Event): Promise<void> {
+    event.preventDefault();
+    await this.search.search(this.searchQuery());
   }
-
- 
 }

@@ -56,7 +56,7 @@
             }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
         <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
         <button class="metadata-button" type="button" (click)="toggleMetadata(document.uuid)" [attr.aria-expanded]="metadataDocumentUuid() === document.uuid">Metadata</button>
-        @if (document.status === 'failed') {
+        @if (document.status === 'failed' || document.status === 'ready') {
         <button (click)="requeueDocument(document.uuid)"><svg xmlns="http://www.w3.org/2000/svg" height="24px"
             viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
             <path
@@ -80,7 +80,7 @@
             }}</small></div>
         <span>PDF</span><span>{{ document.sizeBytes | number }} bytes</span>
         <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
-        @if (document.status === 'failed') {
+        @if (document.status === 'failed' || document.status === 'ready') {
         <button (click)="requeueDocument(document.uuid)"><svg xmlns="http://www.w3.org/2000/svg" height="24px"
             viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
             <path

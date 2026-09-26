@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Op, Order, WhereOptions } from 'sequelize';
 import { BaseCrudStore } from '../../../shared/datastore/base-crud.store';
 import { Document } from '../models/document.entity';
+import { DocumentPage } from '../models/document-page.entity';
 import { DocumentListQuery } from '@binder/common';
 
 @Injectable()
@@ -48,5 +49,47 @@ export class DocumentStore extends BaseCrudStore<Document> {
       hasNext: query.page * query.pageSize < total,
       hasPrev: query.page > 1
     };
+  }
+
+  async searchOwned(ownerUuid: string, query: { q: string; limit: number }) {
+    const tokens = query.q.toLowerCase().split(/\s+/).filter(Boolean);
+    const pageRows = await DocumentPage.findAll({
+      where: { [Op.or]: tokens.map((token) => ({ text: { [Op.iLike]: `%${token}%` } })) },
+      include: [{ model: Document, required: true, where: { ownerUuid } }],
+      order: [['pageNumber', 'ASC']],
+      limit: Math.min(250, Math.max(query.limit * 8, 25))
+    });
+    const titleRows = await this.model.findAll({
+      where: {
+        ownerUuid,
+        [Op.or]: tokens.flatMap((token) => [
+          { title: { [Op.iLike]: `%${token}%` } },
+          { originalFilename: { [Op.iLike]: `%${token}%` } }
+        ])
+      },
+      order: [['updatedAt', 'DESC']],
+      limit: query.limit
+    });
+
+    const pageHits = pageRows
+      .filter((page) => page.document)
+      .map((page) => ({
+        document: page.document!,
+        pageNumber: page.pageNumber,
+        text: page.text,
+        score: this.scoreText(page.text, tokens)
+      }))
+      .sort((left, right) => right.score - left.score);
+    const pageDocumentUuids = new Set(pageHits.map((hit) => hit.document.uuid));
+    const titleHits = titleRows
+      .filter((document) => !pageDocumentUuids.has(document.uuid))
+      .map((document) => ({ document, pageNumber: null, text: document.title ?? document.originalFilename, score: 1 }));
+
+    return [...pageHits, ...titleHits].slice(0, query.limit);
+  }
+
+  private scoreText(text: string, tokens: string[]): number {
+    const normalized = text.toLocaleLowerCase();
+    return tokens.reduce((score, token) => score + (normalized.includes(token) ? 1 : 0), 0);
   }
 }

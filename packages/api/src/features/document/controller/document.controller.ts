@@ -13,7 +13,7 @@ import {
   UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { DocumentListQuerySchema, SetDocumentMetadataInputSchema, SetDocumentTitleInputSchema } from '@binder/common';
+import { DocumentListQuerySchema, DocumentSearchQuerySchema, SetDocumentMetadataInputSchema, SetDocumentTitleInputSchema } from '@binder/common';
 import type { Response } from 'express';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
@@ -46,6 +46,11 @@ export class DocumentController {
     this.logger.debug(`List files ${JSON.stringify(query)}`);
     const input = DocumentListQuerySchema.parse(query);
     return { data: await this.documents.list(user.userId, input) };
+  }
+
+  @Get('search')
+  async search(@Query() query: Record<string, unknown>, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.search(user.userId, DocumentSearchQuerySchema.parse(query)) };
   }
 
   @Get(':uuid/file')

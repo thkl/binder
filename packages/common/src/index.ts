@@ -64,6 +64,27 @@ export const DocumentListResponseSchema = z.object({
 
 export type DocumentListResponse = z.infer<typeof DocumentListResponseSchema>;
 
+export const DocumentSearchQuerySchema = z.object({
+  q: z.string().trim().min(1).max(200),
+  limit: z.coerce.number().int().min(1).max(50).default(20)
+});
+export type DocumentSearchQuery = z.infer<typeof DocumentSearchQuerySchema>;
+
+export const DocumentSearchResultSchema = z.object({
+  document: DocumentSchema,
+  pageNumber: z.number().int().positive().nullable(),
+  snippet: z.string().max(1000),
+  matchType: z.enum(['text', 'title'])
+});
+export type DocumentSearchResult = z.infer<typeof DocumentSearchResultSchema>;
+
+export const DocumentSearchResponseSchema = z.object({
+  query: z.string().min(1),
+  items: z.array(DocumentSearchResultSchema),
+  total: z.number().int().nonnegative()
+});
+export type DocumentSearchResponse = z.infer<typeof DocumentSearchResponseSchema>;
+
 export const PipelineJobKindSchema = z.enum([
   'thumbnail',
   'text-extraction',

@@ -109,7 +109,6 @@ export class DatabaseMigrator {
                         }
                     } else {
                         this.logger.error(`unable to run migration unsafe sql detected in ${migration.path}`);
-                        await transaction.rollback();
                         throw new Error(`Migration failed: Unsafe SQL`);
                     }
                 }
@@ -117,7 +116,10 @@ export class DatabaseMigrator {
                 await transaction.commit();
                 this.logger.info('Database migration completed successfully.');
             } catch (error) {
-                await transaction.rollback();
+                const transactionState = (transaction as unknown as { finished?: string }).finished;
+                if (!transactionState) {
+                    await transaction.rollback();
+                }
                 this.logger.error('Migration failed:', error);
                 throw new Error(`Migration failed: ${(error as Error).message}`);
             }
@@ -135,22 +137,8 @@ export class DatabaseMigrator {
 
         for (const stmt of statements) {
             const lowered = stmt.toLocaleLowerCase();
-            const forbidden = [
-                'drop ',
-                'truncate ',
-                'delete ',
-                'merge ',
-                'exec ',
-                'execute ',
-                'sp_executesql ',
-                'backup ',
-                'restore ',
-                'grant ',
-                'revoke ',
-                'deny ',
-                'create or replace'
-            ];
-            if (forbidden.some((k) => lowered.includes(k))) {
+            const destructiveStatement = /^(drop|truncate|delete|merge|exec|execute|backup|restore|grant|revoke|deny)\b/i.test(stmt);
+            if (destructiveStatement || /\bsp_executesql\b/i.test(stmt) || /\bcreate\s+or\s+replace\b/i.test(stmt)) {
                 return false;
             }
 

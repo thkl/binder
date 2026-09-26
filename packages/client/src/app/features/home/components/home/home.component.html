@@ -1,1 +1,60 @@
-Home
+<section class="home-page">
+  <div class="home-hero">
+    <p class="section-kicker">PRIVATE DOCUMENT VAULT</p>
+    <h2>Find anything in your archive.</h2>
+    <p class="hero-copy">Search titles, filenames, and extracted document text. Ask naturally — semantic search will use this same search surface later.</p>
+
+    <form class="search-form" role="search" (submit)="submitSearch($event)">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+        type="search"
+        placeholder="Find the document about my car inspection last summer"
+        aria-label="Search documents"
+        autocomplete="off">
+      <button type="submit" [disabled]="search.loading() || !searchQuery().trim()">
+        {{ search.loading() ? 'Searching…' : 'Search' }}
+      </button>
+    </form>
+    <p class="search-hint">Try a title, filename, or a phrase from the document.</p>
+  </div>
+
+  @if (search.error(); as error) {
+    <div class="notice error" role="alert">{{ error }}</div>
+  }
+
+  @if (search.loading()) {
+    <section class="search-state"><span class="spinner"></span><p>Searching your archive…</p></section>
+  } @else if (search.result(); as result) {
+    <section class="results-card" aria-live="polite">
+      <header class="results-header">
+        <div><p class="section-kicker">SEARCH RESULTS</p><h3>{{ result.total }} {{ result.total === 1 ? 'document' : 'documents' }} found</h3></div>
+        <span class="query-badge">“{{ result.query }}”</span>
+      </header>
+      @if (result.items.length === 0) {
+        <div class="search-state"><span class="empty-symbol" aria-hidden="true">⌕</span><h4>No matching documents</h4><p>Try fewer words or search for a distinctive phrase.</p></div>
+      } @else {
+        <div class="result-list">
+          @for (item of result.items; track item.document.uuid + '-' + item.pageNumber) {
+            <article class="result-row">
+              <div class="result-mark" aria-hidden="true">{{ item.matchType === 'text' ? '¶' : 'T' }}</div>
+              <div class="result-copy">
+                <a [href]="'/api/v1/documents/' + item.document.uuid + '/file'" target="_blank" rel="noopener">{{ item.document.title || item.document.originalFilename }}</a>
+                <small>{{ item.document.originalFilename }}{{ item.pageNumber ? ' · Page ' + item.pageNumber : ' · Title match' }}</small>
+                <p>{{ item.snippet || 'No text snippet available.' }}</p>
+              </div>
+              <a class="open-result" [href]="'/api/v1/documents/' + item.document.uuid + '/file'" target="_blank" rel="noopener">Open ↗</a>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  } @else {
+    <section class="search-empty">
+      <div class="empty-symbol" aria-hidden="true">✦</div>
+      <h3>Search your document history</h3>
+      <p>Search is currently based on extracted text. Semantic and hybrid search will plug into this same experience next.</p>
+    </section>
+  }
+</section>

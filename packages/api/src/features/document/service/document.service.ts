@@ -2,6 +2,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import {
   CreateDocumentInputSchema,
   Document as DocumentResponse,
+  DocumentSearchQuery,
+  DocumentSearchResponseSchema,
   DocumentListQuery,
   DocumentListResponse,
   DocumentListResponseSchema
@@ -82,6 +84,20 @@ export class DocumentService {
     return DocumentListResponseSchema.parse({
       ...result,
       items: result.items.map((document) => this.toDocumentResponse(document))
+    });
+  }
+
+  async search(ownerUuid: string, query: DocumentSearchQuery) {
+    const result = await this.documents.searchOwned(ownerUuid, query);
+    return DocumentSearchResponseSchema.parse({
+      query: query.q,
+      total: result.length,
+      items: result.map((hit) => ({
+        document: this.toDocumentResponse(hit.document),
+        pageNumber: hit.pageNumber,
+        snippet: this.createSnippet(hit.text, query.q),
+        matchType: hit.pageNumber === null ? 'title' : 'text'
+      }))
     });
   }
 
@@ -184,5 +200,15 @@ export class DocumentService {
       createdAt: document.createdAt.toISOString(),
       updatedAt: document.updatedAt.toISOString()
     };
+  }
+
+  private createSnippet(text: string, query: string): string {
+    const normalized = text.replace(/\s+/g, ' ').trim();
+    if (normalized.length <= 320) return normalized;
+    const token = query.toLocaleLowerCase().split(/\s+/).find((item) => item.length > 2) ?? query.toLocaleLowerCase();
+    const index = normalized.toLocaleLowerCase().indexOf(token);
+    const start = index > 0 ? Math.max(0, index - 100) : 0;
+    const end = Math.min(normalized.length, start + 320);
+    return `${start > 0 ? '…' : ''}${normalized.slice(start, end)}${end < normalized.length ? '…' : ''}`;
   }
 }
