@@ -26,6 +26,9 @@ export class ApplicationSetting extends Model {
 
   @Column({ field: 'is_encrypted', type: DataType.BOOLEAN })
   declare isEncrypted: boolean;
+
+  @Column({ field: 'value_iv', type: DataType.STRING(32), allowNull: true })
+  declare valueIv: string | null;
 }
 
 @Table({ tableName: 'documents', underscored: true, timestamps: true })
@@ -45,6 +48,25 @@ export class Document extends Model {
 
   @Column({ type: DataType.STRING })
   declare status: DocumentStatus;
+}
+
+@Table({ tableName: 'document_embeddings', underscored: true, timestamps: true })
+export class DocumentEmbedding extends Model {
+  @PrimaryKey @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+  @ForeignKey(() => Document)
+  @Column({ field: 'document_id', type: DataType.UUID })
+  declare documentUuid: string;
+  @Column({ field: 'page_number', type: DataType.INTEGER }) declare pageNumber: number;
+  @Column({ field: 'chunk_index', type: DataType.INTEGER }) declare chunkIndex: number;
+  @Column({ type: DataType.TEXT }) declare content: string;
+  @Column({ type: DataType.JSONB }) declare embedding: number[];
+  @Column({ type: DataType.STRING(100) }) declare provider: string;
+  @Column({ type: DataType.STRING(200) }) declare model: string;
+  @Column({ type: DataType.INTEGER }) declare dimensions: number;
+  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
+  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
 }
 
 @Table({ tableName: 'pipeline_jobs', underscored: true, timestamps: true })

@@ -84,6 +84,34 @@ export const settingsMap: SettingsMapItem[] = [
     required: true,
     section: 'pipeline',
   },
+  {
+    key: 'embeddings.enabled', valueFrom: 'embeddings.enabled', encrypted: false, default: false,
+    label: 'Enable hosted semantic embeddings', type: 'checkbox', section: 'pipeline',
+  },
+  {
+    key: 'embeddings.provider', valueFrom: 'embeddings.provider', encrypted: false, default: 'openai-compatible',
+    label: 'Embedding provider', type: 'text', required: true, section: 'pipeline',
+  },
+  {
+    key: 'embeddings.endpoint', valueFrom: 'embeddings.endpoint', encrypted: false,
+    default: 'https://api.openai.com/v1/embeddings', label: 'Embedding endpoint', type: 'text', required: true, section: 'pipeline',
+  },
+  {
+    key: 'embeddings.model', valueFrom: 'embeddings.model', encrypted: false, default: 'text-embedding-3-small',
+    label: 'Embedding model', type: 'text', required: true, section: 'pipeline',
+  },
+  {
+    key: 'embeddings.apiKey', valueFrom: 'embeddings.apiKey', encrypted: true, default: '',
+    label: 'Embedding API key', type: 'password', required: false, section: 'pipeline',
+  },
+  {
+    key: 'embeddings.chunkSize', valueFrom: 'embeddings.chunkSize', encrypted: false, default: '1200',
+    label: 'Embedding chunk size (characters)', type: 'text', required: true, section: 'pipeline',
+  },
+  {
+    key: 'embeddings.chunkOverlap', valueFrom: 'embeddings.chunkOverlap', encrypted: false, default: '200',
+    label: 'Embedding chunk overlap (characters)', type: 'text', required: true, section: 'pipeline',
+  },
     {
     key: 'oidc.ISSUER_URL',
     valueFrom: 'OIDC_ISSUER_URL',
