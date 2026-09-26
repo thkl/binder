@@ -2,6 +2,11 @@ import { Routes } from '@angular/router';
 
 export const appRoutes: Routes = [
   {
+    path: 'documents',
+    loadComponent: () => import('./features/documents/components/documents/documents.component')
+      .then(({ DocumentsComponent }) => DocumentsComponent)
+  },
+  {
     path: 'settings',
     pathMatch: 'full',
     redirectTo: 'settings/common'
@@ -22,4 +27,3 @@ export const appRoutes: Routes = [
     redirectTo: 'settings/common'
   }
 ];
-

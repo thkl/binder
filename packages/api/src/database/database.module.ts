@@ -6,6 +6,7 @@ import { DatabaseConnectionService } from './service/database-connection.service
 import { DatabaseMigrationService } from './service/database-migration.service';
 import { User } from '../features/authentication/models/user.entity';
 import { ApplicationSetting } from '../features/settings/models/settings.model';
+import { Document } from '../features/document/models/document.entity';
 
 @Global()
 @Module({
@@ -54,7 +55,7 @@ import { ApplicationSetting } from '../features/settings/models/settings.model';
         };
       }
     }),
-    SequelizeModule.forFeature([User,ApplicationSetting]),
+    SequelizeModule.forFeature([User, ApplicationSetting, Document]),
   ],
   providers: [DatabaseConnectionService,DatabaseMigrationService],
   exports: [DatabaseConnectionService]

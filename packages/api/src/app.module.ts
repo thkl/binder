@@ -9,6 +9,7 @@ import { BinderConfig, ConfigKeys } from './shared/config/config.keys';
 import { AuthenticationModule } from './features/authentication/authentication.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SettingsModule } from './features/settings/settings.module';
+import { DocumentModule } from './features/document/document.module';
 
 @Module({
   controllers: [HealthController],
@@ -19,6 +20,7 @@ import { SettingsModule } from './features/settings/settings.module';
     SharedModule,
     AuthenticationModule,
     SettingsModule,
+    DocumentModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

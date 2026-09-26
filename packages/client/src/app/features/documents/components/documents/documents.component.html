@@ -1,0 +1,44 @@
+<section class="documents-page">
+  <div class="documents-heading">
+    <div>
+      <p class="section-kicker">PRIVATE DOCUMENT VAULT</p>
+      <h2>Documents</h2>
+      <p class="muted">Your originals stay in your controlled storage, ready for the processing pipeline.</p>
+    </div>
+    <label class="upload-button">
+      <input type="file" accept="application/pdf,.pdf" (change)="fileSelected($event)" [disabled]="documents.uploading()">
+      <span>＋</span> {{ documents.uploading() ? 'Uploading…' : 'Add PDF' }}
+    </label>
+  </div>
+
+  @if (documents.error(); as error) {
+    <div class="notice error" role="alert">{{ error }}</div>
+  }
+
+  <section class="document-card glass-card">
+    <header class="list-header">
+      <span>All documents</span>
+      @if (documents.page(); as page) { <small>{{ page.total }} total</small> }
+    </header>
+
+    @if (documents.loading()) {
+      <div class="empty-state"><span class="spinner"></span><p>Loading documents…</p></div>
+    } @else if (documents.page()?.items?.length === 0) {
+      <div class="empty-state"><span class="empty-icon">▱</span><h3>Your vault is ready</h3><p>Upload your first PDF to start building your document history.</p></div>
+    } @else {
+      <div class="document-list">
+        @for (document of documents.page()?.items; track document.uuid) {
+          <article class="document-row">
+            <span class="file-icon">PDF</span>
+            <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
+            <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
+            <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open ↗</a>
+          </article>
+        }
+      </div>
+      @if (documents.page(); as page) {
+        <footer class="pagination"><button type="button" (click)="previousPage()" [disabled]="!page.hasPrev">← Previous</button><span>Page {{ page.page }} of {{ page.totalPages || 1 }}</span><button type="button" (click)="nextPage()" [disabled]="!page.hasNext">Next →</button></footer>
+      }
+    }
+  </section>
+</section>

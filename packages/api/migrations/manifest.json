@@ -14,6 +14,14 @@
                "created": [
                     "settings"
                ]
+          },
+          "4": {
+               "created": [
+                    "documents"
+               ],
+               "required": [
+                    "users"
+               ]
           }
      }
 }

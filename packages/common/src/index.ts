@@ -11,10 +11,13 @@ export const DocumentStatusSchema = z.enum([
 export type DocumentStatus = z.infer<typeof DocumentStatusSchema>;
 
 export const DocumentSchema = z.object({
-  id: z.uuid(),
-  ownerId: z.string().min(1),
+  uuid: z.uuid(),
+  ownerUuid: z.uuid(),
   originalFilename: z.string().min(1),
   mimeType: z.string().min(1),
+  sizeBytes: z.number().int().nonnegative(),
+  checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
+  storageKey: z.string().min(1),
   status: DocumentStatusSchema,
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime()
@@ -23,8 +26,10 @@ export const DocumentSchema = z.object({
 export type Document = z.infer<typeof DocumentSchema>;
 
 export const CreateDocumentInputSchema = z.object({
-  originalFilename: z.string().min(1).max(255),
-  mimeType: z.string().min(1)
+  originalFilename: z.string().trim().min(1).max(255),
+  mimeType: z.literal('application/pdf'),
+  sizeBytes: z.number().int().positive(),
+  checksumSha256: z.string().regex(/^[a-f0-9]{64}$/)
 });
 
 export type CreateDocumentInput = z.infer<typeof CreateDocumentInputSchema>;
@@ -39,6 +44,18 @@ export const DocumentListQuerySchema = z.object({
 });
 
 export type DocumentListQuery = z.infer<typeof DocumentListQuerySchema>;
+
+export const DocumentListResponseSchema = z.object({
+  items: z.array(DocumentSchema),
+  page: z.number().int().min(1),
+  pageSize: z.number().int().min(1),
+  total: z.number().int().min(0),
+  totalPages: z.number().int().min(0),
+  hasNext: z.boolean(),
+  hasPrev: z.boolean()
+});
+
+export type DocumentListResponse = z.infer<typeof DocumentListResponseSchema>;
 
 export const PaginationMetaSchema = z.object({
   page: z.number().int().min(1),

@@ -1,0 +1,73 @@
+import {
+  AllowNull,
+  Column,
+  CreatedAt,
+  DataType,
+  Default,
+  Model,
+  PrimaryKey,
+  Table,
+  UpdatedAt
+} from 'sequelize-typescript';
+
+export type DocumentStatus = 'uploaded' | 'scanning' | 'processing' | 'ready' | 'failed';
+
+export interface DocumentAttributes {
+  uuid: string;
+  ownerUuid: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  checksumSha256: string;
+  storageKey: string;
+  status: DocumentStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status'> & {
+  uuid?: string;
+  status?: DocumentStatus;
+};
+
+@Table({ tableName: 'documents', underscored: true, timestamps: true })
+export class Document extends Model<DocumentAttributes, DocumentCreationAttributes> {
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ field: 'owner_id', type: DataType.UUID, allowNull: false })
+  declare ownerUuid: string;
+
+  @Column({ field: 'original_filename', type: DataType.STRING(255), allowNull: false })
+  declare originalFilename: string;
+
+  @Column({ field: 'mime_type', type: DataType.STRING(100), allowNull: false })
+  declare mimeType: string;
+
+  @Column({ field: 'size_bytes', type: DataType.BIGINT, allowNull: false })
+  declare sizeBytes: number;
+
+  @Column({ field: 'checksum_sha256', type: DataType.STRING(64), allowNull: false })
+  declare checksumSha256: string;
+
+  @Column({ field: 'storage_key', type: DataType.STRING(500), allowNull: false })
+  declare storageKey: string;
+
+  @Column({
+    type: DataType.ENUM('uploaded', 'scanning', 'processing', 'ready', 'failed'),
+    allowNull: false,
+    defaultValue: 'uploaded'
+  })
+  declare status: DocumentStatus;
+
+  @CreatedAt
+  @Column({ field: 'created_at', type: DataType.DATE })
+  declare readonly createdAt: Date;
+
+  @UpdatedAt
+  @Column({ field: 'updated_at', type: DataType.DATE })
+  declare readonly updatedAt: Date;
+}
+
