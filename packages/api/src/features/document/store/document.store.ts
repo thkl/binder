@@ -24,6 +24,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
 
     if (query.q) {
       (where as unknown as Record<PropertyKey, unknown>)[Op.or] = [
+        { title: { [Op.iLike]: `%${query.q}%` } },
         { originalFilename: { [Op.iLike]: `%${query.q}%` } },
         { checksumSha256: { [Op.iLike]: `%${query.q}%` } }
       ];

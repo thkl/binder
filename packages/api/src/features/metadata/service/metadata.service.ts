@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CreateVocabularyItem,
+  CreateMetadataDefinition,
+  MetadataDefinitionsResponseSchema,
   DocumentMetadataSchema,
   SetDocumentMetadataInput,
   VocabularyItem,
@@ -37,13 +39,55 @@ export class MetadataService {
     return this.toResponse(item);
   }
 
+  async listDefinitions(ownerUuid: string) {
+    const items = await this.store.listDefinitions(ownerUuid);
+    return MetadataDefinitionsResponseSchema.parse({
+      items: items.map((item) => ({
+        uuid: item.uuid,
+        ownerUuid: item.ownerUuid,
+        key: item.key,
+        label: item.label,
+        type: item.type,
+        options: item.options,
+        unique: item.unique,
+        mandatory: item.mandatory,
+        active: item.active,
+        scope: item.ownerUuid === null ? 'system' : 'personal',
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString()
+      }))
+    });
+  }
+
+  async createDefinition(ownerUuid: string, input: CreateMetadataDefinition, isAdmin: boolean) {
+    if (input.scope === 'system' && !isAdmin) {
+      throw new BadRequestException('Only administrators can create system metadata fields');
+    }
+    const definition = await this.store.createDefinition(input.scope === 'system' ? null : ownerUuid, input);
+    return {
+      uuid: definition.uuid,
+      ownerUuid: definition.ownerUuid,
+      key: definition.key,
+      label: definition.label,
+      type: definition.type,
+      options: definition.options,
+      unique: definition.unique,
+      mandatory: definition.mandatory,
+      active: definition.active,
+      scope: definition.ownerUuid === null ? 'system' : 'personal',
+      createdAt: definition.createdAt.toISOString(),
+      updatedAt: definition.updatedAt.toISOString()
+    };
+  }
+
   async getDocumentMetadata(ownerUuid: string, documentUuid: string) {
     const metadata = await this.store.getDocumentMetadata(ownerUuid, documentUuid);
     if (!metadata) throw new NotFoundException('Document not found');
     return DocumentMetadataSchema.parse({
       documentType: metadata.documentType ? this.toResponse(metadata.documentType) : null,
       category: metadata.category ? this.toResponse(metadata.category) : null,
-      tags: metadata.tags.map((tag) => this.toResponse(tag))
+      tags: metadata.tags.map((tag) => this.toResponse(tag)),
+      custom: metadata.custom
     });
   }
 
@@ -57,6 +101,9 @@ export class MetadataService {
         input.tagUuids
       );
       if (!metadata) throw new NotFoundException('Document not found');
+      if (input.custom !== undefined) {
+        await this.store.setCustomValues(ownerUuid, documentUuid, input.custom);
+      }
       return this.getDocumentMetadata(ownerUuid, documentUuid);
     } catch (error) {
       if (error instanceof NotFoundException) throw error;

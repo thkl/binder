@@ -13,7 +13,7 @@ import {
   UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { DocumentListQuerySchema, SetDocumentMetadataInputSchema } from '@binder/common';
+import { DocumentListQuerySchema, SetDocumentMetadataInputSchema, SetDocumentTitleInputSchema } from '@binder/common';
 import type { Response } from 'express';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
@@ -55,6 +55,11 @@ export class DocumentController {
     response.setHeader('Cache-Control', 'private, no-store');
     response.setHeader('Content-Disposition', `inline; filename="${this.safeFilename(result.document.originalFilename)}"`);
     return new StreamableFile(result.stream, { type: result.document.mimeType });
+  }
+
+  @Post(':uuid/title')
+  async updateTitle(@Param('uuid') uuid: string, @Body() body: unknown, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.updateTitle(user.userId, uuid, SetDocumentTitleInputSchema.parse(body)) };
   }
 
   @Get(':uuid/pipeline')

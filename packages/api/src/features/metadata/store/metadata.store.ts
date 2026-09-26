@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Op } from 'sequelize';
 import { DocumentStore } from '../../document/store/document.store';
-import { DocumentCategory, DocumentTag, DocumentTagAssignment, DocumentType } from '../models/vocabulary.entity';
+import { DocumentCategory, DocumentMetadataValue, DocumentTag, DocumentTagAssignment, DocumentType, MetadataDefinition } from '../models/vocabulary.entity';
 
 type VocabularyModel = typeof DocumentType | typeof DocumentCategory | typeof DocumentTag;
 
@@ -23,13 +23,16 @@ export class MetadataStore {
   }
 
   create(model: VocabularyModel, ownerUuid: string | null, name: string, description: string | null) {
-    return model.create({
+    return model.findOne({ where: { ownerUuid, name: { [Op.iLike]: name } } }).then((existing) => {
+      if (existing) throw new Error(`A value named '${name}' already exists`);
+      return model.create({
       uuid: undefined,
       ownerUuid,
       name,
       description,
       active: true
-    } as never);
+      } as never);
+    });
   }
 
   async getDocumentMetadata(ownerUuid: string, documentUuid: string) {
@@ -45,7 +48,86 @@ export class MetadataStore {
       ? []
       : await DocumentTag.findAll({ where: { uuid: { [Op.in]: assignments.map((item) => item.tagUuid) } } });
 
-    return { documentType, category, tags };
+    const definitions = await this.listDefinitions(ownerUuid);
+    const values = await DocumentMetadataValue.findAll({ where: { documentUuid } });
+    const custom = Object.fromEntries(values.flatMap((value) => {
+      const definition = definitions.find((item) => item.uuid === value.definitionUuid);
+      return definition ? [[definition.key, value.value]] : [];
+    }));
+
+    return { documentType, category, tags, custom };
+  }
+
+  listDefinitions(ownerUuid: string) {
+    return MetadataDefinition.findAll({
+      where: { active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } },
+      order: [['label', 'ASC']]
+    });
+  }
+
+  async createDefinition(ownerUuid: string | null, input: {
+    key: string;
+    label: string;
+    type: string;
+    options?: string[];
+    unique: boolean;
+    mandatory: boolean;
+  }) {
+    const existing = await MetadataDefinition.findOne({ where: { key: input.key } });
+    if (existing) throw new Error(`A metadata field with key '${input.key}' already exists`);
+    return MetadataDefinition.create({
+      uuid: undefined,
+      ownerUuid,
+      key: input.key,
+      label: input.label,
+      type: input.type,
+      options: input.options ?? null,
+      unique: input.unique,
+      mandatory: input.mandatory,
+      active: true
+    } as never);
+  }
+
+  async setCustomValues(ownerUuid: string, documentUuid: string, custom: Record<string, unknown>) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, documentUuid);
+    if (!document) return null;
+    const definitions = await this.listDefinitions(ownerUuid);
+    const definitionByKey = new Map(definitions.map((definition) => [definition.key, definition]));
+
+    for (const definition of definitions) {
+      if (definition.mandatory && (custom[definition.key] === undefined || custom[definition.key] === null || custom[definition.key] === '')) {
+        throw new Error(`Metadata field '${definition.label}' is required`);
+      }
+    }
+    for (const [key, value] of Object.entries(custom)) {
+      const definition = definitionByKey.get(key);
+      if (!definition) throw new Error(`Unknown metadata field '${key}'`);
+      this.validateValue(definition, value);
+      if (definition.unique && value !== null && value !== undefined && value !== '') {
+        const existingValues = await DocumentMetadataValue.findAll({ where: { definitionUuid: definition.uuid } });
+        const usedByAnotherDocument = existingValues.some((item) =>
+          item.documentUuid !== documentUuid && JSON.stringify(item.value) === JSON.stringify(value)
+        );
+        if (usedByAnotherDocument) throw new Error(`Metadata field '${definition.label}' must be unique`);
+      }
+      await DocumentMetadataValue.upsert({ documentUuid, definitionUuid: definition.uuid, value });
+    }
+    return this.getDocumentMetadata(ownerUuid, documentUuid);
+  }
+
+  private validateValue(definition: MetadataDefinition, value: unknown): void {
+    if (value === null || value === undefined || value === '') {
+      if (definition.mandatory) throw new Error(`Metadata field '${definition.label}' is required`);
+      return;
+    }
+    if (definition.type === 'text' && typeof value !== 'string') throw new Error(`Metadata field '${definition.label}' must be text`);
+    if (definition.type === 'number' && (typeof value !== 'number' || !Number.isFinite(value))) throw new Error(`Metadata field '${definition.label}' must be a number`);
+    if (definition.type === 'boolean' && typeof value !== 'boolean') throw new Error(`Metadata field '${definition.label}' must be boolean`);
+    if (definition.type === 'multi-select' && (!Array.isArray(value) || value.some((item) => typeof item !== 'string'))) throw new Error(`Metadata field '${definition.label}' must be a list`);
+    if ((definition.type === 'select' || definition.type === 'multi-select') && definition.options) {
+      const values = Array.isArray(value) ? value : [value];
+      if (values.some((item) => !definition.options?.includes(String(item)))) throw new Error(`Metadata field '${definition.label}' has an invalid option`);
+    }
   }
 
   async setDocumentMetadata(

@@ -5,7 +5,8 @@ import {
   DocumentListQuery,
   DocumentListQuerySchema,
   DocumentListResponse,
-  DocumentListResponseSchema
+  DocumentListResponseSchema,
+  SetDocumentTitleInputSchema
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 
@@ -57,6 +58,25 @@ export class DocumentsService {
       this.loading.set(false);
     }
     return this.error() === null;
+  }
+
+  async updateTitle(uuid: string, title: string): Promise<boolean> {
+    const input = SetDocumentTitleInputSchema.safeParse({ title });
+    if (!input.success) {
+      this.error.set('A document title is required and may contain at most 255 characters.');
+      return false;
+    }
+    this.error.set(null);
+    try {
+      await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/${uuid}/title`, input.data, { withCredentials: true })
+      );
+      await this.load();
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    }
   }
 
   async upload(file: File): Promise<boolean> {

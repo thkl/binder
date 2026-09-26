@@ -15,6 +15,7 @@ export type DocumentStatus = 'uploaded' | 'scanning' | 'processing' | 'ready' | 
 export interface DocumentAttributes {
   uuid: string;
   ownerUuid: string;
+  title: string | null;
   originalFilename: string;
   mimeType: string;
   sizeBytes: number;
@@ -44,6 +45,10 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
 
   @Column({ field: 'original_filename', type: DataType.STRING(255), allowNull: false })
   declare originalFilename: string;
+
+  @AllowNull
+  @Column({ type: DataType.STRING(255), allowNull: true })
+  declare title: string | null;
 
   @Column({ field: 'mime_type', type: DataType.STRING(100), allowNull: false })
   declare mimeType: string;

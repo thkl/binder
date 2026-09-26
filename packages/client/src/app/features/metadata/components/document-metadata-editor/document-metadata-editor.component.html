@@ -7,7 +7,19 @@
       <label class="field"><span>Document type</span><select [value]="documentTypeUuid()" (change)="documentTypeUuid.set($any($event.target).value)"><option value="">Not classified</option>@for (item of vocabulary.documentTypes; track item.uuid) { <option [value]="item.uuid">{{ item.name }}{{ item.scope === 'system' ? ' · Workspace' : '' }}</option> }</select></label>
       <label class="field"><span>Category</span><select [value]="categoryUuid()" (change)="categoryUuid.set($any($event.target).value)"><option value="">No category</option>@for (item of vocabulary.categories; track item.uuid) { <option [value]="item.uuid">{{ item.name }}{{ item.scope === 'system' ? ' · Workspace' : '' }}</option> }</select></label>
     </div>
-    <div class="tag-section"><div class="tag-label"><span>Tags</span><small>{{ selectedTags().size }} selected</small></div><div class="tag-list">@for (tag of vocabulary.tags; track tag.uuid) { <label class="tag-option" [class.selected]="isTagSelected(tag.uuid)"><input type="checkbox" [checked]="isTagSelected(tag.uuid)" (change)="toggleTag(tag.uuid)"><span>{{ tag.name }}</span></label> } @empty { <small class="no-tags">Add tags in Metadata library first.</small> }</div></div>
+    <div class="tag-section"><div class="tag-label"><span>Tags</span><small>{{ selectedTags().size }} selected</small></div><input class="tag-search" [value]="tagSearch()" (input)="tagSearch.set($any($event.target).value)" placeholder="Search known tags…" aria-label="Search known tags"><div class="tag-list">@for (tag of filteredTags(); track tag.uuid) { <label class="tag-option" [class.selected]="isTagSelected(tag.uuid)"><input type="checkbox" [checked]="isTagSelected(tag.uuid)" (change)="toggleTag(tag.uuid)"><span>{{ tag.name }}</span></label> } @empty { <small class="no-tags">No matching tags yet.</small> }</div><form class="tag-create" (submit)="addTag($event)"><input [value]="newTagName()" (input)="newTagName.set($any($event.target).value)" placeholder="Add a new personal tag…" aria-label="New tag name"><button type="submit" [disabled]="metadata.saving() || !newTagName().trim()">Add tag</button></form></div>
+    @if (metadata.definitions().length > 0) {
+      <div class="custom-fields"><div class="tag-label"><span>Additional information</span><small>Custom fields</small></div>
+        @for (definition of metadata.definitions(); track definition.uuid) {
+          <label class="field custom-field"><span>{{ definition.label }} @if (definition.mandatory) { <em>Required</em> }</span>
+            @if (definition.type === 'boolean') { <input type="checkbox" [checked]="customValue(definition.key) === true" (change)="setCustomValue(definition.key, $any($event.target).checked)"> }
+            @else if (definition.type === 'select') { <select [value]="customValue(definition.key)" (change)="setCustomValue(definition.key, $any($event.target).value)"><option value="">Choose…</option>@for (option of definition.options ?? []; track option) { <option [value]="option">{{ option }}</option> }</select> }
+            @else if (definition.type === 'multi-select') { <input [value]="$any(customValue(definition.key)).join ? $any(customValue(definition.key)).join(', ') : ''" (change)="setMultiValue(definition.key, $event)" placeholder="Comma separated values"> }
+            @else { <input [type]="definition.type === 'number' ? 'number' : definition.type === 'datetime' ? 'datetime-local' : definition.type" [value]="customValue(definition.key)" (input)="setTypedValue(definition.key, definition.type, $any($event.target).value)"> }
+          </label>
+        }
+      </div>
+    }
     <footer class="editor-footer">@if (saved()) { <span class="saved">✓ Saved</span> }<button type="button" class="save-button" [disabled]="metadata.saving()" (click)="save()">{{ metadata.saving() ? 'Saving…' : 'Save metadata' }}</button></footer>
   </section>
 }

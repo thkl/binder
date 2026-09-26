@@ -14,6 +14,7 @@ import { PipelineService } from '../../pipeline/service/pipeline.service';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { MetadataService } from '../../metadata/service/metadata.service';
 import { SetDocumentMetadataInput } from '@binder/common';
+import { SetDocumentTitleInput } from '@binder/common';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -57,6 +58,7 @@ export class DocumentService {
       const document = await this.documents.create({
         uuid,
         ownerUuid,
+        title: file.originalname,
         ...input,
         storageKey: stored.storageKey,
         thumbnailKey,
@@ -88,6 +90,13 @@ export class DocumentService {
       throw new NotFoundException('Document not found');
     }
     return this.toDocumentResponse(document);
+  }
+
+  async updateTitle(ownerUuid: string, uuid: string, input: SetDocumentTitleInput) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) throw new NotFoundException('Document not found');
+    const updated = await this.documents.update(uuid, { title: input.title });
+    return this.toDocumentResponse(updated ?? document);
   }
 
   async getFile(ownerUuid: string, uuid: string) {
@@ -164,6 +173,7 @@ export class DocumentService {
       uuid: document.uuid,
       ownerUuid: document.ownerUuid,
       originalFilename: document.originalFilename,
+      title: document.title,
       mimeType: document.mimeType,
       sizeBytes: Number(document.sizeBytes),
       checksumSha256: document.checksumSha256,

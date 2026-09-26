@@ -67,4 +67,18 @@
       }
     </main>
   </div>
+
+  <section class="definitions-card glass-card">
+    <header class="content-heading"><div><p class="section-kicker">FLEXIBLE FIELDS</p><h3>Custom metadata</h3></div><span class="count-badge">{{ metadata.definitions().length }} fields</span></header>
+    <p class="definition-intro">Add fields such as project, issue date, or due date. They will appear in every document’s metadata editor.</p>
+    <form class="definition-form" (submit)="$event.preventDefault(); createDefinition()">
+      <label><span>Key</span><input [value]="definitionKey()" (input)="definitionKey.set($any($event.target).value)" placeholder="issueDate" pattern="[a-z][a-zA-Z0-9_]*" required></label>
+      <label><span>Label</span><input [value]="definitionLabel()" (input)="definitionLabel.set($any($event.target).value)" placeholder="Date of issue" required></label>
+      <label><span>Type</span><select [value]="definitionType()" (change)="definitionType.set($any($event.target).value)"><option value="text">Text</option><option value="number">Number</option><option value="date">Date</option><option value="datetime">Date and time</option><option value="boolean">Yes / no</option><option value="select">Select</option><option value="multi-select">Multiple select</option></select></label>
+      @if (definitionType() === 'select' || definitionType() === 'multi-select') { <label><span>Options <small>comma separated</small></span><input [value]="definitionOptions()" (input)="definitionOptions.set($any($event.target).value)" placeholder="Open, In progress, Done" required></label> }
+      <label class="definition-check"><input type="checkbox" [checked]="definitionMandatory()" (change)="definitionMandatory.set($any($event.target).checked)"><span>Required on documents</span></label>
+      <button class="primary-button" type="submit" [disabled]="metadata.saving() || !definitionKey().trim() || !definitionLabel().trim()">{{ metadata.saving() ? 'Adding…' : 'Add field' }}</button>
+    </form>
+    @if (metadata.definitions().length > 0) { <div class="definition-list">@for (definition of metadata.definitions(); track definition.uuid) { <div class="definition-row"><strong>{{ definition.label }}</strong><code>{{ definition.key }}</code><span>{{ definition.type }}{{ definition.mandatory ? ' · required' : '' }}</span></div> }</div> }
+  </section>
 </section>

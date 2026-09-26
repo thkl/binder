@@ -4,18 +4,23 @@ import {
   ApiResponse,
   CreateVocabularyItem,
   CreateVocabularyItemSchema,
+  CreateMetadataDefinition,
+  CreateMetadataDefinitionSchema,
   DocumentMetadata,
   DocumentMetadataSchema,
   SetDocumentMetadataInput,
   SetDocumentMetadataInputSchema,
   VocabularyResponse,
-  VocabularyResponseSchema
+  VocabularyResponseSchema,
+  MetadataDefinition,
+  MetadataDefinitionsResponseSchema
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class MetadataService {
   readonly vocabulary = signal<VocabularyResponse | null>(null);
+  readonly definitions = signal<MetadataDefinition[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
@@ -33,12 +38,44 @@ export class MetadataService {
       );
       const vocabulary = VocabularyResponseSchema.parse(response.data);
       this.vocabulary.set(vocabulary);
+      await this.loadDefinitions();
       return vocabulary;
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
       return null;
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async loadDefinitions(): Promise<MetadataDefinition[] | null> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(`${this.apiUrl}/definitions`, { withCredentials: true })
+      );
+      const definitions = MetadataDefinitionsResponseSchema.parse(response.data).items;
+      this.definitions.set(definitions);
+      return definitions;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  async createDefinition(input: CreateMetadataDefinition): Promise<boolean> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      await firstValueFrom(this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/definitions`, CreateMetadataDefinitionSchema.parse(input), {
+        withCredentials: true
+      }));
+      await this.loadDefinitions();
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    } finally {
+      this.saving.set(false);
     }
   }
 

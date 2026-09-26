@@ -10,6 +10,7 @@ import { Document } from '../features/document/models/document.entity';
 import { PipelineJob } from '../features/pipeline/models/pipeline-job.entity';
 import { PipelineJobEvent } from '../features/pipeline/models/pipeline-job-event.entity';
 import { DocumentCategory, DocumentTag, DocumentTagAssignment, DocumentType } from '../features/metadata/models/vocabulary.entity';
+import { DocumentMetadataValue, MetadataDefinition } from '../features/metadata/models/vocabulary.entity';
 
 @Global()
 @Module({
@@ -60,7 +61,8 @@ import { DocumentCategory, DocumentTag, DocumentTagAssignment, DocumentType } fr
     }),
     SequelizeModule.forFeature([
       User, ApplicationSetting, Document, PipelineJob, PipelineJobEvent,
-      DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment
+      DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment,
+      MetadataDefinition, DocumentMetadataValue
     ]),
   ],
   providers: [DatabaseConnectionService,DatabaseMigrationService],

@@ -52,7 +52,7 @@
         @if (!hasThumbnailFailed(document.uuid)) { <img class="thumbnail" [src]="thumbnailUrl(document.uuid)"
           [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
         <span class="file-icon">PDF</span> }
-        <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number
+        <div class="document-name"><input class="title-input" [value]="document.title || document.originalFilename" (change)="renameDocument(document.uuid, $event)" aria-label="Document title"><small>{{ document.sizeBytes | number
             }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
         <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
         <button class="metadata-button" type="button" (click)="toggleMetadata(document.uuid)" [attr.aria-expanded]="metadataDocumentUuid() === document.uuid">Metadata</button>
@@ -79,7 +79,7 @@
       </div>
       @for (document of documents.page()?.items; track document.uuid) {
       <article class="details-row">
-        <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.checksumSha256
+        <div class="document-name"><strong>{{ document.title || document.originalFilename }}</strong><small>{{ document.checksumSha256
             }}</small></div>
         <span>PDF</span><span>{{ document.sizeBytes | number }} bytes</span>
         <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
@@ -103,7 +103,7 @@
       <a class="icon-card" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">
         @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
           [alt]="''" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
-        <strong>{{ document.originalFilename }}</strong><small>{{ document.status }}</small>
+        <strong>{{ document.title || document.originalFilename }}</strong><small>{{ document.status }}</small>
       </a>
       }
     </div>
@@ -115,7 +115,7 @@
         @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
           [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
         <span class="file-icon">PDF</span> }
-        <strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number }} bytes · {{
+        <strong>{{ document.title || document.originalFilename }}</strong><small>{{ document.sizeBytes | number }} bytes · {{
           document.status }}</small>
       </a>
       }

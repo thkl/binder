@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { MetadataService } from '../../services/metadata.service';
 
 @Component({
@@ -17,6 +17,13 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   readonly selectedTags = signal<Set<string>>(new Set());
   readonly loaded = signal(false);
   readonly saved = signal(false);
+  readonly customValues = signal<Record<string, unknown>>({});
+  readonly newTagName = signal('');
+  readonly tagSearch = signal('');
+  readonly filteredTags = computed(() => {
+    const search = this.tagSearch().trim().toLowerCase();
+    return (this.metadata.vocabulary()?.tags ?? []).filter((tag) => !search || tag.name.toLowerCase().includes(search));
+  });
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['documentUuid'] && this.documentUuid) void this.load();
@@ -32,6 +39,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
       this.documentTypeUuid.set(current.documentType?.uuid ?? '');
       this.categoryUuid.set(current.category?.uuid ?? '');
       this.selectedTags.set(new Set(current.tags.map((tag) => tag.uuid)));
+      this.customValues.set({ ...current.custom });
     }
     this.loaded.set(true);
   }
@@ -51,8 +59,36 @@ export class DocumentMetadataEditorComponent implements OnChanges {
     const result = await this.metadata.setDocumentMetadata(this.documentUuid, {
       documentTypeUuid: this.documentTypeUuid() || null,
       categoryUuid: this.categoryUuid() || null,
-      tagUuids: [...this.selectedTags()]
+      tagUuids: [...this.selectedTags()],
+      custom: this.customValues()
     });
     if (result) this.saved.set(true);
+  }
+
+  async addTag(event: Event): Promise<void> {
+    event.preventDefault();
+    const name = this.newTagName().trim();
+    if (!name) return;
+    if (await this.metadata.create('tags', { name, scope: 'personal' })) {
+      const tag = this.metadata.vocabulary()?.tags.find((item) => item.name.toLowerCase() === name.toLowerCase());
+      if (tag) this.selectedTags.update((selected) => new Set(selected).add(tag.uuid));
+      this.newTagName.set('');
+      this.tagSearch.set('');
+    }
+  }
+
+  customValue(key: string): unknown { return this.customValues()[key] ?? ''; }
+
+  setCustomValue(key: string, value: unknown): void {
+    this.customValues.update((current) => ({ ...current, [key]: value }));
+    this.saved.set(false);
+  }
+
+  setTypedValue(key: string, type: string, value: string): void {
+    this.setCustomValue(key, type === 'number' && value !== '' ? Number(value) : value);
+  }
+
+  setMultiValue(key: string, event: Event): void {
+    this.setCustomValue(key, (event.target as HTMLInputElement).value.split(',').map((item) => item.trim()).filter(Boolean));
   }
 }

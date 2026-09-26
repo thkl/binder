@@ -76,6 +76,11 @@ export class DocumentsComponent implements OnInit {
   toggleMetadata(uuid: string): void {
     this.metadataDocumentUuid.update((current) => current === uuid ? null : uuid);
   }
+
+  async renameDocument(uuid: string, event: Event): Promise<void> {
+    const title = (event.target as HTMLInputElement).value.trim();
+    if (title) await this.documents.updateTitle(uuid, title);
+  }
   
   private readViewMode(): DocumentViewMode {
     const stored = localStorage.getItem('binder.documents.view-mode');

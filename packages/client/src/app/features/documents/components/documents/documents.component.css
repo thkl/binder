@@ -296,3 +296,20 @@ h2 {
         padding-right: 1rem;
     }
 }
+.title-input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  padding: 0.15rem 0;
+}
+
+.title-input:hover,
+.title-input:focus {
+  border-bottom-color: currentColor;
+  outline: none;
+}

@@ -13,6 +13,7 @@ export type DocumentStatus = z.infer<typeof DocumentStatusSchema>;
 export const DocumentSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid(),
+  title: z.string().max(255).nullable(),
   originalFilename: z.string().min(1),
   mimeType: z.string().min(1),
   sizeBytes: z.number().int().nonnegative(),
@@ -26,6 +27,11 @@ export const DocumentSchema = z.object({
 
 export type Document = z.infer<typeof DocumentSchema>;
 
+export const SetDocumentTitleInputSchema = z.object({
+  title: z.string().trim().min(1).max(255)
+});
+export type SetDocumentTitleInput = z.infer<typeof SetDocumentTitleInputSchema>;
+
 export const CreateDocumentInputSchema = z.object({
   originalFilename: z.string().trim().min(1).max(255),
   mimeType: z.literal('application/pdf'),
@@ -38,7 +44,7 @@ export type CreateDocumentInput = z.infer<typeof CreateDocumentInputSchema>;
 export const DocumentListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
-  sort: z.enum(['createdAt', 'updatedAt', 'originalFilename', 'status']).default('createdAt'),
+  sort: z.enum(['createdAt', 'updatedAt', 'originalFilename', 'title', 'status']).default('createdAt'),
   direction: z.enum(['asc', 'desc']).default('desc'),
   status: DocumentStatusSchema.optional(),
   q: z.string().trim().max(200).optional()
@@ -255,13 +261,50 @@ export type CreateVocabularyItem = z.infer<typeof CreateVocabularyItemSchema>;
 export const DocumentMetadataSchema = z.object({
   documentType: VocabularyItemSchema.nullable(),
   category: VocabularyItemSchema.nullable(),
-  tags: z.array(VocabularyItemSchema)
+  tags: z.array(VocabularyItemSchema),
+  custom: z.record(z.string(), z.unknown())
 });
 export type DocumentMetadata = z.infer<typeof DocumentMetadataSchema>;
+
+export const MetadataFieldTypeSchema = z.enum(['text', 'number', 'date', 'datetime', 'boolean', 'select', 'multi-select']);
+export type MetadataFieldType = z.infer<typeof MetadataFieldTypeSchema>;
+
+export const MetadataDefinitionSchema = z.object({
+  uuid: z.uuid(),
+  ownerUuid: z.uuid().nullable(),
+  key: z.string().regex(/^[a-z][a-zA-Z0-9_]*$/).max(100),
+  label: z.string().trim().min(1).max(150),
+  type: MetadataFieldTypeSchema,
+  options: z.array(z.string().trim().min(1).max(150)).nullable(),
+  unique: z.boolean(),
+  mandatory: z.boolean(),
+  active: z.boolean(),
+  scope: VocabularyScopeSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime()
+});
+export type MetadataDefinition = z.infer<typeof MetadataDefinitionSchema>;
+
+export const MetadataDefinitionsResponseSchema = z.object({
+  items: z.array(MetadataDefinitionSchema)
+});
+export type MetadataDefinitionsResponse = z.infer<typeof MetadataDefinitionsResponseSchema>;
+
+export const CreateMetadataDefinitionSchema = z.object({
+  key: z.string().regex(/^[a-z][a-zA-Z0-9_]*$/).max(100),
+  label: z.string().trim().min(1).max(150),
+  type: MetadataFieldTypeSchema,
+  options: z.array(z.string().trim().min(1).max(150)).optional(),
+  unique: z.boolean().optional().default(false),
+  mandatory: z.boolean().optional().default(false),
+  scope: VocabularyScopeSchema.optional().default('personal')
+});
+export type CreateMetadataDefinition = z.infer<typeof CreateMetadataDefinitionSchema>;
 
 export const SetDocumentMetadataInputSchema = z.object({
   documentTypeUuid: z.uuid().nullable().optional(),
   categoryUuid: z.uuid().nullable().optional(),
-  tagUuids: z.array(z.uuid()).optional()
+  tagUuids: z.array(z.uuid()).optional(),
+  custom: z.record(z.string(), z.unknown()).optional()
 });
 export type SetDocumentMetadataInput = z.infer<typeof SetDocumentMetadataInputSchema>;

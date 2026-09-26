@@ -59,6 +59,16 @@
                "required": [
                     "settings"
                ]
+          },
+          "10": {
+               "created": [
+                    "metadata_definitions",
+                    "document_metadata_values"
+               ],
+               "required": [
+                    "users",
+                    "documents"
+               ]
           }
      }
 }
