@@ -52,7 +52,7 @@
         @if (!hasThumbnailFailed(document.uuid)) { <img class="thumbnail" [src]="thumbnailUrl(document.uuid)"
           [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
         <span class="file-icon">PDF</span> }
-        <div class="document-name"><div class="title-line"><input class="title-input" [value]="document.title || document.originalFilename" (change)="renameDocument(document.uuid, $event)" aria-label="Document title"><button class="suggest-title-button" type="button" (click)="suggestTitle(document.uuid)" [disabled]="titleSuggestionLoading()[document.uuid]">{{ titleSuggestionLoading()[document.uuid] ? '…' : '✦' }}</button></div>@if (titleSuggestions()[document.uuid]; as suggestion) { <div class="title-suggestion"><span>Suggested: <strong>{{ suggestion.title }}</strong></span><button type="button" (click)="acceptTitleSuggestion(document.uuid)">Accept</button><button type="button" (click)="dismissTitleSuggestion(document.uuid)">Dismiss</button></div> }<small>{{ document.sizeBytes | number
+        <div class="document-name"><div class="title-line"><input class="title-input" [value]="document.title || document.originalFilename" (change)="renameDocument(document.uuid, $event)" aria-label="Document title"><button class="suggest-title-button" type="button" (click)="suggestTitle(document.uuid)" [disabled]="titleSuggestionLoading()[document.uuid]">{{ titleSuggestionLoading()[document.uuid] ? '…' : '✦' }}</button></div>@if (titleSuggestions()[document.uuid]; as suggestion) { <div class="title-suggestion"><span>Suggested: <strong>{{ suggestion.suggestedTitle }}</strong></span><button type="button" (click)="toggleMetadata(document.uuid)">Review</button><button type="button" (click)="acceptSuggestedMetadata(document.uuid)">Accept title</button><button type="button" (click)="dismissTitleSuggestion(document.uuid)">Dismiss</button></div> }<small>{{ document.sizeBytes | number
             }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
         <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
         <button class="metadata-button" type="button" (click)="toggleMetadata(document.uuid)" [attr.aria-expanded]="metadataDocumentUuid() === document.uuid">Metadata</button>
@@ -137,7 +137,10 @@
           </div>
           <button type="button" class="property-close" (click)="closeMetadata()" aria-label="Close document properties">×</button>
         </header>
-        <binder-document-metadata-editor [documentUuid]="metadataUuid" />
+        @if (titleSuggestions()[metadataUuid]; as suggestion) {
+          <div class="suggestion-summary"><strong>AI suggestions ready</strong><span>Review the proposed title and metadata below.</span><button type="button" (click)="acceptSuggestedMetadata(metadataUuid)">Accept title</button></div>
+        }
+        <binder-document-metadata-editor [documentUuid]="metadataUuid" [suggestion]="titleSuggestions()[metadataUuid] || null" (suggestionAccepted)="acceptSuggestedMetadata(metadataUuid)" />
       </aside>
     </div>
   }

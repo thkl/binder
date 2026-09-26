@@ -34,7 +34,11 @@ export type SetDocumentTitleInput = z.infer<typeof SetDocumentTitleInputSchema>;
 
 export const DocumentTitleSuggestionSchema = z.object({
   suggestedTitle: z.string().trim().min(1).max(255),
-  confidence: z.number().min(0).max(1)
+  confidence: z.number().min(0).max(1),
+  documentTypeUuid: z.uuid().nullable().default(null),
+  categoryUuid: z.uuid().nullable().default(null),
+  tagUuids: z.array(z.uuid()).max(50).default([]),
+  custom: z.record(z.string(), z.unknown()).default({})
 });
 export type DocumentTitleSuggestion = z.infer<typeof DocumentTitleSuggestionSchema>;
 

@@ -5,6 +5,7 @@ import { ApplicationSettingsService } from '../../settings/service/application-s
 import { DocumentPage } from '../models/document-page.entity';
 import { DocumentStore } from '../store/document.store';
 import { BinderLogger } from '../../../shared/service/logger.helper';
+import { MetadataService } from '../../metadata/service/metadata.service';
 
 const ProviderResponseSchema = z.object({
   choices: z.array(z.object({ message: z.object({ content: z.string() }) })).min(1)
@@ -16,7 +17,8 @@ export class TitleSuggestionService {
 
   constructor(
     private readonly documents: DocumentStore,
-    private readonly settings: ApplicationSettingsService
+    private readonly settings: ApplicationSettingsService,
+    private readonly metadata: MetadataService
   ) {}
 
   async suggest(ownerUuid: string, documentUuid: string): Promise<DocumentTitleSuggestion> {
@@ -34,6 +36,8 @@ export class TitleSuggestionService {
     const model = await this.settings.get('ai.model', 'gpt-4o-mini');
     const pages = await DocumentPage.findAll({ where: { documentUuid }, order: [['pageNumber', 'ASC']], limit: 12 });
     const extractedText = pages.map((page) => page.text).join('\n\n').slice(0, 12_000);
+    const vocabulary = await this.metadata.list(ownerUuid);
+    const definitions = await this.metadata.listDefinitions(ownerUuid);
     this.logger.info('Requesting document title suggestion', { documentUuid, model, textLength: extractedText.length });
 
     const response = await fetch(endpoint!, {
@@ -43,8 +47,8 @@ export class TitleSuggestionService {
         model,
         temperature: 0.2,
         messages: [
-          { role: 'system', content: 'You create concise human-readable document titles. Return only valid JSON with exactly this shape: {"suggestedTitle":"...","confidence":0.0}. The title must be at most 255 characters. Never include markdown.' },
-          { role: 'user', content: `Original filename: ${document.originalFilename}\nCurrent title: ${document.title ?? ''}\nExtracted document text:\n${extractedText}` }
+          { role: 'system', content: 'You classify documents and create concise human-readable titles. Return only valid JSON with exactly this shape: {"suggestedTitle":"...","confidence":0.0,"documentTypeUuid":null,"categoryUuid":null,"tagUuids":[],"custom":{}}. Use only the supplied UUIDs and metadata keys. Never invent UUIDs, tags, types, categories, or custom keys. Use null or [] when uncertain. The title must be at most 255 characters. Never include markdown.' },
+          { role: 'user', content: `Original filename: ${document.originalFilename}\nCurrent title: ${document.title ?? ''}\nAllowed document types: ${JSON.stringify(vocabulary.documentTypes.map((item) => ({ uuid: item.uuid, name: item.name })))}\nAllowed categories: ${JSON.stringify(vocabulary.categories.map((item) => ({ uuid: item.uuid, name: item.name })))}\nAllowed tags: ${JSON.stringify(vocabulary.tags.map((item) => ({ uuid: item.uuid, name: item.name })))}\nAllowed custom metadata definitions: ${JSON.stringify(definitions.items.map((item) => ({ key: item.key, label: item.label, type: item.type, options: item.options })))}\nExtracted document text:\n${extractedText}` }
         ]
       })
     });
@@ -52,7 +56,19 @@ export class TitleSuggestionService {
     const body = ProviderResponseSchema.parse(await response.json());
     const content = body.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/\s*```$/, '');
     const suggestion = DocumentTitleSuggestionSchema.parse(JSON.parse(content));
-    this.logger.info('Document title suggestion received', { documentUuid, confidence: suggestion.confidence });
-    return suggestion;
+    const allowedTypeUuids = new Set(vocabulary.documentTypes.map((item) => item.uuid));
+    const allowedCategoryUuids = new Set(vocabulary.categories.map((item) => item.uuid));
+    const allowedTagUuids = new Set(vocabulary.tags.map((item) => item.uuid));
+    const allowedDefinitions = new Map(definitions.items.map((item) => [item.key, item]));
+    const safeCustom = Object.fromEntries(Object.entries(suggestion.custom).filter(([key]) => allowedDefinitions.has(key)));
+    const safeSuggestion: DocumentTitleSuggestion = {
+      ...suggestion,
+      documentTypeUuid: suggestion.documentTypeUuid && allowedTypeUuids.has(suggestion.documentTypeUuid) ? suggestion.documentTypeUuid : null,
+      categoryUuid: suggestion.categoryUuid && allowedCategoryUuids.has(suggestion.categoryUuid) ? suggestion.categoryUuid : null,
+      tagUuids: suggestion.tagUuids.filter((uuid) => allowedTagUuids.has(uuid)),
+      custom: safeCustom
+    };
+    this.logger.info('Document metadata suggestion received', { documentUuid, confidence: safeSuggestion.confidence, hasType: Boolean(safeSuggestion.documentTypeUuid), hasCategory: Boolean(safeSuggestion.categoryUuid), tagCount: safeSuggestion.tagUuids.length, customFieldCount: Object.keys(safeSuggestion.custom).length });
+    return safeSuggestion;
   }
 }

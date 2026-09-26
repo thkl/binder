@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, HostListener, inject, OnI
 import { CommonModule } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
 import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
+import type { DocumentTitleSuggestion } from '@binder/common';
 
 type DocumentViewMode = 'list' | 'details' | 'small-icons' | 'large-icons';
 
@@ -18,7 +19,7 @@ export class DocumentsComponent implements OnInit {
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
   readonly viewMode = signal<DocumentViewMode>(this.readViewMode());
   readonly metadataDocumentUuid = signal<string | null>(null);
-  readonly titleSuggestions = signal<Record<string, { title: string; confidence: number }>>({});
+  readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
   readonly metadataDocument = computed(() => {
     const uuid = this.metadataDocumentUuid();
@@ -102,18 +103,26 @@ export class DocumentsComponent implements OnInit {
     const suggestion = await this.documents.suggestTitle(uuid);
     this.titleSuggestionLoading.update((current) => ({ ...current, [uuid]: false }));
     if (suggestion) {
-      this.titleSuggestions.update((current) => ({ ...current, [uuid]: { title: suggestion.suggestedTitle, confidence: suggestion.confidence } }));
+      this.titleSuggestions.update((current) => ({ ...current, [uuid]: suggestion }));
     }
   }
 
   async acceptTitleSuggestion(uuid: string): Promise<void> {
     const suggestion = this.titleSuggestions()[uuid];
-    if (!suggestion || !(await this.documents.updateTitle(uuid, suggestion.title))) return;
+    if (!suggestion || !(await this.documents.updateTitle(uuid, suggestion.suggestedTitle))) return;
     this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
   }
 
   dismissTitleSuggestion(uuid: string): void {
     this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
+  }
+
+  async acceptSuggestedMetadata(uuid: string): Promise<void> {
+    const suggestion = this.titleSuggestions()[uuid];
+    if (!suggestion) return;
+    if (await this.documents.updateTitle(uuid, suggestion.suggestedTitle)) {
+      this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
+    }
   }
   
   private readViewMode(): DocumentViewMode {
