@@ -18,6 +18,7 @@ import { MetadataService } from '../../metadata/service/metadata.service';
 import { SetDocumentMetadataInput } from '@binder/common';
 import { SetDocumentTitleInput } from '@binder/common';
 import { th } from 'zod/locales';
+import { SemanticSearchService } from './semantic-search.service';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -33,7 +34,8 @@ export class DocumentService {
     private readonly documents: DocumentStore,
     private readonly storage: DocumentStorageService,
     private readonly pipeline: PipelineService,
-    private readonly metadata: MetadataService
+    private readonly metadata: MetadataService,
+    private readonly semanticSearch: SemanticSearchService
   ) { }
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -88,7 +90,11 @@ export class DocumentService {
   }
 
   async search(ownerUuid: string, query: DocumentSearchQuery) {
-    const result = await this.documents.searchOwned(ownerUuid, query);
+    const [keywordResult, semanticResult] = await Promise.all([
+      this.documents.searchOwned(ownerUuid, query),
+      this.semanticSearch.search(ownerUuid, query.q, query.limit).catch(() => [])
+    ]);
+    const result = this.mergeSearchResults(keywordResult, semanticResult, query.limit);
     return DocumentSearchResponseSchema.parse({
       query: query.q,
       total: result.length,
@@ -96,9 +102,23 @@ export class DocumentService {
         document: this.toDocumentResponse(hit.document),
         pageNumber: hit.pageNumber,
         snippet: this.createSnippet(hit.text, query.q),
-        matchType: hit.pageNumber === null ? 'title' : 'text'
+        matchType: hit.matchType
       }))
     });
+  }
+
+  private mergeSearchResults(
+    keywordResult: Array<{ document: import('../models/document.entity').Document; pageNumber: number | null; text: string; score: number }>,
+    semanticResult: Array<{ document: import('../models/document.entity').Document; pageNumber: number; text: string; score: number }>,
+    limit: number
+  ) {
+    const merged = new Map<string, { document: import('../models/document.entity').Document; pageNumber: number | null; text: string; score: number; matchType: 'text' | 'title' | 'semantic' }>();
+    for (const hit of keywordResult) merged.set(hit.document.uuid, { ...hit, matchType: hit.pageNumber === null ? 'title' : 'text' });
+    for (const hit of semanticResult) {
+      const existing = merged.get(hit.document.uuid);
+      if (!existing || hit.score > existing.score) merged.set(hit.document.uuid, { ...hit, matchType: 'semantic' });
+    }
+    return [...merged.values()].sort((left, right) => right.score - left.score).slice(0, limit);
   }
 
   async get(ownerUuid: string, uuid: string) {

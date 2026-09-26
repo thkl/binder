@@ -9,13 +9,13 @@ derived/<document-uuid>/ocr.pdf
 derived/<document-uuid>/extracted.txt
 ```
 
-The authenticated API exposes a first exact-text search endpoint:
+The authenticated API exposes a hybrid search endpoint:
 
 ```text
 GET /api/v1/documents/search?q=car+inspection&limit=20
 ```
 
-Search is ownership-scoped and currently checks document titles, original filenames, and page text. Results contain the document, a page number when the match is in extracted text, a bounded snippet, and the match type.
+Search is ownership-scoped and checks document titles, original filenames, and page text. When hosted embeddings are enabled, the query is embedded with the configured provider and compared with stored document chunks using cosine similarity. Results contain the document, a page number, a bounded snippet, and the match type (`title`, `text`, or `semantic`). If embeddings are disabled or unavailable, keyword search continues to work.
 
 The client home page provides the primary search surface. The response contract is deliberately independent of the search implementation so semantic and hybrid ranking can be added behind the same UI later.
 
@@ -23,7 +23,7 @@ The client home page provides the primary search surface. The response contract 
 
 - Add PostgreSQL full-text indexes and ranked `tsvector` search for larger archives.
 - Add metadata and tag filters.
-- Add semantic/vector candidates and hybrid ranking.
+- Add PostgreSQL vector indexing with pgvector for larger archives; the initial implementation compares JSONB vectors in the API to avoid requiring a special database extension.
 - Include match explanations and page-level highlighting.
 
 Search must always scope candidates by the authenticated document owner before returning results.

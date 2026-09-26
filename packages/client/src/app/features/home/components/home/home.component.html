@@ -2,7 +2,7 @@
   <div class="home-hero">
     <p class="section-kicker">PRIVATE DOCUMENT VAULT</p>
     <h2>Find anything in your archive.</h2>
-    <p class="hero-copy">Search titles, filenames, and extracted document text. Ask naturally — semantic search will use this same search surface later.</p>
+    <p class="hero-copy">Search titles, filenames, and extracted document text. Ask naturally — semantic matches are included when embeddings are enabled.</p>
 
     <form class="search-form" role="search" (submit)="submitSearch($event)">
       <span class="search-icon" aria-hidden="true">⌕</span>
@@ -38,7 +38,7 @@
         <div class="result-list">
           @for (item of result.items; track item.document.uuid + '-' + item.pageNumber) {
             <article class="result-row">
-              <div class="result-mark" aria-hidden="true">{{ item.matchType === 'text' ? '¶' : 'T' }}</div>
+              <div class="result-mark" aria-hidden="true">{{ item.matchType === 'semantic' ? '✦' : item.matchType === 'text' ? '¶' : 'T' }}</div>
               <div class="result-copy">
                 <a [href]="'/api/v1/documents/' + item.document.uuid + '/file'" target="_blank" rel="noopener">{{ item.document.title || item.document.originalFilename }}</a>
                 <small>{{ item.document.originalFilename }}{{ item.pageNumber ? ' · Page ' + item.pageNumber : ' · Title match' }}</small>
@@ -54,7 +54,7 @@
     <section class="search-empty">
       <div class="empty-symbol" aria-hidden="true">✦</div>
       <h3>Search your document history</h3>
-      <p>Search is currently based on extracted text. Semantic and hybrid search will plug into this same experience next.</p>
+      <p>Results combine keyword matches with semantic matches when hosted embeddings are enabled.</p>
     </section>
   }
 </section>
