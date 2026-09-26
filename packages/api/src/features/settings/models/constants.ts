@@ -74,4 +74,13 @@ export const settingsMap: SettingsMapItem[] = [
     type: 'text',
     section: 'oidc',
   },
+   {
+    key: 'frontend.url',
+    valueFrom: 'frontendurl',
+    encrypted: false,
+    default: '',
+    label: 'URL of the Application',
+    type: 'text',
+    section: 'common',
+  },
 ]

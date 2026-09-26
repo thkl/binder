@@ -9,7 +9,7 @@
 } @else {
   <main class="workspace">
     <header class="topbar">
-      <div class="brand-lockup">
+      <div class="brand-lockup click" routerLink="/">
         <span class="brand-mark">B</span>
         <div>
           <div class="eyebrow">BINDER / PRIVATE CLOUD</div>
@@ -17,25 +17,10 @@
         </div>
       </div>
       <div class="topbar-actions">
+        <a class="nav-link" routerLink="/settings" routerLinkActive="active">Settings</a>
         <button class="secondary" type="button" (click)="logout()">Sign out</button>
       </div>
     </header>
-    <section class="welcome-row">
-      <div>
-        <p class="section-kicker">GOOD TO SEE YOU</p>
-        <h2>Everything important, <span>in one place.</span></h2>
-        <p class="muted">Your private document intelligence workspace is ready when you are.</p>
-      </div>
-      <button class="primary-action" type="button"><span>＋</span> Add document</button>
-    </section>
-    <section class="dashboard-grid">
-      <article class="dashboard-card vault-card">
-        <div class="card-heading"><span class="card-icon">▱</span><span>Document vault</span><span class="card-arrow">↗</span></div>
-        <strong>Ready for your first document</strong>
-        <p class="muted">Upload, organize and find documents with natural language.</p>
-        <div class="progress-line"><span></span></div>
-        <small>0 documents indexed</small>
-      </article>
-    </section>
+    <router-outlet />
   </main>
 }

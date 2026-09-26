@@ -121,7 +121,8 @@ export const ApplicationSettingsDataSchema = z.object({
   key: z.string().trim().min(1).max(255),
   value: z.string(),
   isEncrypted: z.boolean(),
-  description: z.string().max(500).optional()
+  // The database column is nullable, so API responses may contain null.
+  description: z.string().max(500).nullable().optional()
 });
 
 export type ApplicationSettingsData = z.infer<typeof ApplicationSettingsDataSchema>;

@@ -9,6 +9,8 @@
 .eyebrow, .section-kicker { color: var(--cyan); font-size: .67rem; font-weight: 800; letter-spacing: .18em; }
 h1 { margin: .3rem 0 0; font-size: 1rem; letter-spacing: -.02em; }
 .topbar-actions { gap: 1rem; }
+.nav-link { padding: .55rem .7rem; border-radius: .55rem; color: var(--muted); text-decoration: none; font-size: .83rem; font-weight: 700; }
+.nav-link:hover, .nav-link.active { color: var(--cyan); background: rgba(97,215,244,.08); }
 .secure-badge { color: #a8d9cd; font-size: .78rem; }
 .status-dot { display: inline-block; width: .45rem; height: .45rem; margin-right: .35rem; border-radius: 50%; background: #67e0ac; box-shadow: 0 0 .6rem #67e0ac; }
 .welcome-row { justify-content: space-between; gap: 2rem; margin-bottom: 2.5rem; }
@@ -33,4 +35,5 @@ h1 { margin: .3rem 0 0; font-size: 1rem; letter-spacing: -.02em; }
 .security-card strong { margin: 1.5rem 0; }
 .security-list { margin-top: .7rem; color: #b9c9dc; font-size: .88rem; }
 .security-list span { margin-right: .45rem; color: #67e0ac; }
+.click {cursor: pointer;}
 @media (max-width: 680px) { .workspace { padding: 1.25rem 1rem 3rem; } .topbar { margin-bottom: 3.5rem; } .secure-badge { display: none; } .welcome-row { align-items: flex-start; flex-direction: column; } .dashboard-grid { grid-template-columns: 1fr; } }
