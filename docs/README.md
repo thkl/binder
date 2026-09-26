@@ -16,6 +16,7 @@ This folder contains the living documentation for the lightweight document manag
 - [OCR architecture](./architecture/ocr.md) — OCRmyPDF/Tesseract worker design
 - [Document pipeline](./architecture/pipeline.md) — durable jobs, retries, events, and worker boundaries
 - [Controlled document metadata](./architecture/document-metadata.md) — system and personal classification vocabularies
+- [Container deployment](./architecture/containers.md) — API, client, worker, PostgreSQL, and shared storage
 - [Logging](./architecture/logging.md) — Winston logging, file rotation, and sensitive-data rules
 - [Security baseline](./security.md) — continuous security checks and secure-by-default rules
 

@@ -10,6 +10,62 @@ services:
       - "5432:5432"
     volumes:
       - binder-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U binder -d binder"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      API_PORT: 3000
+      CLIENT_PATH: /app/client
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: binder
+      DATABASE_USER: binder
+      DATABASE_PASSWORD: binder
+      DOCUMENT_STORAGE_ROOT: /data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - binder-document-storage:/data/storage
+      - binder-api-logs:/app/logs
+
+  worker:
+    build:
+      context: .
+      target: worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: binder
+      DATABASE_USER: binder
+      DATABASE_PASSWORD: binder
+      DOCUMENT_STORAGE_ROOT: /data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - binder-document-storage:/data/storage
+      - binder-worker-logs:/app/logs
 
 volumes:
   binder-postgres-data:
+  binder-document-storage:
+  binder-api-logs:
+  binder-worker-logs:
