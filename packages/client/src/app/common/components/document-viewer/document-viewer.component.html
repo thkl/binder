@@ -1,0 +1,9 @@
+<div class="document-viewer-backdrop" role="presentation" (click)="closed.emit()">
+  <aside class="document-viewer-panel" role="dialog" aria-modal="true" aria-labelledby="document-viewer-title" (click)="$event.stopPropagation()">
+    <header class="document-viewer-header">
+      <div><p class="section-kicker">DOCUMENT VIEW</p><h3 id="document-viewer-title">{{ title }}</h3></div>
+      <button type="button" class="viewer-close" (click)="closed.emit()" aria-label="Close document viewer">×</button>
+    </header>
+    <iframe class="document-viewer-frame" [src]="fileUrl" title="Document preview"></iframe>
+  </aside>
+</div>

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, HostListener, inject, OnI
 import { CommonModule } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
 import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
+import { DocumentViewerComponent } from '../../../../common/components/document-viewer/document-viewer.component';
 import type { DocumentTitleSuggestion } from '@binder/common';
 
 type DocumentViewMode = 'list' | 'details' | 'small-icons' | 'large-icons';
@@ -9,7 +10,7 @@ type DocumentViewMode = 'list' | 'details' | 'small-icons' | 'large-icons';
 @Component({
   selector: 'binder-documents',
   standalone: true,
-  imports: [CommonModule, DocumentMetadataEditorComponent],
+  imports: [CommonModule, DocumentMetadataEditorComponent, DocumentViewerComponent],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -21,8 +22,13 @@ export class DocumentsComponent implements OnInit {
   readonly metadataDocumentUuid = signal<string | null>(null);
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
+  readonly viewerDocumentUuid = signal<string | null>(null);
   readonly metadataDocument = computed(() => {
     const uuid = this.metadataDocumentUuid();
+    return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
+  });
+  readonly viewerDocument = computed(() => {
+    const uuid = this.viewerDocumentUuid();
     return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
   });
 
@@ -81,6 +87,7 @@ export class DocumentsComponent implements OnInit {
   }
 
   toggleMetadata(uuid: string): void {
+    this.viewerDocumentUuid.set(null);
     this.metadataDocumentUuid.update((current) => current === uuid ? null : uuid);
   }
 
@@ -88,9 +95,20 @@ export class DocumentsComponent implements OnInit {
     this.metadataDocumentUuid.set(null);
   }
 
+  openDocument(event: Event, uuid: string): void {
+    event.preventDefault();
+    this.metadataDocumentUuid.set(null);
+    this.viewerDocumentUuid.set(uuid);
+  }
+
+  closeDocumentViewer(): void {
+    this.viewerDocumentUuid.set(null);
+  }
+
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.closeMetadata();
+    this.closeDocumentViewer();
   }
 
   async renameDocument(uuid: string, event: Event): Promise<void> {
@@ -104,6 +122,8 @@ export class DocumentsComponent implements OnInit {
     this.titleSuggestionLoading.update((current) => ({ ...current, [uuid]: false }));
     if (suggestion) {
       this.titleSuggestions.update((current) => ({ ...current, [uuid]: suggestion }));
+      this.viewerDocumentUuid.set(null);
+      this.metadataDocumentUuid.set(uuid);
     }
   }
 
@@ -123,6 +143,12 @@ export class DocumentsComponent implements OnInit {
     if (await this.documents.updateTitle(uuid, suggestion.suggestedTitle)) {
       this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
     }
+  }
+
+  async acceptSuggestedField(uuid: string, field: string): Promise<void> {
+    if (field !== 'title') return;
+    const suggestion = this.titleSuggestions()[uuid];
+    if (suggestion) await this.documents.updateTitle(uuid, suggestion.suggestedTitle);
   }
   
   private readViewMode(): DocumentViewMode {

@@ -62,11 +62,11 @@
             <article class="result-row">
               <div class="result-mark" aria-hidden="true">{{ item.matchType === 'semantic' ? '✦' : item.matchType === 'text' ? '¶' : 'T' }}</div>
               <div class="result-copy">
-                <a [href]="'/api/v1/documents/' + item.document.uuid + '/file'" target="_blank" rel="noopener">{{ item.document.title || item.document.originalFilename }}</a>
+                <a href="" (click)="openDocument($event, item.document.uuid)">{{ item.document.title || item.document.originalFilename }}</a>
                 <small>{{ item.document.originalFilename }}{{ item.pageNumber ? ' · Page ' + item.pageNumber : ' · Title match' }}</small>
                 <p>{{ item.snippet || 'No text snippet available.' }}</p>
               </div>
-              <a class="open-result" [href]="'/api/v1/documents/' + item.document.uuid + '/file'" target="_blank" rel="noopener">Open ↗</a>
+              <a class="open-result" href="" (click)="openDocument($event, item.document.uuid)">Open ↗</a>
             </article>
           }
         </div>
@@ -80,3 +80,6 @@
     </section>
   }
 </section>
+@if (viewerDocumentUuid(); as viewerUuid) {
+  <binder-document-viewer [documentUuid]="viewerUuid" [title]="viewerDocumentTitle()" (closed)="closeDocumentViewer()" />
+}

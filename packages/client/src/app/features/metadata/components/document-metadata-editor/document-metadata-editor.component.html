@@ -13,6 +13,7 @@
   @if (suggestion; as pending) {
     <section class="ai-suggestion" aria-label="AI metadata suggestions">
       <div class="suggestion-heading"><div><span class="section-kicker">AI REVIEW</span><strong>Suggested metadata</strong></div><small>{{ (pending.confidence * 100) | number:'1.0-0' }}% confidence</small></div>
+      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('title')" (change)="acceptSuggestionField('title')"><span>Title: <strong>{{ pending.suggestedTitle }}</strong></span></label>
       <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('documentTypeUuid')" [disabled]="!pending.documentTypeUuid" (change)="acceptSuggestionField('documentTypeUuid')"><span>Type: {{ suggestedTypeName(pending.documentTypeUuid) }}</span></label>
       <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('categoryUuid')" [disabled]="!pending.categoryUuid" (change)="acceptSuggestionField('categoryUuid')"><span>Category: {{ suggestedCategoryName(pending.categoryUuid) }}</span></label>
       <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('tagUuids')" [disabled]="pending.tagUuids.length === 0" (change)="acceptSuggestionField('tagUuids')"><span>Tags: {{ pending.tagUuids.length }} suggested</span></label>

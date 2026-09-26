@@ -15,6 +15,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   @Input({ required: true }) documentUuid = '';
   @Input() suggestion: DocumentTitleSuggestion | null = null;
   @Output() suggestionAccepted = new EventEmitter<void>();
+  @Output() suggestionFieldAccepted = new EventEmitter<string>();
 
   readonly metadata = inject(MetadataService);
   readonly documentTypeUuid = signal('');
@@ -83,6 +84,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
     if (field === 'categoryUuid') this.categoryUuid.set(suggestion.categoryUuid ?? '');
     if (field === 'tagUuids') this.selectedTags.set(new Set(suggestion.tagUuids));
     if (field === 'custom') this.customValues.update((current) => ({ ...current, ...suggestion.custom }));
+    if (field === 'title') this.suggestionFieldAccepted.emit(field);
     this.saved.set(false);
   }
 

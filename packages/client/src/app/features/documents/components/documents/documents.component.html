@@ -52,7 +52,7 @@
         @if (!hasThumbnailFailed(document.uuid)) { <img class="thumbnail" [src]="thumbnailUrl(document.uuid)"
           [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
         <span class="file-icon">PDF</span> }
-        <div class="document-name"><div class="title-line"><input class="title-input" [value]="document.title || document.originalFilename" (change)="renameDocument(document.uuid, $event)" aria-label="Document title"><button class="suggest-title-button" type="button" (click)="suggestTitle(document.uuid)" [disabled]="titleSuggestionLoading()[document.uuid]">{{ titleSuggestionLoading()[document.uuid] ? '…' : '✦' }}</button></div>@if (titleSuggestions()[document.uuid]; as suggestion) { <div class="title-suggestion"><span>Suggested: <strong>{{ suggestion.suggestedTitle }}</strong></span><button type="button" (click)="toggleMetadata(document.uuid)">Review</button><button type="button" (click)="acceptSuggestedMetadata(document.uuid)">Accept title</button><button type="button" (click)="dismissTitleSuggestion(document.uuid)">Dismiss</button></div> }<small>{{ document.sizeBytes | number
+        <div class="document-name"><div class="title-line"><input class="title-input" [value]="document.title || document.originalFilename" (change)="renameDocument(document.uuid, $event)" aria-label="Document title"><button class="suggest-title-button" type="button" (click)="suggestTitle(document.uuid)" [disabled]="titleSuggestionLoading()[document.uuid]">{{ titleSuggestionLoading()[document.uuid] ? '…' : '✦' }}</button></div>@if (titleSuggestions()[document.uuid]; as suggestion) { <div class="title-suggestion"><span>Suggested: <strong>{{ suggestion.suggestedTitle }}</strong></span><button type="button" (click)="toggleMetadata(document.uuid)">Review</button><button type="button" (click)="dismissTitleSuggestion(document.uuid)">Dismiss</button></div> }<small>{{ document.sizeBytes | number
             }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
         <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
         <button class="metadata-button" type="button" (click)="toggleMetadata(document.uuid)" [attr.aria-expanded]="metadataDocumentUuid() === document.uuid">Metadata</button>
@@ -63,7 +63,7 @@
               d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z" />
           </svg></button>
         }
-        <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open
+        <a class="open-link" href="" (click)="openDocument($event, document.uuid)">Open
           ↗</a>
       </article>
       }
@@ -88,7 +88,7 @@
           </svg></button>
         }
         <span>{{ document.createdAt | date:'mediumDate' }}</span>
-        <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open
+        <a class="open-link" href="" (click)="openDocument($event, document.uuid)">Open
           ↗</a>
       </article>
       }
@@ -97,7 +97,7 @@
     @case ('small-icons') {
     <div class="icon-grid small-icons">
       @for (document of documents.page()?.items; track document.uuid) {
-      <a class="icon-card" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">
+      <a class="icon-card" href="" (click)="openDocument($event, document.uuid)">
         @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
           [alt]="''" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
         <strong>{{ document.title || document.originalFilename }}</strong><small>{{ document.status }}</small>
@@ -108,7 +108,7 @@
     @case ('large-icons') {
     <div class="icon-grid large-icons">
       @for (document of documents.page()?.items; track document.uuid) {
-      <a class="icon-card" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">
+      <a class="icon-card" href="" (click)="openDocument($event, document.uuid)">
         @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
           [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
         <span class="file-icon">PDF</span> }
@@ -137,11 +137,11 @@
           </div>
           <button type="button" class="property-close" (click)="closeMetadata()" aria-label="Close document properties">×</button>
         </header>
-        @if (titleSuggestions()[metadataUuid]; as suggestion) {
-          <div class="suggestion-summary"><strong>AI suggestions ready</strong><span>Review the proposed title and metadata below.</span><button type="button" (click)="acceptSuggestedMetadata(metadataUuid)">Accept title</button></div>
-        }
-        <binder-document-metadata-editor [documentUuid]="metadataUuid" [suggestion]="titleSuggestions()[metadataUuid] || null" (suggestionAccepted)="acceptSuggestedMetadata(metadataUuid)" />
+        <binder-document-metadata-editor [documentUuid]="metadataUuid" [suggestion]="titleSuggestions()[metadataUuid] || null" (suggestionFieldAccepted)="acceptSuggestedField(metadataUuid, $event)" (suggestionAccepted)="acceptSuggestedMetadata(metadataUuid)" />
       </aside>
     </div>
+  }
+  @if (viewerDocumentUuid(); as viewerUuid) {
+    <binder-document-viewer [documentUuid]="viewerUuid" [title]="viewerDocument()?.title || viewerDocument()?.originalFilename || 'Document'" (closed)="closeDocumentViewer()" />
   }
 </section>
