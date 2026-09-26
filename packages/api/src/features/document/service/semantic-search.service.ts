@@ -52,7 +52,7 @@ export class SemanticSearchService {
         text: embedding.content,
         score: 1 - Number((embedding as DocumentEmbedding & { cosineDistance?: number }).get('cosineDistance'))
       }))
-      .filter((hit) => hit.document && Number.isFinite(hit.score))
+      .filter((hit) => hit.document && Number.isFinite(hit.score) && hit.score >= 0.35)
       .sort((left, right) => right.score - left.score)
       .filter((hit, index, hits) => index === hits.findIndex((candidate) => candidate.document.uuid === hit.document.uuid))
       .slice(0, limit);

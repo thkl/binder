@@ -52,7 +52,8 @@ export class DocumentStore extends BaseCrudStore<Document> {
   }
 
   async searchOwned(ownerUuid: string, query: { q: string; limit: number }) {
-    const tokens = query.q.toLowerCase().split(/\s+/).filter(Boolean);
+    const tokens = this.searchTokens(query.q);
+    if (tokens.length === 0) return [];
     const pageRows = await DocumentPage.findAll({
       where: { [Op.or]: tokens.map((token) => ({ text: { [Op.iLike]: `%${token}%` } })) },
       include: [{ model: Document, required: true, where: { ownerUuid } }],
@@ -90,6 +91,15 @@ export class DocumentStore extends BaseCrudStore<Document> {
 
   private scoreText(text: string, tokens: string[]): number {
     const normalized = text.toLocaleLowerCase();
-    return tokens.reduce((score, token) => score + (normalized.includes(token) ? 1 : 0), 0);
+    const matches = tokens.reduce((score, token) => score + (normalized.includes(token) ? 1 : 0), 0);
+    return matches / tokens.length;
+  }
+
+  private searchTokens(query: string): string[] {
+    const stopWords = new Set([
+      'a', 'an', 'and', 'about', 'are', 'find', 'for', 'from', 'get', 'i', 'in', 'me', 'my', 'of', 'on', 'show', 'the', 'to', 'with',
+      'ein', 'eine', 'einen', 'einer', 'einem', 'eines', 'und', 'über', 'finde', 'für', 'mir', 'meine', 'von', 'der', 'die', 'das', 'den', 'dem', 'zu', 'mit'
+    ]);
+    return [...new Set(query.toLocaleLowerCase().split(/\s+/).map((token) => token.replace(/[^\p{L}\p{N}-]/gu, '')).filter((token) => token.length >= 3 && !stopWords.has(token)))];
   }
 }
