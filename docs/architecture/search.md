@@ -24,4 +24,6 @@ The client home page provides the primary search surface. The response contract 
 - Add expression indexes for additional embedding dimensions if other models are used.
 - Include match explanations and page-level highlighting.
 
+Document titles are searchable independently from original filenames. A future AI metadata step may suggest a cleaner title for filenames such as `01_2026_blabla.pdf`; the suggestion must be presented for manual confirmation before saving.
+
 Search must always scope candidates by the authenticated document owner before returning results.

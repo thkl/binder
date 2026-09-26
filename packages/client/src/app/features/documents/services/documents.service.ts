@@ -6,7 +6,9 @@ import {
   DocumentListQuerySchema,
   DocumentListResponse,
   DocumentListResponseSchema,
-  SetDocumentTitleInputSchema
+  SetDocumentTitleInputSchema,
+  DocumentTitleSuggestion,
+  DocumentTitleSuggestionSchema
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -76,6 +78,19 @@ export class DocumentsService {
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
       return false;
+    }
+  }
+
+  async suggestTitle(uuid: string): Promise<DocumentTitleSuggestion | null> {
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1', `documents/${uuid}/title/suggest`), {}, { withCredentials: true })
+      );
+      return DocumentTitleSuggestionSchema.parse(response.data);
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
     }
   }
 

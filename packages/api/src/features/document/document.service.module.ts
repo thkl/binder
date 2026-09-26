@@ -6,10 +6,11 @@ import { PipelineServiceModule } from '../pipeline/pipeline.service.module';
 import { MetadataServiceModule } from '../metadata/metadata.service.module';
 import { SharedModule } from '../../shared/shared.service.module';
 import { SemanticSearchService } from './service/semantic-search.service';
+import { TitleSuggestionService } from './service/title-suggestion.service';
 
 @Module({
   imports: [DocumentStoreModule, PipelineServiceModule, MetadataServiceModule, SharedModule],
-  providers: [DocumentService, DocumentStorageService, SemanticSearchService],
+  providers: [DocumentService, DocumentStorageService, SemanticSearchService, TitleSuggestionService],
   exports: [DocumentService]
 })
 export class DocumentServiceModule {}

@@ -56,7 +56,7 @@ Expected result: the TÜV report from 05/2025, with a matching text snippet and 
 - Vector search and hybrid ranking
 - Page-aware snippets
 - Tags and configurable document types
-- Suggested metadata with manual confirmation
+- Suggested title and metadata with manual confirmation
 - Retry and reprocess actions
 
 ### P2 — automation
@@ -92,6 +92,8 @@ Acceptance criteria:
 7. Semantic search can be enabled without changing the document storage model.
 8. The original PDF can be opened.
 9. Reprocessing is safe and does not create duplicate chunks or records.
+
+The original filename remains an immutable technical property. The editable document title is a separate human-readable property and may be suggested from the filename and extracted content, but suggestions require user confirmation.
 
 ## Product principles
 

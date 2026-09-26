@@ -32,6 +32,12 @@ export const SetDocumentTitleInputSchema = z.object({
 });
 export type SetDocumentTitleInput = z.infer<typeof SetDocumentTitleInputSchema>;
 
+export const DocumentTitleSuggestionSchema = z.object({
+  suggestedTitle: z.string().trim().min(1).max(255),
+  confidence: z.number().min(0).max(1)
+});
+export type DocumentTitleSuggestion = z.infer<typeof DocumentTitleSuggestionSchema>;
+
 export const CreateDocumentInputSchema = z.object({
   originalFilename: z.string().trim().min(1).max(255),
   mimeType: z.literal('application/pdf'),

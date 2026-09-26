@@ -67,6 +67,11 @@ export class DocumentController {
     return { data: await this.documents.updateTitle(user.userId, uuid, SetDocumentTitleInputSchema.parse(body)) };
   }
 
+  @Post(':uuid/title/suggest')
+  async suggestTitle(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.suggestTitle(user.userId, uuid) };
+  }
+
   @Get(':uuid/pipeline')
   async pipeline(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
     return { data: await this.documents.getPipeline(user.userId, uuid) };

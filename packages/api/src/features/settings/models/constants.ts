@@ -21,6 +21,10 @@ export const settingsSections: SettingsSection[] = [
     key: 'pipeline',
     label: 'Processing pipeline',
   },
+  {
+    key: 'ai',
+    label: 'AI assistance',
+  },
 ];
 
 export const settingsMap: SettingsMapItem[] = [
@@ -111,6 +115,26 @@ export const settingsMap: SettingsMapItem[] = [
   {
     key: 'embeddings.chunkOverlap', valueFrom: 'embeddings.chunkOverlap', encrypted: false, default: '200',
     label: 'Embedding chunk overlap (characters)', type: 'text', required: true, section: 'pipeline',
+  },
+  {
+    key: 'ai.titleSuggestions.enabled', valueFrom: 'ai.titleSuggestions.enabled', encrypted: false, default: false,
+    label: 'Enable AI title suggestions', type: 'checkbox', section: 'ai',
+  },
+  {
+    key: 'ai.provider', valueFrom: 'ai.provider', encrypted: false, default: 'openai-compatible',
+    label: 'AI provider', type: 'text', required: true, section: 'ai',
+  },
+  {
+    key: 'ai.endpoint', valueFrom: 'ai.endpoint', encrypted: false, default: 'https://api.openai.com/v1/chat/completions',
+    label: 'AI chat endpoint', type: 'text', required: true, section: 'ai',
+  },
+  {
+    key: 'ai.model', valueFrom: 'ai.model', encrypted: false, default: 'gpt-4o-mini',
+    label: 'AI model', type: 'text', required: true, section: 'ai',
+  },
+  {
+    key: 'ai.apiKey', valueFrom: 'ai.apiKey', encrypted: true, default: '',
+    label: 'AI API key', type: 'password', required: false, section: 'ai',
   },
     {
     key: 'oidc.ISSUER_URL',

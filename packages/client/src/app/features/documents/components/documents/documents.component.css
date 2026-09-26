@@ -321,3 +321,11 @@ h2 {
   border-bottom-color: currentColor;
   outline: none;
 }
+.title-line { display:flex; align-items:center; gap:.35rem; }
+.suggest-title-button { width:1.7rem; height:1.7rem; border:1px solid rgba(97,215,244,.22); border-radius:.4rem; color:var(--cyan); background:rgba(97,215,244,.06); cursor:pointer; }
+.suggest-title-button:disabled { cursor:wait; opacity:.55; }
+.title-suggestion { display:flex; align-items:center; flex-wrap:wrap; gap:.4rem; margin-top:.35rem; color:#9db2ca; font-size:.68rem; }
+.title-suggestion span { margin-right:.25rem; }
+.title-suggestion strong { color:#dff8ff; }
+.title-suggestion button { border:1px solid rgba(97,215,244,.22); border-radius:.35rem; padding:.25rem .4rem; color:#a9dfee; background:rgba(97,215,244,.06); cursor:pointer; font:inherit; font-size:.64rem; }
+.title-suggestion button:hover { border-color:var(--cyan); color:var(--cyan); }

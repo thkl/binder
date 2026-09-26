@@ -17,6 +17,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Document pipeline](./architecture/pipeline.md) — durable jobs, retries, events, and worker boundaries
 - [Controlled document metadata](./architecture/document-metadata.md) — system and personal classification vocabularies
 - [Document search](./architecture/search.md) — page text search, snippets, and the semantic-search extension point
+- [AI assistance](./architecture/ai-assistance.md) — user-confirmed hosted title suggestions
 - [Container deployment](./architecture/containers.md) — API, client, worker, PostgreSQL, and shared storage
 - [Configuration ownership](./architecture/configuration.md) — bootstrap environment versus database runtime settings
 - [Logging](./architecture/logging.md) — Winston logging, file rotation, and sensitive-data rules

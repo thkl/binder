@@ -18,6 +18,8 @@ export class DocumentsComponent implements OnInit {
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
   readonly viewMode = signal<DocumentViewMode>(this.readViewMode());
   readonly metadataDocumentUuid = signal<string | null>(null);
+  readonly titleSuggestions = signal<Record<string, { title: string; confidence: number }>>({});
+  readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
   readonly metadataDocument = computed(() => {
     const uuid = this.metadataDocumentUuid();
     return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
@@ -93,6 +95,25 @@ export class DocumentsComponent implements OnInit {
   async renameDocument(uuid: string, event: Event): Promise<void> {
     const title = (event.target as HTMLInputElement).value.trim();
     if (title) await this.documents.updateTitle(uuid, title);
+  }
+
+  async suggestTitle(uuid: string): Promise<void> {
+    this.titleSuggestionLoading.update((current) => ({ ...current, [uuid]: true }));
+    const suggestion = await this.documents.suggestTitle(uuid);
+    this.titleSuggestionLoading.update((current) => ({ ...current, [uuid]: false }));
+    if (suggestion) {
+      this.titleSuggestions.update((current) => ({ ...current, [uuid]: { title: suggestion.suggestedTitle, confidence: suggestion.confidence } }));
+    }
+  }
+
+  async acceptTitleSuggestion(uuid: string): Promise<void> {
+    const suggestion = this.titleSuggestions()[uuid];
+    if (!suggestion || !(await this.documents.updateTitle(uuid, suggestion.title))) return;
+    this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
+  }
+
+  dismissTitleSuggestion(uuid: string): void {
+    this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
   }
   
   private readViewMode(): DocumentViewMode {

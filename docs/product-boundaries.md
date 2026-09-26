@@ -15,6 +15,7 @@ This document defines the scope of the first release. It is intentionally narrow
 - Optional embeddings and semantic search
 - Document detail pages with original-file access
 - Manual metadata editing
+- Editable human-readable document titles separate from immutable original filenames
 - Retry and reprocessing
 
 ## Explicitly out of scope initially
@@ -36,6 +37,8 @@ This document defines the scope of the first release. It is intentionally narrow
 ### Original versus derived data
 
 Original files are immutable application inputs. OCR output, extracted text, previews, and embeddings are derived data and may be regenerated.
+
+The original filename is preserved as technical source metadata. The document title is an editable presentation field. Automated title suggestions are never applied without user confirmation.
 
 ### LLM responsibility
 

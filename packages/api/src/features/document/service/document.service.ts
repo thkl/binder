@@ -19,6 +19,7 @@ import { SetDocumentMetadataInput } from '@binder/common';
 import { SetDocumentTitleInput } from '@binder/common';
 import { th } from 'zod/locales';
 import { SemanticSearchService } from './semantic-search.service';
+import { TitleSuggestionService } from './title-suggestion.service';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -35,7 +36,8 @@ export class DocumentService {
     private readonly storage: DocumentStorageService,
     private readonly pipeline: PipelineService,
     private readonly metadata: MetadataService,
-    private readonly semanticSearch: SemanticSearchService
+    private readonly semanticSearch: SemanticSearchService,
+    private readonly titleSuggestions: TitleSuggestionService
   ) { }
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -141,6 +143,10 @@ export class DocumentService {
     if (!document) throw new NotFoundException('Document not found');
     const updated = await this.documents.update(uuid, { title: input.title });
     return this.toDocumentResponse(updated ?? document);
+  }
+
+  async suggestTitle(ownerUuid: string, uuid: string) {
+    return this.titleSuggestions.suggest(ownerUuid, uuid);
   }
 
   async getFile(ownerUuid: string, uuid: string) {
