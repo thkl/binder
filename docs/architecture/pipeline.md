@@ -26,12 +26,12 @@ The endpoint returns jobs and their safe event messages. It never returns docume
 
 ## Worker boundary
 
-The next pipeline step is a worker that claims queued jobs with PostgreSQL locking, executes one bounded processing operation, and records the result. The worker will depend on storage and pipeline contracts; it must not call HTTP controllers or own document authorization.
+The worker is `packages/worker`. It claims queued jobs with PostgreSQL locking, executes one bounded processing operation, and records the result. Run it with `pnpm --filter @binder/worker dev` during development or as a separate container in production. It depends on the shared database and storage volume; it does not call HTTP controllers or own document authorization.
 
 The first worker operations are:
 
-1. text extraction from text-based PDFs
-2. OCR for scanned PDFs
+1. text extraction from text-based PDFs (implemented with MuPDF)
+2. OCR for scanned PDFs (job is queued when no text layer is found; processor still needs an OCR engine)
 3. chunking and search indexing
 
 Every operation must be idempotent, retryable, observable, and safe to run again without changing the original file.

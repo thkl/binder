@@ -1,0 +1,23 @@
+{
+  "name": "@binder/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "dotenv run -f ../../.env -- node --watch dist/main.js",
+    "start": "dotenv run -f ../../.env -- node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "18.0.3",
+    "mupdf": "^1.28.1",
+    "sequelize": "^6.0.0",
+    "sequelize-typescript": "^2.1.0",
+    "winston": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^6.0.0"
+  }
+}
