@@ -74,6 +74,14 @@
                "required": [
                     "settings"
                ]
+          },
+          "12": {
+               "created": [
+                    "document_pages"
+               ],
+               "required": [
+                    "documents"
+               ]
           }
      }
 }

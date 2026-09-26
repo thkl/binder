@@ -7,6 +7,7 @@ import { DatabaseMigrationService } from './service/database-migration.service';
 import { User } from '../features/authentication/models/user.entity';
 import { ApplicationSetting } from '../features/settings/models/settings.model';
 import { Document } from '../features/document/models/document.entity';
+import { DocumentPage } from '../features/document/models/document-page.entity';
 import { PipelineJob } from '../features/pipeline/models/pipeline-job.entity';
 import { PipelineJobEvent } from '../features/pipeline/models/pipeline-job-event.entity';
 import { DocumentCategory, DocumentTag, DocumentTagAssignment, DocumentType } from '../features/metadata/models/vocabulary.entity';
@@ -60,7 +61,7 @@ import { DocumentMetadataValue, MetadataDefinition } from '../features/metadata/
       }
     }),
     SequelizeModule.forFeature([
-      User, ApplicationSetting, Document, PipelineJob, PipelineJobEvent,
+      User, ApplicationSetting, Document, DocumentPage, PipelineJob, PipelineJobEvent,
       DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment,
       MetadataDefinition, DocumentMetadataValue
     ]),

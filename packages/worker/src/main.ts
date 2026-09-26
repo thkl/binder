@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { Op, Transaction } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ApplicationSetting, Document, PipelineJob, PipelineJobEvent, JobKind } from './models.js';
+import { DocumentPage } from './document-page.model.js';
 import { createLogger, format, transports, Logger } from 'winston';
 
 interface ClaimedJob {
@@ -53,7 +54,7 @@ const sequelize = new Sequelize({
   logging: false,
   pool: { max: 4, min: 0, idle: 10_000 }
 });
-sequelize.addModels([ApplicationSetting, Document, PipelineJob, PipelineJobEvent]);
+sequelize.addModels([ApplicationSetting, Document, DocumentPage, PipelineJob, PipelineJobEvent]);
 
 let stopping = false;
 
@@ -202,9 +203,10 @@ async function processJob(job: ClaimedJob): Promise<void> {
   try {
     switch (job.kind) {
       case 'text-extraction': {
-        const text = await extractPdfText(job.storageKey);
-        await writeDerivedText(job.documentUuid, text);
-        await completeJob(job, text.trim().length === 0);
+        const extracted = await extractPdfPages(job.storageKey);
+        await writeDerivedText(job.documentUuid, extracted.text);
+        await persistDocumentPages(job.documentUuid, extracted.pages);
+        await completeJob(job, extracted.text.trim().length === 0);
         break;
       }
       case 'thumbnail':
@@ -214,9 +216,10 @@ async function processJob(job: ClaimedJob): Promise<void> {
       case 'ocr':
         {
           const ocrStorageKey = await runOcr(job.storageKey, job.documentUuid);
-          const text = await extractPdfText(ocrStorageKey);
-          if (!text.trim()) throw new Error('OCR completed but produced no searchable text');
-          await writeDerivedText(job.documentUuid, text);
+          const extracted = await extractPdfPages(ocrStorageKey);
+          if (!extracted.text.trim()) throw new Error('OCR completed but produced no searchable text');
+          await writeDerivedText(job.documentUuid, extracted.text);
+          await persistDocumentPages(job.documentUuid, extracted.pages);
           await completeJob(job, false);
           break;
         }
@@ -228,7 +231,7 @@ async function processJob(job: ClaimedJob): Promise<void> {
   }
 }
 
-async function extractPdfText(storageKey: string): Promise<string> {
+async function extractPdfPages(storageKey: string): Promise<{ pages: string[]; text: string }> {
   const mupdf = await import('mupdf');
   const pdf = await fs.readFile(resolveStoragePath(storageKey));
   const document = mupdf.Document.openDocument(pdf, 'application/pdf');
@@ -247,7 +250,7 @@ async function extractPdfText(storageKey: string): Promise<string> {
     document.destroy();
   }
 
-  return pages.join('\n\n').trim();
+  return { pages, text: pages.join('\n\n').trim() };
 }
 
 async function createThumbnail(storageKey: string, documentUuid: string): Promise<void> {
@@ -290,6 +293,25 @@ async function writeDerivedText(documentUuid: string, text: string): Promise<voi
   await fs.mkdir(dirname(target), { recursive: true, mode: 0o750 });
   await fs.writeFile(temporaryPath, text, { encoding: 'utf8', mode: 0o640 });
   await fs.rename(temporaryPath, target);
+}
+
+async function persistDocumentPages(documentUuid: string, pages: string[]): Promise<void> {
+  await sequelize.transaction(async (transaction) => {
+    await DocumentPage.destroy({ where: { documentUuid }, transaction });
+    if (pages.length > 0) {
+      await DocumentPage.bulkCreate(pages.map((text, index) => ({
+        uuid: randomUUID(),
+        documentUuid,
+        pageNumber: index + 1,
+        text
+      })), { transaction });
+    }
+  });
+  logger.info('Persisted extracted document pages', {
+    documentUuid,
+    pageCount: pages.length,
+    textLength: pages.join('').length
+  });
 }
 
 async function runOcr(storageKey: string, documentUuid: string): Promise<string> {
