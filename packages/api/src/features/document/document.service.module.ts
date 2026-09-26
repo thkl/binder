@@ -4,9 +4,10 @@ import { DocumentService } from './service/document.service';
 import { DocumentStorageService } from './service/document-storage.service';
 import { PipelineServiceModule } from '../pipeline/pipeline.service.module';
 import { MetadataServiceModule } from '../metadata/metadata.service.module';
+import { SharedModule } from '../../shared/shared.service.module';
 
 @Module({
-  imports: [DocumentStoreModule, PipelineServiceModule, MetadataServiceModule],
+  imports: [DocumentStoreModule, PipelineServiceModule, MetadataServiceModule, SharedModule],
   providers: [DocumentService, DocumentStorageService],
   exports: [DocumentService]
 })
