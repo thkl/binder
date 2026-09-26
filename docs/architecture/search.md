@@ -23,7 +23,7 @@ The client home page provides the primary search surface. The response contract 
 
 - Add PostgreSQL full-text indexes and ranked `tsvector` search for larger archives.
 - Add metadata and tag filters.
-- Add PostgreSQL vector indexing with pgvector for larger archives; the initial implementation compares JSONB vectors in the API to avoid requiring a special database extension.
+- Add expression indexes for additional embedding dimensions if other models are used.
 - Include match explanations and page-level highlighting.
 
 Search must always scope candidates by the authenticated document owner before returning results.

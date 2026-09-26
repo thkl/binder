@@ -62,6 +62,9 @@ export class DocumentEmbedding extends Model {
   @Column({ field: 'chunk_index', type: DataType.INTEGER }) declare chunkIndex: number;
   @Column({ type: DataType.TEXT }) declare content: string;
   @Column({ type: DataType.JSONB }) declare embedding: number[];
+  // Sequelize has no built-in pgvector type; this maps the existing database
+  // column as a string while PostgreSQL validates the native vector value.
+  @Column({ field: 'embedding_vector', type: DataType.STRING }) declare embeddingVector: string;
   @Column({ type: DataType.STRING(100) }) declare provider: string;
   @Column({ type: DataType.STRING(200) }) declare model: string;
   @Column({ type: DataType.INTEGER }) declare dimensions: number;

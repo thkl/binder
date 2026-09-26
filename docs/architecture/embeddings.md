@@ -4,7 +4,9 @@ Embeddings are an optional second stage of the document pipeline. OCR and text e
 
 The default is disabled. This is intentional: enabling it sends document text, which may contain personal or confidential information, to a third-party service. The API key is stored encrypted in the `settings` table and is decrypted only by the worker at startup.
 
-The worker currently stores vectors as JSONB in `document_embeddings`. This keeps the first hosted-provider implementation independent of a PostgreSQL extension. The rows contain the document, page, chunk, provider, model, dimensions, content, and vector. Semantic retrieval and an optional pgvector index are a later search milestone.
+The worker stores the original vectors as JSONB and also writes a native pgvector column. Semantic retrieval uses PostgreSQL cosine-distance ordering, with an HNSW index for the default 1536-dimensional model. Other dimensions remain queryable but do not use that index until a matching expression index is added.
+
+The database image must provide the `vector` extension. The bundled Docker Compose configuration uses `pgvector/pgvector:pg17`. For an externally managed PostgreSQL server, install pgvector before applying migration 15.
 
 Settings:
 

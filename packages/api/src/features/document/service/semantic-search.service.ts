@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { literal } from 'sequelize';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { DocumentEmbedding } from '../models/document-embedding.entity';
 import { Document } from '../models/document.entity';
@@ -32,33 +33,28 @@ export class SemanticSearchService {
     const vector = body.data?.[0]?.embedding;
     if (!vector?.length) throw new Error('Embedding provider returned an invalid query vector');
 
+    if (vector.some((value) => !Number.isFinite(value))) throw new Error('Embedding provider returned an invalid query vector');
+    const vectorLiteral = `[${vector.join(',')}]`;
+    const similarityExpression = `"embedding_vector"::vector(${vector.length}) <=> '${vectorLiteral}'::vector`;
     const embeddings = await DocumentEmbedding.findAll({
       include: [{ model: Document, required: true, where: { ownerUuid } }],
-      where: { dimensions: vector.length }
+      where: { dimensions: vector.length },
+      attributes: {
+        include: [[literal(similarityExpression), 'cosineDistance']]
+      },
+      order: [[literal(similarityExpression), 'ASC']],
+      limit: Math.min(250, Math.max(limit * 8, 25))
     });
     return embeddings
       .map((embedding) => ({
         document: (embedding as DocumentEmbedding & { document?: Document }).document!,
         pageNumber: embedding.pageNumber,
         text: embedding.content,
-        score: cosineSimilarity(vector, embedding.embedding)
+        score: 1 - Number((embedding as DocumentEmbedding & { cosineDistance?: number }).get('cosineDistance'))
       }))
       .filter((hit) => hit.document && Number.isFinite(hit.score))
       .sort((left, right) => right.score - left.score)
       .filter((hit, index, hits) => index === hits.findIndex((candidate) => candidate.document.uuid === hit.document.uuid))
       .slice(0, limit);
   }
-}
-
-function cosineSimilarity(left: number[], right: number[]): number {
-  if (left.length !== right.length) return 0;
-  let dot = 0;
-  let leftMagnitude = 0;
-  let rightMagnitude = 0;
-  for (let index = 0; index < left.length; index += 1) {
-    dot += left[index] * right[index];
-    leftMagnitude += left[index] ** 2;
-    rightMagnitude += right[index] ** 2;
-  }
-  return leftMagnitude && rightMagnitude ? dot / Math.sqrt(leftMagnitude * rightMagnitude) : 0;
 }

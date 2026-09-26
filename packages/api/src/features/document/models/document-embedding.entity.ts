@@ -26,6 +26,9 @@ export class DocumentEmbedding extends Model {
   @Column({ type: DataType.JSONB, allowNull: false })
   declare embedding: number[];
 
+  @Column({ field: 'embedding_vector', type: DataType.STRING, allowNull: false })
+  declare embeddingVector: string;
+
   @Column({ type: DataType.STRING(100), allowNull: false })
   declare provider: string;
 
