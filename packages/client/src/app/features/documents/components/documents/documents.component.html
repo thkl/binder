@@ -66,9 +66,6 @@
         <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open
           ↗</a>
       </article>
-      @if (metadataDocumentUuid() === document.uuid) {
-        <binder-document-metadata-editor [documentUuid]="document.uuid" />
-      }
       }
     </div>
     }
@@ -129,4 +126,19 @@
     }
     }
   </section>
+
+  @if (metadataDocumentUuid(); as metadataUuid) {
+    <div class="property-backdrop" role="presentation" (click)="closeMetadata()">
+      <aside class="property-panel" role="dialog" aria-modal="true" aria-labelledby="property-panel-title" (click)="$event.stopPropagation()">
+        <header class="property-header">
+          <div>
+            <p class="section-kicker">DOCUMENT PROPERTIES</p>
+            <h3 id="property-panel-title">{{ metadataDocument()?.title || metadataDocument()?.originalFilename || 'Metadata' }}</h3>
+          </div>
+          <button type="button" class="property-close" (click)="closeMetadata()" aria-label="Close document properties">×</button>
+        </header>
+        <binder-document-metadata-editor [documentUuid]="metadataUuid" />
+      </aside>
+    </div>
+  }
 </section>

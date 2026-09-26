@@ -27,6 +27,7 @@ h3 { margin:.3rem 0 0; color:#dceaff; font-size:1.05rem; letter-spacing:-.025em;
 .save-button { min-height:2.55rem; border:0; border-radius:.55rem; padding:.65rem .9rem; color:#061326; background:var(--cyan); cursor:pointer; font:inherit; font-size:.72rem; font-weight:800; }
 .save-button:hover:not(:disabled) { background:#8be7fa; }.save-button:disabled { cursor:wait; opacity:.55; }.saved { color:#75dfaa; font-size:.72rem; font-weight:700; }
 .editor-loading { padding:1rem 1.35rem; color:#a9bad0; font-size:.75rem; }
+.editor-error { margin:1rem 1.35rem; border:1px solid rgba(255,120,120,.25); border-radius:.6rem; padding:.8rem; color:#ffb0b0; background:rgba(255,120,120,.1); font-size:.75rem; line-height:1.5; }
 .spinner { display:inline-block; width:.75rem; height:.75rem; margin-right:.35rem; border:2px solid rgba(97,215,244,.25); border-top-color:var(--cyan); border-radius:50%; animation:spin .8s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 @media (max-width:720px) { :host { margin:0 .6rem .75rem; }.editor-fields { grid-template-columns:1fr; padding:1rem; }.tag-section,.custom-fields,.editor-footer,.editor-heading { padding-left:1rem; padding-right:1rem; }.editor-heading { align-items:flex-start; flex-direction:column; }.tag-create { max-width:none; } }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
 import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
@@ -18,6 +18,10 @@ export class DocumentsComponent implements OnInit {
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
   readonly viewMode = signal<DocumentViewMode>(this.readViewMode());
   readonly metadataDocumentUuid = signal<string | null>(null);
+  readonly metadataDocument = computed(() => {
+    const uuid = this.metadataDocumentUuid();
+    return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
+  });
 
   ngOnInit(): void {
     void this.documents.load();
@@ -75,6 +79,15 @@ export class DocumentsComponent implements OnInit {
 
   toggleMetadata(uuid: string): void {
     this.metadataDocumentUuid.update((current) => current === uuid ? null : uuid);
+  }
+
+  closeMetadata(): void {
+    this.metadataDocumentUuid.set(null);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeMetadata();
   }
 
   async renameDocument(uuid: string, event: Event): Promise<void> {

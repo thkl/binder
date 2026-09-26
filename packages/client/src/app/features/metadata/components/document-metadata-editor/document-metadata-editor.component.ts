@@ -31,9 +31,8 @@ export class DocumentMetadataEditorComponent implements OnChanges {
 
   async load(): Promise<void> {
     this.loaded.set(false);
-    const [vocabulary, , current] = await Promise.all([
-      this.metadata.vocabulary() ? Promise.resolve(this.metadata.vocabulary()) : this.metadata.loadVocabulary(),
-      this.metadata.definitions().length > 0 ? Promise.resolve(this.metadata.definitions()) : this.metadata.loadDefinitions(),
+    const [vocabulary, current] = await Promise.all([
+      this.metadata.loadVocabulary(),
       this.metadata.getDocumentMetadata(this.documentUuid)
     ]);
     if (vocabulary && current) this.applyMetadata(current);

@@ -89,6 +89,14 @@ h2 {
 .view-switcher button { width:1.8rem; height:1.7rem; border:0; border-radius:.35rem; color:#7188a5; background:transparent; cursor:pointer; line-height:1; }
 .view-switcher button:hover, .view-switcher button.active { color:var(--cyan); background:rgba(97,215,244,.12); }
 .metadata-button { min-height:2rem; border:1px solid rgba(97,215,244,.22); border-radius:.45rem; padding:.35rem .55rem; color:#a9dfee; background:rgba(97,215,244,.06); cursor:pointer; font:inherit; font-size:.68rem; font-weight:700; }.metadata-button:hover { border-color:var(--cyan); color:var(--cyan); }
+.property-backdrop { position:fixed; z-index:40; inset:0; display:flex; justify-content:flex-end; background:rgba(2,10,22,.54); backdrop-filter:blur(3px); }
+.property-panel { width:min(38rem,100vw); height:100%; overflow-y:auto; border-left:1px solid rgba(97,215,244,.22); background:linear-gradient(160deg,#102e50 0%,#07182d 72%); box-shadow:-1.5rem 0 4rem rgba(0,0,0,.28); animation:property-in .2s ease-out; }
+.property-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding:1.35rem 1.4rem .8rem; }
+.property-header h3 { max-width:29rem; margin:.35rem 0 0; overflow-wrap:anywhere; color:#e5f1ff; font-size:1.15rem; letter-spacing:-.03em; }
+.property-close { display:grid; place-items:center; width:2.5rem; height:2.5rem; flex:0 0 auto; border:1px solid rgba(157,190,232,.2); border-radius:.6rem; color:#b9c9dc; background:rgba(157,190,232,.06); cursor:pointer; font-size:1.5rem; line-height:1; }
+.property-close:hover { border-color:var(--cyan); color:var(--cyan); background:rgba(97,215,244,.1); }
+.property-panel binder-document-metadata-editor { display:block; margin-left:0; }
+@keyframes property-in { from { transform:translateX(1rem); opacity:.7; } to { transform:translateX(0); opacity:1; } }
 
 .list-header small {
     color: #7188a5;

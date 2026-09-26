@@ -1,5 +1,7 @@
 @if (!loaded()) {
   <div class="editor-loading"><span class="spinner"></span> Loading classification options…</div>
+} @else if (metadata.error(); as error) {
+  <div class="editor-error" role="alert">{{ error }}</div>
 } @else if (metadata.vocabulary(); as vocabulary) {
   <section class="metadata-editor" aria-labelledby="metadata-editor-title">
     <header class="editor-heading"><div><p class="section-kicker">DOCUMENT CLASSIFICATION</p><h3 id="metadata-editor-title">Metadata</h3></div><span class="helper">Controlled values only</span></header>
