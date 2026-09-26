@@ -93,20 +93,12 @@ export const settingsMap: SettingsMapItem[] = [
     label: 'Enable hosted semantic embeddings', type: 'checkbox', section: 'pipeline',
   },
   {
-    key: 'embeddings.provider', valueFrom: 'embeddings.provider', encrypted: false, default: 'openai-compatible',
-    label: 'Embedding provider', type: 'text', required: true, section: 'pipeline',
-  },
-  {
     key: 'embeddings.endpoint', valueFrom: 'embeddings.endpoint', encrypted: false,
     default: 'https://api.openai.com/v1/embeddings', label: 'Embedding endpoint', type: 'text', required: true, section: 'pipeline',
   },
   {
     key: 'embeddings.model', valueFrom: 'embeddings.model', encrypted: false, default: 'text-embedding-3-small',
     label: 'Embedding model', type: 'text', required: true, section: 'pipeline',
-  },
-  {
-    key: 'embeddings.apiKey', valueFrom: 'embeddings.apiKey', encrypted: true, default: '',
-    label: 'Embedding API key', type: 'password', required: false, section: 'pipeline',
   },
   {
     key: 'embeddings.chunkSize', valueFrom: 'embeddings.chunkSize', encrypted: false, default: '1200',
@@ -122,19 +114,19 @@ export const settingsMap: SettingsMapItem[] = [
   },
   {
     key: 'ai.provider', valueFrom: 'ai.provider', encrypted: false, default: 'openai-compatible',
-    label: 'AI provider', type: 'text', required: true, section: 'ai',
+    label: 'AI provider (shared)', type: 'text', required: true, section: 'ai',
   },
   {
     key: 'ai.endpoint', valueFrom: 'ai.endpoint', encrypted: false, default: 'https://api.openai.com/v1/chat/completions',
-    label: 'AI chat endpoint', type: 'text', required: true, section: 'ai',
+    label: 'Assistant endpoint', type: 'text', required: true, section: 'ai',
   },
   {
     key: 'ai.model', valueFrom: 'ai.model', encrypted: false, default: 'gpt-4o-mini',
-    label: 'AI model', type: 'text', required: true, section: 'ai',
+    label: 'Assistant model', type: 'text', required: true, section: 'ai',
   },
   {
     key: 'ai.apiKey', valueFrom: 'ai.apiKey', encrypted: true, default: '',
-    label: 'AI API key', type: 'password', required: false, section: 'ai',
+    label: 'AI API key (shared)', type: 'password', required: false, section: 'ai',
   },
     {
     key: 'oidc.ISSUER_URL',

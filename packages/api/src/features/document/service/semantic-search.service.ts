@@ -21,7 +21,7 @@ export class SemanticSearchService {
   async search(ownerUuid: string, query: string, limit: number): Promise<SemanticHit[]> {
     const enabled = (await this.settings.get('embeddings.enabled', 'false'))?.toLowerCase() === 'true';
     const apiKey = await this.settings.get('embeddings.apiKey', '');
-    const provider = await this.settings.get('embeddings.provider', 'openai-compatible');
+    const provider = await this.settings.get('ai.provider', 'openai-compatible');
     this.logger.debug('Semantic search configuration checked', {
       enabled,
       provider,

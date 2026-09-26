@@ -32,4 +32,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-The project is in the planning phase. The first implementation milestone is defined, but no application code or database schema has been created yet.
+The project is in the P1 phase. The first implementation milestone is defined, but no application code or database schema has been created yet.

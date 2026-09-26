@@ -67,6 +67,14 @@ Expected result: the TÜV report from 05/2025, with a matching text snippet and 
 - Email/scanner ingestion
 - Saved searches and bulk actions
 
+### P3 — provider management and advanced AI
+
+- Configure multiple named AI providers
+- Store provider-specific endpoints, models, and encrypted credentials
+- Select the provider independently for embeddings and AI assistant features
+- Test provider connectivity and model capabilities from the settings UI
+- Support different providers for privacy-sensitive and general-purpose workloads
+
 ### Later
 
 - Multi-user organizations and permissions

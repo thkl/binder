@@ -20,7 +20,8 @@ export const config: WorkerConfig = {
 
 export async function loadRuntimeConfiguration(): Promise<void> {
   const keys = ['documents.storageRoot', 'pipeline.ocrLanguages', 'pipeline.pollIntervalMs', 'pipeline.lockTimeoutMs', 'pipeline.reconcileIntervalMs',
-    'embeddings.enabled', 'embeddings.provider', 'embeddings.endpoint', 'embeddings.model', 'embeddings.apiKey', 'embeddings.chunkSize', 'embeddings.chunkOverlap'];
+    'embeddings.enabled', 'embeddings.endpoint', 'embeddings.model', 'embeddings.chunkSize', 'embeddings.chunkOverlap',
+    'ai.provider', 'ai.apiKey', 'embeddings.provider', 'embeddings.apiKey'];
   const settings = await ApplicationSetting.findAll({ where: { key: { [Op.in]: keys } } });
   const values = new Map(settings.map((setting) => [setting.key, setting]));
   const appRoot = process.env.APP_ROOT_PATH ?? process.cwd();
@@ -32,12 +33,12 @@ export async function loadRuntimeConfiguration(): Promise<void> {
   config.lockTimeoutMs = readSettingInteger(values, 'pipeline.lockTimeoutMs', config.lockTimeoutMs);
   config.reconcileIntervalMs = readSettingInteger(values, 'pipeline.reconcileIntervalMs', config.reconcileIntervalMs);
   config.embeddings.enabled = values.get('embeddings.enabled')?.value.toLowerCase() === 'true';
-  config.embeddings.provider = values.get('embeddings.provider')?.value || config.embeddings.provider;
+  config.embeddings.provider = values.get('ai.provider')?.value || values.get('embeddings.provider')?.value || config.embeddings.provider;
   config.embeddings.endpoint = values.get('embeddings.endpoint')?.value || config.embeddings.endpoint;
   config.embeddings.model = values.get('embeddings.model')?.value || config.embeddings.model;
   config.embeddings.chunkSize = readSettingInteger(values, 'embeddings.chunkSize', config.embeddings.chunkSize);
   config.embeddings.chunkOverlap = Math.min(readSettingInteger(values, 'embeddings.chunkOverlap', config.embeddings.chunkOverlap), config.embeddings.chunkSize - 1);
-  const key = values.get('embeddings.apiKey');
+  const key = values.get('ai.apiKey')?.value ? values.get('ai.apiKey') : values.get('embeddings.apiKey');
   config.embeddings.apiKey = key?.isEncrypted && key.valueIv ? decryptSecret(key.value, key.valueIv) : (key?.value ?? '');
   if (config.embeddings.enabled && !config.embeddings.apiKey) logger.warn('Embeddings enabled but no API key is configured');
 }

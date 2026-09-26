@@ -4,12 +4,16 @@ AI title suggestions are optional and explicitly user-triggered. The API sends t
 
 The client displays the proposed title with accept and dismiss actions. Accepting uses the normal ownership-checked title update endpoint; dismissing makes no database change.
 
-Configuration is stored in the database. The API key is encrypted with `ENCRYPTION_KEY`:
+Configuration is stored in the database. The provider and API key are shared by assistant and embedding workloads. Their endpoints and models remain separate. The API key is encrypted with `ENCRYPTION_KEY`:
 
 - `ai.titleSuggestions.enabled`
 - `ai.provider`
-- `ai.endpoint`
-- `ai.model`
-- `ai.apiKey`
+- `ai.endpoint` / `ai.model` for assistant requests
+- `ai.apiKey` for both assistant and embedding requests
+- `embeddings.endpoint` / `embeddings.model` for embedding requests
 
 The default is disabled. Logs include document UUID, model, and text length, but never document text, prompts, API keys, or generated vectors.
+
+## P3 provider profiles
+
+The current configuration uses one shared provider and API key for assistant and embedding requests. A planned P3 extension will replace this with a list of named provider profiles. Each profile will contain its own endpoint, encrypted credentials, and task-specific model settings. Embeddings and assistant requests will then select their provider independently.

@@ -111,6 +111,11 @@
                "required": [
                     "settings"
                ]
+          },
+          "18": {
+               "required": [
+                    "settings"
+               ]
           }
      }
 }
