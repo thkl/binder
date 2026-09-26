@@ -31,11 +31,11 @@ export class DocumentMetadataEditorComponent implements OnChanges {
 
   async load(): Promise<void> {
     this.loaded.set(false);
-    const [vocabulary, current] = await Promise.all([
+    const [, current] = await Promise.all([
       this.metadata.loadVocabulary(),
       this.metadata.getDocumentMetadata(this.documentUuid)
     ]);
-    if (vocabulary && current) this.applyMetadata(current);
+    if (current) this.applyMetadata(current);
     this.loaded.set(true);
   }
 
@@ -58,7 +58,8 @@ export class DocumentMetadataEditorComponent implements OnChanges {
       custom: this.customValues()
     });
     if (result) {
-      this.applyMetadata(result);
+      const persisted = await this.metadata.getDocumentMetadata(this.documentUuid);
+      this.applyMetadata(persisted ?? result);
       this.saved.set(true);
     }
   }
