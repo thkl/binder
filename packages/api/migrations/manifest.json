@@ -22,6 +22,20 @@
                "required": [
                     "users"
                ]
+          },
+          "5": {
+               "required": [
+                    "documents"
+               ]
+          },
+          "6": {
+               "created": [
+                    "pipeline_jobs",
+                    "pipeline_job_events"
+               ],
+               "required": [
+                    "documents"
+               ]
           }
      }
 }

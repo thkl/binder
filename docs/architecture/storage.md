@@ -30,6 +30,14 @@ Derived artifacts remain separate from the raw document tree:
 └── tmp/
 ```
 
+The first upload implementation creates a first-page PNG preview with the npm `mupdf` package. MuPDF runs through WebAssembly, so the API does not require Poppler, Ghostscript, Cairo, or another operating-system tool. The preview is written to:
+
+```text
+derived/<document-id>/thumbnail.png
+```
+
+Thumbnail generation is best-effort derived work. A rendering failure leaves the immutable original available and leaves the thumbnail reference empty so a later pipeline retry can regenerate it.
+
 ### Directory meanings
 
 - `documents/`: immutable raw uploaded/imported files. This is the directory a malware scanner can monitor.

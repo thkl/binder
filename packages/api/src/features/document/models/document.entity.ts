@@ -20,13 +20,15 @@ export interface DocumentAttributes {
   sizeBytes: number;
   checksumSha256: string;
   storageKey: string;
+  thumbnailKey: string | null;
   status: DocumentStatus;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status'> & {
+export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'thumbnailKey'> & {
   uuid?: string;
+  thumbnailKey?: string | null;
   status?: DocumentStatus;
 };
 
@@ -55,6 +57,10 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   @Column({ field: 'storage_key', type: DataType.STRING(500), allowNull: false })
   declare storageKey: string;
 
+  @AllowNull
+  @Column({ field: 'thumbnail_key', type: DataType.STRING(500), allowNull: true })
+  declare thumbnailKey: string | null;
+
   @Column({
     type: DataType.ENUM('uploaded', 'scanning', 'processing', 'ready', 'failed'),
     allowNull: false,
@@ -70,4 +76,3 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   @Column({ field: 'updated_at', type: DataType.DATE })
   declare readonly updatedAt: Date;
 }
-

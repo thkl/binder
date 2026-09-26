@@ -10,6 +10,8 @@ import { randomUUID } from 'node:crypto';
 import type { Express } from 'express';
 import { DocumentStore } from '../store/document.store';
 import { DocumentStorageService } from './document-storage.service';
+import { PipelineService } from '../../pipeline/service/pipeline.service';
+import { BinderLogger } from '../../../shared/service/logger.helper';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -19,9 +21,12 @@ export interface UploadedDocumentFile {
 
 @Injectable()
 export class DocumentService {
+  private readonly logger = new BinderLogger(DocumentService.name);
+
   constructor(
     private readonly documents: DocumentStore,
-    private readonly storage: DocumentStorageService
+    private readonly storage: DocumentStorageService,
+    private readonly pipeline: PipelineService
   ) {}
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -39,13 +44,26 @@ export class DocumentService {
         sizeBytes: stored.sizeBytes,
         checksumSha256: stored.checksumSha256
       });
+      let thumbnailKey: string | null = null;
+      try {
+        thumbnailKey = await this.storage.createThumbnail(stored.storageKey, uuid);
+      } catch {
+        // Thumbnail generation is derived work. Keep the original available
+        // when a PDF cannot be rendered and let the pipeline retry later.
+      }
       const document = await this.documents.create({
         uuid,
         ownerUuid,
         ...input,
         storageKey: stored.storageKey,
+        thumbnailKey,
         status: 'uploaded'
       });
+      try {
+        await this.pipeline.enqueue(document.uuid, ownerUuid);
+      } catch (error) {
+        this.logger.error(`Unable to enqueue document pipeline for ${document.uuid}`, error);
+      }
       return this.toDocumentResponse(document);
     } catch (error) {
       await this.storage.remove(stored.storageKey).catch(() => undefined);
@@ -77,6 +95,37 @@ export class DocumentService {
     return { document: this.toDocumentResponse(document), stream: this.storage.openReadStream(document.storageKey) };
   }
 
+  async getThumbnail(ownerUuid: string, uuid: string) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) {
+      throw new NotFoundException('Document thumbnail not found');
+    }
+
+    let thumbnailKey = document.thumbnailKey;
+    if (!thumbnailKey || !(await this.storage.exists(thumbnailKey))) {
+      try {
+        thumbnailKey = await this.storage.createThumbnail(document.storageKey, document.uuid);
+        await this.documents.update(document.uuid, { thumbnailKey });
+        document.thumbnailKey = thumbnailKey;
+      } catch {
+        throw new NotFoundException('Document thumbnail could not be generated');
+      }
+    }
+
+    return {
+      document: this.toDocumentResponse(document),
+      stream: this.storage.openReadStream(thumbnailKey)
+    };
+  }
+
+  async getPipeline(ownerUuid: string, uuid: string) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+    return this.pipeline.getForDocument(ownerUuid, uuid);
+  }
+
   private toDocumentResponse(document: import('../models/document.entity').Document): DocumentResponse {
     return {
       uuid: document.uuid,
@@ -86,6 +135,7 @@ export class DocumentService {
       sizeBytes: Number(document.sizeBytes),
       checksumSha256: document.checksumSha256,
       storageKey: document.storageKey,
+      thumbnailKey: document.thumbnailKey,
       status: document.status,
       createdAt: document.createdAt.toISOString(),
       updatedAt: document.updatedAt.toISOString()

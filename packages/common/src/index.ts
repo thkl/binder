@@ -18,6 +18,7 @@ export const DocumentSchema = z.object({
   sizeBytes: z.number().int().nonnegative(),
   checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
   storageKey: z.string().min(1),
+  thumbnailKey: z.string().min(1).nullable().optional(),
   status: DocumentStatusSchema,
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime()
@@ -56,6 +57,56 @@ export const DocumentListResponseSchema = z.object({
 });
 
 export type DocumentListResponse = z.infer<typeof DocumentListResponseSchema>;
+
+export const PipelineJobKindSchema = z.enum([
+  'thumbnail',
+  'text-extraction',
+  'ocr',
+  'embedding'
+]);
+export type PipelineJobKind = z.infer<typeof PipelineJobKindSchema>;
+
+export const PipelineJobStatusSchema = z.enum([
+  'queued',
+  'running',
+  'succeeded',
+  'failed',
+  'cancelled'
+]);
+export type PipelineJobStatus = z.infer<typeof PipelineJobStatusSchema>;
+
+export const PipelineJobSchema = z.object({
+  uuid: z.uuid(),
+  documentUuid: z.uuid(),
+  ownerUuid: z.uuid(),
+  kind: PipelineJobKindSchema,
+  status: PipelineJobStatusSchema,
+  attempts: z.number().int().nonnegative(),
+  maxAttempts: z.number().int().positive(),
+  availableAt: z.iso.datetime(),
+  lockedAt: z.iso.datetime().nullable().optional(),
+  startedAt: z.iso.datetime().nullable().optional(),
+  completedAt: z.iso.datetime().nullable().optional(),
+  lastError: z.string().max(2000).nullable().optional(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime()
+});
+export type PipelineJob = z.infer<typeof PipelineJobSchema>;
+
+export const PipelineJobEventSchema = z.object({
+  uuid: z.uuid(),
+  jobUuid: z.uuid(),
+  type: z.string().min(1).max(100),
+  message: z.string().max(2000).nullable().optional(),
+  createdAt: z.iso.datetime()
+});
+export type PipelineJobEvent = z.infer<typeof PipelineJobEventSchema>;
+
+export const DocumentPipelineResponseSchema = z.object({
+  jobs: z.array(PipelineJobSchema),
+  events: z.array(PipelineJobEventSchema)
+});
+export type DocumentPipelineResponse = z.infer<typeof DocumentPipelineResponseSchema>;
 
 export const PaginationMetaSchema = z.object({
   page: z.number().int().min(1),

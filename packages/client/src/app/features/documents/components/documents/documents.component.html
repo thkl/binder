@@ -18,7 +18,15 @@
   <section class="document-card glass-card">
     <header class="list-header">
       <span>All documents</span>
-      @if (documents.page(); as page) { <small>{{ page.total }} total</small> }
+      <div class="list-header-actions">
+        @if (documents.page(); as page) { <small>{{ page.total }} total</small> }
+        <div class="view-switcher" aria-label="Document view">
+          <button type="button" [class.active]="viewMode() === 'list'" (click)="setViewMode('list')" aria-label="List view" title="List view">☷</button>
+          <button type="button" [class.active]="viewMode() === 'details'" (click)="setViewMode('details')" aria-label="Details view" title="Details view">☰</button>
+          <button type="button" [class.active]="viewMode() === 'small-icons'" (click)="setViewMode('small-icons')" aria-label="Small icon view" title="Small icons">▦</button>
+          <button type="button" [class.active]="viewMode() === 'large-icons'" (click)="setViewMode('large-icons')" aria-label="Large icon view" title="Large icons">⊞</button>
+        </div>
+      </div>
     </header>
 
     @if (documents.loading()) {
@@ -26,16 +34,54 @@
     } @else if (documents.page()?.items?.length === 0) {
       <div class="empty-state"><span class="empty-icon">▱</span><h3>Your vault is ready</h3><p>Upload your first PDF to start building your document history.</p></div>
     } @else {
-      <div class="document-list">
-        @for (document of documents.page()?.items; track document.uuid) {
-          <article class="document-row">
-            <span class="file-icon">PDF</span>
-            <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
-            <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
-            <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open ↗</a>
-          </article>
+      @switch (viewMode()) {
+        @case ('list') {
+          <div class="document-list">
+            @for (document of documents.page()?.items; track document.uuid) {
+              <article class="document-row">
+                @if (!hasThumbnailFailed(document.uuid)) { <img class="thumbnail" [src]="thumbnailUrl(document.uuid)" [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
+                <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
+                <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
+                <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open ↗</a>
+              </article>
+            }
+          </div>
         }
-      </div>
+        @case ('details') {
+          <div class="details-list">
+            <div class="details-heading"><span>Name</span><span>Type</span><span>Size</span><span>Status</span><span>Added</span><span></span></div>
+            @for (document of documents.page()?.items; track document.uuid) {
+              <article class="details-row">
+                <div class="document-name"><strong>{{ document.originalFilename }}</strong><small>{{ document.checksumSha256 }}</small></div>
+                <span>PDF</span><span>{{ document.sizeBytes | number }} bytes</span>
+                <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
+                <span>{{ document.createdAt | date:'mediumDate' }}</span>
+                <a class="open-link" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">Open ↗</a>
+              </article>
+            }
+          </div>
+        }
+        @case ('small-icons') {
+          <div class="icon-grid small-icons">
+            @for (document of documents.page()?.items; track document.uuid) {
+              <a class="icon-card" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">
+                @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)" [alt]="''" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
+                <strong>{{ document.originalFilename }}</strong><small>{{ document.status }}</small>
+              </a>
+            }
+          </div>
+        }
+        @case ('large-icons') {
+          <div class="icon-grid large-icons">
+            @for (document of documents.page()?.items; track document.uuid) {
+              <a class="icon-card" [href]="'/api/v1/documents/' + document.uuid + '/file'" target="_blank" rel="noopener">
+                @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)" [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
+                <strong>{{ document.originalFilename }}</strong><small>{{ document.sizeBytes | number }} bytes · {{ document.status }}</small>
+              </a>
+            }
+          </div>
+        }
+      }
       @if (documents.page(); as page) {
         <footer class="pagination"><button type="button" (click)="previousPage()" [disabled]="!page.hasPrev">← Previous</button><span>Page {{ page.page }} of {{ page.totalPages || 1 }}</span><button type="button" (click)="nextPage()" [disabled]="!page.hasNext">Next →</button></footer>
       }

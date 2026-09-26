@@ -18,10 +18,13 @@ import type { Response } from 'express';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
 import { DocumentService, UploadedDocumentFile } from '../service/document.service';
+import { BinderLogger } from '../../../shared/service/logger.helper';
 
 @Controller('documents')
 @UseGuards(AuthenticationGuard)
 export class DocumentController {
+  private readonly logger = new BinderLogger(DocumentController.name);
+
   constructor(private readonly documents: DocumentService) {}
 
   @Post()
@@ -30,7 +33,9 @@ export class DocumentController {
     @UploadedFile() file: UploadedDocumentFile | undefined,
     @CurrentUser() user: ScopedUser
   ) {
+    this.logger.debug("Uploading File ....");
     if (!file) {
+      this.logger.error("No file sumbitted");
       throw new BadRequestException('A PDF file is required');
     }
     return { data: await this.documents.upload(user.userId, file) };
@@ -38,20 +43,35 @@ export class DocumentController {
 
   @Get()
   async list(@Query() query: Record<string, unknown>, @CurrentUser() user: ScopedUser) {
+    this.logger.debug(`List files ${JSON.stringify(query)}`);
     const input = DocumentListQuerySchema.parse(query);
     return { data: await this.documents.list(user.userId, input) };
   }
 
   @Get(':uuid/file')
   async file(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser, @Res({ passthrough: true }) response: Response) {
+    this.logger.debug(`Get File ${uuid}`);
     const result = await this.documents.getFile(user.userId, uuid);
     response.setHeader('Cache-Control', 'private, no-store');
     response.setHeader('Content-Disposition', `inline; filename="${this.safeFilename(result.document.originalFilename)}"`);
     return new StreamableFile(result.stream, { type: result.document.mimeType });
   }
 
+  @Get(':uuid/pipeline')
+  async pipeline(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.getPipeline(user.userId, uuid) };
+  }
+
+  @Get(':uuid/thumbnail')
+  async thumbnail(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    this.logger.debug(`Get thumbnail ${uuid}`);
+    const result = await this.documents.getThumbnail(user.userId, uuid);
+    return new StreamableFile(result.stream, { type: 'image/png' });
+  }
+
   @Get(':uuid')
   async get(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    this.logger.debug(`Get document ${uuid}`);
     return { data: await this.documents.get(user.userId, uuid) };
   }
 

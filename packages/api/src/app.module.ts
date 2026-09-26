@@ -10,6 +10,7 @@ import { AuthenticationModule } from './features/authentication/authentication.m
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SettingsModule } from './features/settings/settings.module';
 import { DocumentModule } from './features/document/document.module';
+import { PipelineModule } from './features/pipeline/pipeline.module';
 
 @Module({
   controllers: [HealthController],
@@ -21,6 +22,7 @@ import { DocumentModule } from './features/document/document.module';
     AuthenticationModule,
     SettingsModule,
     DocumentModule,
+    PipelineModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

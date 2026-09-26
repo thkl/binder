@@ -10,6 +10,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { User } from '../../features/authentication/models/user.entity';
 import { ApplicationSetting } from '../../features/settings/models/settings.model';
 import { Document } from '../../features/document/models/document.entity';
+import { PipelineJob } from '../../features/pipeline/models/pipeline-job.entity';
+import { PipelineJobEvent } from '../../features/pipeline/models/pipeline-job-event.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -37,7 +39,7 @@ export class DatabaseConnectionService {
             return;
         }
 
-        this.registerModels([User, ApplicationSetting, Document]);
+        this.registerModels([User, ApplicationSetting, Document, PipelineJob, PipelineJobEvent]);
         await this.initialize();
     }
 

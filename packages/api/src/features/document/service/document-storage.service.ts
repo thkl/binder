@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import { createReadStream, ReadStream } from 'node:fs';
-import { dirname, extname, isAbsolute, join, normalize, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 
 export interface StoredDocumentFile {
@@ -50,8 +50,56 @@ export class DocumentStorageService {
     return { storageKey, absolutePath, checksumSha256, sizeBytes: buffer.length };
   }
 
+  async createThumbnail(storageKey: string, uuid: string): Promise<string> {
+    const pdfBuffer = await fs.readFile(this.resolveStoragePath(storageKey));
+    const thumbnailKey = `derived/${uuid}/thumbnail.png`;
+    const thumbnailPath = this.resolveStoragePath(thumbnailKey);
+    const temporaryPath = `${thumbnailPath}.${randomUUID()}.tmp`;
+    const mupdf = await import('mupdf');
+    const document = mupdf.Document.openDocument(pdfBuffer, 'application/pdf');
+
+    try {
+      if (document.countPages() < 1) {
+        throw new Error('PDF contains no pages');
+      }
+
+      const page = document.loadPage(0);
+      try {
+        const bounds = page.getBounds();
+        const pageWidth = Math.max(1, bounds[2] - bounds[0]);
+        const scale = 480 / pageWidth;
+        const pixmap = page.toPixmap(
+          mupdf.Matrix.scale(scale, scale),
+          mupdf.ColorSpace.DeviceRGB
+        );
+        try {
+          await fs.mkdir(dirname(thumbnailPath), { recursive: true, mode: 0o750 });
+          await fs.writeFile(temporaryPath, pixmap.asPNG(), { mode: 0o640 });
+          await fs.rename(temporaryPath, thumbnailPath);
+        } finally {
+          pixmap.destroy();
+        }
+      } finally {
+        page.destroy();
+      }
+    } finally {
+      document.destroy();
+    }
+
+    return thumbnailKey;
+  }
+
   async remove(storageKey: string): Promise<void> {
     await fs.rm(this.resolveStoragePath(storageKey), { force: true });
+  }
+
+  async exists(storageKey: string): Promise<boolean> {
+    try {
+      await fs.access(this.resolveStoragePath(storageKey));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   openReadStream(storageKey: string): ReadStream {
@@ -73,4 +121,3 @@ export class DocumentStorageService {
     return absolutePath;
   }
 }
-
