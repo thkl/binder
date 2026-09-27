@@ -47,15 +47,15 @@
   }
 
   @if (search.loading()) {
-    <section class="search-state"><span class="spinner"></span><p>Searching your archive…</p></section>
+    <section class="search-state"><span class="spinner"></span><p>{{ 'home.searching' | t }}</p></section>
   } @else if (search.result(); as result) {
     <section class="results-card" aria-live="polite">
       <header class="results-header">
-        <div><p class="section-kicker">SEARCH RESULTS</p><h3>{{ result.total }} {{ result.total === 1 ? 'document' : 'documents' }} found</h3></div>
+        <div><p class="section-kicker">{{ 'home.results' | t }}</p><h3>{{ result.total }} {{ result.total === 1 ? ('home.document' | t) : ('home.documents' | t) }} {{ 'home.found' | t }}</h3></div>
         <span class="query-badge">“{{ result.query }}”</span>
       </header>
       @if (result.items.length === 0) {
-        <div class="search-state"><span class="empty-symbol" aria-hidden="true">⌕</span><h4>No matching documents</h4><p>Try fewer words or search for a distinctive phrase.</p></div>
+        <div class="search-state"><span class="empty-symbol" aria-hidden="true">⌕</span><h4>{{ 'home.noMatches' | t }}</h4><p>{{ 'home.tryFewer' | t }}</p></div>
       } @else {
         <div class="result-list">
           @for (item of result.items; track item.document.uuid + '-' + item.pageNumber) {
@@ -75,7 +75,7 @@
   } @else {
     <section class="search-empty">
       <div class="empty-symbol" aria-hidden="true">✦</div>
-      <h3>Search your document history</h3>
+      <h3>{{ 'home.history' | t }}</h3>
       <p>Results combine keyword matches with semantic matches when hosted embeddings are enabled.</p>
     </section>
   }

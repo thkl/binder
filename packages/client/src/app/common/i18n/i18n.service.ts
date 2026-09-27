@@ -4,32 +4,32 @@ import type { AppLanguage, LocalizedText, VocabularyItem } from '@binder/common'
 type TranslationMap = Record<string, string>;
 
 const EN: TranslationMap = {
-  'app.loading': 'Securing your workspace…', 'app.privateCloud': 'BINDER / PRIVATE CLOUD', 'app.vault': 'Your document vault',
+  'app.loading': 'Loading your workspace…', 'app.privateCloud': 'BINDER / DOCUMENTS', 'app.vault': 'Document workspace',
   'nav.documents': 'Documents', 'nav.metadata': 'Metadata', 'nav.settings': 'Settings', 'nav.signOut': 'Sign out',
   'language.english': 'English', 'language.german': 'German',
-  'login.privateIntelligence': 'PRIVATE DOCUMENT INTELLIGENCE', 'login.headline': 'Your documents.\nUnder control.',
-  'login.copy': 'A calm, secure home for the documents that matter. Search naturally, keep ownership clear, and stay ready for what comes next.',
-  'login.privacy': 'Built for privacy', 'login.privacyCopy': 'Your files stay in your controlled storage.', 'login.secureAccess': 'SECURE ACCESS',
-  'login.welcome': 'Welcome back', 'login.copyShort': 'Sign in to open your document vault.', 'login.username': 'Username', 'login.password': 'Password',
+  'login.privateIntelligence': 'DOCUMENT MANAGEMENT', 'login.headline': 'Your documents.\nOrganized.',
+  'login.copy': 'Store, organize, and search your documents in one place. Files remain in your configured storage.',
+  'login.privacy': 'Local storage', 'login.privacyCopy': 'Your files remain in the storage you configure.', 'login.secureAccess': 'SIGN IN',
+  'login.welcome': 'Welcome back', 'login.copyShort': 'Sign in to open your document workspace.', 'login.username': 'Username', 'login.password': 'Password',
   'login.signingIn': 'Signing in…', 'login.signIn': 'Sign in', 'login.or': 'or', 'login.sso': 'Continue with SSO',
   'password.security': 'SECURITY', 'password.changeTitle': 'Change your password', 'password.changeMessage': 'Choose a new password for your account.', 'password.firstTitle': 'Choose a new password', 'password.firstMessage': 'Your temporary password must be changed before continuing.', 'password.old': 'Old password', 'password.new': 'New password', 'password.confirm': 'Confirm new password',
   'password.saving': 'Saving…', 'password.save': 'Save password', 'password.mismatch': 'The new password and confirmation do not match.',
-  'documents.kicker': 'PRIVATE DOCUMENT VAULT', 'documents.title': 'Documents', 'documents.copy': 'Your originals stay in your controlled storage, ready for the processing pipeline.',
+  'documents.kicker': 'DOCUMENTS', 'documents.title': 'Documents', 'documents.copy': 'Manage uploaded files and their processing status.',
   'documents.add': 'Add PDF', 'documents.uploading': 'Uploading…', 'documents.all': 'All documents', 'documents.list': 'List view',
   'documents.details': 'Details view', 'documents.smallIcons': 'Small icons', 'documents.largeIcons': 'Large icons', 'documents.loading': 'Loading documents…',
-  'documents.ready': 'Your vault is ready', 'documents.empty': 'Upload your first PDF to start building your document history.', 'documents.metadata': 'Metadata',
+  'documents.ready': 'No documents yet', 'documents.empty': 'Upload a PDF to get started.', 'documents.metadata': 'Metadata',
   'documents.open': 'Open', 'documents.previous': 'Previous', 'documents.next': 'Next', 'documents.suggestion': 'Suggested:', 'documents.review': 'Review', 'documents.dismiss': 'Dismiss',
-  'home.kicker': 'PRIVATE DOCUMENT VAULT', 'home.title': 'Find anything in your archive.', 'home.copy': 'Search titles, filenames, and extracted document text. Ask naturally — semantic matches are included when embeddings are enabled.',
+  'home.kicker': 'DOCUMENT SEARCH', 'home.title': 'Search your documents.', 'home.copy': 'Search titles, filenames, and extracted text. Semantic matches are included when enabled.',
   'home.placeholder': 'Find the document about my car inspection last summer', 'home.search': 'Search', 'home.searching': 'Searching…', 'home.type': 'Type', 'home.category': 'Category', 'home.tag': 'Tag',
-  'home.anyType': 'Any type', 'home.anyCategory': 'Any category', 'home.anyTag': 'Any tag', 'home.hint': 'Try a title, filename, or a phrase from the document.',
-  'home.results': 'SEARCH RESULTS', 'home.document': 'document', 'home.documents': 'documents', 'home.found': 'found', 'home.noMatches': 'No matching documents', 'home.tryFewer': 'Try fewer words or search for a distinctive phrase.',
+  'home.anyType': 'Any type', 'home.anyCategory': 'Any category', 'home.anyTag': 'Any tag', 'home.hint': 'Search by title, filename, or text from a document.',
+  'home.results': 'SEARCH RESULTS', 'home.document': 'document', 'home.documents': 'documents', 'home.found': 'found', 'home.noMatches': 'No matching documents', 'home.tryFewer': 'Try fewer words or a more specific phrase.',
   'home.titleMatch': 'Title match', 'home.noSnippet': 'No text snippet available.', 'home.history': 'Search your document history', 'home.semantic': 'Results combine keyword matches with semantic matches when hosted embeddings are enabled.',
-  'metadata.kicker': 'CLASSIFICATION / CONTROLLED VOCABULARY', 'metadata.title': 'Metadata library', 'metadata.copy': 'Keep classification consistent so search and future AI suggestions stay precise.',
+  'metadata.kicker': 'METADATA', 'metadata.title': 'Metadata library', 'metadata.copy': 'Manage document types, categories, tags, and custom fields.',
   'metadata.add': 'Add', 'metadata.vocabulary': 'VOCABULARY', 'metadata.types': 'Document types', 'metadata.categories': 'Categories', 'metadata.tags': 'Tags',
-  'metadata.workspaceNote': 'System entries are shared across your workspace.', 'metadata.available': 'AVAILABLE VALUES', 'metadata.entries': 'entries', 'metadata.create': 'Create a controlled value',
-  'metadata.createCopy': 'It will be available for document classification immediately.', 'metadata.name': 'Name', 'metadata.description': 'Description', 'metadata.optional': 'Optional',
+  'metadata.workspaceNote': 'System entries are shared across the workspace.', 'metadata.available': 'VALUES', 'metadata.entries': 'entries', 'metadata.create': 'Create a value',
+  'metadata.createCopy': 'The value can be used for document classification.', 'metadata.name': 'Name', 'metadata.description': 'Description', 'metadata.optional': 'Optional',
   'metadata.workspaceValue': 'Workspace-wide value', 'metadata.workspaceValueCopy': 'Make this available to every user.', 'metadata.cancel': 'Cancel', 'metadata.creating': 'Creating…', 'metadata.createValue': 'Create value',
-  'metadata.loading': 'Loading vocabulary…', 'metadata.noValues': 'No values yet', 'metadata.createFirst': 'Create your first controlled value to make classification more precise.', 'metadata.createOne': 'Create one',
+  'metadata.loading': 'Loading values…', 'metadata.noValues': 'No values yet', 'metadata.createFirst': 'Add a value to use it when classifying documents.', 'metadata.createOne': 'Add a value',
   'metadata.workspace': 'Workspace', 'metadata.personal': 'Personal', 'metadata.noDescription': 'No description added', 'metadata.flexible': 'FLEXIBLE FIELDS', 'metadata.custom': 'Custom metadata',
   'metadata.customCopy': 'Add fields such as project, issue date, or due date. They will appear in every document’s metadata editor.', 'metadata.key': 'Key', 'metadata.label': 'Label', 'metadata.fieldType': 'Type',
   'metadata.required': 'Required on documents', 'metadata.adding': 'Adding…', 'metadata.addField': 'Add field', 'metadata.date': 'Date', 'metadata.dateTime': 'Date and time', 'metadata.yesNo': 'Yes / no', 'metadata.select': 'Select', 'metadata.multiSelect': 'Multiple select',
@@ -55,6 +55,71 @@ const DE: TranslationMap = {
   'editor.loading': 'Klassifizierungsoptionen werden geladen…', 'editor.kicker': 'DOKUMENTKLASSIFIZIERUNG', 'editor.title': 'Metadaten', 'editor.aiReview': 'KI-PRÜFUNG', 'editor.suggested': 'Vorgeschlagene Metadaten', 'editor.titleField': 'Titel', 'editor.type': 'Typ', 'editor.category': 'Kategorie', 'editor.tags': 'Tags', 'editor.customFields': 'Benutzerdefinierte Felder', 'editor.acceptAll': 'Alle Vorschläge übernehmen', 'editor.notClassified': 'Nicht klassifiziert', 'editor.noCategory': 'Keine Kategorie', 'editor.selected': 'ausgewählt', 'editor.searchTags': 'Bekannte Tags suchen…', 'editor.noTags': 'Keine passenden Tags.', 'editor.newTag': 'Neuen persönlichen Tag hinzufügen…', 'editor.addTag': 'Tag hinzufügen', 'editor.additional': 'Zusätzliche Informationen', 'editor.choose': 'Auswählen…', 'editor.comma': 'Kommagetrennte Werte', 'editor.saved': 'Gespeichert', 'editor.saving': 'Wird gespeichert…', 'editor.save': 'Metadaten speichern', 'viewer.kicker': 'DOKUMENTANSICHT', 'viewer.close': 'Dokumentansicht schließen', 'viewer.preview': 'Dokumentvorschau'
 };
 
+const CALMER_COPY: Record<string, TranslationMap> = {
+  en: {
+    'app.loading': 'Loading your workspace…',
+    'app.privateCloud': 'BINDER / DOCUMENTS',
+    'app.vault': 'Document workspace',
+    'settings.kicker': 'CONFIGURATION',
+    'settings.copy': 'Manage the configuration for this workspace.',
+    'login.privateIntelligence': 'DOCUMENT MANAGEMENT',
+    'login.headline': 'Your documents.\nOrganized.',
+    'login.copy': 'Store, organize, and search your documents in one place. Files remain in your configured storage.',
+    'login.privacy': 'Local storage',
+    'login.privacyCopy': 'Your files remain in the storage you configure.',
+    'login.secureAccess': 'SIGN IN',
+    'documents.kicker': 'DOCUMENTS',
+    'documents.copy': 'Manage uploaded files and their processing status.',
+    'documents.ready': 'No documents yet',
+    'documents.empty': 'Upload a PDF to get started.',
+    'home.kicker': 'DOCUMENT SEARCH',
+    'home.title': 'Search your documents.',
+    'home.copy': 'Search titles, filenames, and extracted text. Semantic matches are included when enabled.',
+    'home.hint': 'Search by title, filename, or text from a document.',
+    'metadata.kicker': 'METADATA',
+    'metadata.copy': 'Manage document types, categories, tags, and custom fields.',
+    'metadata.workspaceNote': 'System entries are shared across the workspace.',
+    'metadata.available': 'VALUES',
+    'metadata.create': 'Create a value',
+    'metadata.createCopy': 'The value can be used for document classification.',
+    'metadata.customCopy': 'Add fields such as project, issue date, or due date. They appear in each document’s metadata editor.',
+    'metadata.loading': 'Loading values…',
+    'metadata.createFirst': 'Add a value to use it when classifying documents.',
+    'metadata.createOne': 'Add a value'
+  },
+  de: {
+    'app.loading': 'Arbeitsbereich wird geladen…',
+    'app.privateCloud': 'BINDER / DOKUMENTE',
+    'app.vault': 'Dokumentenarbeitsbereich',
+    'settings.kicker': 'KONFIGURATION',
+    'settings.copy': 'Konfiguration für diesen Arbeitsbereich verwalten.',
+    'login.privateIntelligence': 'DOKUMENTENVERWALTUNG',
+    'login.headline': 'Ihre Dokumente.\nÜbersichtlich.',
+    'login.copy': 'Dokumente an einem Ort speichern, ordnen und durchsuchen. Die Dateien bleiben in Ihrem konfigurierten Speicher.',
+    'login.privacy': 'Lokaler Speicher',
+    'login.privacyCopy': 'Ihre Dateien bleiben in dem von Ihnen festgelegten Speicher.',
+    'login.secureAccess': 'ANMELDEN',
+    'documents.kicker': 'DOKUMENTE',
+    'documents.copy': 'Hochgeladene Dateien und ihren Verarbeitungsstatus verwalten.',
+    'documents.ready': 'Noch keine Dokumente',
+    'documents.empty': 'Laden Sie ein PDF hoch, um zu beginnen.',
+    'home.kicker': 'DOKUMENTSUCHE',
+    'home.title': 'Dokumente durchsuchen.',
+    'home.copy': 'Titel, Dateinamen und extrahierten Text durchsuchen. Bei Aktivierung werden auch semantische Treffer berücksichtigt.',
+    'home.hint': 'Nach Titel, Dateiname oder Text aus einem Dokument suchen.',
+    'metadata.kicker': 'METADATEN',
+    'metadata.copy': 'Dokumenttypen, Kategorien, Tags und benutzerdefinierte Felder verwalten.',
+    'metadata.workspaceNote': 'Systemeinträge werden im Arbeitsbereich geteilt.',
+    'metadata.available': 'WERTE',
+    'metadata.create': 'Wert erstellen',
+    'metadata.createCopy': 'Der Wert kann für die Dokumentklassifizierung verwendet werden.',
+    'metadata.customCopy': 'Felder wie Projekt, Ausstellungsdatum oder Fälligkeitsdatum hinzufügen. Sie erscheinen im Metadateneditor jedes Dokuments.',
+    'metadata.loading': 'Werte werden geladen…',
+    'metadata.createFirst': 'Fügen Sie einen Wert hinzu, um ihn bei der Klassifizierung zu verwenden.',
+    'metadata.createOne': 'Wert hinzufügen'
+  }
+};
+
 @Injectable({ providedIn: 'root' })
 export class I18nService {
   readonly language = signal<AppLanguage>(this.initialLanguage());
@@ -65,7 +130,8 @@ export class I18nService {
   }
 
   t(key: string): string {
-    return (this.language().toLowerCase().startsWith('de') ? DE[key] : EN[key]) ?? EN[key] ?? key;
+    const language = this.language().toLowerCase().startsWith('de') ? 'de' : 'en';
+    return CALMER_COPY[language][key] ?? (language === 'de' ? DE[key] : EN[key]) ?? EN[key] ?? key;
   }
 
   name(item: Pick<VocabularyItem, 'name' | 'translations'>): string {
