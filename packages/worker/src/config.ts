@@ -8,6 +8,8 @@ import { logger } from './logger.js';
 export interface WorkerConfig {
   storageRoot: string; ocrLanguages: string; workerId: string;
   pollIntervalMs: number; lockTimeoutMs: number; reconcileIntervalMs: number;
+  maxUploadBytes: number;
+  inbox: { enabled: boolean; path: string; importOwnerUuid: string; pollIntervalMs: number; stabilityMs: number };
   embeddings: { enabled: boolean; provider: string; endpoint: string; model: string; apiKey: string; chunkSize: number; chunkOverlap: number };
 }
 
@@ -15,11 +17,14 @@ export const config: WorkerConfig = {
   storageRoot: getDefaultStorageRoot(), ocrLanguages: 'deu+eng',
   workerId: process.env.PIPELINE_WORKER_ID ?? `${hostname()}-${process.pid}`,
   pollIntervalMs: 2_000, lockTimeoutMs: 15 * 60 * 1_000, reconcileIntervalMs: 30_000,
+  maxUploadBytes: 50 * 1024 * 1024,
+  inbox: { enabled: false, path: 'inbox', importOwnerUuid: '', pollIntervalMs: 5_000, stabilityMs: 2_000 },
   embeddings: { enabled: false, provider: 'openai-compatible', endpoint: 'https://api.openai.com/v1/embeddings', model: 'text-embedding-3-small', apiKey: '', chunkSize: 1200, chunkOverlap: 200 }
 };
 
 export async function loadRuntimeConfiguration(): Promise<void> {
-  const keys = ['documents.storageRoot', 'pipeline.ocrLanguages', 'pipeline.pollIntervalMs', 'pipeline.lockTimeoutMs', 'pipeline.reconcileIntervalMs',
+  const keys = ['documents.storageRoot', 'documents.maxUploadBytes', 'pipeline.ocrLanguages', 'pipeline.pollIntervalMs', 'pipeline.lockTimeoutMs', 'pipeline.reconcileIntervalMs',
+    'inbox.enabled', 'inbox.path', 'inbox.importOwnerUuid', 'inbox.pollIntervalMs', 'inbox.stabilityMs',
     'embeddings.enabled', 'embeddings.endpoint', 'embeddings.model', 'embeddings.chunkSize', 'embeddings.chunkOverlap',
     'ai.provider', 'ai.apiKey', 'embeddings.provider', 'embeddings.apiKey'];
   const settings = await ApplicationSetting.findAll({ where: { key: { [Op.in]: keys } } });
@@ -27,11 +32,17 @@ export async function loadRuntimeConfiguration(): Promise<void> {
   const appRoot = process.env.APP_ROOT_PATH ?? process.cwd();
   const storage = values.get('documents.storageRoot')?.value ?? join(appRoot, 'storage');
   config.storageRoot = isAbsolute(storage) ? storage : resolve(appRoot, storage);
+  config.maxUploadBytes = readSettingInteger(values, 'documents.maxUploadBytes', config.maxUploadBytes);
   const languages = values.get('pipeline.ocrLanguages')?.value;
   if (languages && /^[a-z]{3}(?:\+[a-z]{3})*$/.test(languages)) config.ocrLanguages = languages;
   config.pollIntervalMs = readSettingInteger(values, 'pipeline.pollIntervalMs', config.pollIntervalMs);
   config.lockTimeoutMs = readSettingInteger(values, 'pipeline.lockTimeoutMs', config.lockTimeoutMs);
   config.reconcileIntervalMs = readSettingInteger(values, 'pipeline.reconcileIntervalMs', config.reconcileIntervalMs);
+  config.inbox.enabled = values.get('inbox.enabled')?.value.toLowerCase() === 'true';
+  config.inbox.path = values.get('inbox.path')?.value?.trim() || config.inbox.path;
+  config.inbox.importOwnerUuid = values.get('inbox.importOwnerUuid')?.value?.trim() || '';
+  config.inbox.pollIntervalMs = readSettingInteger(values, 'inbox.pollIntervalMs', config.inbox.pollIntervalMs);
+  config.inbox.stabilityMs = readSettingInteger(values, 'inbox.stabilityMs', config.inbox.stabilityMs);
   config.embeddings.enabled = values.get('embeddings.enabled')?.value.toLowerCase() === 'true';
   config.embeddings.provider = values.get('ai.provider')?.value || values.get('embeddings.provider')?.value || config.embeddings.provider;
   config.embeddings.endpoint = values.get('embeddings.endpoint')?.value || config.embeddings.endpoint;

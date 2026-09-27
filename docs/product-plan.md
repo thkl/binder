@@ -66,11 +66,13 @@ P1 is complete. The system supports the first usable document workflow: upload, 
 
 ### P2 — automation
 
-- Watched import folder
+- Inbox folder import with explicit owner assignment
 - Duplicate detection
 - Automatic classification and tagging
 - Email/scanner ingestion
 - Saved searches and bulk actions
+
+The first P2 slice is the inbox folder. Files copied into the configured `inbox/` directory are treated as external input: the worker claims them safely, validates them, assigns the configured import owner, creates normal document and pipeline records, and moves or marks the source after successful handoff. The inbox must be restart-safe and must not create duplicate documents when the same file is observed more than once.
 
 ### P3 — provider management and advanced AI
 

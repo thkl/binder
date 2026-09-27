@@ -79,6 +79,26 @@ export const settingsMap: SettingsMapItem[] = [
     section: 'pipeline',
   },
   {
+    key: 'inbox.enabled', valueFrom: 'inbox.enabled', encrypted: false, default: false,
+    label: 'Enable inbox import', type: 'checkbox', section: 'documents',
+  },
+  {
+    key: 'inbox.path', valueFrom: 'inbox.path', encrypted: false, default: 'inbox',
+    label: 'Inbox path (relative to storage root)', type: 'text', required: true, section: 'documents',
+  },
+  {
+    key: 'inbox.importOwnerUuid', valueFrom: 'inbox.importOwnerUuid', encrypted: false, default: '',
+    label: 'Inbox import owner UUID', type: 'text', required: false, section: 'documents',
+  },
+  {
+    key: 'inbox.pollIntervalMs', valueFrom: 'inbox.pollIntervalMs', encrypted: false, default: '5000',
+    label: 'Inbox polling interval (ms)', type: 'text', required: true, section: 'documents',
+  },
+  {
+    key: 'inbox.stabilityMs', valueFrom: 'inbox.stabilityMs', encrypted: false, default: '2000',
+    label: 'Inbox file stability delay (ms)', type: 'text', required: true, section: 'documents',
+  },
+  {
     key: 'pipeline.ocrLanguages',
     valueFrom: 'pipeline.ocrLanguages',
     encrypted: false,

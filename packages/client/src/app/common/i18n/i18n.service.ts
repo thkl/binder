@@ -85,7 +85,12 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'metadata.customCopy': 'Add fields such as project, issue date, or due date. They appear in each document’s metadata editor.',
     'metadata.loading': 'Loading values…',
     'metadata.createFirst': 'Add a value to use it when classifying documents.',
-    'metadata.createOne': 'Add a value'
+    'metadata.createOne': 'Add a value',
+    'setting.inbox.enabled': 'Enable inbox import',
+    'setting.inbox.path': 'Inbox path (relative to storage root)',
+    'setting.inbox.importOwnerUuid': 'Inbox import owner UUID',
+    'setting.inbox.pollIntervalMs': 'Inbox polling interval (ms)',
+    'setting.inbox.stabilityMs': 'Inbox file stability delay (ms)'
   },
   de: {
     'app.loading': 'Arbeitsbereich wird geladen…',
@@ -116,7 +121,12 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'metadata.customCopy': 'Felder wie Projekt, Ausstellungsdatum oder Fälligkeitsdatum hinzufügen. Sie erscheinen im Metadateneditor jedes Dokuments.',
     'metadata.loading': 'Werte werden geladen…',
     'metadata.createFirst': 'Fügen Sie einen Wert hinzu, um ihn bei der Klassifizierung zu verwenden.',
-    'metadata.createOne': 'Wert hinzufügen'
+    'metadata.createOne': 'Wert hinzufügen',
+    'setting.inbox.enabled': 'Inbox-Import aktivieren',
+    'setting.inbox.path': 'Inbox-Pfad (relativ zum Speicherpfad)',
+    'setting.inbox.importOwnerUuid': 'UUID des Besitzers für Inbox-Importe',
+    'setting.inbox.pollIntervalMs': 'Abfrageintervall der Inbox (ms)',
+    'setting.inbox.stabilityMs': 'Wartezeit für stabile Inbox-Dateien (ms)'
   }
 };
 

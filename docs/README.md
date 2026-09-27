@@ -33,4 +33,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-P0 and P1 are implemented. The first usable document workflow is complete. Current work can move to P2 automation; multiple configurable AI providers are planned for P3.
+P0 and P1 are implemented. P2 has started with the inbox-folder importer; duplicate handling and automatic pipeline handoff are now in place. Multiple configurable AI providers remain planned for P3.

@@ -13,6 +13,8 @@ async function main(): Promise<void> {
     pollIntervalMs: config.pollIntervalMs,
     lockTimeoutMs: config.lockTimeoutMs,
     reconcileIntervalMs: config.reconcileIntervalMs,
+    maxUploadBytes: config.maxUploadBytes,
+    inbox: config.inbox,
     embeddingsEnabled: config.embeddings.enabled
   });
   await startPipelineWorker();

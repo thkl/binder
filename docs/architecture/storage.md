@@ -22,6 +22,8 @@ Derived artifacts remain separate from the raw document tree:
 <storage-root>/
 ├── documents/
 │   └── YYYY/MM/<document-id>.<extension>
+├── inbox/
+│   └── <external files waiting for import>
 ├── derived/
 │   └── <document-id>/
 │       ├── extracted.txt
@@ -41,6 +43,7 @@ Thumbnail generation is best-effort derived work. A rendering failure leaves the
 ### Directory meanings
 
 - `documents/`: immutable raw uploaded/imported files. This is the directory a malware scanner can monitor.
+- `inbox/`: external drop folder. Files remain here until the importer has safely claimed and validated them. It must not be served over HTTP.
 - `derived/`: generated text, OCR output, thumbnails, and other rebuildable artifacts
 - `tmp/`: incomplete uploads and temporary processing files; safe to clean only after confirming no active job uses them
 
@@ -57,8 +60,17 @@ DOCUMENT_STORAGE_ROOT=./storage
 DOCUMENT_MAX_UPLOAD_BYTES=52428800
 DOCUMENT_ALLOWED_EXTENSIONS=pdf,jpg,jpeg,png,txt
 DOCUMENT_KEEP_DERIVED_FILES=true
-DOCUMENT_IMPORT_OWNER_ID=
 DOCUMENT_MALWARE_SCAN_REQUIRED=true
+```
+
+Runtime inbox settings are stored in PostgreSQL and editable by an administrator:
+
+```text
+inbox.enabled=false
+inbox.path=inbox
+inbox.importOwnerUuid=<internal user UUID>
+inbox.pollIntervalMs=5000
+inbox.stabilityMs=2000
 ```
 
 Defaults are development-friendly, but production should use an absolute path outside the application source tree.
@@ -71,7 +83,8 @@ Defaults are development-friendly, but production should use an absolute path ou
 - Enforce the maximum upload size before processing begins.
 - Validate file type using both extension and detected content type.
 - Never construct paths from unsanitized user input.
-- Assign folder-imported documents to `DOCUMENT_IMPORT_OWNER_ID` or reject the import when no owner is configured.
+- Assign folder-imported documents to `inbox.importOwnerUuid` or leave them untouched when no active owner is configured.
+- Treat the inbox as untrusted input: use atomic claim/rename operations, ignore hidden and temporary files, validate content before moving into `documents/`, and record failures without deleting the source.
 - Keep raw files available to the scanner without exposing the storage directory directly over HTTP.
 - Keep secrets and LLM credentials out of this configuration document and source control.
 

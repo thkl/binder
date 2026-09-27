@@ -31,6 +31,16 @@ export class ApplicationSetting extends Model {
   declare valueIv: string | null;
 }
 
+@Table({ tableName: 'users', timestamps: false })
+export class User extends Model {
+  @PrimaryKey
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ field: 'is_active', type: DataType.BOOLEAN })
+  declare isActive: boolean;
+}
+
 @Table({ tableName: 'documents', underscored: true, timestamps: true })
 export class Document extends Model {
   @PrimaryKey
@@ -42,6 +52,21 @@ export class Document extends Model {
 
   @Column({ field: 'owner_id', type: DataType.UUID })
   declare ownerUuid: string;
+
+  @Column({ field: 'original_filename', type: DataType.STRING(255) })
+  declare originalFilename: string;
+
+  @Column({ type: DataType.STRING(255) })
+  declare title: string | null;
+
+  @Column({ field: 'mime_type', type: DataType.STRING(100) })
+  declare mimeType: string;
+
+  @Column({ field: 'size_bytes', type: DataType.BIGINT })
+  declare sizeBytes: number;
+
+  @Column({ field: 'checksum_sha256', type: DataType.STRING(64) })
+  declare checksumSha256: string;
 
   @Column({ field: 'thumbnail_key', type: DataType.STRING, allowNull: true })
   declare thumbnailKey: string | null;

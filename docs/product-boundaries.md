@@ -23,7 +23,7 @@ This document defines the scope of the first release. It is intentionally narrow
 - Multi-tenant accounts
 - Fine-grained permissions and sharing
 - Email ingestion
-- Watched folders
+- External email ingestion
 - Mobile applications
 - Editing document contents
 - Digital signatures
