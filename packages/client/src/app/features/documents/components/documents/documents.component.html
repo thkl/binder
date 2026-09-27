@@ -156,7 +156,14 @@
           </div>
           <button type="button" class="property-close" (click)="closeMetadata()" aria-label="Close document properties">×</button>
         </header>
-        <binder-document-metadata-editor [documentUuid]="metadataUuid" [suggestion]="titleSuggestions()[metadataUuid] || null" (manuallySaved)="markDocumentReviewed(metadataUuid)" (suggestionTitleAccepted)="acceptSuggestedTitleValue(metadataUuid, $event)" (suggestionDismissed)="dismissLocalTitleSuggestion(metadataUuid)" (suggestionAccepted)="acceptSuggestedMetadata(metadataUuid, $event)" />
+        <binder-document-metadata-editor 
+          [documentUuid]="metadataUuid" 
+          [documentData]="documentData()"
+          [suggestion]="titleSuggestions()[metadataUuid] || null" 
+          (manuallySaved)="markDocumentReviewed(metadataUuid)" 
+          (suggestionTitleAccepted)="acceptSuggestedTitleValue(metadataUuid, $event)" 
+          (suggestionDismissed)="dismissLocalTitleSuggestion(metadataUuid)" 
+          (suggestionAccepted)="acceptSuggestedMetadata(metadataUuid, $event)" />
       </aside>
     </div>
   }

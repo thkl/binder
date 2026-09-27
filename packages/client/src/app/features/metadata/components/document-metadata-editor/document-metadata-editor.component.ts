@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import type { CreateIssuerInput, DocumentMetadata, DocumentTitleSuggestion, Issuer, UpdateIssuerInput } from '@binder/common';
+import type { CreateIssuerInput, Document, DocumentMetadata, DocumentTitleSuggestion, Issuer, UpdateIssuerInput } from '@binder/common';
 import { MetadataService } from '../../services/metadata.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
@@ -15,11 +15,13 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
 export class DocumentMetadataEditorComponent implements OnChanges {
   @Input({ required: true }) documentUuid = '';
   @Input() suggestion: DocumentTitleSuggestion | null = null;
+  @Input() documentData : Document | null = null;
+
   @Output() suggestionAccepted = new EventEmitter<string>();
   @Output() suggestionTitleAccepted = new EventEmitter<string>();
   @Output() suggestionDismissed = new EventEmitter<void>();
   @Output() manuallySaved = new EventEmitter<void>();
-
+  
   readonly metadata = inject(MetadataService);
   readonly i18n = inject(I18nService);
   readonly documentTypeUuid = signal('');
@@ -65,6 +67,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
     const [, current] = await Promise.all([
       this.metadata.loadVocabulary(),
       this.metadata.getDocumentMetadata(this.documentUuid)
+
     ]);
     if (current) this.applyMetadata(current);
     this.loaded.set(true);

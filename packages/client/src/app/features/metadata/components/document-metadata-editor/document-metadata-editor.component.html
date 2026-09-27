@@ -106,6 +106,9 @@
     }
   </div>
   }
+  @if (documentData && documentData.thumbnailUrl) {
+    <img [src]="documentData.thumbnailUrl">
+  }
   <footer class="editor-footer">@if (saved()) { <span class="saved">✓ Saved</span> }<button type="button"
       class="save-button" [disabled]="metadata.saving()" (click)="save()">{{ metadata.saving() ? 'Saving…' : 'Save
       metadata' }}</button></footer>

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
 import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
 import { DocumentViewerComponent } from '../../../../common/components/document-viewer/document-viewer.component';
-import type { DocumentTitleSuggestion } from '@binder/common';
+import type { Document, DocumentTitleSuggestion } from '@binder/common';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 import type { Document as CommonDocument } from '@binder/common';
 
@@ -28,14 +28,25 @@ export class DocumentsComponent implements OnInit {
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
   readonly viewerDocumentUuid = signal<string | null>(null);
+  
   readonly metadataDocument = computed(() => {
     const uuid = this.metadataDocumentUuid();
     return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
   });
+  
+  readonly documentData = computed(()=>{
+    const metadataDocument = this.metadataDocument();
+    if (metadataDocument) {
+      return metadataDocument as Document
+    }
+    return null;
+  })
+
   readonly viewerDocument = computed(() => {
     const uuid = this.viewerDocumentUuid();
     return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
   });
+  
   readonly documentGroups = computed<DocumentGroup[]>(() => {
     const documents = this.documents.page()?.items ?? [];
     const mode = this.groupMode();
