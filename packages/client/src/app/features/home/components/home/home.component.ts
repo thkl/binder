@@ -29,6 +29,24 @@ export class HomeComponent {
   readonly selectedTag = signal('');
   readonly selectedIssuer = signal('');
 
+  searchResult = computed(()=>{
+    const result = this.search.result();
+    if (result) {
+      const sorted = result.items.sort((i1,i2)=>{
+        if (i1.semanticScore === null && i2.semanticScore === null) {
+          return 0;
+        }
+        if (i1.semanticScore ?? 0 > (i2.semanticScore ?? 0)) return -1;
+        if (i2.semanticScore ?? 0 > (i1.semanticScore ?? 0)) return 1;
+        return 0
+      })
+      return sorted;
+    } else {
+      return [];
+    }
+  })
+
+
   itemName(item: { name: string; translations: Record<string, string> }): string { return this.i18n.name(item); }
 
   async submitSearch(event: Event): Promise<void> {

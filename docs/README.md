@@ -35,4 +35,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-P0 and P1 are implemented. P2 has started with the inbox-folder importer; duplicate handling and automatic pipeline handoff are now in place. Multiple configurable AI providers remain planned for P3.
+P0 and P1 are implemented. The first P2 slice is implemented: inbox-folder import, duplicate handling, automatic pipeline handoff, high-confidence classification, issuer matching, and live inbox updates are in place. The next P2 work is general document bulk actions, followed by saved searches and then hardening/security verification. Email and scanner ingestion have moved to P3, alongside multiple configurable AI providers.

@@ -64,7 +64,7 @@
         <div class="search-state"><span class="empty-symbol" aria-hidden="true">⌕</span><h4>{{ 'home.noMatches' | t }}</h4><p>{{ 'home.tryFewer' | t }}</p></div>
       } @else {
         <div class="result-list">
-          @for (item of result.items; track item.document.uuid + '-' + item.pageNumber) {
+          @for (item of searchResult(); track item.document.uuid + '-' + item.pageNumber) {
             <article class="result-row">
               <div class="result-mark" aria-hidden="true">{{ item.matchType === 'semantic' ? '✦' : item.matchType === 'text' ? '¶' : 'T' }}</div>
               <div class="result-copy">
