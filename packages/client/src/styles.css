@@ -17,7 +17,13 @@
 body {
   margin: 0;
   min-width: 320px;
+
+  --glass-card-background-color: linear-gradient(135deg, rgba(20, 52, 88, .78), rgba(10, 27, 50, .72));
+  
 }
+
+
+
 
 *, *::before, *::after { box-sizing: border-box; }
 button, input { font: inherit; }

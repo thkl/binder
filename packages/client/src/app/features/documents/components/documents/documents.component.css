@@ -237,6 +237,7 @@ h2 {
 
 .document-name,
 .preview-card-body {
+  background: var(--glass-card-background-color);
   display: grid;
   min-width: 0;
   gap: .5rem;
@@ -701,7 +702,7 @@ h2 {
     height: 6.5rem;
   }
 
-  .document-row > .status {
+  .document-row>.status {
     grid-column: 2;
     justify-self: start;
   }
@@ -717,6 +718,7 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .preview-card,
   .property-panel,
   .spinner {
