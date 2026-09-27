@@ -1,4 +1,6 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, MessageEvent } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Observable } from 'rxjs';
 import {
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
@@ -21,10 +23,12 @@ export class InboxService {
     private readonly items: InboxItemStore,
     private readonly titleSuggestions: TitleSuggestionService,
     private readonly documents: DocumentService,
-    private readonly settings: ApplicationSettingsService
+    private readonly settings: ApplicationSettingsService,
+    private readonly eventEmitter: EventEmitter2
   ) {}
 
   async list() {
+    await this.removeCompletedItems();
     const [items, aiCandidates] = await Promise.all([
       this.items.findQueue(),
       this.items.countAiCandidates()
@@ -46,7 +50,9 @@ export class InboxService {
     let failed = 0;
     let skipped = 0;
     const automaticApproval = await this.getAutomaticApprovalSettings();
+    const completionStage = await this.getCompletionStage();
     try {
+      await this.removeCompletedItems(completionStage);
       const candidates = await this.items.findAiCandidates();
       for (const item of candidates) {
         if (!item.documentUuid) {
@@ -82,6 +88,10 @@ export class InboxService {
             autoApplied,
             aiError: null
           });
+          if (completionStage === 'ai-analysis') {
+            await this.items.remove(item.uuid);
+          }
+          this.emitChanged('ai-analysis-complete');
           processed += 1;
         } catch (error) {
           const message = (error instanceof Error ? error.message : String(error)).slice(0, 2000);
@@ -103,6 +113,49 @@ export class InboxService {
     }
   }
 
+  events(): Observable<MessageEvent> {
+    return new Observable<MessageEvent>((subscriber) => {
+      let lastToken: string | null = null;
+      let checking = false;
+
+      const emit = (reason: string): void => {
+        subscriber.next({
+          data: {
+            type: 'inbox.changed',
+            occurredAt: new Date().toISOString(),
+            reason
+          }
+        });
+      };
+      const onApplicationChange = (event: { reason?: string } = {}): void => emit(event.reason ?? 'application-change');
+      this.eventEmitter.on('inbox.changed', onApplicationChange);
+
+      const checkDatabase = async (): Promise<void> => {
+        if (checking) return;
+        checking = true;
+        try {
+          const token = await this.items.changeToken();
+          if (lastToken === null) {
+            lastToken = token;
+            emit('connected');
+          } else if (token !== lastToken) {
+            lastToken = token;
+            emit('database-change');
+          }
+        } finally {
+          checking = false;
+        }
+      };
+
+      void checkDatabase();
+      const timer = setInterval(() => void checkDatabase(), 2_000);
+      return () => {
+        clearInterval(timer);
+        this.eventEmitter.off('inbox.changed', onApplicationChange);
+      };
+    });
+  }
+
   private async getAutomaticApprovalSettings(): Promise<{ enabled: boolean; confidence: number }> {
     const enabled = (await this.settings.get('ai.automaticClassification.enabled', 'false'))?.toLowerCase() === 'true';
     const configured = Number(await this.settings.get('ai.automaticClassification.confidence', '0.8'));
@@ -111,6 +164,24 @@ export class InboxService {
       enabled,
       confidence: Number.isFinite(confidence) ? Math.min(1, Math.max(0, confidence)) : 0.8
     };
+  }
+
+  private async getCompletionStage(): Promise<'import' | 'ai-analysis'> {
+    const value = (await this.settings.get('inbox.completionStage', 'ai-analysis'))?.trim();
+    return value === 'import' ? 'import' : 'ai-analysis';
+  }
+
+  private async removeCompletedItems(completionStage?: 'import' | 'ai-analysis'): Promise<void> {
+    const stage = completionStage ?? await this.getCompletionStage();
+    const removed = await this.items.removeCompleted(stage);
+    if (removed > 0) {
+      this.logger.info('Removed completed inbox items', { removed, completionStage: stage });
+      this.emitChanged('completed-items-removed');
+    }
+  }
+
+  private emitChanged(reason: string): void {
+    this.eventEmitter.emit('inbox.changed', { reason });
   }
 
   private toResponse(item: InboxItem) {

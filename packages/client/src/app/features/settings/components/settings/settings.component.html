@@ -66,6 +66,14 @@
                       <option [value]="user.uuid">{{ user.username }}{{ user.email ? ' · ' + user.email : '' }}{{ user.isAdmin ? ' · ' + ('settings.admin' | t) : '' }}</option>
                     }
                   </select>
+                  } @else if (item.type === 'select') {
+                  <select
+                    [value]="stringValue(item)"
+                    (change)="updateText(item, $event)">
+                    @for (option of item.options ?? []; track option) {
+                      <option [value]="option">{{ settingOptionLabel(item.key, option) }}</option>
+                    }
+                  </select>
                   } @else if (item.type === 'textarea') {
                   <textarea
                     [value]="stringValue(item)"

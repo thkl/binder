@@ -99,6 +99,11 @@ export const settingsMap: SettingsMapItem[] = [
     label: 'Inbox file stability delay (ms)', type: 'text', required: true, section: 'documents',
   },
   {
+    key: 'inbox.completionStage', valueFrom: 'inbox.completionStage', encrypted: false, default: 'ai-analysis',
+    label: 'Remove inbox item after', type: 'select', required: true,
+    options: ['import', 'ai-analysis'], section: 'documents',
+  },
+  {
     key: 'pipeline.ocrLanguages',
     valueFrom: 'pipeline.ocrLanguages',
     encrypted: false,

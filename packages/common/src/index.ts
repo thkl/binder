@@ -121,6 +121,13 @@ export const InboxAiProcessResponseSchema = z.object({
 });
 export type InboxAiProcessResponse = z.infer<typeof InboxAiProcessResponseSchema>;
 
+export const InboxChangeEventSchema = z.object({
+  type: z.literal('inbox.changed'),
+  occurredAt: z.iso.datetime(),
+  reason: z.string().max(100).optional()
+});
+export type InboxChangeEvent = z.infer<typeof InboxChangeEventSchema>;
+
 export const CreateDocumentInputSchema = z.object({
   originalFilename: z.string().trim().min(1).max(255),
   mimeType: z.literal('application/pdf'),
@@ -307,7 +314,7 @@ export type AppLanguage = z.infer<typeof AppLanguageSchema>;
 export const LocalizedTextSchema = z.record(AppLanguageSchema, z.string().trim().max(150));
 export type LocalizedText = z.infer<typeof LocalizedTextSchema>;
 
-export const SettingControlTypeSchema = z.enum(['text', 'password', 'textarea', 'checkbox']);
+export const SettingControlTypeSchema = z.enum(['text', 'password', 'textarea', 'checkbox', 'select']);
 export type SettingControlType = z.infer<typeof SettingControlTypeSchema>;
 
 export const SettingValueSchema = z.union([z.string(), z.number(), z.boolean()]);
@@ -331,7 +338,8 @@ export const SettingsMapItemSchema = z.object({
   requiredIf: z.string().trim().min(1).max(255).optional(),
   requiredIfValue: SettingValueSchema.optional(),
   pattern: z.string().max(1000).optional(),
-  patternMessage: z.string().max(500).optional()
+  patternMessage: z.string().max(500).optional(),
+  options: z.array(z.string().trim().min(1).max(100)).max(50).optional()
 });
 
 export type SettingsMapItem = z.infer<typeof SettingsMapItemSchema>;

@@ -1,14 +1,22 @@
-import { Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, MessageEvent, Post, Sse, UseGuards } from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { InboxService } from '../service/inbox.service';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('inbox')
 @UseGuards(AuthenticationGuard, RolesGuard)
 @Roles('admin')
 export class InboxController {
   constructor(private readonly inbox: InboxService) {}
+
+  @Sse('events')
+  @SkipThrottle()
+  events(): Observable<MessageEvent> {
+    return this.inbox.events();
+  }
 
   @Get()
   async list() {

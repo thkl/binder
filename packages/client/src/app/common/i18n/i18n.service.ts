@@ -159,7 +159,10 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'editor.saveIssuer': 'Save issuer',
     'editor.cancelIssuer': 'Cancel',
     'home.issuer': 'Issuer',
-    'home.anyIssuer': 'Any issuer'
+    'home.anyIssuer': 'Any issuer',
+    'setting.inbox.completionStage': 'Remove inbox item after',
+    'setting.inbox.completionStage.import': 'Import',
+    'setting.inbox.completionStage.ai-analysis': 'AI analysis'
   },
   de: {
     'setting.ai.automaticClassification.enabled': 'KI-Klassifizierung bei hoher Sicherheit automatisch übernehmen',
@@ -181,7 +184,10 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'editor.saveIssuer': 'Aussteller speichern',
     'editor.cancelIssuer': 'Abbrechen',
     'home.issuer': 'Aussteller',
-    'home.anyIssuer': 'Jeder Aussteller'
+    'home.anyIssuer': 'Jeder Aussteller',
+    'setting.inbox.completionStage': 'Inbox-Eintrag entfernen nach',
+    'setting.inbox.completionStage.import': 'Import',
+    'setting.inbox.completionStage.ai-analysis': 'KI-Analyse'
   }
 };
 

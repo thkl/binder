@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import {
   ApiResponse,
+  InboxChangeEventSchema,
   InboxAiProcessResponse,
   InboxAiProcessResponseSchema,
   InboxQueueItem,
@@ -16,6 +17,7 @@ export class InboxService {
   readonly loading = signal(false);
   readonly processing = signal(false);
   readonly error = signal<string | null>(null);
+  private eventSource: EventSource | null = null;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -53,6 +55,27 @@ export class InboxService {
     } finally {
       this.processing.set(false);
     }
+  }
+
+  startLiveUpdates(): void {
+    if (this.eventSource) return;
+    const source = new EventSource('/api/v1/inbox/events', { withCredentials: true });
+    source.onmessage = (event) => {
+      try {
+        const change = InboxChangeEventSchema.safeParse(JSON.parse(event.data));
+        if (change.success && change.data.type === 'inbox.changed' && change.data.reason !== 'connected') {
+          void this.load();
+        }
+      } catch {
+        // Ignore malformed event payloads; the next event or reconnect will recover the view.
+      }
+    };
+    this.eventSource = source;
+  }
+
+  stopLiveUpdates(): void {
+    this.eventSource?.close();
+    this.eventSource = null;
   }
 
   private getErrorMessage(error: unknown): string {

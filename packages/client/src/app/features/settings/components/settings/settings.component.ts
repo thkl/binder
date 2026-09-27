@@ -103,6 +103,11 @@ export class SettingsComponent implements OnInit {
     return translated === key ? item.label : translated;
   }
 
+  settingOptionLabel(key: string, option: string): string {
+    const translated = this.i18n.t(`setting.${key}.${option}`);
+    return translated === `setting.${key}.${option}` ? option : translated;
+  }
+
   updateText(item: SettingsMapItem, event: Event): void {
     const value = (event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
     this.values.update((current) => ({ ...current, [item.key]: value }));

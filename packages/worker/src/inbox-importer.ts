@@ -4,7 +4,7 @@ import { basename, dirname, extname, join } from 'node:path';
 import { Op } from 'sequelize';
 import { config } from './config.js';
 import { sequelize } from './database.js';
-import { Document, InboxItem, PipelineJob, PipelineJobEvent, User } from './models.js';
+import { ApplicationSetting, Document, InboxItem, PipelineJob, PipelineJobEvent, User } from './models.js';
 import { logger } from './logger.js';
 import { resolveStoragePath } from './storage.js';
 
@@ -34,12 +34,13 @@ export async function importInboxDocuments(force = false): Promise<void> {
 
   const entries = await fs.readdir(inboxPath, { withFileTypes: true });
   const candidates = entries.filter((entry) => entry.isFile() && !entry.name.startsWith('.'));
+  const completionStage = await getCompletionStage();
   let imported = 0;
   let duplicates = 0;
   let rejected = 0;
 
   for (const entry of candidates) {
-    const result = await importFile(inboxPath, entry.name, ownerUuid);
+    const result = await importFile(inboxPath, entry.name, ownerUuid, completionStage);
     if (result === 'imported') imported += 1;
     if (result === 'duplicate') duplicates += 1;
     if (result === 'rejected') rejected += 1;
@@ -50,7 +51,7 @@ export async function importInboxDocuments(force = false): Promise<void> {
   }
 }
 
-async function importFile(inboxPath: string, filename: string, ownerUuid: string): Promise<'imported' | 'duplicate' | 'rejected' | 'skipped'> {
+async function importFile(inboxPath: string, filename: string, ownerUuid: string, completionStage: 'import' | 'ai-analysis'): Promise<'imported' | 'duplicate' | 'rejected' | 'skipped'> {
   const sourcePath = join(inboxPath, filename);
   const initial = await statFile(sourcePath);
   if (!initial) return 'skipped';
@@ -159,20 +160,24 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
           type: 'queued',
           message: 'Queued from inbox import'
         }, { transaction });
-        await inboxItem.update({
-          status: 'imported',
-          documentUuid: document.uuid,
-          checksumSha256,
-          sizeBytes: buffer.length,
-          lastError: null
-        }, { transaction });
+        if (completionStage === 'import') {
+          await inboxItem.destroy({ transaction });
+        } else {
+          await inboxItem.update({
+            status: 'imported',
+            documentUuid: document.uuid,
+            checksumSha256,
+            sizeBytes: buffer.length,
+            lastError: null
+          }, { transaction });
+        }
       });
     } catch (error) {
       await moveTo(targetPath, join(inboxPath, 'rejected'), filename);
       throw error;
     }
 
-    logger.info('Imported inbox document', { documentUuid, filename, storageKey, ownerUuid });
+    logger.info('Imported inbox document', { documentUuid, filename, storageKey, ownerUuid, completionStage, inboxItemRemoved: completionStage === 'import' });
     return 'imported';
   } catch (error) {
     await inboxItem.update({
@@ -183,6 +188,11 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
     logger.error('Inbox document import failed', { filename, error: error instanceof Error ? error.message : String(error) });
     return 'rejected';
   }
+}
+
+async function getCompletionStage(): Promise<'import' | 'ai-analysis'> {
+  const setting = await ApplicationSetting.findByPk('inbox.completionStage');
+  return setting?.value === 'import' ? 'import' : setting?.value === 'ai-analysis' ? 'ai-analysis' : config.inbox.completionStage;
 }
 
 async function statFile(path: string): Promise<{ size: number; mtimeMs: number } | null> {

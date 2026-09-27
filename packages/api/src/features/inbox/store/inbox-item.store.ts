@@ -14,6 +14,26 @@ export class InboxItemStore extends BaseCrudStore<InboxItem> {
     return this.model.findAll({ order: [['createdAt', 'DESC']] });
   }
 
+  async removeCompleted(completionStage: 'import' | 'ai-analysis'): Promise<number> {
+    return this.model.destroy({
+      where: completionStage === 'import'
+        ? { status: 'imported' }
+        : { status: 'imported', aiStatus: 'ready' }
+    });
+  }
+
+  async remove(uuid: string): Promise<number> {
+    return this.model.destroy({ where: { uuid } });
+  }
+
+  async changeToken(): Promise<string> {
+    const latest = await this.model.findOne({
+      attributes: ['uuid', 'updatedAt'],
+      order: [['updatedAt', 'DESC']]
+    });
+    return latest ? `${latest.uuid}:${latest.updatedAt.toISOString()}` : 'empty';
+  }
+
   async countAiCandidates(): Promise<number> {
     return this.model.count({ where: { status: 'imported', aiStatus: { [Op.in]: ['pending', 'failed'] } } });
   }

@@ -165,6 +165,12 @@
                     "documents",
                     "document_pages"
                ]
+          },
+          "26": {
+               "required": [
+                    "settings",
+                    "inbox_items"
+               ]
           }
      }
 }

@@ -73,6 +73,7 @@ inbox.path=inbox
 inbox.importOwnerUuid=<internal user UUID>
 inbox.pollIntervalMs=5000
 inbox.stabilityMs=2000
+inbox.completionStage=ai-analysis
 ```
 
 Defaults are development-friendly, but production should use an absolute path outside the application source tree.
