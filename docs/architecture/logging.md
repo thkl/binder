@@ -2,7 +2,7 @@
 
 ## Decision
 
-The API uses Winston for structured application logging. `LoggingService.initializeLogging()` is installed during Nest bootstrap and passed into `NestFactory.create`, so Nest's own logs use the same rotating/console transports. Logging supports console output for Docker and rotating files for deployments that retain local logs.
+The API uses Winston for structured application logging. `LoggingService.initializeLogging()` is installed during Nest bootstrap and passed into `NestFactory.create`, so Nest's own logs use the same rotating/console transports. The pipeline worker uses the same rotation settings and writes `worker-YYYY-MM-DD.log` and `worker-error-YYYY-MM-DD.log`. Logging supports console output for Docker and rotating files for deployments that retain local logs.
 
 The frontend should use a small environment-aware logging facade rather than writing directly to `console` throughout feature code. Browser logs must never contain credentials, session identifiers, document contents, or extracted personal data.
 
@@ -28,6 +28,8 @@ LOG_JSON=true
 ```
 
 Use a rotating-file transport with bounded size and retention. The log directory must be separate from document storage and must have appropriate filesystem permissions.
+
+The administrator-only API exposes available rotated files through `GET /api/v1/logs` and downloads through `GET /api/v1/logs/:filename`. Only validated `application-*` and `worker-*` rotated filenames are served. The Docker API and worker containers mount the same log volume so the API can list both services' files.
 
 ## Structured fields
 

@@ -18,6 +18,7 @@
       </div>
       <div class="topbar-actions">
         @if (auth.user()?.isAdmin) { <a class="nav-link" routerLink="/inbox" routerLinkActive="active">{{ 'nav.inbox' | t }}</a> }
+        @if (auth.user()?.isAdmin) { <a class="nav-link" routerLink="/logs" routerLinkActive="active">{{ 'nav.logs' | t }}</a> }
         <a class="nav-link" routerLink="/documents" routerLinkActive="active">{{ 'nav.documents' | t }}</a>
         <a class="nav-link" routerLink="/metadata" routerLinkActive="active">{{ 'nav.metadata' | t }}</a>
         <a class="nav-link" routerLink="/settings" routerLinkActive="active">{{ 'nav.settings' | t }}</a>

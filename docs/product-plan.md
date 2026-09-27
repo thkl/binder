@@ -87,6 +87,7 @@ The remaining P2 work is intentionally ordered as follows:
 ### P3 — provider management and advanced AI
 
 - Email and scanner ingestion adapters
+- Administrator log viewer for API and worker rotation files
 - Configure multiple named AI providers
 - Store provider-specific endpoints, models, and encrypted credentials
 - Select the provider independently for embeddings and AI assistant features

@@ -14,6 +14,7 @@ import { PipelineModule } from './features/pipeline/pipeline.module';
 import { MetadataModule } from './features/metadata/metadata.module';
 import { InboxModule } from './features/inbox/inbox.module';
 import { IssuerModule } from './features/issuer/issuer.module';
+import { LogsModule } from './features/logs/logs.module';
 
 @Module({
   controllers: [HealthController],
@@ -29,6 +30,7 @@ import { IssuerModule } from './features/issuer/issuer.module';
     MetadataModule,
     InboxModule,
     IssuerModule,
+    LogsModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -1,0 +1,47 @@
+<section class="logs-page">
+  <header class="logs-heading">
+    <div>
+      <p class="section-kicker">{{ 'logs.kicker' | t }}</p>
+      <h2>{{ 'logs.title' | t }}</h2>
+      <p class="muted">{{ 'logs.copy' | t }}</p>
+    </div>
+    <button class="refresh-button" type="button" (click)="logs.load()" [disabled]="logs.loading()">
+      @if (logs.loading()) { <span class="spinner"></span> }
+      {{ logs.loading() ? ('logs.loading' | t) : ('logs.refresh' | t) }}
+    </button>
+  </header>
+
+  @if (logs.error(); as error) {
+    <div class="notice error" role="alert">{{ error }}</div>
+  }
+
+  <section class="logs-card glass-card" aria-labelledby="logs-list-title">
+    <header class="logs-card-header">
+      <div>
+        <p class="section-kicker">{{ 'logs.available' | t }}</p>
+        <h3 id="logs-list-title">{{ logs.files().length }} {{ 'logs.files' | t }}</h3>
+      </div>
+    </header>
+
+    @if (logs.loading() && logs.files().length === 0) {
+      <div class="logs-state"><span class="spinner"></span><p>{{ 'logs.loading' | t }}</p></div>
+    } @else if (logs.files().length === 0) {
+      <div class="logs-state"><span class="empty-icon">⌁</span><p>{{ 'logs.empty' | t }}</p></div>
+    } @else {
+      <div class="log-list" role="list">
+        @for (file of logs.files(); track file.name) {
+          <article class="log-row" role="listitem">
+            <div class="log-icon" [class.error-log]="file.isError" aria-hidden="true">{{ file.isError ? '!' : '≡' }}</div>
+            <div class="log-copy">
+              <strong>{{ file.name }}</strong>
+              <small>{{ sourceLabel(file) }} · {{ kindLabel(file) }} · {{ file.compressed ? ('logs.compressed' | t) : ('logs.plainText' | t) }}</small>
+            </div>
+            <time [attr.datetime]="file.modifiedAt">{{ file.modifiedAt | date:'medium' }}</time>
+            <span class="file-size">{{ fileSize(file.sizeBytes) }}</span>
+            <a class="download-link" [href]="logs.downloadUrl(file.name)" [attr.download]="file.name">{{ 'logs.download' | t }}</a>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</section>

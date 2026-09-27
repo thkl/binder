@@ -214,6 +214,24 @@ export const InboxChangeEventSchema = z.object({
 });
 export type InboxChangeEvent = z.infer<typeof InboxChangeEventSchema>;
 
+export const LogFileSourceSchema = z.enum(['application', 'worker']);
+export type LogFileSource = z.infer<typeof LogFileSourceSchema>;
+
+export const LogFileSchema = z.object({
+  name: z.string().regex(/^(application|worker)(-error)?-\d{4}-\d{2}-\d{2}\.log(?:\.gz)?$/),
+  source: LogFileSourceSchema,
+  isError: z.boolean(),
+  compressed: z.boolean(),
+  sizeBytes: z.number().int().nonnegative(),
+  modifiedAt: z.iso.datetime()
+});
+export type LogFile = z.infer<typeof LogFileSchema>;
+
+export const LogFileListResponseSchema = z.object({
+  items: z.array(LogFileSchema)
+});
+export type LogFileListResponse = z.infer<typeof LogFileListResponseSchema>;
+
 export const CreateDocumentInputSchema = z.object({
   originalFilename: z.string().trim().min(1).max(255),
   mimeType: z.literal('application/pdf'),

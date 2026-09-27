@@ -93,6 +93,7 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'settings.kicker': 'CONFIGURATION',
     'settings.copy': 'Manage the configuration for this workspace.',
     'nav.inbox': 'Inbox',
+    'nav.logs': 'Logs',
     'settings.noOwner': 'Select an import owner',
     'settings.admin': 'Admin',
     'login.privateIntelligence': 'DOCUMENT MANAGEMENT',
@@ -127,7 +128,22 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'inbox.removeDuplicates': 'Remove duplicates',
     'inbox.removeRejected': 'Remove rejected',
     'inbox.confirmRemoveDuplicates': 'Remove all duplicate inbox items?',
-    'inbox.confirmRemoveRejected': 'Remove all rejected inbox items?'
+    'inbox.confirmRemoveRejected': 'Remove all rejected inbox items?',
+    'logs.kicker': 'SYSTEM LOGS',
+    'logs.title': 'Logs',
+    'logs.copy': 'Review rotated application and worker logs. Log files are available to administrators only.',
+    'logs.available': 'AVAILABLE FILES',
+    'logs.files': 'files',
+    'logs.refresh': 'Refresh',
+    'logs.loading': 'Loading logs…',
+    'logs.empty': 'No rotated log files are available.',
+    'logs.application': 'Application',
+    'logs.worker': 'Worker',
+    'logs.errorLog': 'Error log',
+    'logs.standardLog': 'Standard log',
+    'logs.compressed': 'Compressed',
+    'logs.plainText': 'Plain text',
+    'logs.download': 'Download'
   },
   de: {
     'app.loading': 'Arbeitsbereich wird geladen…',
@@ -136,6 +152,7 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'settings.kicker': 'KONFIGURATION',
     'settings.copy': 'Konfiguration für diesen Arbeitsbereich verwalten.',
     'nav.inbox': 'Inbox',
+    'nav.logs': 'Protokolle',
     'settings.noOwner': 'Importbesitzer auswählen',
     'settings.admin': 'Admin',
     'login.privateIntelligence': 'DOKUMENTENVERWALTUNG',
@@ -170,7 +187,22 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'inbox.removeDuplicates': 'Duplikate entfernen',
     'inbox.removeRejected': 'Abgelehnte entfernen',
     'inbox.confirmRemoveDuplicates': 'Alle doppelten Inbox-Einträge entfernen?',
-    'inbox.confirmRemoveRejected': 'Alle abgelehnten Inbox-Einträge entfernen?'
+    'inbox.confirmRemoveRejected': 'Alle abgelehnten Inbox-Einträge entfernen?',
+    'logs.kicker': 'SYSTEMPROTOKOLLE',
+    'logs.title': 'Protokolle',
+    'logs.copy': 'Anwendungs- und Worker-Protokolle prüfen. Die Dateien sind nur für Administratoren verfügbar.',
+    'logs.available': 'VERFÜGBARE DATEIEN',
+    'logs.files': 'Dateien',
+    'logs.refresh': 'Aktualisieren',
+    'logs.loading': 'Protokolle werden geladen…',
+    'logs.empty': 'Keine rotierten Protokolldateien verfügbar.',
+    'logs.application': 'Anwendung',
+    'logs.worker': 'Worker',
+    'logs.errorLog': 'Fehlerprotokoll',
+    'logs.standardLog': 'Standardprotokoll',
+    'logs.compressed': 'Komprimiert',
+    'logs.plainText': 'Text',
+    'logs.download': 'Herunterladen'
   }
 };
 

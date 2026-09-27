@@ -7,6 +7,11 @@ export const appRoutes: Routes = [
       .then(({ InboxComponent }) => InboxComponent)
   },
   {
+    path: 'logs',
+    loadComponent: () => import('./features/logs/components/logs/logs.component')
+      .then(({ LogsComponent }) => LogsComponent)
+  },
+  {
     path: 'documents',
     loadComponent: () => import('./features/documents/components/documents/documents.component')
       .then(({ DocumentsComponent }) => DocumentsComponent)

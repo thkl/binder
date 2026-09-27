@@ -14,7 +14,8 @@
     "mupdf": "^1.28.1",
     "sequelize": "^6.0.0",
     "sequelize-typescript": "^2.1.0",
-    "winston": "^3.0.0"
+    "winston": "^3.0.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

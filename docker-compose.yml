@@ -44,7 +44,7 @@ services:
       - "3000:3000"
     volumes:
       - binder-document-storage:/app/storage
-      - binder-api-logs:/app/logs
+      - binder-logs:/app/logs
 
   worker:
     build:
@@ -66,10 +66,9 @@ services:
         condition: service_healthy
     volumes:
       - binder-document-storage:/app/storage
-      - binder-worker-logs:/app/logs
+      - binder-logs:/app/logs
 
 volumes:
   binder-postgres-data:
   binder-document-storage:
-  binder-api-logs:
-  binder-worker-logs:
+  binder-logs:

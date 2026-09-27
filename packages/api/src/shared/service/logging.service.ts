@@ -7,6 +7,18 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { BinderConfig, ConfigKeys } from '../config/config.keys';
 
+export interface LogFileDescriptor {
+  name: string;
+  source: 'application' | 'worker';
+  isError: boolean;
+  compressed: boolean;
+  sizeBytes: number;
+  modifiedAt: Date;
+  path: string;
+}
+
+const LOG_FILE_PATTERN = /^(application|worker)(-error)?-\d{4}-\d{2}-\d{2}\.log(?:\.gz)?$/;
+
 @Injectable()
 export class LoggingService {
   constructor(private readonly config: ConfigService<BinderConfig>) {}
@@ -69,15 +81,40 @@ export class LoggingService {
   }
 
   getLogs(): string[] {
+    return this.listLogFiles().map((file) => file.name);
+  }
+
+  listLogFiles(): LogFileDescriptor[] {
     const logDir = this.getLogDirectory();
-    if (!fs.existsSync(logDir)) {
-      return [];
-    }
+    if (!fs.existsSync(logDir)) return [];
 
     return fs.readdirSync(logDir, { withFileTypes: true })
-      .filter((item) => item.isFile() && item.name.startsWith('application-') && !item.name.includes('error'))
-      .map((item) => item.name)
-      .sort();
+      .filter((item) => item.isFile() && LOG_FILE_PATTERN.test(item.name))
+      .flatMap((item) => {
+        try {
+          const filePath = path.join(logDir, item.name);
+          const stats = fs.statSync(filePath);
+          const match = LOG_FILE_PATTERN.exec(item.name);
+          if (!match) return [];
+          return [{
+            name: item.name,
+            source: match[1] as 'application' | 'worker',
+            isError: Boolean(match[2]),
+            compressed: item.name.endsWith('.gz'),
+            sizeBytes: stats.size,
+            modifiedAt: stats.mtime,
+            path: filePath
+          }];
+        } catch {
+          return [];
+        }
+      })
+      .sort((left, right) => right.modifiedAt.getTime() - left.modifiedAt.getTime());
+  }
+
+  getLogFile(filename: string): LogFileDescriptor | null {
+    if (path.basename(filename) !== filename || !LOG_FILE_PATTERN.test(filename)) return null;
+    return this.listLogFiles().find((file) => file.name === filename) ?? null;
   }
 
   getLogFileForDate(date: Date, filePrefix: string): string {

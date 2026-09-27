@@ -7,6 +7,10 @@ coverage/
 !.env.example
 storage/
 logs/
+!packages/api/src/features/logs/
+!packages/api/src/features/logs/**
+!packages/client/src/app/features/logs/
+!packages/client/src/app/features/logs/**
 *.local
 graphify-out/
 .DS_Store
