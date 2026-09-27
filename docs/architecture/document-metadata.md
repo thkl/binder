@@ -23,9 +23,12 @@ POST /api/v1/metadata/definitions
 GET  /api/v1/documents/:uuid/metadata
 POST /api/v1/documents/:uuid/metadata
 POST /api/v1/documents/:uuid/title
+GET  /api/v1/documents/:uuid/extracted-text
 ```
 
 Document titles are editable presentation metadata; the original filename remains immutable for audit and storage purposes.
+
+The extracted text endpoint is ownership-protected and returns the combined text plus page boundaries. The metadata editor loads it lazily in a second tab next to the thumbnail so users can copy text such as issuer details without increasing the initial metadata-panel request cost.
 
 The document metadata endpoint accepts document type, category, tag UUIDs, and a `custom` object. Every vocabulary UUID and custom field key is checked against the active system or personal metadata available to the authenticated owner.
 

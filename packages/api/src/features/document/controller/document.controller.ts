@@ -64,6 +64,11 @@ export class DocumentController {
     return new StreamableFile(result.stream, { type: result.document.mimeType });
   }
 
+  @Get(':uuid/extracted-text')
+  async extractedText(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.getExtractedText(user.userId, uuid) };
+  }
+
   @Post(':uuid/title')
   async updateTitle(@Param('uuid') uuid: string, @Body() body: unknown, @CurrentUser() user: ScopedUser) {
     return { data: await this.documents.updateTitle(user.userId, uuid, SetDocumentTitleInputSchema.parse(body)) };

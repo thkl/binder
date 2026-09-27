@@ -17,6 +17,13 @@ export class DocumentStore extends BaseCrudStore<Document> {
     return this.model.findOne({ where: { uuid, ownerUuid } });
   }
 
+  async findOwnedPageText(ownerUuid: string, uuid: string) {
+    const document = await this.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) return null;
+    const pages = await DocumentPage.findAll({ where: { documentUuid: uuid }, order: [['pageNumber', 'ASC']] });
+    return { document, pages };
+  }
+
   async findOwnedPage(ownerUuid: string, query: DocumentListQuery) {
     const where: WhereOptions<Document> = { ownerUuid };
 

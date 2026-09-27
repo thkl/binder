@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
@@ -11,9 +11,9 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ChangePasswordComponent {
-  @Input() title = 'Change your password';
-  @Input() message = 'Choose a new password for your account.';
-  @Output() changed = new EventEmitter<void>();
+  readonly title = input('Change your password');
+  readonly message = input('Choose a new password for your account.');
+  readonly changed = output<void>();
 
   readonly oldPassword = signal('');
   readonly newPassword = signal('');

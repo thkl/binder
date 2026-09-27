@@ -9,7 +9,7 @@ import {
   DocumentListResponse,
   DocumentListResponseSchema
 } from '@binder/common';
-import { ClearDocumentSuggestionResponseSchema, DocumentMetadataSummary, DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
+import { ClearDocumentSuggestionResponseSchema, DocumentExtractedTextResponseSchema, DocumentMetadataSummary, DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
 import { randomUUID } from 'node:crypto';
 import type { Express } from 'express';
 import { DocumentStore } from '../store/document.store';
@@ -170,6 +170,15 @@ export class DocumentService {
       throw new NotFoundException('Document not found');
     }
     return { document: this.toDocumentResponse(document), stream: await this.storage.openReadStream(document.storageKey) };
+  }
+
+  async getExtractedText(ownerUuid: string, uuid: string) {
+    const result = await this.documents.findOwnedPageText(ownerUuid, uuid);
+    if (!result) throw new NotFoundException('Document not found');
+    return DocumentExtractedTextResponseSchema.parse({
+      text: result.pages.map((page) => page.text).join('\n\n'),
+      pages: result.pages.map((page) => ({ pageNumber: page.pageNumber, text: page.text }))
+    });
   }
 
   async getThumbnail(ownerUuid: string, uuid: string) {

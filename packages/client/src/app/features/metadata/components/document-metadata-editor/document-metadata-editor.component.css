@@ -498,4 +498,108 @@ h3 {
 .previewContainer {
     border-top: 1px solid rgba(157, 190, 232, .1);
     padding: .55rem;
+    display: flex;
+}
+
+.document-preview {
+    border-top: 1px solid rgba(157, 190, 232, .1);
+    background: rgba(5, 18, 35, .2);
+}
+
+.preview-tabs {
+    display: flex;
+    gap: .35rem;
+    padding: .7rem 1.35rem 0;
+    border-bottom: 1px solid rgba(157, 190, 232, .1);
+}
+
+.preview-tabs button {
+    min-height: 2.5rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    padding: .55rem .7rem;
+    color: #8da4bd;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: .7rem;
+    font-weight: 800;
+}
+
+.preview-tabs button:hover,
+.preview-tabs button.active {
+    border-bottom-color: var(--cyan);
+    color: #dff8ff;
+}
+
+.preview-tabs button:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: -2px;
+}
+
+.previewImage {
+    display: block;
+    width: min(100%, 22rem);
+    max-height: 28rem;
+    object-fit: contain;
+}
+
+.preview-empty,
+.preview-state {
+    margin: 0;
+    padding: 2rem 1rem;
+    color: #8da4bd;
+    font-size: .75rem;
+    text-align: center;
+}
+
+.extracted-text-panel {
+    padding: .8rem 1.35rem 1.15rem;
+}
+
+.extracted-text {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-height: 18rem;
+    resize: vertical;
+    border: 1px solid rgba(157, 190, 232, .2);
+    border-radius: .6rem;
+    padding: .8rem;
+    color: #dceaff;
+    background: rgba(5, 18, 35, .58);
+    font: inherit;
+    font-size: .75rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+}
+
+.extracted-text:focus {
+    border-color: var(--cyan);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(97, 215, 244, .1);
+}
+
+.preview-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: .55rem;
+    padding: 1.25rem;
+    color: #ffb0b0;
+    font-size: .75rem;
+    text-align: center;
+}
+
+.preview-error button {
+    border: 1px solid rgba(255, 120, 120, .3);
+    border-radius: .45rem;
+    padding: .4rem .65rem;
+    color: #ffd0d0;
+    background: rgba(255, 120, 120, .08);
+    cursor: pointer;
+    font: inherit;
+    font-size: .7rem;
+    font-weight: 800;
 }

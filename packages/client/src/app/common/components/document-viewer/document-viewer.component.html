@@ -1,9 +1,9 @@
 <div class="document-viewer-backdrop" role="presentation" (click)="closed.emit()">
   <aside class="document-viewer-panel" role="dialog" aria-modal="true" aria-labelledby="document-viewer-title" (click)="$event.stopPropagation()">
     <header class="document-viewer-header">
-      <div><p class="section-kicker">{{ 'viewer.kicker' | t }}</p><h3 id="document-viewer-title">{{ title }}</h3></div>
+      <div><p class="section-kicker">{{ 'viewer.kicker' | t }}</p><h3 id="document-viewer-title">{{ title() }}</h3></div>
       <button type="button" class="viewer-close" (click)="closed.emit()" [attr.aria-label]="'viewer.close' | t">×</button>
     </header>
-    <iframe class="document-viewer-frame" [src]="fileUrl" [title]="'viewer.preview' | t"></iframe>
+    <iframe class="document-viewer-frame" [src]="fileUrl()" [title]="'viewer.preview' | t"></iframe>
   </aside>
 </div>

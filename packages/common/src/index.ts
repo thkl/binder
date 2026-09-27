@@ -51,6 +51,18 @@ export const DocumentSchema = z.object({
 
 export type Document = z.infer<typeof DocumentSchema>;
 
+export const DocumentExtractedTextPageSchema = z.object({
+  pageNumber: z.number().int().positive(),
+  text: z.string()
+});
+export type DocumentExtractedTextPage = z.infer<typeof DocumentExtractedTextPageSchema>;
+
+export const DocumentExtractedTextResponseSchema = z.object({
+  text: z.string(),
+  pages: z.array(DocumentExtractedTextPageSchema)
+});
+export type DocumentExtractedTextResponse = z.infer<typeof DocumentExtractedTextResponseSchema>;
+
 export const IssuerSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid(),

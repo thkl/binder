@@ -27,7 +27,7 @@
       <select [value]="issuerUuid()" (change)="issuerUuid.set($any($event.target).value)">
         <option value="">{{ 'editor.noIssuer' | t }}</option>
         @for (issuer of metadata.issuers(); track issuer.uuid) {
-          <option [value]="issuer.uuid">{{ issuer.name }}{{ issuer.city ? ' · ' + issuer.city : '' }}</option>
+          <option [value]="issuer.uuid" [selected]="issuerUuid() === issuer.uuid">{{ issuer.name }}{{ issuer.city ? ' · ' + issuer.city : '' }}</option>
         }
       </select>
       <button type="button" class="secondary-button" (click)="openIssuerForm()">
@@ -106,10 +106,26 @@
     }
   </div>
   }
-  @if (documentData && documentData.thumbnailUrl) {
-    <div class="previewContainer">
-    <img class="previewImage" [src]="documentData.thumbnailUrl">
-    </div>
+  @if (documentData(); as document) {
+    <section class="document-preview" [attr.aria-label]="'editor.documentPreview' | t">
+      <div class="preview-tabs" role="tablist" [attr.aria-label]="'editor.documentPreview' | t">
+        <button type="button" role="tab" [attr.aria-selected]="previewTab() === 'thumbnail'" [class.active]="previewTab() === 'thumbnail'" (click)="selectPreviewTab('thumbnail')">{{ 'editor.thumbnail' | t }}</button>
+        <button type="button" role="tab" [attr.aria-selected]="previewTab() === 'text'" [class.active]="previewTab() === 'text'" (click)="selectPreviewTab('text')">{{ 'editor.extractedText' | t }}</button>
+      </div>
+      @if (previewTab() === 'thumbnail') {
+        <div class="previewContainer">
+          @if (document.thumbnailUrl) { <img class="previewImage" [src]="document.thumbnailUrl" [alt]="document.title || document.originalFilename"> }
+          @else { <p class="preview-empty">{{ 'editor.noThumbnail' | t }}</p> }
+        </div>
+      } @else {
+        <div class="extracted-text-panel">
+          @if (extractedTextLoading()) { <div class="preview-state"><span class="spinner"></span> {{ 'editor.loadingText' | t }}</div> }
+          @else if (extractedTextError(); as error) { <div class="preview-error" role="alert">{{ error }} <button type="button" (click)="selectPreviewTab('text')">{{ 'editor.retryText' | t }}</button></div> }
+          @else if (extractedText()?.trim()) { <textarea class="extracted-text" readonly [value]="extractedText()" aria-label="Extracted document text"></textarea> }
+          @else { <p class="preview-empty">{{ 'editor.noExtractedText' | t }}</p> }
+        </div>
+      }
+    </section>
   }
   <footer class="editor-footer">@if (saved()) { <span class="saved">✓ Saved</span> }<button type="button"
       class="save-button" [disabled]="metadata.saving()" (click)="save()">{{ metadata.saving() ? 'Saving…' : 'Save

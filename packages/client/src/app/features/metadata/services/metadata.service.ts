@@ -20,7 +20,9 @@ import {
   CreateIssuerInput,
   CreateIssuerInputSchema,
   UpdateIssuerInput,
-  UpdateIssuerInputSchema
+  UpdateIssuerInputSchema,
+  DocumentExtractedTextResponse,
+  DocumentExtractedTextResponseSchema
 } from '@binder/common';
 import { ClearDocumentSuggestionResponseSchema } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
@@ -164,6 +166,17 @@ export class MetadataService {
       return DocumentMetadataSchema.parse(response.data);
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  async getExtractedText(uuid: string): Promise<DocumentExtractedTextResponse | null> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(`/api/v1/documents/${uuid}/extracted-text`, { withCredentials: true })
+      );
+      return DocumentExtractedTextResponseSchema.parse(response.data);
+    } catch (error) {
       return null;
     }
   }

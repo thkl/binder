@@ -5,11 +5,10 @@ import { DocumentMetadataEditorComponent } from '../../../metadata/components/do
 import { DocumentViewerComponent } from '../../../../common/components/document-viewer/document-viewer.component';
 import type { Document, DocumentTitleSuggestion } from '@binder/common';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
-import type { Document as CommonDocument } from '@binder/common';
 
 type DocumentViewMode = 'list' | 'details' | 'small-icons' | 'large-icons';
 type DocumentGroupMode = 'none' | 'documentType' | 'category' | 'issuer' | 'tag';
-type DocumentGroup = { key: string; label: string | null; documents: CommonDocument[] };
+type DocumentGroup = { key: string; label: string | null; documents: Document[] };
 
 @Component({
   selector: 'binder-documents',
@@ -34,13 +33,7 @@ export class DocumentsComponent implements OnInit {
     return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
   });
   
-  readonly documentData = computed(()=>{
-    const metadataDocument = this.metadataDocument();
-    if (metadataDocument) {
-      return metadataDocument as Document
-    }
-    return null;
-  })
+  readonly documentData = this.metadataDocument;
 
   readonly viewerDocument = computed(() => {
     const uuid = this.viewerDocumentUuid();

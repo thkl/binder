@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import type { CreateIssuerInput, Document, DocumentMetadata, DocumentTitleSuggestion, Issuer, UpdateIssuerInput } from '@binder/common';
 import { MetadataService } from '../../services/metadata.service';
@@ -12,15 +12,15 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
   styleUrl: './document-metadata-editor.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DocumentMetadataEditorComponent implements OnChanges {
-  @Input({ required: true }) documentUuid = '';
-  @Input() suggestion: DocumentTitleSuggestion | null = null;
-  @Input() documentData : Document | null = null;
+export class DocumentMetadataEditorComponent {
+  readonly documentUuid = input.required<string>();
+  readonly suggestion = input<DocumentTitleSuggestion | null>(null);
+  readonly documentData = input<Document | null>(null);
 
-  @Output() suggestionAccepted = new EventEmitter<string>();
-  @Output() suggestionTitleAccepted = new EventEmitter<string>();
-  @Output() suggestionDismissed = new EventEmitter<void>();
-  @Output() manuallySaved = new EventEmitter<void>();
+  readonly suggestionAccepted = output<string>();
+  readonly suggestionTitleAccepted = output<string>();
+  readonly suggestionDismissed = output<void>();
+  readonly manuallySaved = output<void>();
   
   readonly metadata = inject(MetadataService);
   readonly i18n = inject(I18nService);
@@ -46,29 +46,41 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   readonly issuerCountry = signal('');
   readonly issuerCustomJson = signal('{}');
   readonly issuerError = signal<string | null>(null);
+  readonly previewTab = signal<'thumbnail' | 'text'>('thumbnail');
+  readonly extractedText = signal<string | null>(null);
+  readonly extractedTextLoading = signal(false);
+  readonly extractedTextLoaded = signal(false);
+  readonly extractedTextError = signal<string | null>(null);
   readonly filteredTags = computed(() => {
     const search = this.tagSearch().trim().toLowerCase();
     return (this.metadata.vocabulary()?.tags ?? []).filter((tag) => !search || tag.name.toLowerCase().includes(search));
   });
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['documentUuid'] && this.documentUuid) {
+  private readonly documentInputEffect = effect(() => {
+    const uuid = this.documentUuid();
+    if (uuid) {
       this.serverSuggestion.set(null);
-      void this.load();
+      this.previewTab.set('thumbnail');
+      this.extractedText.set(null);
+      this.extractedTextLoaded.set(false);
+      this.extractedTextError.set(null);
+      void this.load(uuid);
     }
-    if (changes['suggestion']) {
-      this.inputSuggestion.set(this.suggestion);
-      this.acceptedSuggestionFields.set(new Set());
-    }
-  }
+  });
 
-  async load(): Promise<void> {
+  private readonly suggestionInputEffect = effect(() => {
+    this.inputSuggestion.set(this.suggestion());
+    this.acceptedSuggestionFields.set(new Set());
+  });
+
+  async load(uuid = this.documentUuid()): Promise<void> {
     this.loaded.set(false);
     const [, current] = await Promise.all([
       this.metadata.loadVocabulary(),
-      this.metadata.getDocumentMetadata(this.documentUuid)
+      this.metadata.getDocumentMetadata(uuid)
 
     ]);
+    if (uuid !== this.documentUuid()) return;
     if (current) this.applyMetadata(current);
     this.loaded.set(true);
   }
@@ -85,7 +97,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   isTagSelected(uuid: string): boolean { return this.selectedTags().has(uuid); }
 
   async save(): Promise<boolean> {
-    const result = await this.metadata.setDocumentMetadata(this.documentUuid, {
+    const result = await this.metadata.setDocumentMetadata(this.documentUuid(), {
       issuerUuid: this.issuerUuid() || null,
       documentTypeUuid: this.documentTypeUuid() || null,
       categoryUuid: this.categoryUuid() || null,
@@ -93,7 +105,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
       custom: this.customValues()
     });
     if (result) {
-      const persisted = await this.metadata.getDocumentMetadata(this.documentUuid);
+      const persisted = await this.metadata.getDocumentMetadata(this.documentUuid());
       this.applyMetadata(persisted ?? result);
       this.saved.set(true);
       this.manuallySaved.emit();
@@ -131,11 +143,27 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   }
 
   async dismissSuggestion(): Promise<void> {
-    if (await this.metadata.clearDocumentSuggestion(this.documentUuid) === null) return;
+    if (await this.metadata.clearDocumentSuggestion(this.documentUuid()) === null) return;
     this.inputSuggestion.set(null);
     this.serverSuggestion.set(null);
     this.acceptedSuggestionFields.set(new Set());
     this.suggestionDismissed.emit();
+  }
+
+  async selectPreviewTab(tab: 'thumbnail' | 'text'): Promise<void> {
+    this.previewTab.set(tab);
+    if (tab === 'text' && !this.extractedTextLoaded() && !this.extractedTextLoading()) {
+      this.extractedTextLoading.set(true);
+      this.extractedTextError.set(null);
+      const result = await this.metadata.getExtractedText(this.documentUuid());
+      if (result) {
+        this.extractedText.set(result.text);
+        this.extractedTextLoaded.set(true);
+      } else {
+        this.extractedTextError.set(this.i18n.t('editor.textError'));
+      }
+      this.extractedTextLoading.set(false);
+    }
   }
 
   isSuggestionAccepted(field: string): boolean { return this.acceptedSuggestionFields().has(field); }
@@ -242,6 +270,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
       this.issuerUuid.set(result.uuid);
       this.showIssuerForm.set(false);
       this.saved.set(false);
+      await this.save();
     }
   }
 }
