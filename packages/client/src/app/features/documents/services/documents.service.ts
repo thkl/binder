@@ -31,7 +31,8 @@ export class DocumentsService {
   async load(query: Partial<DocumentListQuery> = {}): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
-    const parsed = DocumentListQuerySchema.parse({ ...this.currentQuery, ...query });
+    const schemaQuery = { ...this.currentQuery, ...query }
+    const parsed = DocumentListQuerySchema.parse(schemaQuery);
     this.currentQuery = parsed;
     const params = new URLSearchParams({
       page: String(parsed.page),

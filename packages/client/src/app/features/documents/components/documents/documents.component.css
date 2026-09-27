@@ -333,10 +333,13 @@ h2 {
 
 .document-name,
 .preview-card-body {
-  background: rgba(5, 18, 35, 0.90);
   display: grid;
   min-width: 0;
   gap: .5rem;
+}
+
+.preview-card-body {
+  background: rgba(5, 18, 35, 0.90);
 }
 
 .title-line {

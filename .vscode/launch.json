@@ -7,7 +7,7 @@
       "request": "launch",
       "type": "chrome",
       "url": "http://localhost:4200",
-      "webRoot": "${workspaceFolder}/apps/idb-client/"
+      "webRoot": "${workspaceFolder}/packages/client/"
     },
 
  

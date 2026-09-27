@@ -42,7 +42,13 @@
             <option value="isNew">{{ 'documents.groupReviewState' | t }}</option>
           </select>
         </label>
-
+        <label class="group-picker">
+          <span>{{ 'documents.sortDirection' | t }}</span>
+          <select [value]="sortDirection()" (change)="setSortDirection($any($event.target).value)">
+            <option value="desc">{{ 'documents.sortDesc' | t }}</option>
+            <option value="asc">{{ 'documents.sortAsc' | t }}</option>
+          </select>
+        </label>
         <div class="view-switcher" role="group" [attr.aria-label]="'documents.viewMode' | t">
           <button
             type="button"

@@ -15,6 +15,7 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
 
 type DocumentViewMode = 'list' | 'icons';
 type DocumentGroupMode = DocumentGroupBy;
+type DocumentSortDirection = 'asc' | 'desc';
 type DocumentGroup = { key: string; label: string | null; documents: Document[] };
 
 @Component({
@@ -32,6 +33,7 @@ export class DocumentsComponent implements OnInit {
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
   readonly viewMode = signal<DocumentViewMode>(this.readViewMode());
   readonly groupMode = signal<DocumentGroupMode>(this.readGroupMode());
+  readonly sortDirection  = signal<DocumentSortDirection>(this.readSortDirection());
   readonly metadataDocumentUuid = signal<string | null>(null);
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
@@ -192,11 +194,28 @@ export class DocumentsComponent implements OnInit {
   }
 
   setGroupMode(mode: DocumentGroupMode): void {
-    if (!this.canLeaveMetadata()) return;
+    if (!this.canLeaveMetadata()) {
+      console.log("canLeaveMetadata is false")
+      return;
+    }
+    console.log("Set Group Mode ",mode)
     this.groupMode.set(mode);
     localStorage.setItem('binder.documents.group-mode', mode);
     this.clearSelection();
     void this.documents.load({ page: 1, groupBy: mode });
+  }
+
+
+  setSortDirection(direction: DocumentSortDirection): void {
+    if (!this.canLeaveMetadata()) {
+      console.log("canLeaveMetadata is false")
+      return;
+    }
+    console.log("Set SortDirection",direction)
+    this.sortDirection.set(direction);
+    localStorage.setItem('binder.documents.sortDirection', direction);
+    this.clearSelection();
+    void this.documents.load({ page: 1, direction: direction });
   }
 
   markDocumentReviewed(uuid: string): void {
@@ -345,12 +364,20 @@ export class DocumentsComponent implements OnInit {
     this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
   }
 
+  private readSortDirection(): DocumentSortDirection {
+    const stored = localStorage.getItem('binder.documents.sortDirection');
+    return stored === 'asc' || stored === 'desc'
+      ? stored
+      : 'desc';
+  }
+
   private readGroupMode(): DocumentGroupMode {
     const stored = localStorage.getItem('binder.documents.group-mode');
     return stored === 'documentType' || stored === 'category' || stored === 'issuer' || stored === 'tag' || stored === 'status' || stored === 'isNew'
       ? stored
       : 'none';
   }
+  
   
   private readViewMode(): DocumentViewMode {
     const stored = localStorage.getItem('binder.documents.view-mode');
