@@ -6,6 +6,12 @@ import { DocumentCategory, DocumentMetadataValue, DocumentTag, DocumentTagAssign
 import { Issuer } from '../../issuer/models/issuer.entity';
 
 type VocabularyModel = typeof DocumentType | typeof DocumentCategory | typeof DocumentTag;
+type DocumentMetadataSummarySource = {
+  uuid: string;
+  documentTypeUuid: string | null;
+  categoryUuid: string | null;
+  issuerUuid: string | null;
+};
 
 @Injectable()
 export class MetadataStore {
@@ -60,6 +66,41 @@ export class MetadataStore {
     }));
 
     return { issuer, documentType, category, tags, custom, suggestion: document.aiSuggestion };
+  }
+
+  async getDocumentMetadataSummaries(ownerUuid: string, documents: DocumentMetadataSummarySource[]) {
+    if (documents.length === 0) return new Map<string, { documentType: DocumentType | null; category: DocumentCategory | null; issuer: Issuer | null; tags: DocumentTag[] }>();
+
+    const documentUuids = documents.map((document) => document.uuid);
+    const typeUuids = documents.flatMap((document) => document.documentTypeUuid ?? []);
+    const categoryUuids = documents.flatMap((document) => document.categoryUuid ?? []);
+    const issuerUuids = documents.flatMap((document) => document.issuerUuid ?? []);
+    const [documentTypes, categories, issuers, assignments] = await Promise.all([
+      typeUuids.length > 0 ? DocumentType.findAll({ where: { uuid: { [Op.in]: typeUuids }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } }) : [],
+      categoryUuids.length > 0 ? DocumentCategory.findAll({ where: { uuid: { [Op.in]: categoryUuids }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } }) : [],
+      issuerUuids.length > 0 ? Issuer.findAll({ where: { uuid: { [Op.in]: issuerUuids }, ownerUuid } }) : [],
+      DocumentTagAssignment.findAll({ where: { documentUuid: { [Op.in]: documentUuids } } })
+    ]);
+    const tagUuids = [...new Set(assignments.map((assignment) => assignment.tagUuid))];
+    const tags = tagUuids.length > 0
+      ? await DocumentTag.findAll({ where: { uuid: { [Op.in]: tagUuids }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } })
+      : [];
+    const typesByUuid = new Map(documentTypes.map((item) => [item.uuid, item]));
+    const categoriesByUuid = new Map(categories.map((item) => [item.uuid, item]));
+    const issuersByUuid = new Map(issuers.map((item) => [item.uuid, item]));
+    const tagsByUuid = new Map(tags.map((item) => [item.uuid, item]));
+    const tagsByDocument = new Map<string, DocumentTag[]>();
+    for (const assignment of assignments) {
+      const tag = tagsByUuid.get(assignment.tagUuid);
+      if (tag) tagsByDocument.set(assignment.documentUuid, [...(tagsByDocument.get(assignment.documentUuid) ?? []), tag]);
+    }
+
+    return new Map(documents.map((document) => [document.uuid, {
+      documentType: document.documentTypeUuid ? typesByUuid.get(document.documentTypeUuid) ?? null : null,
+      category: document.categoryUuid ? categoriesByUuid.get(document.categoryUuid) ?? null : null,
+      issuer: document.issuerUuid ? issuersByUuid.get(document.issuerUuid) ?? null : null,
+      tags: tagsByDocument.get(document.uuid) ?? []
+    }]));
   }
 
   listDefinitions(ownerUuid: string) {

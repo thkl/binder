@@ -137,6 +137,7 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
           thumbnailKey: null,
           pageCount: 1,
           issuerUuid: null,
+          isNew: true,
           status: 'uploaded'
         }, { transaction });
         const job = await PipelineJob.create({

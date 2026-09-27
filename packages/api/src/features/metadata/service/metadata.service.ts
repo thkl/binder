@@ -4,6 +4,7 @@ import {
   CreateMetadataDefinition,
   MetadataDefinitionsResponseSchema,
   DocumentMetadataSchema,
+  DocumentMetadataSummarySchema,
   DocumentTitleSuggestionSchema,
   SetDocumentMetadataInput,
   VocabularyItem,
@@ -104,6 +105,24 @@ export class MetadataService {
       custom: metadata.custom,
       suggestion: suggestion?.success ? suggestion.data : null
     });
+  }
+
+  async getDocumentMetadataSummaries(ownerUuid: string, documents: Array<{ uuid: string; documentTypeUuid: string | null; categoryUuid: string | null; issuerUuid: string | null }>) {
+    const summaries = await this.store.getDocumentMetadataSummaries(ownerUuid, documents);
+    return new Map([...summaries.entries()].map(([uuid, summary]) => [uuid, DocumentMetadataSummarySchema.parse({
+      documentType: summary.documentType ? {
+        uuid: summary.documentType.uuid,
+        name: summary.documentType.name,
+        translations: summary.documentType.translations ?? {}
+      } : null,
+      category: summary.category ? {
+        uuid: summary.category.uuid,
+        name: summary.category.name,
+        translations: summary.category.translations ?? {}
+      } : null,
+      issuer: summary.issuer ? { uuid: summary.issuer.uuid, name: summary.issuer.name } : null,
+      tags: summary.tags.map((tag) => ({ uuid: tag.uuid, name: tag.name, translations: tag.translations ?? {} }))
+    })]));
   }
 
   async setDocumentMetadata(ownerUuid: string, documentUuid: string, input: SetDocumentMetadataInput) {

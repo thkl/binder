@@ -18,6 +18,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   @Output() suggestionAccepted = new EventEmitter<string>();
   @Output() suggestionTitleAccepted = new EventEmitter<string>();
   @Output() suggestionDismissed = new EventEmitter<void>();
+  @Output() manuallySaved = new EventEmitter<void>();
 
   readonly metadata = inject(MetadataService);
   readonly i18n = inject(I18nService);
@@ -92,6 +93,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
       const persisted = await this.metadata.getDocumentMetadata(this.documentUuid);
       this.applyMetadata(persisted ?? result);
       this.saved.set(true);
+      this.manuallySaved.emit();
       return true;
     }
     return false;

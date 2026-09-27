@@ -1,0 +1,7 @@
+ALTER TABLE documents
+    ADD COLUMN IF NOT EXISTS is_new BOOLEAN NOT NULL DEFAULT TRUE;
+
+UPDATE documents
+SET is_new = FALSE
+WHERE is_new = TRUE
+  AND created_at < CURRENT_TIMESTAMP;

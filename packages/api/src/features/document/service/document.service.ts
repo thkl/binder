@@ -9,7 +9,7 @@ import {
   DocumentListResponse,
   DocumentListResponseSchema
 } from '@binder/common';
-import { ClearDocumentSuggestionResponseSchema, DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
+import { ClearDocumentSuggestionResponseSchema, DocumentMetadataSummary, DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
 import { randomUUID } from 'node:crypto';
 import type { Express } from 'express';
 import { DocumentStore } from '../store/document.store';
@@ -74,6 +74,7 @@ export class DocumentService {
         thumbnailKey,
         pageCount: 1,
         issuerUuid: null,
+        isNew: true,
         status: 'uploaded'
       });
       try {
@@ -90,9 +91,10 @@ export class DocumentService {
 
   async list(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListResponse> {
     const result = await this.documents.findOwnedPage(ownerUuid, query);
+    const summaries = await this.metadata.getDocumentMetadataSummaries(ownerUuid, result.items);
     return DocumentListResponseSchema.parse({
       ...result,
-      items: result.items.map((document) => this.toDocumentResponse(document))
+      items: result.items.map((document) => this.toDocumentResponse(document, summaries.get(document.uuid)))
     });
   }
 
@@ -146,7 +148,7 @@ export class DocumentService {
   async updateTitle(ownerUuid: string, uuid: string, input: SetDocumentTitleInput) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
-    const updated = await this.documents.update(uuid, { title: input.title });
+    const updated = await this.documents.update(uuid, { title: input.title, isNew: false });
     return this.toDocumentResponse(updated ?? document);
   }
 
@@ -233,7 +235,9 @@ export class DocumentService {
   }
 
   async setMetadata(ownerUuid: string, uuid: string, input: SetDocumentMetadataInput) {
-    return this.metadata.setDocumentMetadata(ownerUuid, uuid, input);
+    const metadata = await this.metadata.setDocumentMetadata(ownerUuid, uuid, input);
+    if (metadata) await this.documents.update(uuid, { isNew: false });
+    return metadata;
   }
 
   async applySuggestionToEmptyFields(ownerUuid: string, uuid: string, suggestion: DocumentTitleSuggestion): Promise<{ appliedFields: string[] }> {
@@ -287,7 +291,7 @@ export class DocumentService {
     return { appliedFields };
   }
 
-  private toDocumentResponse(document: import('../models/document.entity').Document): DocumentResponse {
+  private toDocumentResponse(document: import('../models/document.entity').Document, metadataSummary?: DocumentMetadataSummary): DocumentResponse {
     return {
       uuid: document.uuid,
       ownerUuid: document.ownerUuid,
@@ -301,6 +305,8 @@ export class DocumentService {
       thumbnailUrl: this.thumbnailUrl(document.uuid),
       pageCount: document.pageCount || 1,
       issuerUuid: document.issuerUuid,
+      isNew: document.isNew,
+      metadataSummary: metadataSummary ?? { documentType: null, category: null, issuer: null, tags: [] },
       status: document.status,
       createdAt: document.createdAt.toISOString(),
       updatedAt: document.updatedAt.toISOString()

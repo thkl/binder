@@ -5,8 +5,11 @@ import { DocumentMetadataEditorComponent } from '../../../metadata/components/do
 import { DocumentViewerComponent } from '../../../../common/components/document-viewer/document-viewer.component';
 import type { DocumentTitleSuggestion } from '@binder/common';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
+import type { Document as CommonDocument } from '@binder/common';
 
 type DocumentViewMode = 'list' | 'details' | 'small-icons' | 'large-icons';
+type DocumentGroupMode = 'none' | 'documentType' | 'category' | 'issuer' | 'tag';
+type DocumentGroup = { key: string; label: string | null; documents: CommonDocument[] };
 
 @Component({
   selector: 'binder-documents',
@@ -20,6 +23,7 @@ export class DocumentsComponent implements OnInit {
   readonly documents = inject(DocumentsService);
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
   readonly viewMode = signal<DocumentViewMode>(this.readViewMode());
+  readonly groupMode = signal<DocumentGroupMode>(this.readGroupMode());
   readonly metadataDocumentUuid = signal<string | null>(null);
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
@@ -31,6 +35,28 @@ export class DocumentsComponent implements OnInit {
   readonly viewerDocument = computed(() => {
     const uuid = this.viewerDocumentUuid();
     return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
+  });
+  readonly documentGroups = computed<DocumentGroup[]>(() => {
+    const documents = this.documents.page()?.items ?? [];
+    const mode = this.groupMode();
+    if (mode === 'none') return [{ key: 'all', label: null, documents }];
+    const groups = new Map<string, DocumentGroup>();
+    for (const document of documents) {
+      const values = mode === 'documentType'
+        ? document.metadataSummary.documentType ? [{ key: document.metadataSummary.documentType.uuid, label: document.metadataSummary.documentType.name }] : []
+        : mode === 'category'
+          ? document.metadataSummary.category ? [{ key: document.metadataSummary.category.uuid, label: document.metadataSummary.category.name }] : []
+          : mode === 'issuer'
+            ? document.metadataSummary.issuer ? [{ key: document.metadataSummary.issuer.uuid, label: document.metadataSummary.issuer.name }] : []
+            : document.metadataSummary.tags.map((tag) => ({ key: tag.uuid, label: tag.name }));
+      const groupValues = values.length > 0 ? values : [{ key: '__none', label: null }];
+      for (const value of groupValues) {
+        const group = groups.get(value.key) ?? { key: value.key, label: value.label, documents: [] };
+        group.documents.push(document);
+        groups.set(value.key, group);
+      }
+    }
+    return [...groups.values()].sort((left, right) => (left.label ?? '').localeCompare(right.label ?? ''));
   });
 
   ngOnInit(): void {
@@ -80,6 +106,18 @@ export class DocumentsComponent implements OnInit {
   setViewMode(mode: DocumentViewMode): void {
     this.viewMode.set(mode);
     localStorage.setItem('binder.documents.view-mode', mode);
+  }
+
+  setGroupMode(mode: DocumentGroupMode): void {
+    this.groupMode.set(mode);
+    localStorage.setItem('binder.documents.group-mode', mode);
+  }
+
+  markDocumentReviewed(uuid: string): void {
+    this.documents.page.update((page) => page ? {
+      ...page,
+      items: page.items.map((document) => document.uuid === uuid ? { ...document, isNew: false } : document)
+    } : page);
   }
 
 
@@ -151,6 +189,11 @@ export class DocumentsComponent implements OnInit {
 
   dismissLocalTitleSuggestion(uuid: string): void {
     this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
+  }
+
+  private readGroupMode(): DocumentGroupMode {
+    const stored = localStorage.getItem('binder.documents.group-mode');
+    return stored === 'documentType' || stored === 'category' || stored === 'issuer' || stored === 'tag' ? stored : 'none';
   }
   
   private readViewMode(): DocumentViewMode {

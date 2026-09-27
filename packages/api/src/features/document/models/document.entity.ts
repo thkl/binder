@@ -24,6 +24,7 @@ export interface DocumentAttributes {
   thumbnailKey: string | null;
   pageCount: number;
   issuerUuid: string | null;
+  isNew: boolean;
   aiSuggestion: Record<string, unknown> | null;
   searchVector: unknown;
   status: DocumentStatus;
@@ -31,11 +32,12 @@ export interface DocumentAttributes {
   updatedAt: Date;
 }
 
-export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'thumbnailKey' | 'pageCount' | 'issuerUuid' | 'aiSuggestion'> & {
+export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'thumbnailKey' | 'pageCount' | 'issuerUuid' | 'isNew' | 'aiSuggestion'> & {
   uuid?: string;
   thumbnailKey?: string | null;
   pageCount?: number;
   issuerUuid?: string | null;
+  isNew?: boolean;
   aiSuggestion?: Record<string, unknown> | null;
   status?: DocumentStatus;
 };
@@ -84,6 +86,9 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
 
   @AllowNull @Column({ field: 'issuer_id', type: DataType.UUID })
   declare issuerUuid: string | null;
+
+  @Column({ field: 'is_new', type: DataType.BOOLEAN, allowNull: false, defaultValue: true })
+  declare isNew: boolean;
 
   @AllowNull
   @Column({ field: 'ai_suggestion', type: DataType.JSONB, allowNull: true })

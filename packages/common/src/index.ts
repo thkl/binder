@@ -10,6 +10,25 @@ export const DocumentStatusSchema = z.enum([
 
 export type DocumentStatus = z.infer<typeof DocumentStatusSchema>;
 
+export const DocumentGroupVocabularyValueSchema = z.object({
+  uuid: z.uuid(),
+  name: z.string().trim().min(1).max(150),
+  translations: z.record(z.string(), z.string()).default({})
+});
+
+export const DocumentGroupIssuerValueSchema = z.object({
+  uuid: z.uuid(),
+  name: z.string().trim().min(1).max(200)
+});
+
+export const DocumentMetadataSummarySchema = z.object({
+  documentType: DocumentGroupVocabularyValueSchema.nullable(),
+  category: DocumentGroupVocabularyValueSchema.nullable(),
+  issuer: DocumentGroupIssuerValueSchema.nullable(),
+  tags: z.array(DocumentGroupVocabularyValueSchema)
+});
+export type DocumentMetadataSummary = z.infer<typeof DocumentMetadataSummarySchema>;
+
 export const DocumentSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid(),
@@ -23,6 +42,8 @@ export const DocumentSchema = z.object({
   thumbnailUrl: z.string().min(1),
   pageCount: z.number().int().min(1),
   issuerUuid: z.uuid().nullable(),
+  isNew: z.boolean(),
+  metadataSummary: DocumentMetadataSummarySchema,
   status: DocumentStatusSchema,
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime()

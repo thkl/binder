@@ -154,6 +154,9 @@ export class Document extends Model {
   @Column({ field: 'issuer_id', type: DataType.UUID, allowNull: true })
   declare issuerUuid: string | null;
 
+  @Column({ field: 'is_new', type: DataType.BOOLEAN, allowNull: false, defaultValue: true })
+  declare isNew: boolean;
+
   @Column({ field: 'ai_suggestion', type: DataType.JSONB, allowNull: true })
   declare aiSuggestion: Record<string, unknown> | null;
 
