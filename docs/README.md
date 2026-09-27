@@ -19,6 +19,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Controlled document metadata](./architecture/document-metadata.md) — system and personal classification vocabularies
 - [Issuers](./architecture/issuers.md) — reusable sender records, document references, and deterministic worker matching
 - [Document search](./architecture/search.md) — page text search, snippets, and the semantic-search extension point
+- [Document bulk actions](./architecture/bulk-actions.md) — page-scoped selection and batch document operations
 - [AI assistance](./architecture/ai-assistance.md) — user-confirmed hosted title suggestions
 - [Localization](./architecture/localization.md) — extensible UI and vocabulary translations
 - [Container deployment](./architecture/containers.md) — API, client, worker, PostgreSQL, and shared storage

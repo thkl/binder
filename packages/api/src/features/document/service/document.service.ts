@@ -5,6 +5,8 @@ import {
   Document as DocumentResponse,
   DocumentSearchQuery,
   DocumentSearchResponseSchema,
+  DocumentBulkActionInput,
+  DocumentBulkActionResponseSchema,
   DocumentListQuery,
   DocumentListResponse,
   DocumentListResponseSchema
@@ -117,6 +119,40 @@ export class DocumentService {
         matchType: hit.matchType,
         semanticScore: hit.semanticScore
       }))
+    });
+  }
+
+  async bulkAction(ownerUuid: string, input: DocumentBulkActionInput) {
+    const items = [];
+
+    for (const uuid of input.documentUuids) {
+      try {
+        if (input.action === 'analyze') {
+          await this.suggestTitle(ownerUuid, uuid);
+        } else if (input.action === 'requeue') {
+          await this.requeue(ownerUuid, uuid);
+        } else {
+          const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+          if (!document) {
+            throw new NotFoundException('Document not found');
+          }
+          await this.documents.update(uuid, { isNew: false });
+        }
+
+        items.push({ uuid, success: true, message: null });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Bulk action failed';
+        this.logger.warn(`Bulk document action failed for ${uuid}: ${message}`);
+        items.push({ uuid, success: false, message: message.slice(0, 500) });
+      }
+    }
+
+    return DocumentBulkActionResponseSchema.parse({
+      action: input.action,
+      requested: items.length,
+      succeeded: items.filter((item) => item.success).length,
+      failed: items.filter((item) => !item.success).length,
+      items
     });
   }
 

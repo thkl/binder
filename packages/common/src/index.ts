@@ -108,6 +108,38 @@ export const DocumentTitleSuggestionSchema = z.object({
 });
 export type DocumentTitleSuggestion = z.infer<typeof DocumentTitleSuggestionSchema>;
 
+export const DocumentBulkActionSchema = z.enum([
+  'analyze',
+  'requeue',
+  'mark-reviewed'
+]);
+export type DocumentBulkAction = z.infer<typeof DocumentBulkActionSchema>;
+
+export const DocumentBulkActionInputSchema = z.object({
+  documentUuids: z.array(z.uuid()).min(1).max(100).refine(
+    (uuids) => new Set(uuids).size === uuids.length,
+    'Document UUIDs must be unique'
+  ),
+  action: DocumentBulkActionSchema
+});
+export type DocumentBulkActionInput = z.infer<typeof DocumentBulkActionInputSchema>;
+
+export const DocumentBulkActionItemSchema = z.object({
+  uuid: z.uuid(),
+  success: z.boolean(),
+  message: z.string().max(500).nullable()
+});
+export type DocumentBulkActionItem = z.infer<typeof DocumentBulkActionItemSchema>;
+
+export const DocumentBulkActionResponseSchema = z.object({
+  action: DocumentBulkActionSchema,
+  requested: z.number().int().nonnegative(),
+  succeeded: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  items: z.array(DocumentBulkActionItemSchema)
+});
+export type DocumentBulkActionResponse = z.infer<typeof DocumentBulkActionResponseSchema>;
+
 export const ClearDocumentSuggestionResponseSchema = z.object({ cleared: z.boolean() });
 export type ClearDocumentSuggestionResponse = z.infer<typeof ClearDocumentSuggestionResponseSchema>;
 

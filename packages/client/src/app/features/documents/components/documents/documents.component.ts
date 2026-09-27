@@ -4,7 +4,12 @@ import { DocumentsService } from '../../services/documents.service';
 import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
 import { DocumentViewerComponent } from '../../../../common/components/document-viewer/document-viewer.component';
 import { DocumentActionsComponent } from '../document-actions/document-actions.component';
-import type { Document, DocumentTitleSuggestion } from '@binder/common';
+import type {
+  Document,
+  DocumentBulkAction,
+  DocumentBulkActionResponse,
+  DocumentTitleSuggestion
+} from '@binder/common';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 type DocumentViewMode = 'list' | 'icons';
@@ -32,6 +37,9 @@ export class DocumentsComponent implements OnInit {
   readonly viewerDocumentUuid = signal<string | null>(null);
   readonly metadataDirty = signal(false);
   readonly metadataClosePrompt = signal(false);
+  readonly selectedDocumentUuids = signal<Set<string>>(new Set());
+  readonly bulkActionInProgress = signal<DocumentBulkAction | null>(null);
+  readonly bulkActionResult = signal<DocumentBulkActionResponse | null>(null);
   
   readonly metadataDocument = computed(() => {
     const uuid = this.metadataDocumentUuid();
@@ -39,6 +47,12 @@ export class DocumentsComponent implements OnInit {
   });
   
   readonly documentData = this.metadataDocument;
+
+  readonly selectedCount = computed(() => this.selectedDocumentUuids().size);
+  readonly allVisibleSelected = computed(() => {
+    const visible = this.documents.page()?.items ?? [];
+    return visible.length > 0 && visible.every((document) => this.selectedDocumentUuids().has(document.uuid));
+  });
 
   readonly viewerDocument = computed(() => {
     const uuid = this.viewerDocumentUuid();
@@ -89,6 +103,7 @@ export class DocumentsComponent implements OnInit {
   async nextPage(): Promise<void> {
     const page = this.documents.page();
     if (page?.hasNext) {
+      this.clearSelection();
       await this.documents.load({ page: page.page + 1, pageSize: page.pageSize });
     }
   }
@@ -96,7 +111,64 @@ export class DocumentsComponent implements OnInit {
   async previousPage(): Promise<void> {
     const page = this.documents.page();
     if (page && page.hasPrev) {
+      this.clearSelection();
       await this.documents.load({ page: page.page - 1, pageSize: page.pageSize });
+    }
+  }
+
+  toggleDocumentSelection(uuid: string, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.selectedDocumentUuids.update((selected) => {
+      const next = new Set(selected);
+      if (checked) {
+        next.add(uuid);
+      } else {
+        next.delete(uuid);
+      }
+      return next;
+    });
+    this.bulkActionResult.set(null);
+  }
+
+  toggleAllVisible(): void {
+    const visible = this.documents.page()?.items ?? [];
+    const allSelected = this.allVisibleSelected();
+    this.selectedDocumentUuids.update((selected) => {
+      const next = new Set(selected);
+      for (const document of visible) {
+        if (allSelected) {
+          next.delete(document.uuid);
+        } else {
+          next.add(document.uuid);
+        }
+      }
+      return next;
+    });
+    this.bulkActionResult.set(null);
+  }
+
+  isDocumentSelected(uuid: string): boolean {
+    return this.selectedDocumentUuids().has(uuid);
+  }
+
+  clearSelection(): void {
+    this.selectedDocumentUuids.set(new Set());
+    this.bulkActionResult.set(null);
+  }
+
+  async runBulkAction(action: DocumentBulkAction): Promise<void> {
+    if (this.selectedCount() === 0 || !this.canLeaveMetadata()) return;
+
+    this.bulkActionInProgress.set(action);
+    this.bulkActionResult.set(null);
+    const result = await this.documents.bulkAction({
+      documentUuids: [...this.selectedDocumentUuids()],
+      action
+    });
+    this.bulkActionInProgress.set(null);
+    if (result) {
+      this.selectedDocumentUuids.set(new Set());
+      this.bulkActionResult.set(result);
     }
   }
 

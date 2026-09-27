@@ -14,7 +14,13 @@ import {
   UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { DocumentListQuerySchema, DocumentSearchQuerySchema, SetDocumentMetadataInputSchema, SetDocumentTitleInputSchema } from '@binder/common';
+import {
+  DocumentBulkActionInputSchema,
+  DocumentListQuerySchema,
+  DocumentSearchQuerySchema,
+  SetDocumentMetadataInputSchema,
+  SetDocumentTitleInputSchema
+} from '@binder/common';
 import type { Response } from 'express';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
@@ -53,6 +59,11 @@ export class DocumentController {
   @Get('search')
   async search(@Query() query: Record<string, unknown>, @CurrentUser() user: ScopedUser) {
     return { data: await this.documents.search(user.userId, DocumentSearchQuerySchema.parse(query)) };
+  }
+
+  @Post('bulk')
+  async bulkAction(@Body() body: unknown, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.bulkAction(user.userId, DocumentBulkActionInputSchema.parse(body)) };
   }
 
   @Get(':uuid/file')

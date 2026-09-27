@@ -2,6 +2,9 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import {
   ApiResponse,
+  DocumentBulkActionInput,
+  DocumentBulkActionResponse,
+  DocumentBulkActionResponseSchema,
   DocumentListQuery,
   DocumentListQuerySchema,
   DocumentListResponse,
@@ -62,6 +65,25 @@ export class DocumentsService {
       this.loading.set(false);
     }
     return this.error() === null;
+  }
+
+  async bulkAction(input: DocumentBulkActionInput): Promise<DocumentBulkActionResponse | null> {
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', 'documents/bulk'),
+          input,
+          { withCredentials: true }
+        )
+      );
+      const result = DocumentBulkActionResponseSchema.parse(response.data);
+      await this.load();
+      return result;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
   }
 
   async updateTitle(uuid: string, title: string): Promise<boolean> {

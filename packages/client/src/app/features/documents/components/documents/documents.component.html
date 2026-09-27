@@ -67,6 +67,59 @@
       </div>
     </header>
 
+    <div class="bulk-toolbar" [class.visible]="selectedCount() > 0">
+      <label class="select-all-control">
+        <input
+          type="checkbox"
+          [checked]="allVisibleSelected()"
+          (change)="toggleAllVisible()"
+          [attr.aria-label]="'documents.selectAllVisible' | t">
+        <span>{{ selectedCount() }} {{ 'documents.selected' | t }}</span>
+      </label>
+
+      @if (selectedCount() > 0) {
+        <div class="bulk-actions" role="group" [attr.aria-label]="'documents.bulkActions' | t">
+          <button
+            type="button"
+            class="bulk-action-button primary"
+            [disabled]="bulkActionInProgress() !== null"
+            (click)="runBulkAction('analyze')">
+            {{ bulkActionInProgress() === 'analyze' ? ('documents.analyzing' | t) : ('documents.analyzeSelected' | t) }}
+          </button>
+          <button
+            type="button"
+            class="bulk-action-button"
+            [disabled]="bulkActionInProgress() !== null"
+            (click)="runBulkAction('requeue')">
+            {{ bulkActionInProgress() === 'requeue' ? ('documents.requeueing' | t) : ('documents.requeueSelected' | t) }}
+          </button>
+          <button
+            type="button"
+            class="bulk-action-button"
+            [disabled]="bulkActionInProgress() !== null"
+            (click)="runBulkAction('mark-reviewed')">
+            {{ 'documents.markReviewed' | t }}
+          </button>
+          <button
+            type="button"
+            class="bulk-action-button quiet"
+            [disabled]="bulkActionInProgress() !== null"
+            (click)="clearSelection()">
+            {{ 'documents.clearSelection' | t }}
+          </button>
+        </div>
+      }
+
+      @if (bulkActionResult(); as result) {
+        <span class="bulk-result" role="status">
+          {{ result.succeeded }} {{ 'documents.completed' | t }}
+          @if (result.failed > 0) {
+            · {{ result.failed }} {{ 'documents.failed' | t }}
+          }
+        </span>
+      }
+    </div>
+
     @if (documents.loading()) {
       <div class="empty-state">
         <span class="spinner"></span>
@@ -91,6 +144,14 @@
 
             @for (document of group.documents; track document.uuid) {
               <article class="document-row">
+                <label class="selection-control">
+                  <input
+                    type="checkbox"
+                    [checked]="isDocumentSelected(document.uuid)"
+                    (change)="toggleDocumentSelection(document.uuid, $event)"
+                    [attr.aria-label]="('documents.select' | t) + ': ' + (document.title || document.originalFilename)">
+                </label>
+
                 <button
                   type="button"
                   class="row-preview"
@@ -181,6 +242,15 @@
                 </button>
 
                 <div class="preview-card-body">
+                  <label class="card-selection-control">
+                    <input
+                      type="checkbox"
+                      [checked]="isDocumentSelected(document.uuid)"
+                      (change)="toggleDocumentSelection(document.uuid, $event)"
+                      [attr.aria-label]="('documents.select' | t) + ': ' + (document.title || document.originalFilename)">
+                    <span>{{ 'documents.select' | t }}</span>
+                  </label>
+
                   <div class="title-line">
                     @if (editingTitleUuid() === document.uuid) {
                       <input
