@@ -13,6 +13,7 @@ import { DocumentModule } from './features/document/document.module';
 import { PipelineModule } from './features/pipeline/pipeline.module';
 import { MetadataModule } from './features/metadata/metadata.module';
 import { InboxModule } from './features/inbox/inbox.module';
+import { IssuerModule } from './features/issuer/issuer.module';
 
 @Module({
   controllers: [HealthController],
@@ -27,6 +28,7 @@ import { InboxModule } from './features/inbox/inbox.module';
     PipelineModule,
     MetadataModule,
     InboxModule,
+    IssuerModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

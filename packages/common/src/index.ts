@@ -20,12 +20,43 @@ export const DocumentSchema = z.object({
   checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
   storageKey: z.string().min(1),
   thumbnailKey: z.string().min(1).nullable().optional(),
+  issuerUuid: z.uuid().nullable(),
   status: DocumentStatusSchema,
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime()
 });
 
 export type Document = z.infer<typeof DocumentSchema>;
+
+export const IssuerSchema = z.object({
+  uuid: z.uuid(),
+  ownerUuid: z.uuid(),
+  name: z.string().trim().min(1).max(200),
+  address: z.string().max(255).nullable(),
+  zipCode: z.string().max(32).nullable(),
+  city: z.string().max(150).nullable(),
+  country: z.string().max(100).nullable(),
+  custom: z.record(z.string(), z.unknown()),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime()
+});
+export type Issuer = z.infer<typeof IssuerSchema>;
+
+export const IssuerListResponseSchema = z.object({ items: z.array(IssuerSchema) });
+export type IssuerListResponse = z.infer<typeof IssuerListResponseSchema>;
+
+export const CreateIssuerInputSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  address: z.string().trim().max(255).nullable().optional(),
+  zipCode: z.string().trim().max(32).nullable().optional(),
+  city: z.string().trim().max(150).nullable().optional(),
+  country: z.string().trim().max(100).nullable().optional(),
+  custom: z.record(z.string(), z.unknown()).optional().default({})
+});
+export type CreateIssuerInput = z.infer<typeof CreateIssuerInputSchema>;
+
+export const UpdateIssuerInputSchema = CreateIssuerInputSchema.partial();
+export type UpdateIssuerInput = z.infer<typeof UpdateIssuerInputSchema>;
 
 export const DocumentThumbnailSchema = z.object({
   uuid: z.uuid(),
@@ -114,6 +145,7 @@ export const DocumentListQuerySchema = z.object({
   sort: z.enum(['createdAt', 'updatedAt', 'originalFilename', 'title', 'status']).default('createdAt'),
   direction: z.enum(['asc', 'desc']).default('desc'),
   status: DocumentStatusSchema.optional(),
+  issuerUuid: z.uuid().optional(),
   q: z.string().trim().max(200).optional()
 });
 
@@ -137,6 +169,7 @@ export const DocumentSearchQuerySchema = z.object({
   status: DocumentStatusSchema.optional(),
   documentTypeUuid: z.uuid().optional(),
   categoryUuid: z.uuid().optional(),
+  issuerUuid: z.uuid().optional(),
   tagUuids: z.preprocess(
     (value) => typeof value === 'string' ? value.split(',').map((item) => item.trim()).filter(Boolean) : value,
     z.array(z.uuid()).max(20).optional()
@@ -382,6 +415,7 @@ export const CreateVocabularyItemSchema = z.object({
 export type CreateVocabularyItem = z.infer<typeof CreateVocabularyItemSchema>;
 
 export const DocumentMetadataSchema = z.object({
+  issuer: IssuerSchema.nullable(),
   documentType: VocabularyItemSchema.nullable(),
   category: VocabularyItemSchema.nullable(),
   tags: z.array(VocabularyItemSchema),
@@ -425,6 +459,7 @@ export const CreateMetadataDefinitionSchema = z.object({
 export type CreateMetadataDefinition = z.infer<typeof CreateMetadataDefinitionSchema>;
 
 export const SetDocumentMetadataInputSchema = z.object({
+  issuerUuid: z.uuid().nullable().optional(),
   documentTypeUuid: z.uuid().nullable().optional(),
   categoryUuid: z.uuid().nullable().optional(),
   tagUuids: z.array(z.uuid()).optional(),

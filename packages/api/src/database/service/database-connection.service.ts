@@ -17,6 +17,7 @@ import { PipelineJobEvent } from '../../features/pipeline/models/pipeline-job-ev
 import { DocumentCategory, DocumentTag, DocumentTagAssignment, DocumentType } from '../../features/metadata/models/vocabulary.entity';
 import { DocumentMetadataValue, MetadataDefinition } from '../../features/metadata/models/vocabulary.entity';
 import { InboxItem } from '../../features/inbox/models/inbox-item.entity';
+import { Issuer } from '../../features/issuer/models/issuer.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -47,7 +48,7 @@ export class DatabaseConnectionService {
         this.registerModels([
             User, ApplicationSetting, Document, DocumentPage, DocumentEmbedding, PipelineJob, PipelineJobEvent,
             DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment,
-            MetadataDefinition, DocumentMetadataValue, InboxItem
+            MetadataDefinition, DocumentMetadataValue, InboxItem, Issuer
         ]);
         await this.initialize();
     }

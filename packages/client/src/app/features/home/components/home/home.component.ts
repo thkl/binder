@@ -27,6 +27,7 @@ export class HomeComponent {
   readonly selectedType = signal('');
   readonly selectedCategory = signal('');
   readonly selectedTag = signal('');
+  readonly selectedIssuer = signal('');
 
   itemName(item: { name: string; translations: Record<string, string> }): string { return this.i18n.name(item); }
 
@@ -35,6 +36,7 @@ export class HomeComponent {
     await this.search.search(this.searchQuery(), {
       documentTypeUuid: this.selectedType() || undefined,
       categoryUuid: this.selectedCategory() || undefined,
+      issuerUuid: this.selectedIssuer() || undefined,
       tagUuids: this.selectedTag() ? [this.selectedTag()] : undefined
     });
   }

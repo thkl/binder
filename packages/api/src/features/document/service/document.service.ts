@@ -73,6 +73,7 @@ export class DocumentService {
         ...input,
         storageKey: stored.storageKey,
         thumbnailKey,
+        issuerUuid: null,
         status: 'uploaded'
       });
       try {
@@ -98,7 +99,7 @@ export class DocumentService {
   async search(ownerUuid: string, query: DocumentSearchQuery) {
     const [keywordResult, semanticResult] = await Promise.all([
       this.documents.searchOwned(ownerUuid, query),
-      this.semanticSearch.search(ownerUuid, query.q, query.limit).catch((error: unknown) => {
+      this.semanticSearch.search(ownerUuid, query.q, query.limit, query).catch((error: unknown) => {
         this.logger.warn(`Semantic search unavailable: ${error instanceof Error ? error.message : String(error)}`);
         return [];
       })
@@ -307,6 +308,7 @@ export class DocumentService {
       checksumSha256: document.checksumSha256,
       storageKey: document.storageKey,
       thumbnailKey: document.thumbnailKey,
+      issuerUuid: document.issuerUuid,
       status: document.status,
       createdAt: document.createdAt.toISOString(),
       updatedAt: document.updatedAt.toISOString()

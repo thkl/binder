@@ -21,6 +21,35 @@
       <button type="button" class="accept-all-button" (click)="acceptAllSuggestion()">✓ {{ 'editor.acceptAll' | t }}</button>
     </section>
   }
+  <section class="issuer-section">
+    <div class="tag-label"><span>{{ 'editor.issuer' | t }}</span><small>{{ 'editor.issuerHint' | t }}</small></div>
+    <div class="issuer-picker">
+      <select [value]="issuerUuid()" (change)="issuerUuid.set($any($event.target).value)">
+        <option value="">{{ 'editor.noIssuer' | t }}</option>
+        @for (issuer of metadata.issuers(); track issuer.uuid) {
+          <option [value]="issuer.uuid">{{ issuer.name }}{{ issuer.city ? ' · ' + issuer.city : '' }}</option>
+        }
+      </select>
+      <button type="button" class="secondary-button" (click)="openIssuerForm()">
+        {{ issuerUuid() ? ('editor.editIssuer' | t) : ('editor.addIssuer' | t) }}
+      </button>
+    </div>
+    @if (showIssuerForm()) {
+      <div class="issuer-form">
+        @if (issuerError(); as error) { <div class="issuer-form-error" role="alert">{{ error }}</div> }
+        <label class="field"><span>{{ 'editor.issuerName' | t }}</span><input [value]="issuerName()" (input)="issuerName.set($any($event.target).value)" required></label>
+        <label class="field"><span>{{ 'editor.address' | t }}</span><input [value]="issuerAddress()" (input)="issuerAddress.set($any($event.target).value)"></label>
+        <label class="field"><span>{{ 'editor.zipCode' | t }}</span><input [value]="issuerZipCode()" (input)="issuerZipCode.set($any($event.target).value)"></label>
+        <label class="field"><span>{{ 'editor.city' | t }}</span><input [value]="issuerCity()" (input)="issuerCity.set($any($event.target).value)"></label>
+        <label class="field"><span>{{ 'editor.country' | t }}</span><input [value]="issuerCountry()" (input)="issuerCountry.set($any($event.target).value)"></label>
+        <label class="field issuer-custom"><span>{{ 'editor.customIssuerFields' | t }}</span><textarea [value]="issuerCustomJson()" (input)="issuerCustomJson.set($any($event.target).value)" rows="4" spellcheck="false"></textarea><small>{{ 'editor.issuerJsonHint' | t }}</small></label>
+        <div class="issuer-actions">
+          <button type="button" class="secondary-button" (click)="cancelIssuerForm()">{{ 'editor.cancelIssuer' | t }}</button>
+          <button type="button" class="save-button" [disabled]="metadata.saving() || !issuerName().trim()" (click)="saveIssuer()">{{ 'editor.saveIssuer' | t }}</button>
+        </div>
+      </div>
+    }
+  </section>
   <div class="editor-fields">
     <label class="field"><span>Document type</span><select [value]="documentTypeUuid()"
         (change)="documentTypeUuid.set($any($event.target).value)">

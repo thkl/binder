@@ -13,7 +13,14 @@ import {
   VocabularyResponse,
   VocabularyResponseSchema,
   MetadataDefinition,
-  MetadataDefinitionsResponseSchema
+  MetadataDefinitionsResponseSchema,
+  Issuer,
+  IssuerListResponseSchema,
+  IssuerSchema,
+  CreateIssuerInput,
+  CreateIssuerInputSchema,
+  UpdateIssuerInput,
+  UpdateIssuerInputSchema
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 
@@ -21,6 +28,7 @@ import { firstValueFrom } from 'rxjs';
 export class MetadataService {
   readonly vocabulary = signal<VocabularyResponse | null>(null);
   readonly definitions = signal<MetadataDefinition[]>([]);
+  readonly issuers = signal<Issuer[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
@@ -38,7 +46,7 @@ export class MetadataService {
       );
       const vocabulary = VocabularyResponseSchema.parse(response.data);
       this.vocabulary.set(vocabulary);
-      await this.loadDefinitions();
+      await Promise.all([this.loadDefinitions(), this.loadIssuers()]);
       return vocabulary;
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
@@ -59,6 +67,56 @@ export class MetadataService {
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
       return null;
+    }
+  }
+
+  async loadIssuers(): Promise<Issuer[] | null> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>('/api/v1/issuers', { withCredentials: true })
+      );
+      const issuers = IssuerListResponseSchema.parse(response.data).items;
+      this.issuers.set(issuers);
+      return issuers;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  async createIssuer(input: CreateIssuerInput): Promise<Issuer | null> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(this.http.post<ApiResponse<unknown>>('/api/v1/issuers', CreateIssuerInputSchema.parse(input), {
+        withCredentials: true
+      }));
+      const issuer = IssuerSchema.parse(response.data);
+      await this.loadIssuers();
+      return issuer;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async updateIssuer(uuid: string, input: UpdateIssuerInput): Promise<Issuer | null> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(this.http.patch<ApiResponse<unknown>>(`/api/v1/issuers/${uuid}`, UpdateIssuerInputSchema.parse(input), {
+        withCredentials: true
+      }));
+      const issuer = IssuerSchema.parse(response.data);
+      await this.loadIssuers();
+      return issuer;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    } finally {
+      this.saving.set(false);
     }
   }
 

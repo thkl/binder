@@ -23,6 +23,9 @@ export class DocumentStore extends BaseCrudStore<Document> {
     if (query.status) {
       where.status = query.status;
     }
+    if (query.issuerUuid) {
+      where.issuerUuid = query.issuerUuid;
+    }
 
     if (query.q) {
       (where as unknown as Record<PropertyKey, unknown>)[Op.or] = [
@@ -96,12 +99,16 @@ export class DocumentStore extends BaseCrudStore<Document> {
   }
 
   private async findMetadataMatches(ownerUuid: string, query: DocumentSearchQuery): Promise<string[] | null> {
-    const hasFilters = Boolean(query.status || query.documentTypeUuid || query.categoryUuid || query.tagUuids?.length || query.metadata);
+    const hasFilters = Boolean(query.status || query.issuerUuid || query.documentTypeUuid || query.categoryUuid || query.tagUuids?.length || query.metadata);
     if (!hasFilters) return null;
-    const documents = await this.model.findAll({ where: { ownerUuid, ...(query.status ? { status: query.status } : {}) }, attributes: ['uuid'] });
+    const documents = await this.model.findAll({
+      where: { ownerUuid, ...(query.status ? { status: query.status } : {}) },
+      attributes: ['uuid', 'issuerUuid', 'documentTypeUuid', 'categoryUuid']
+    });
     let allowed = new Set(documents.map((document) => document.uuid));
-    if (query.documentTypeUuid || query.categoryUuid) {
+    if (query.issuerUuid || query.documentTypeUuid || query.categoryUuid) {
       const matching = documents.filter((document) =>
+        (!query.issuerUuid || document.issuerUuid === query.issuerUuid) &&
         (!query.documentTypeUuid || document.documentTypeUuid === query.documentTypeUuid) &&
         (!query.categoryUuid || document.categoryUuid === query.categoryUuid)
       );
@@ -115,7 +122,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
         tags.add(assignment.tagUuid);
         tagsByDocument.set(assignment.documentUuid, tags);
       }
-      allowed = new Set([...allowed].filter((uuid) => query.tagUuids!.every((tagUuid) => tagsByDocument.get(uuid)?.has(tagUuid))));
+      allowed = new Set([...allowed].filter((documentUuid) => query.tagUuids!.every((tagUuid) => tagsByDocument.get(documentUuid)?.has(tagUuid))));
     }
     if (query.metadata && allowed.size > 0) {
       const definitions = await MetadataDefinition.findAll({ where: { key: { [Op.in]: Object.keys(query.metadata) }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } });

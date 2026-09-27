@@ -69,6 +69,7 @@ P1 is complete. The system supports the first usable document workflow: upload, 
 - Inbox folder import with explicit owner assignment
 - Duplicate detection
 - Automatic classification and tagging
+- Reusable issuers with owner-scoped document references and deterministic sender matching
 - Email/scanner ingestion
 - Saved searches and bulk actions
 

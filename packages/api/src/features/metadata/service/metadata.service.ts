@@ -84,6 +84,18 @@ export class MetadataService {
     const metadata = await this.store.getDocumentMetadata(ownerUuid, documentUuid);
     if (!metadata) throw new NotFoundException('Document not found');
     return DocumentMetadataSchema.parse({
+      issuer: metadata.issuer ? {
+        uuid: metadata.issuer.uuid,
+        ownerUuid: metadata.issuer.ownerUuid,
+        name: metadata.issuer.name,
+        address: metadata.issuer.address,
+        zipCode: metadata.issuer.zipCode,
+        city: metadata.issuer.city,
+        country: metadata.issuer.country,
+        custom: metadata.issuer.custom ?? {},
+        createdAt: metadata.issuer.createdAt.toISOString(),
+        updatedAt: metadata.issuer.updatedAt.toISOString()
+      } : null,
       documentType: metadata.documentType ? this.toResponse(metadata.documentType) : null,
       category: metadata.category ? this.toResponse(metadata.category) : null,
       tags: metadata.tags.map((tag) => this.toResponse(tag)),
@@ -96,6 +108,7 @@ export class MetadataService {
       const metadata = await this.store.setDocumentMetadata(
         ownerUuid,
         documentUuid,
+        input.issuerUuid,
         input.documentTypeUuid,
         input.categoryUuid,
         input.tagUuids

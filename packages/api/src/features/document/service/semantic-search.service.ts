@@ -4,6 +4,7 @@ import { ApplicationSettingsService } from '../../settings/service/application-s
 import { DocumentEmbedding } from '../models/document-embedding.entity';
 import { Document } from '../models/document.entity';
 import { BinderLogger } from '../../../shared/service/logger.helper';
+import type { DocumentSearchQuery } from '@binder/common';
 
 export interface SemanticHit {
   document: Document;
@@ -18,7 +19,7 @@ export class SemanticSearchService {
 
   constructor(private readonly settings: ApplicationSettingsService) {}
 
-  async search(ownerUuid: string, query: string, limit: number): Promise<SemanticHit[]> {
+  async search(ownerUuid: string, query: string, limit: number, filters: Pick<DocumentSearchQuery, 'issuerUuid' | 'status'> = {}): Promise<SemanticHit[]> {
     const enabled = (await this.settings.get('embeddings.enabled', 'false'))?.toLowerCase() === 'true';
     const apiKey = await this.settings.get('embeddings.apiKey', '');
     const provider = await this.settings.get('ai.provider', 'openai-compatible');
@@ -54,7 +55,15 @@ export class SemanticSearchService {
     const vectorLiteral = `[${vector.join(',')}]`;
     const similarityExpression = `"embedding_vector"::vector(${vector.length}) <=> '${vectorLiteral}'::vector`;
     const embeddings = await DocumentEmbedding.findAll({
-      include: [{ model: Document, required: true, where: { ownerUuid } }],
+      include: [{
+        model: Document,
+        required: true,
+        where: {
+          ownerUuid,
+          ...(filters.issuerUuid ? { issuerUuid: filters.issuerUuid } : {}),
+          ...(filters.status ? { status: filters.status } : {})
+        }
+      }],
       where: { dimensions: vector.length },
       attributes: {
         include: [[literal(similarityExpression), 'cosineDistance']]

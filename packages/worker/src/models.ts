@@ -41,6 +41,37 @@ export class User extends Model {
   declare isActive: boolean;
 }
 
+@Table({ tableName: 'issuers', underscored: true, timestamps: true })
+export class Issuer extends Model {
+  @PrimaryKey @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ field: 'owner_id', type: DataType.UUID })
+  declare ownerUuid: string;
+
+  @Column({ type: DataType.STRING(200) })
+  declare name: string;
+
+  @Column({ type: DataType.STRING(255), allowNull: true })
+  declare address: string | null;
+
+  @Column({ field: 'zip_code', type: DataType.STRING(32), allowNull: true })
+  declare zipCode: string | null;
+
+  @Column({ type: DataType.STRING(150), allowNull: true })
+  declare city: string | null;
+
+  @Column({ type: DataType.STRING(100), allowNull: true })
+  declare country: string | null;
+
+  @Column({ type: DataType.JSONB })
+  declare custom: Record<string, unknown>;
+
+  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
+  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
+}
+
 export type InboxItemStatus = 'new' | 'processing' | 'imported' | 'duplicate' | 'rejected' | 'failed';
 export type InboxAiStatus = 'pending' | 'processing' | 'ready' | 'failed';
 
@@ -116,6 +147,9 @@ export class Document extends Model {
 
   @Column({ field: 'thumbnail_key', type: DataType.STRING, allowNull: true })
   declare thumbnailKey: string | null;
+
+  @Column({ field: 'issuer_id', type: DataType.UUID, allowNull: true })
+  declare issuerUuid: string | null;
 
   @Column({ type: DataType.STRING })
   declare status: DocumentStatus;

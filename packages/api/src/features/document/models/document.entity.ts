@@ -22,15 +22,17 @@ export interface DocumentAttributes {
   checksumSha256: string;
   storageKey: string;
   thumbnailKey: string | null;
+  issuerUuid: string | null;
   searchVector: unknown;
   status: DocumentStatus;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'thumbnailKey'> & {
+export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'thumbnailKey' | 'issuerUuid'> & {
   uuid?: string;
   thumbnailKey?: string | null;
+  issuerUuid?: string | null;
   status?: DocumentStatus;
 };
 
@@ -72,6 +74,9 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
 
   @AllowNull @Column({ field: 'category_id', type: DataType.UUID })
   declare categoryUuid: string | null;
+
+  @AllowNull @Column({ field: 'issuer_id', type: DataType.UUID })
+  declare issuerUuid: string | null;
 
   @Column({ field: 'search_vector', type: DataType.TSVECTOR })
   declare searchVector: unknown;

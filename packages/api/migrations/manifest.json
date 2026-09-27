@@ -150,6 +150,15 @@
                     "inbox_items",
                     "settings"
                ]
+          },
+          "24": {
+               "created": [
+                    "issuers"
+               ],
+               "required": [
+                    "users",
+                    "documents"
+               ]
           }
      }
 }

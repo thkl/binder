@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import type { LocalizedText } from '@binder/common';
 import { DocumentStore } from '../../document/store/document.store';
 import { DocumentCategory, DocumentMetadataValue, DocumentTag, DocumentTagAssignment, DocumentType, MetadataDefinition } from '../models/vocabulary.entity';
+import { Issuer } from '../../issuer/models/issuer.entity';
 
 type VocabularyModel = typeof DocumentType | typeof DocumentCategory | typeof DocumentTag;
 
@@ -41,7 +42,8 @@ export class MetadataStore {
     const document = await this.documents.findOwnedByUuid(ownerUuid, documentUuid);
     if (!document) return null;
 
-    const [documentType, category, assignments] = await Promise.all([
+    const [issuer, documentType, category, assignments] = await Promise.all([
+      document.issuerUuid ? Issuer.findOne({ where: { uuid: document.issuerUuid, ownerUuid } }) : null,
       document.documentTypeUuid ? DocumentType.findByPk(document.documentTypeUuid) : null,
       document.categoryUuid ? DocumentCategory.findByPk(document.categoryUuid) : null,
       DocumentTagAssignment.findAll({ where: { documentUuid } })
@@ -57,7 +59,7 @@ export class MetadataStore {
       return definition ? [[definition.key, value.value]] : [];
     }));
 
-    return { documentType, category, tags, custom };
+    return { issuer, documentType, category, tags, custom };
   }
 
   listDefinitions(ownerUuid: string) {
@@ -135,6 +137,7 @@ export class MetadataStore {
   async setDocumentMetadata(
     ownerUuid: string,
     documentUuid: string,
+    issuerUuid: string | null | undefined,
     documentTypeUuid: string | null | undefined,
     categoryUuid: string | null | undefined,
     tagUuids: string[] | undefined
@@ -142,7 +145,10 @@ export class MetadataStore {
     const document = await this.documents.findOwnedByUuid(ownerUuid, documentUuid);
     if (!document) return null;
 
-    const [documentType, category, tags] = await Promise.all([
+    const [issuer, documentType, category, tags] = await Promise.all([
+      issuerUuid === undefined || issuerUuid === null
+        ? null
+        : Issuer.findOne({ where: { uuid: issuerUuid, ownerUuid } }),
       documentTypeUuid === undefined || documentTypeUuid === null
         ? null
         : this.findAvailable(DocumentType, documentTypeUuid, ownerUuid),
@@ -154,11 +160,13 @@ export class MetadataStore {
         : Promise.all([...new Set(tagUuids)].map((uuid) => this.findAvailable(DocumentTag, uuid, ownerUuid)))
     ]);
 
+    if (issuerUuid && !issuer) throw new Error('Issuer is not available');
     if (documentTypeUuid && !documentType) throw new Error('Document type is not available');
     if (categoryUuid && !category) throw new Error('Category is not available');
     if (tags && tags.some((tag) => !tag)) throw new Error('One or more tags are not available');
 
     const update: Record<string, unknown> = {};
+    if (issuerUuid !== undefined) update.issuerUuid = issuerUuid;
     if (documentTypeUuid !== undefined) update.documentTypeUuid = documentTypeUuid;
     if (categoryUuid !== undefined) update.categoryUuid = categoryUuid;
     const updated = Object.keys(update).length > 0

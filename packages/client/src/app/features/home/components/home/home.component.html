@@ -37,6 +37,12 @@
             @for (item of vocabulary.tags; track item.uuid) { <option [value]="item.uuid">{{ itemName(item) }}</option> }
           </select>
         </label>
+        <label>{{ 'home.issuer' | t }}
+          <select [value]="selectedIssuer()" (change)="selectedIssuer.set($any($event.target).value)">
+            <option value="">{{ 'home.anyIssuer' | t }}</option>
+            @for (issuer of search.issuers(); track issuer.uuid) { <option [value]="issuer.uuid">{{ issuer.name }}</option> }
+          </select>
+        </label>
       </div>
     }
     <p class="search-hint">{{ 'home.hint' | t }}</p>

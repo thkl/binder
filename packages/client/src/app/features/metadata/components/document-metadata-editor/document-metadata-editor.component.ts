@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import type { DocumentTitleSuggestion } from '@binder/common';
+import type { CreateIssuerInput, DocumentTitleSuggestion, Issuer, UpdateIssuerInput } from '@binder/common';
 import { MetadataService } from '../../services/metadata.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
@@ -22,6 +22,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   readonly i18n = inject(I18nService);
   readonly documentTypeUuid = signal('');
   readonly categoryUuid = signal('');
+  readonly issuerUuid = signal('');
   readonly selectedTags = signal<Set<string>>(new Set());
   readonly loaded = signal(false);
   readonly saved = signal(false);
@@ -29,6 +30,15 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   readonly newTagName = signal('');
   readonly tagSearch = signal('');
   readonly acceptedSuggestionFields = signal<Set<string>>(new Set());
+  readonly showIssuerForm = signal(false);
+  readonly editingIssuerUuid = signal<string | null>(null);
+  readonly issuerName = signal('');
+  readonly issuerAddress = signal('');
+  readonly issuerZipCode = signal('');
+  readonly issuerCity = signal('');
+  readonly issuerCountry = signal('');
+  readonly issuerCustomJson = signal('{}');
+  readonly issuerError = signal<string | null>(null);
   readonly filteredTags = computed(() => {
     const search = this.tagSearch().trim().toLowerCase();
     return (this.metadata.vocabulary()?.tags ?? []).filter((tag) => !search || tag.name.toLowerCase().includes(search));
@@ -62,6 +72,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
 
   async save(): Promise<void> {
     const result = await this.metadata.setDocumentMetadata(this.documentUuid, {
+      issuerUuid: this.issuerUuid() || null,
       documentTypeUuid: this.documentTypeUuid() || null,
       categoryUuid: this.categoryUuid() || null,
       tagUuids: [...this.selectedTags()],
@@ -115,7 +126,8 @@ export class DocumentMetadataEditorComponent implements OnChanges {
 
   suggestedCustomCount(): number { return this.suggestion ? Object.keys(this.suggestion.custom).length : 0; }
 
-  private applyMetadata(current: { documentType: { uuid: string } | null; category: { uuid: string } | null; tags: { uuid: string }[]; custom: Record<string, unknown> }): void {
+  private applyMetadata(current: { issuer?: { uuid: string } | null; documentType: { uuid: string } | null; category: { uuid: string } | null; tags: { uuid: string }[]; custom: Record<string, unknown> }): void {
+    this.issuerUuid.set(current.issuer?.uuid ?? '');
     this.documentTypeUuid.set(current.documentType?.uuid ?? '');
     this.categoryUuid.set(current.category?.uuid ?? '');
     this.selectedTags.set(new Set(current.tags.map((tag) => tag.uuid)));
@@ -147,5 +159,57 @@ export class DocumentMetadataEditorComponent implements OnChanges {
 
   setMultiValue(key: string, event: Event): void {
     this.setCustomValue(key, (event.target as HTMLInputElement).value.split(',').map((item) => item.trim()).filter(Boolean));
+  }
+
+  selectedIssuer(): Issuer | undefined {
+    return this.metadata.issuers().find((issuer) => issuer.uuid === this.issuerUuid());
+  }
+
+  openIssuerForm(): void {
+    const selected = this.selectedIssuer();
+    this.editingIssuerUuid.set(selected?.uuid ?? null);
+    this.issuerName.set(selected?.name ?? '');
+    this.issuerAddress.set(selected?.address ?? '');
+    this.issuerZipCode.set(selected?.zipCode ?? '');
+    this.issuerCity.set(selected?.city ?? '');
+    this.issuerCountry.set(selected?.country ?? '');
+    this.issuerCustomJson.set(JSON.stringify(selected?.custom ?? {}, null, 2));
+    this.issuerError.set(null);
+    this.showIssuerForm.set(true);
+  }
+
+  cancelIssuerForm(): void {
+    this.issuerError.set(null);
+    this.showIssuerForm.set(false);
+  }
+
+  async saveIssuer(): Promise<void> {
+    let custom: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(this.issuerCustomJson());
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Issuer custom fields must be a JSON object');
+      custom = parsed as Record<string, unknown>;
+    } catch (error) {
+      this.issuerError.set(error instanceof Error ? error.message : 'Custom issuer fields must be valid JSON');
+      return;
+    }
+
+    const input: CreateIssuerInput = {
+      name: this.issuerName().trim(),
+      address: this.issuerAddress().trim() || null,
+      zipCode: this.issuerZipCode().trim() || null,
+      city: this.issuerCity().trim() || null,
+      country: this.issuerCountry().trim() || null,
+      custom
+    };
+    const editingUuid = this.editingIssuerUuid();
+    const result = editingUuid
+      ? await this.metadata.updateIssuer(editingUuid, input as UpdateIssuerInput)
+      : await this.metadata.createIssuer(input);
+    if (result) {
+      this.issuerUuid.set(result.uuid);
+      this.showIssuerForm.set(false);
+      this.saved.set(false);
+    }
   }
 }

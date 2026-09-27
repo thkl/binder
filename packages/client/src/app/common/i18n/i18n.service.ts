@@ -143,13 +143,45 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'setting.ai.automaticClassification.enabled': 'Automatically apply high-confidence AI classification',
     'setting.ai.automaticClassification.confidence': 'Automatic classification confidence threshold (0–1)',
     'setting.ai.automaticClassification.confidence.hint': 'Use a value from 0 to 1. Example: 0.8 means 80%.',
-    'inbox.autoApplied': 'Applied automatically'
+    'inbox.autoApplied': 'Applied automatically',
+    'editor.issuer': 'Issuer',
+    'editor.issuerHint': 'Reusable sender record',
+    'editor.noIssuer': 'No issuer',
+    'editor.addIssuer': 'Add issuer',
+    'editor.editIssuer': 'Edit issuer',
+    'editor.issuerName': 'Name',
+    'editor.address': 'Address',
+    'editor.zipCode': 'ZIP code',
+    'editor.city': 'City',
+    'editor.country': 'Country',
+    'editor.customIssuerFields': 'Custom issuer fields',
+    'editor.issuerJsonHint': 'Optional JSON object for additional issuer data.',
+    'editor.saveIssuer': 'Save issuer',
+    'editor.cancelIssuer': 'Cancel',
+    'home.issuer': 'Issuer',
+    'home.anyIssuer': 'Any issuer'
   },
   de: {
     'setting.ai.automaticClassification.enabled': 'KI-Klassifizierung bei hoher Sicherheit automatisch übernehmen',
     'setting.ai.automaticClassification.confidence': 'Schwellwert für automatische KI-Klassifizierung (0–1)',
     'setting.ai.automaticClassification.confidence.hint': 'Wert zwischen 0 und 1. Beispiel: 0.8 bedeutet 80%.',
-    'inbox.autoApplied': 'Automatisch übernommen'
+    'inbox.autoApplied': 'Automatisch übernommen',
+    'editor.issuer': 'Aussteller',
+    'editor.issuerHint': 'Wiederverwendbarer Absender',
+    'editor.noIssuer': 'Kein Aussteller',
+    'editor.addIssuer': 'Aussteller hinzufügen',
+    'editor.editIssuer': 'Aussteller bearbeiten',
+    'editor.issuerName': 'Name',
+    'editor.address': 'Adresse',
+    'editor.zipCode': 'PLZ',
+    'editor.city': 'Ort',
+    'editor.country': 'Land',
+    'editor.customIssuerFields': 'Benutzerdefinierte Ausstellerdaten',
+    'editor.issuerJsonHint': 'Optionales JSON-Objekt für zusätzliche Ausstellerdaten.',
+    'editor.saveIssuer': 'Aussteller speichern',
+    'editor.cancelIssuer': 'Abbrechen',
+    'home.issuer': 'Aussteller',
+    'home.anyIssuer': 'Jeder Aussteller'
   }
 };
 

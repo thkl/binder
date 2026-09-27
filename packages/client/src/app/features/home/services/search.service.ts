@@ -5,6 +5,8 @@ import {
   DocumentSearchQuerySchema,
   DocumentSearchResponse,
   DocumentSearchResponseSchema,
+  Issuer,
+  IssuerListResponseSchema,
   VocabularyResponse,
   VocabularyResponseSchema
 } from '@binder/common';
@@ -17,6 +19,7 @@ export class SearchService {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly vocabulary = signal<VocabularyResponse | null>(null);
+  readonly issuers = signal<Issuer[]>([]);
 
   constructor(
     private readonly http: HttpClient,
@@ -31,12 +34,22 @@ export class SearchService {
         this.appService.getApiUrl('v1', 'metadata/vocabulary'), { withCredentials: true }
       ));
       this.vocabulary.set(VocabularyResponseSchema.parse(response.data));
+      await this.loadIssuers();
     } catch {
       this.vocabulary.set(null);
     }
   }
 
-  async search(query: string, filters: { documentTypeUuid?: string; categoryUuid?: string; tagUuids?: string[] } = {}): Promise<void> {
+  async loadIssuers(): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.http.get<ApiResponse<unknown>>('/api/v1/issuers', { withCredentials: true }));
+      this.issuers.set(IssuerListResponseSchema.parse(response.data).items);
+    } catch {
+      this.issuers.set([]);
+    }
+  }
+
+  async search(query: string, filters: { documentTypeUuid?: string; categoryUuid?: string; issuerUuid?: string; tagUuids?: string[] } = {}): Promise<void> {
     const parsed = DocumentSearchQuerySchema.safeParse({ q: query, limit: 20, ...filters });
     if (!parsed.success) {
       this.result.set(null);
@@ -50,6 +63,7 @@ export class SearchService {
       const params = new URLSearchParams({ q: parsed.data.q, limit: String(parsed.data.limit) });
       if (parsed.data.documentTypeUuid) params.set('documentTypeUuid', parsed.data.documentTypeUuid);
       if (parsed.data.categoryUuid) params.set('categoryUuid', parsed.data.categoryUuid);
+      if (parsed.data.issuerUuid) params.set('issuerUuid', parsed.data.issuerUuid);
       if (parsed.data.tagUuids?.length) params.set('tagUuids', parsed.data.tagUuids.join(','));
       const response = await firstValueFrom(
         this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1', 'documents/search', `?${params.toString()}`), {
