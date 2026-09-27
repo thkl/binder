@@ -460,6 +460,7 @@ h2 {
 .document-row-actions,
 .preview-card-actions {
   display: block;
+  background-color: rgba(20, 52, 88, .99);
 }
 
 .icon-grid {

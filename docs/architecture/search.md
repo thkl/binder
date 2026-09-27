@@ -27,3 +27,20 @@ The client home page provides the primary search surface. The response contract 
 Document titles are searchable independently from original filenames. A future AI metadata step may suggest a cleaner title for filenames such as `01_2026_blabla.pdf`; the suggestion must be presented for manual confirmation before saving.
 
 Search must always scope candidates by the authenticated document owner before returning results.
+
+## Document list grouping
+
+The document list accepts a `groupBy` query parameter and keeps it in the
+typed pagination contract:
+
+```text
+GET /api/v1/documents?page=1&pageSize=25&groupBy=issuer
+```
+
+Grouping is applied before pagination. Scalar groups (`documentType`,
+`category`, `issuer`, `status`, and `isNew`) are ordered by their database
+column before the requested secondary sort. Tag grouping uses the ORM-backed
+tag assignment table and deterministically assigns a multi-tag document to
+its first ordered tag group; untagged documents follow afterward. The client
+uses the same group mode across page navigation, so a group cannot reappear
+because each page independently sorted an ungrouped result set.

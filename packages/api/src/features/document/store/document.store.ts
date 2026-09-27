@@ -42,6 +42,10 @@ export class DocumentStore extends BaseCrudStore<Document> {
       ];
     }
 
+    if (query.groupBy === 'tag') {
+      return this.findOwnedTagGroupedPage(where, query);
+    }
+
     const sortDirection = query.direction.toUpperCase() as 'ASC' | 'DESC';
     const order: Order = query.groupBy === 'none'
       ? [[query.sort, sortDirection]]
@@ -69,6 +73,79 @@ export class DocumentStore extends BaseCrudStore<Document> {
     };
   }
 
+  private async findOwnedTagGroupedPage(where: WhereOptions<Document>, query: DocumentListQuery) {
+    const candidateDocuments = await this.model.findAll({
+      where,
+      attributes: ['uuid'],
+      order: [
+        [query.sort, query.direction.toUpperCase() as 'ASC' | 'DESC'],
+        ['uuid', 'ASC']
+      ]
+    });
+    const candidateUuids = candidateDocuments.map((document) => document.uuid);
+    const total = candidateUuids.length;
+
+    if (total === 0) {
+      return {
+        items: [],
+        groupBy: query.groupBy,
+        page: query.page,
+        pageSize: query.pageSize,
+        total: 0,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: query.page > 1
+      };
+    }
+
+    const sortPosition = new Map(candidateUuids.map((uuid, index) => [uuid, index]));
+    const assignments = await DocumentTagAssignment.findAll({
+      where: { documentUuid: { [Op.in]: candidateUuids } },
+      attributes: ['documentUuid', 'tagUuid'],
+      order: [
+        ['tagUuid', 'ASC'],
+        ['documentUuid', 'ASC']
+      ]
+    });
+    const documentsByTag = new Map<string, string[]>();
+    const assignedDocuments = new Set<string>();
+
+    for (const assignment of assignments) {
+      if (assignedDocuments.has(assignment.documentUuid)) {
+        continue;
+      }
+      const documents = documentsByTag.get(assignment.tagUuid) ?? [];
+      documents.push(assignment.documentUuid);
+      documentsByTag.set(assignment.tagUuid, documents);
+      assignedDocuments.add(assignment.documentUuid);
+    }
+
+    const groupedUuids = [...documentsByTag.values()]
+      .flatMap((uuids) => uuids.sort((left, right) => sortPosition.get(left)! - sortPosition.get(right)!));
+    const untaggedUuids = candidateUuids.filter((uuid) => !assignedDocuments.has(uuid));
+    const orderedUuids = [...groupedUuids, ...untaggedUuids];
+    const offset = (query.page - 1) * query.pageSize;
+    const pageUuids = orderedUuids.slice(offset, offset + query.pageSize);
+    const rows = pageUuids.length === 0
+      ? []
+      : await this.model.findAll({ where: { ...where, uuid: { [Op.in]: pageUuids } } });
+    const documentsByUuid = new Map(rows.map((document) => [document.uuid, document]));
+
+    return {
+      items: pageUuids.flatMap((uuid) => {
+        const document = documentsByUuid.get(uuid);
+        return document ? [document] : [];
+      }),
+      groupBy: query.groupBy,
+      page: query.page,
+      pageSize: query.pageSize,
+      total,
+      totalPages: Math.ceil(total / query.pageSize),
+      hasNext: query.page * query.pageSize < total,
+      hasPrev: query.page > 1
+    };
+  }
+
   private groupField(groupBy: DocumentListQuery['groupBy']): string {
     switch (groupBy) {
       case 'documentType':
@@ -82,9 +159,8 @@ export class DocumentStore extends BaseCrudStore<Document> {
       case 'isNew':
         return 'isNew';
       case 'tag':
-        // Tags are many-to-many and do not have a single document column.
-        // Keep the result deterministic until tag grouping gets a dedicated
-        // grouped query.
+        // Tag grouping is handled by findOwnedTagGroupedPage because tags are
+        // many-to-many and do not have a single document column.
         return 'uuid';
       case 'none':
         return 'uuid';

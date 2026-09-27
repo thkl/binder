@@ -192,8 +192,10 @@ export class DocumentsComponent implements OnInit {
   }
 
   setGroupMode(mode: DocumentGroupMode): void {
+    if (!this.canLeaveMetadata()) return;
     this.groupMode.set(mode);
     localStorage.setItem('binder.documents.group-mode', mode);
+    this.clearSelection();
     void this.documents.load({ page: 1, groupBy: mode });
   }
 
