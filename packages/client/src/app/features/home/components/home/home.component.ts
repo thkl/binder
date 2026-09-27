@@ -28,11 +28,12 @@ export class HomeComponent {
   readonly selectedCategory = signal('');
   readonly selectedTag = signal('');
   readonly selectedIssuer = signal('');
+  readonly onlySemantic = signal(true);
 
   searchResult = computed(()=>{
     const result = this.search.result();
     if (result) {
-      const sorted = result.items.sort((i1,i2)=>{
+      const sorted = (this.onlySemantic()?result.items.filter(item=>item.semanticScore!==null):result.items).sort((i1,i2)=>{
         if (i1.semanticScore === null && i2.semanticScore === null) {
           return 0;
         }

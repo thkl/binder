@@ -370,7 +370,7 @@
           [documentData]="documentData()"
           [suggestion]="titleSuggestions()[metadataUuid] || null"
           (dirtyChange)="metadataDirtyChanged($event)"
-          (manuallySaved)="markDocumentReviewed(metadataUuid)"
+          (manuallySaved)="metadataSaved(metadataUuid)"
           (suggestionTitleAccepted)="acceptSuggestedTitleValue(metadataUuid, $event)"
           (suggestionDismissed)="dismissLocalTitleSuggestion(metadataUuid)"
           (suggestionAccepted)="acceptSuggestedMetadata(metadataUuid, $event)" />

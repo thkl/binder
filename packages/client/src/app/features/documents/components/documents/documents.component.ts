@@ -234,6 +234,11 @@ export class DocumentsComponent implements OnInit {
     } : page);
   }
 
+  async metadataSaved(uuid: string): Promise<void> {
+    this.markDocumentReviewed(uuid);
+    await this.documents.load();
+  }
+
 
   async requeueDocument(uuid:string) {
     await this.documents.requeueDocument(uuid);
