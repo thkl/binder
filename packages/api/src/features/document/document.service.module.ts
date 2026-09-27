@@ -11,6 +11,6 @@ import { TitleSuggestionService } from './service/title-suggestion.service';
 @Module({
   imports: [DocumentStoreModule, PipelineServiceModule, MetadataServiceModule, SharedModule],
   providers: [DocumentService, DocumentStorageService, SemanticSearchService, TitleSuggestionService],
-  exports: [DocumentService]
+  exports: [DocumentService, TitleSuggestionService]
 })
 export class DocumentServiceModule {}

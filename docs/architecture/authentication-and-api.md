@@ -67,6 +67,7 @@ The first local-auth endpoints are:
 ```text
 POST /api/v1/auth/login
 GET  /api/v1/auth/session
+GET  /api/v1/auth/users        # administrators; safe user-directory fields only
 POST /api/v1/auth/password
 POST /api/v1/auth/logout
 ```

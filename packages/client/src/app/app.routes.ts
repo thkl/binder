@@ -2,6 +2,11 @@ import { Routes } from '@angular/router';
 
 export const appRoutes: Routes = [
   {
+    path: 'inbox',
+    loadComponent: () => import('./features/inbox/components/inbox/inbox.component')
+      .then(({ InboxComponent }) => InboxComponent)
+  },
+  {
     path: 'documents',
     loadComponent: () => import('./features/documents/components/documents/documents.component')
       .then(({ DocumentsComponent }) => DocumentsComponent)

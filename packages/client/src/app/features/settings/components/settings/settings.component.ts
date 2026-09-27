@@ -47,7 +47,10 @@ export class SettingsComponent implements OnInit {
   }
 
   async loadSettings(): Promise<void> {
-    const response = await this.settingsService.load();
+    const [response] = await Promise.all([
+      this.settingsService.load(),
+      this.settingsService.loadUsers()
+    ]);
     if (!response) {
       return;
     }
@@ -95,7 +98,7 @@ export class SettingsComponent implements OnInit {
   }
 
   updateText(item: SettingsMapItem, event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
+    const value = (event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
     this.values.update((current) => ({ ...current, [item.key]: value }));
     this.saved.set(false);
   }

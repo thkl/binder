@@ -7,6 +7,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Product plan](./product-plan.md) — product vision, priorities, and milestones
 - [Product boundaries](./product-boundaries.md) — what is in and out of the first release
 - [Storage configuration](./architecture/storage.md) — original files, derived files, and configuration
+- [Inbox queue](./architecture/inbox.md) — durable import state and batch AI review
 - [Data access layer](./architecture/data-access.md) — where `basic-crud` fits and where it does not
 - [Monorepo and contracts](./architecture/monorepo.md) — package boundaries and shared Zod API contracts
 - [Backend feature modules](./architecture/backend-modules.md) — NestJS feature organization and dependency direction

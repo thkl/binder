@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { randomBytes } from 'node:crypto';
-import { AuthenticatedUser, ChangePasswordInput, LoginInput } from '@binder/common';
+import { AuthenticatedUser, ChangePasswordInput, LoginInput, UserDirectoryResponseSchema } from '@binder/common';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { UserStore } from '../stores/user.store';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
@@ -73,6 +73,18 @@ export class AuthenticationService {
   async getAuthenticatedUser(userId: string): Promise<AuthenticatedUser | null> {
     const user = await this.users.findById(userId);
     return user && user.isActive ? this.toAuthenticatedUser(user) : null;
+  }
+
+  async listActiveUsers() {
+    const users = await this.users.findAllNamed('findActiveUsers');
+    return UserDirectoryResponseSchema.parse({
+      items: users.map((user) => ({
+        uuid: user.uuid,
+        username: user.username,
+        email: user.email,
+        isAdmin: user.isAdmin
+      }))
+    });
   }
 
   private toAuthenticatedUser(user: User): AuthenticatedUser {

@@ -72,7 +72,7 @@ P1 is complete. The system supports the first usable document workflow: upload, 
 - Email/scanner ingestion
 - Saved searches and bulk actions
 
-The first P2 slice is the inbox folder. Files copied into the configured `inbox/` directory are treated as external input: the worker claims them safely, validates them, assigns the configured import owner, creates normal document and pipeline records, and moves or marks the source after successful handoff. The inbox must be restart-safe and must not create duplicate documents when the same file is observed more than once.
+The first P2 slice is the inbox folder. Files copied into the configured `inbox/` directory are treated as external input: the worker claims them safely, validates them, assigns the configured import owner, creates normal document and pipeline records, and moves or marks the source after successful handoff. The inbox must be restart-safe and must not create duplicate documents when the same file is observed more than once. The admin inbox queue persists import state and offers a batch AI analysis action that stores suggestions for review without applying them automatically.
 
 ### P3 — provider management and advanced AI
 

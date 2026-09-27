@@ -8,7 +8,8 @@ import {
   DocumentListResponseSchema,
   SetDocumentTitleInputSchema,
   DocumentTitleSuggestion,
-  DocumentTitleSuggestionSchema
+  DocumentTitleSuggestionSchema,
+  DocumentThumbnailsResponseSchema
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -19,6 +20,7 @@ export class DocumentsService {
   readonly loading = signal(false);
   readonly uploading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly thumbnailUrls = signal<Record<string, string>>({});
   readonly appService = inject(ApplicationService);
 
   constructor(private readonly http: HttpClient) {}
@@ -40,11 +42,33 @@ export class DocumentsService {
       const response = await firstValueFrom(
         this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1','documents',`?${params.toString()}`), { withCredentials: true })
       );
-      this.page.set(DocumentListResponseSchema.parse(response.data));
+      const page = DocumentListResponseSchema.parse(response.data);
+      await this.loadThumbnails(page.items.map((document) => document.uuid));
+      this.page.set(page);
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async loadThumbnails(uuids: string[]): Promise<void> {
+    if (uuids.length === 0) return;
+    try {
+      const params = new URLSearchParams({ uuids: uuids.join(',') });
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', 'documents/thumbnails', `?${params.toString()}`),
+          { withCredentials: true }
+        )
+      );
+      const result = DocumentThumbnailsResponseSchema.parse(response.data);
+      this.thumbnailUrls.update((current) => ({
+        ...current,
+        ...Object.fromEntries(result.items.map((item) => [item.uuid, item.url]))
+      }));
+    } catch {
+      // A missing preview must not prevent the document list from loading.
     }
   }
 

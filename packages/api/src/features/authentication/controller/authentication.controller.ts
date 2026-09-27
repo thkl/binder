@@ -1,13 +1,23 @@
-import { Body, Controller, Get, Post, Req, UnauthorizedException } from '@nestjs/common';
-import { ChangePasswordInputSchema, LoginInputSchema } from '@binder/common';
+import { Body, Controller, Get, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { ChangePasswordInputSchema, LoginInputSchema, UserDirectoryResponseSchema } from '@binder/common';
 import type { Request } from 'express';
 import { AuthenticationService } from '../service/authentication.service';
 import { SessionRequest } from '../models/request.model';
+import { AuthenticationGuard } from '../guards/authentication.guard';
+import { RolesGuard } from '../../../shared/guards/roles.guard';
+import { Roles } from '../../../shared/decorators/roles.decorator';
  
 
 @Controller('auth')
 export class AuthenticationController {
   constructor(private readonly authentication: AuthenticationService) {}
+
+  @Get('users')
+  @UseGuards(AuthenticationGuard, RolesGuard)
+  @Roles('admin')
+  async users() {
+    return { data: UserDirectoryResponseSchema.parse(await this.authentication.listActiveUsers()) };
+  }
 
   @Post('login')
   async login(@Body() body: unknown, @Req() request: SessionRequest) {

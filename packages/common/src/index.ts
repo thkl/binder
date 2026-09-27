@@ -27,6 +27,17 @@ export const DocumentSchema = z.object({
 
 export type Document = z.infer<typeof DocumentSchema>;
 
+export const DocumentThumbnailSchema = z.object({
+  uuid: z.uuid(),
+  url: z.string().min(1)
+});
+export type DocumentThumbnail = z.infer<typeof DocumentThumbnailSchema>;
+
+export const DocumentThumbnailsResponseSchema = z.object({
+  items: z.array(DocumentThumbnailSchema)
+});
+export type DocumentThumbnailsResponse = z.infer<typeof DocumentThumbnailsResponseSchema>;
+
 export const SetDocumentTitleInputSchema = z.object({
   title: z.string().trim().min(1).max(255)
 });
@@ -41,6 +52,51 @@ export const DocumentTitleSuggestionSchema = z.object({
   custom: z.record(z.string(), z.unknown()).default({})
 });
 export type DocumentTitleSuggestion = z.infer<typeof DocumentTitleSuggestionSchema>;
+
+export const InboxItemStatusSchema = z.enum([
+  'new',
+  'processing',
+  'imported',
+  'duplicate',
+  'rejected',
+  'failed'
+]);
+export type InboxItemStatus = z.infer<typeof InboxItemStatusSchema>;
+
+export const InboxAiStatusSchema = z.enum(['pending', 'processing', 'ready', 'failed']);
+export type InboxAiStatus = z.infer<typeof InboxAiStatusSchema>;
+
+export const InboxQueueItemSchema = z.object({
+  uuid: z.uuid(),
+  ownerUuid: z.uuid(),
+  documentUuid: z.uuid().nullable(),
+  originalFilename: z.string().min(1).max(255),
+  checksumSha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+  sizeBytes: z.number().int().nonnegative(),
+  status: InboxItemStatusSchema,
+  aiStatus: InboxAiStatusSchema,
+  aiSuggestion: DocumentTitleSuggestionSchema.nullable(),
+  lastError: z.string().max(2000).nullable(),
+  aiError: z.string().max(2000).nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime()
+});
+export type InboxQueueItem = z.infer<typeof InboxQueueItemSchema>;
+
+export const InboxQueueResponseSchema = z.object({
+  items: z.array(InboxQueueItemSchema),
+  total: z.number().int().nonnegative(),
+  aiCandidates: z.number().int().nonnegative()
+});
+export type InboxQueueResponse = z.infer<typeof InboxQueueResponseSchema>;
+
+export const InboxAiProcessResponseSchema = z.object({
+  processed: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+  items: z.array(InboxQueueItemSchema)
+});
+export type InboxAiProcessResponse = z.infer<typeof InboxAiProcessResponseSchema>;
 
 export const CreateDocumentInputSchema = z.object({
   originalFilename: z.string().trim().min(1).max(255),
@@ -206,6 +262,19 @@ export const AuthenticatedUserSchema = z.object({
 });
 
 export type AuthenticatedUser = z.infer<typeof AuthenticatedUserSchema>;
+
+export const UserDirectoryItemSchema = z.object({
+  uuid: z.uuid(),
+  username: z.string().min(1).max(100),
+  email: z.string().email().nullable(),
+  isAdmin: z.boolean()
+});
+export type UserDirectoryItem = z.infer<typeof UserDirectoryItemSchema>;
+
+export const UserDirectoryResponseSchema = z.object({
+  items: z.array(UserDirectoryItemSchema)
+});
+export type UserDirectoryResponse = z.infer<typeof UserDirectoryResponseSchema>;
 
 export const AppLanguageSchema = z.string().regex(/^[a-z]{2}(?:-[A-Z]{2})?$/);
 export type AppLanguage = z.infer<typeof AppLanguageSchema>;

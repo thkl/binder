@@ -65,8 +65,8 @@ export class DocumentsComponent implements OnInit {
     }
   }
 
-  thumbnailUrl(uuid: string): string {
-    return `/api/v1/documents/${uuid}/thumbnail`;
+  thumbnailUrl(uuid: string): string | null {
+    return this.documents.thumbnailUrls()[uuid] ?? null;
   }
 
   hasThumbnailFailed(uuid: string): boolean {

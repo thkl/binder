@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   CreateDocumentInputSchema,
   Document as DocumentResponse,
@@ -8,7 +9,9 @@ import {
   DocumentListResponse,
   DocumentListResponseSchema
 } from '@binder/common';
+import { DocumentThumbnailsResponseSchema } from '@binder/common';
 import { randomUUID } from 'node:crypto';
+import { Op } from 'sequelize';
 import type { Express } from 'express';
 import { DocumentStore } from '../store/document.store';
 import { DocumentStorageService } from './document-storage.service';
@@ -20,6 +23,7 @@ import { SetDocumentTitleInput } from '@binder/common';
 import { th } from 'zod/locales';
 import { SemanticSearchService } from './semantic-search.service';
 import { TitleSuggestionService } from './title-suggestion.service';
+import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -37,7 +41,8 @@ export class DocumentService {
     private readonly pipeline: PipelineService,
     private readonly metadata: MetadataService,
     private readonly semanticSearch: SemanticSearchService,
-    private readonly titleSuggestions: TitleSuggestionService
+    private readonly titleSuggestions: TitleSuggestionService,
+    private readonly config: ConfigService<BinderConfig>
   ) { }
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -163,6 +168,33 @@ export class DocumentService {
       throw new NotFoundException('Document thumbnail not found');
     }
 
+    const thumbnailKey = await this.ensureThumbnail(document);
+
+    return {
+      document: this.toDocumentResponse(document),
+      stream: await this.storage.openReadStream(thumbnailKey)
+    };
+  }
+
+  async getThumbnailUrls(ownerUuid: string, uuids: string[]) {
+    const uniqueUuids = [...new Set(uuids)].slice(0, 100);
+    const documents = await this.documents.findAll({
+      where: { ownerUuid, uuid: { [Op.in]: uniqueUuids } }
+    });
+    const items = [];
+    for (const document of documents) {
+      try {
+        await this.ensureThumbnail(document);
+        const apiPrefix = this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
+        items.push({ uuid: document.uuid, url: `/${apiPrefix}/documents/${document.uuid}/thumbnail` });
+      } catch (error) {
+        this.logger.warn(`Unable to prepare thumbnail URL for ${document.uuid}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    return DocumentThumbnailsResponseSchema.parse({ items });
+  }
+
+  private async ensureThumbnail(document: import('../models/document.entity').Document): Promise<string> {
     let thumbnailKey = document.thumbnailKey;
     if (!thumbnailKey || !(await this.storage.exists(thumbnailKey))) {
       try {
@@ -173,11 +205,7 @@ export class DocumentService {
         throw new NotFoundException('Document thumbnail could not be generated');
       }
     }
-
-    return {
-      document: this.toDocumentResponse(document),
-      stream: await this.storage.openReadStream(thumbnailKey)
-    };
+    return thumbnailKey;
   }
 
   async getPipeline(ownerUuid: string, uuid: string) {

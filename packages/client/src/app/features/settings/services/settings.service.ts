@@ -4,7 +4,9 @@ import {
   ApiResponse,
   ApplicationSettingsResponse,
   ApplicationSettingsResponseSchema,
-  SetApplicationSettingInput
+  SetApplicationSettingInput,
+  UserDirectoryItem,
+  UserDirectoryResponseSchema
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 
@@ -14,6 +16,7 @@ export class SettingsService {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
+  readonly users = signal<UserDirectoryItem[]>([]);
 
   private readonly apiUrl = '/api/v1/settings';
 
@@ -56,6 +59,20 @@ export class SettingsService {
     }
   }
 
+  async loadUsers(): Promise<UserDirectoryItem[]> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>('/api/v1/auth/users', { withCredentials: true })
+      );
+      const users = UserDirectoryResponseSchema.parse(response.data).items;
+      this.users.set(users);
+      return users;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return [];
+    }
+  }
+
   private getErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse && error.status === 401) {
       return 'Your session has expired. Please sign in again.';
@@ -66,4 +83,3 @@ export class SettingsService {
     return 'The settings could not be loaded. Please try again.';
   }
 }
-

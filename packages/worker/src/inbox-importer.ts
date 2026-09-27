@@ -1,9 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import { basename, dirname, extname, join } from 'node:path';
+import { Op } from 'sequelize';
 import { config } from './config.js';
 import { sequelize } from './database.js';
-import { Document, PipelineJob, PipelineJobEvent, User } from './models.js';
+import { Document, InboxItem, PipelineJob, PipelineJobEvent, User } from './models.js';
 import { logger } from './logger.js';
 import { resolveStoragePath } from './storage.js';
 
@@ -27,9 +28,9 @@ export async function importInboxDocuments(force = false): Promise<void> {
   }
 
   const inboxPath = await resolveStoragePath(config.inbox.path);
-  await fs.mkdir(inboxPath, { recursive: true, mode: 0o750 });
-  await fs.mkdir(join(inboxPath, 'duplicates'), { recursive: true, mode: 0o750 });
-  await fs.mkdir(join(inboxPath, 'rejected'), { recursive: true, mode: 0o750 });
+  await ensureWritableDirectory(inboxPath);
+  await ensureWritableDirectory(join(inboxPath, 'duplicates'));
+  await ensureWritableDirectory(join(inboxPath, 'rejected'));
 
   const entries = await fs.readdir(inboxPath, { withFileTypes: true });
   const candidates = entries.filter((entry) => entry.isFile() && !entry.name.startsWith('.'));
@@ -52,11 +53,40 @@ export async function importInboxDocuments(force = false): Promise<void> {
 async function importFile(inboxPath: string, filename: string, ownerUuid: string): Promise<'imported' | 'duplicate' | 'rejected' | 'skipped'> {
   const sourcePath = join(inboxPath, filename);
   const initial = await statFile(sourcePath);
-  if (!initial || initial.size === 0) return 'skipped';
+  if (!initial) return 'skipped';
+
+  const inboxItem = await InboxItem.findOne({
+    where: { originalFilename: filename, status: { [Op.in]: ['new', 'processing'] } },
+    order: [['createdAt', 'DESC']]
+  }) ?? await InboxItem.create({
+    uuid: randomUUID(),
+    ownerUuid,
+    documentUuid: null,
+    originalFilename: safeFilename(filename),
+    checksumSha256: null,
+    sizeBytes: initial.size,
+    status: 'new',
+    aiStatus: 'pending',
+    aiSuggestion: null,
+    lastError: null,
+    aiError: null
+  });
+
+  await inboxItem.update({ sizeBytes: initial.size, lastError: null });
+
+  if (initial.size === 0) {
+    await moveTo(sourcePath, join(inboxPath, 'rejected'), filename);
+    await inboxItem.update({ status: 'rejected', lastError: 'The inbox file is empty' });
+    return 'rejected';
+  }
 
   if (Date.now() - initial.mtimeMs < config.inbox.stabilityMs) return 'skipped';
   if (extname(filename).toLowerCase() !== '.pdf' || initial.size > config.maxUploadBytes) {
     await moveTo(sourcePath, join(inboxPath, 'rejected'), filename);
+    await inboxItem.update({
+      status: 'rejected',
+      lastError: extname(filename).toLowerCase() !== '.pdf' ? 'Unsupported file type' : 'File exceeds the configured upload limit'
+    });
     logger.warn('Rejected inbox file', { filename, sizeBytes: initial.size, reason: extname(filename).toLowerCase() !== '.pdf' ? 'unsupported-file-type' : 'file-too-large' });
     return 'rejected';
   }
@@ -71,12 +101,15 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
     return 'skipped';
   }
 
+  await inboxItem.update({ status: 'processing' });
+
   try {
     const buffer = await fs.readFile(claimedPath);
     const checksumSha256 = createHash('sha256').update(buffer).digest('hex');
     const duplicate = await Document.findOne({ where: { checksumSha256 } });
     if (duplicate) {
       await moveTo(claimedPath, join(inboxPath, 'duplicates'), filename);
+      await inboxItem.update({ status: 'duplicate', checksumSha256, documentUuid: duplicate.uuid, lastError: null });
       logger.info('Skipped duplicate inbox document', { filename, duplicateDocumentUuid: duplicate.uuid, checksumSha256 });
       return 'duplicate';
     }
@@ -123,6 +156,13 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
           type: 'queued',
           message: 'Queued from inbox import'
         }, { transaction });
+        await inboxItem.update({
+          status: 'imported',
+          documentUuid: document.uuid,
+          checksumSha256,
+          sizeBytes: buffer.length,
+          lastError: null
+        }, { transaction });
       });
     } catch (error) {
       await moveTo(targetPath, join(inboxPath, 'rejected'), filename);
@@ -132,6 +172,10 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
     logger.info('Imported inbox document', { documentUuid, filename, storageKey, ownerUuid });
     return 'imported';
   } catch (error) {
+    await inboxItem.update({
+      status: 'failed',
+      lastError: (error instanceof Error ? error.message : String(error)).slice(0, 2000)
+    }).catch((updateError) => logger.error('Unable to update inbox item after import failure', { filename, error: updateError }));
     await moveToIfPresent(claimedPath, join(inboxPath, 'rejected'), filename);
     logger.error('Inbox document import failed', { filename, error: error instanceof Error ? error.message : String(error) });
     return 'rejected';
@@ -154,6 +198,12 @@ async function moveTo(sourcePath: string, directory: string, filename: string): 
 
 async function moveToIfPresent(sourcePath: string, directory: string, filename: string): Promise<void> {
   if (await statFile(sourcePath)) await moveTo(sourcePath, directory, filename);
+}
+
+async function ensureWritableDirectory(directory: string): Promise<void> {
+  await fs.mkdir(directory, { recursive: true, mode: 0o770 });
+  // mkdir is affected by the process umask; chmod makes the NAS-facing mode explicit.
+  await fs.chmod(directory, 0o770);
 }
 
 function safeFilename(filename: string): string {

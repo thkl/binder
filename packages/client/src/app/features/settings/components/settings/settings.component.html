@@ -33,7 +33,7 @@
       <form class="settings-form glass-card" (submit)="$event.preventDefault(); save()">
         <header class="form-heading">
           <div>
-            <p class="section-kicker">CONFIGURATION GROUP</p>
+            <p class="section-kicker">{{ 'settings.group' | t }}</p>
             <h3>{{ activeSectionLabel() }}</h3>
           </div>
           <span class="field-count">{{ activeItems().length }} {{ 'settings.fields' | t }}</span>
@@ -50,14 +50,23 @@
                     type="checkbox"
                     [checked]="booleanValue(item)"
                     (change)="updateCheckbox(item, $event)">
-                  <span class="checkbox-copy"><strong>{{ item.label }}</strong><small>{{ item.key }}</small></span>
+                  <span class="checkbox-copy"><strong>{{ itemLabel(item) }}</strong><small>{{ item.key }}</small></span>
                   <span class="toggle"><span></span></span>
                 </label>
               } @else {
                 <label class="text-field">
                   <span class="field-label"><strong>{{ itemLabel(item) }}</strong>@if (item.required) { <em>Required</em> }</span>
                   <small>{{ description(item) }}</small>
-                  @if (item.type === 'textarea') {
+                  @if (item.key === 'inbox.importOwnerUuid') {
+                  <select
+                    [value]="stringValue(item)"
+                    (change)="updateText(item, $event)">
+                    <option value="">{{ 'settings.noOwner' | t }}</option>
+                    @for (user of settingsService.users(); track user.uuid) {
+                      <option [value]="user.uuid">{{ user.username }}{{ user.email ? ' · ' + user.email : '' }}{{ user.isAdmin ? ' · ' + ('settings.admin' | t) : '' }}</option>
+                    }
+                  </select>
+                  } @else if (item.type === 'textarea') {
                   <textarea
                     [value]="stringValue(item)"
                     [required]="item.required ?? false"

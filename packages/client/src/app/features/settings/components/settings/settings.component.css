@@ -27,9 +27,9 @@ h3 { margin: .4rem 0 0; font-size: 1.35rem; letter-spacing: -.04em; }
 .field-label strong { font-size: .85rem; }
 .field-label em { color: var(--cyan); font-size: .62rem; font-style: normal; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .text-field small, .checkbox-copy small { color: #7188a5; font-size: .7rem; }
-.text-field input { width: 100%; border: 1px solid rgba(157,190,232,.2); border-radius: .65rem; padding: .8rem .85rem; color: var(--ink); background: rgba(5,18,35,.55); outline: none; }
+.text-field input, .text-field select { width: 100%; border: 1px solid rgba(157,190,232,.2); border-radius: .65rem; padding: .8rem .85rem; color: var(--ink); background: rgba(5,18,35,.55); outline: none; }
 .text-field textarea { width: 100%; min-height: 10rem; resize: vertical; border: 1px solid rgba(157,190,232,.2); border-radius: .65rem; padding: .8rem .85rem; color: var(--ink); background: rgba(5,18,35,.55); outline: none; font: inherit; line-height: 1.5; }
-.text-field input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(97,215,244,.13); }
+.text-field input:focus, .text-field select:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(97,215,244,.13); }
 .text-field textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(97,215,244,.13); }
 .field-hint { color: #67e0ac; font-size: .68rem; }
 .checkbox-field { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .8rem; padding: 1rem; border: 1px solid rgba(157,190,232,.12); border-radius: .75rem; cursor: pointer; }

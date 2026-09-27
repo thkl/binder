@@ -19,6 +19,7 @@ import { AuthenticationGuard } from '../../authentication/guards/authentication.
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
 import { DocumentService, UploadedDocumentFile } from '../service/document.service';
 import { BinderLogger } from '../../../shared/service/logger.helper';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('documents')
 @UseGuards(AuthenticationGuard)
@@ -93,10 +94,24 @@ export class DocumentController {
     return { data: await this.documents.requeue(user.userId, uuid) };
   }
 
+  @Get('thumbnails')
+  @SkipThrottle()
+  async thumbnails(@Query() query: Record<string, unknown>, @CurrentUser() user: ScopedUser) {
+    const uuids = typeof query.uuids === 'string'
+      ? query.uuids.split(',').map((uuid) => uuid.trim()).filter(Boolean)
+      : [];
+    if (uuids.length === 0) {
+      throw new BadRequestException('At least one document UUID is required');
+    }
+    return { data: await this.documents.getThumbnailUrls(user.userId, uuids) };
+  }
+
   @Get(':uuid/thumbnail')
-  async thumbnail(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+  @SkipThrottle()
+  async thumbnail(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser, @Res({ passthrough: true }) response: Response) {
     this.logger.debug(`Get thumbnail ${uuid}`);
     const result = await this.documents.getThumbnail(user.userId, uuid);
+    response.setHeader('Cache-Control', 'private, max-age=86400, immutable');
     return new StreamableFile(result.stream, { type: 'image/png' });
   }
 

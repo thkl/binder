@@ -1,0 +1,66 @@
+<section class="inbox-page">
+  <header class="inbox-heading">
+    <div>
+      <p class="section-kicker">{{ 'inbox.kicker' | t }}</p>
+      <h2>{{ 'inbox.title' | t }}</h2>
+      <p class="muted">{{ 'inbox.copy' | t }}</p>
+    </div>
+    <div class="heading-actions">
+      <button class="secondary" type="button" (click)="inbox.load()" [disabled]="inbox.loading()">
+        {{ inbox.loading() ? ('inbox.loading' | t) : ('inbox.refresh' | t) }}
+      </button>
+      <button class="primary-action" type="button" (click)="processAllWithAi()"
+        [disabled]="inbox.processing() || inbox.aiCandidates() === 0">
+        @if (inbox.processing()) { <span class="spinner"></span> }
+        {{ inbox.processing() ? ('inbox.processingAll' | t) : ('inbox.processAll' | t) }}
+      </button>
+    </div>
+  </header>
+
+  @if (inbox.error(); as error) {
+    <div class="notice error" role="alert">{{ error }}</div>
+  }
+
+  <div class="summary-grid" aria-label="Inbox summary">
+    <article class="summary-card glass-card"><span class="summary-label">{{ 'inbox.summary.new' | t }}</span><strong>{{ newCount() }}</strong><small>{{ 'inbox.summary.waiting' | t }}</small></article>
+    <article class="summary-card glass-card"><span class="summary-label">{{ 'inbox.summary.processing' | t }}</span><strong>{{ processingCount() }}</strong><small>{{ 'inbox.summary.worker' | t }}</small></article>
+    <article class="summary-card glass-card"><span class="summary-label">{{ 'inbox.summary.imported' | t }}</span><strong>{{ importedCount() }}</strong><small>{{ inbox.aiCandidates() }} {{ 'inbox.summary.aiReady' | t }}</small></article>
+  </div>
+
+  <section class="queue-card glass-card" aria-labelledby="inbox-queue-title">
+    <header class="queue-header">
+      <div><p class="section-kicker">{{ 'inbox.queueKicker' | t }}</p><h3 id="inbox-queue-title">{{ 'inbox.queueTitle' | t }}</h3></div>
+      <span class="queue-count">{{ inbox.items().length }}</span>
+    </header>
+
+    @if (inbox.loading() && inbox.items().length === 0) {
+      <div class="queue-state"><span class="spinner"></span><p>{{ 'inbox.loading' | t }}</p></div>
+    } @else if (inbox.items().length === 0) {
+      <div class="queue-state"><span class="empty-icon">⇩</span><h4>{{ 'inbox.emptyTitle' | t }}</h4><p>{{ 'inbox.emptyCopy' | t }}</p></div>
+    } @else {
+      <div class="queue-list" role="list">
+        @for (item of inbox.items(); track item.uuid) {
+          <article class="queue-row" role="listitem">
+            <div class="file-mark" aria-hidden="true">PDF</div>
+            <div class="file-copy">
+              <strong [title]="item.originalFilename">{{ item.originalFilename }}</strong>
+              <small>{{ item.sizeBytes | number }} bytes · {{ item.createdAt | date:'medium' }}</small>
+              @if (suggestionTitle(item); as title) {
+                <span class="suggestion"><span aria-hidden="true">✦</span> {{ 'inbox.suggestion' | t }} <strong>{{ title }}</strong></span>
+              }
+              @if (item.lastError; as error) { <span class="row-error">{{ error }}</span> }
+              @if (item.aiError; as aiError) { <span class="row-error">{{ aiError }}</span> }
+            </div>
+            <div class="status-stack">
+              <span class="status-pill" [class]="'status-pill status-' + item.status">{{ statusLabel(item.status) }}</span>
+              @if (item.status === 'imported') { <span class="ai-pill" [class]="'ai-pill ai-' + item.aiStatus">{{ aiStatusLabel(item.aiStatus) }}</span> }
+            </div>
+            @if (item.documentUuid) {
+              <a class="open-link" routerLink="/documents">{{ 'inbox.openDocuments' | t }} ↗</a>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+</section>

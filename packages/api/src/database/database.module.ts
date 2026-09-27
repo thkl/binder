@@ -13,6 +13,7 @@ import { PipelineJob } from '../features/pipeline/models/pipeline-job.entity';
 import { PipelineJobEvent } from '../features/pipeline/models/pipeline-job-event.entity';
 import { DocumentCategory, DocumentTag, DocumentTagAssignment, DocumentType } from '../features/metadata/models/vocabulary.entity';
 import { DocumentMetadataValue, MetadataDefinition } from '../features/metadata/models/vocabulary.entity';
+import { InboxItem } from '../features/inbox/models/inbox-item.entity';
 
 @Global()
 @Module({
@@ -64,7 +65,7 @@ import { DocumentMetadataValue, MetadataDefinition } from '../features/metadata/
     SequelizeModule.forFeature([
       User, ApplicationSetting, Document, DocumentPage, DocumentEmbedding, PipelineJob, PipelineJobEvent,
       DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment,
-      MetadataDefinition, DocumentMetadataValue
+      MetadataDefinition, DocumentMetadataValue, InboxItem
     ]),
   ],
   providers: [DatabaseConnectionService,DatabaseMigrationService],

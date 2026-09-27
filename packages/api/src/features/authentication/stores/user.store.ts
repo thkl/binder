@@ -29,6 +29,8 @@ const findActiveUsers: NamedQueryAddingOptions<User> = {
   name: 'findActiveUsers',
   findOptions: {
     where: { isActive: true },
+    attributes: ['uuid', 'username', 'email', 'isAdmin'],
+    order: [['username', 'ASC']],
   },
 };
 

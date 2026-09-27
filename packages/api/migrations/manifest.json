@@ -135,6 +135,15 @@
                     "documents",
                     "users"
                ]
+          },
+          "22": {
+               "created": [
+                    "inbox_items"
+               ],
+               "required": [
+                    "users",
+                    "documents"
+               ]
           }
      }
 }

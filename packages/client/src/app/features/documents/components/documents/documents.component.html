@@ -49,7 +49,7 @@
     <div class="document-list">
       @for (document of documents.page()?.items; track document.uuid) {
       <article class="document-row">
-        @if (!hasThumbnailFailed(document.uuid)) { <img class="thumbnail" [src]="thumbnailUrl(document.uuid)"
+        @if (thumbnailUrl(document.uuid) && !hasThumbnailFailed(document.uuid)) { <img class="thumbnail" [src]="thumbnailUrl(document.uuid)"
           [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
         <span class="file-icon">PDF</span> }
         <div class="document-name"><div class="title-line"><input class="title-input" [value]="document.title || document.originalFilename" (change)="renameDocument(document.uuid, $event)" aria-label="Document title"><button class="suggest-title-button" type="button" (click)="suggestTitle(document.uuid)" [disabled]="titleSuggestionLoading()[document.uuid]">{{ titleSuggestionLoading()[document.uuid] ? '…' : '✦' }}</button></div>@if (titleSuggestions()[document.uuid]; as suggestion) { <div class="title-suggestion"><span>Suggested: <strong>{{ suggestion.suggestedTitle }}</strong></span><button type="button" (click)="toggleMetadata(document.uuid)">Review</button><button type="button" (click)="dismissTitleSuggestion(document.uuid)">Dismiss</button></div> }<small>{{ document.sizeBytes | number
@@ -98,7 +98,7 @@
     <div class="icon-grid small-icons">
       @for (document of documents.page()?.items; track document.uuid) {
       <a class="icon-card" href="" (click)="openDocument($event, document.uuid)">
-        @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
+        @if (thumbnailUrl(document.uuid) && !hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
           [alt]="''" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
         <strong>{{ document.title || document.originalFilename }}</strong><small>{{ document.status }}</small>
       </a>
@@ -109,7 +109,7 @@
     <div class="icon-grid large-icons">
       @for (document of documents.page()?.items; track document.uuid) {
       <a class="icon-card" href="" (click)="openDocument($event, document.uuid)">
-        @if (!hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
+        @if (thumbnailUrl(document.uuid) && !hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
           [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
         <span class="file-icon">PDF</span> }
         <strong>{{ document.title || document.originalFilename }}</strong><small>{{ document.sizeBytes | number }} bytes · {{
