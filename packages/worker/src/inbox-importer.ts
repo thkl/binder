@@ -68,6 +68,7 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
     status: 'new',
     aiStatus: 'pending',
     aiSuggestion: null,
+    autoApplied: false,
     lastError: null,
     aiError: null
   });

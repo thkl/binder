@@ -23,6 +23,7 @@ export interface InboxItemAttributes {
   status: InboxItemStatus;
   aiStatus: InboxAiStatus;
   aiSuggestion: Record<string, unknown> | null;
+  autoApplied: boolean;
   lastError: string | null;
   aiError: string | null;
   createdAt: Date;
@@ -36,6 +37,7 @@ export type InboxItemCreationAttributes = Omit<InboxItemAttributes, 'createdAt' 
   status?: InboxItemStatus;
   aiStatus?: InboxAiStatus;
   aiSuggestion?: Record<string, unknown> | null;
+  autoApplied?: boolean;
   lastError?: string | null;
   aiError?: string | null;
 };
@@ -73,6 +75,9 @@ export class InboxItem extends Model<InboxItemAttributes, InboxItemCreationAttri
   @AllowNull
   @Column({ field: 'ai_suggestion', type: DataType.JSONB, allowNull: true })
   declare aiSuggestion: Record<string, unknown> | null;
+
+  @Column({ field: 'ai_auto_applied', type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+  declare autoApplied: boolean;
 
   @AllowNull
   @Column({ field: 'last_error', type: DataType.STRING(2000), allowNull: true })

@@ -24,6 +24,7 @@
 .file-copy small { overflow-wrap: anywhere; color: #7188a5; font-size: .67rem; }
 .suggestion { overflow-wrap: anywhere; color: #a8e8d1; font-size: .7rem; line-height: 1.4; }
 .suggestion > span { color: #67e0ac; }
+.auto-applied { color: #a8e8d1; font-size: .68rem; }
 .row-error { overflow-wrap: anywhere; color: var(--danger); font-size: .68rem; line-height: 1.4; }
 .status-stack { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .35rem; }
 .status-pill, .ai-pill { display: inline-flex; align-items: center; min-height: 1.7rem; border: 1px solid transparent; border-radius: 999px; padding: .28rem .55rem; font-size: .63rem; font-weight: 800; white-space: nowrap; }

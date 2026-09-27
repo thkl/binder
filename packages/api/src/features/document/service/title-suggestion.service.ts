@@ -26,9 +26,10 @@ export class TitleSuggestionService {
     if (!document) throw new NotFoundException('Document not found');
 
     const enabled = (await this.settings.get('ai.titleSuggestions.enabled', 'false'))?.toLowerCase() === 'true';
+    const automaticClassification = (await this.settings.get('ai.automaticClassification.enabled', 'false'))?.toLowerCase() === 'true';
     const provider = await this.settings.get('ai.provider', 'openai-compatible');
     const apiKey = await this.settings.get('ai.apiKey', '');
-    if (!enabled || !apiKey || provider !== 'openai-compatible') {
+    if ((!enabled && !automaticClassification) || !apiKey || provider !== 'openai-compatible') {
       throw new BadRequestException('AI title suggestions are not configured');
     }
 

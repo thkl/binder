@@ -9,7 +9,7 @@ import {
   DocumentListResponse,
   DocumentListResponseSchema
 } from '@binder/common';
-import { DocumentThumbnailsResponseSchema } from '@binder/common';
+import { DocumentThumbnailsResponseSchema, DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
 import { randomUUID } from 'node:crypto';
 import { Op } from 'sequelize';
 import type { Express } from 'express';
@@ -18,7 +18,6 @@ import { DocumentStorageService } from './document-storage.service';
 import { PipelineService } from '../../pipeline/service/pipeline.service';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { MetadataService } from '../../metadata/service/metadata.service';
-import { SetDocumentMetadataInput } from '@binder/common';
 import { SetDocumentTitleInput } from '@binder/common';
 import { th } from 'zod/locales';
 import { SemanticSearchService } from './semantic-search.service';
@@ -246,6 +245,57 @@ export class DocumentService {
     return this.metadata.setDocumentMetadata(ownerUuid, uuid, input);
   }
 
+  async applySuggestionToEmptyFields(ownerUuid: string, uuid: string, suggestion: DocumentTitleSuggestion): Promise<{ appliedFields: string[] }> {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) throw new NotFoundException('Document not found');
+
+    const metadata = await this.metadata.getDocumentMetadata(ownerUuid, uuid);
+    const appliedFields: string[] = [];
+    const titleIsEmpty = !document.title?.trim() || document.title.trim() === document.originalFilename.trim();
+    if (titleIsEmpty && suggestion.suggestedTitle.trim()) {
+      await this.documents.update(uuid, { title: suggestion.suggestedTitle });
+      appliedFields.push('title');
+    }
+
+    const classification: SetDocumentMetadataInput = {};
+    if (!metadata.documentType && suggestion.documentTypeUuid) {
+      classification.documentTypeUuid = suggestion.documentTypeUuid;
+    }
+    if (!metadata.category && suggestion.categoryUuid) {
+      classification.categoryUuid = suggestion.categoryUuid;
+    }
+    if (metadata.tags.length === 0 && suggestion.tagUuids.length > 0) {
+      classification.tagUuids = suggestion.tagUuids;
+    }
+    if (Object.keys(classification).length > 0) {
+      try {
+        await this.metadata.setDocumentMetadata(ownerUuid, uuid, classification);
+        if (classification.documentTypeUuid) appliedFields.push('documentType');
+        if (classification.categoryUuid) appliedFields.push('category');
+        if (classification.tagUuids) appliedFields.push('tags');
+      } catch (error) {
+        this.logger.warn(`Unable to auto-apply document classification for ${uuid}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    const newCustomValues = Object.fromEntries(Object.entries(suggestion.custom).filter(([key, value]) => {
+      const current = metadata.custom[key];
+      return this.isEmptyMetadataValue(current) && !this.isEmptyMetadataValue(value);
+    }));
+    if (Object.keys(newCustomValues).length > 0) {
+      try {
+        await this.metadata.setDocumentMetadata(ownerUuid, uuid, {
+          custom: { ...metadata.custom, ...newCustomValues }
+        });
+        appliedFields.push(...Object.keys(newCustomValues).map((key) => `custom.${key}`));
+      } catch (error) {
+        this.logger.warn(`Unable to auto-apply custom metadata for ${uuid}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    return { appliedFields };
+  }
+
   private toDocumentResponse(document: import('../models/document.entity').Document): DocumentResponse {
     return {
       uuid: document.uuid,
@@ -271,5 +321,9 @@ export class DocumentService {
     const start = index > 0 ? Math.max(0, index - 100) : 0;
     const end = Math.min(normalized.length, start + 320);
     return `${start > 0 ? '…' : ''}${normalized.slice(start, end)}${end < normalized.length ? '…' : ''}`;
+  }
+
+  private isEmptyMetadataValue(value: unknown): boolean {
+    return value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
   }
 }

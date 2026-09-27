@@ -138,6 +138,21 @@ const CALMER_COPY: Record<string, TranslationMap> = {
   }
 };
 
+const EXTENDED_COPY: Record<string, TranslationMap> = {
+  en: {
+    'setting.ai.automaticClassification.enabled': 'Automatically apply high-confidence AI classification',
+    'setting.ai.automaticClassification.confidence': 'Automatic classification confidence threshold (0–1)',
+    'setting.ai.automaticClassification.confidence.hint': 'Use a value from 0 to 1. Example: 0.8 means 80%.',
+    'inbox.autoApplied': 'Applied automatically'
+  },
+  de: {
+    'setting.ai.automaticClassification.enabled': 'KI-Klassifizierung bei hoher Sicherheit automatisch übernehmen',
+    'setting.ai.automaticClassification.confidence': 'Schwellwert für automatische KI-Klassifizierung (0–1)',
+    'setting.ai.automaticClassification.confidence.hint': 'Wert zwischen 0 und 1. Beispiel: 0.8 bedeutet 80%.',
+    'inbox.autoApplied': 'Automatisch übernommen'
+  }
+};
+
 @Injectable({ providedIn: 'root' })
 export class I18nService {
   readonly language = signal<AppLanguage>(this.initialLanguage());
@@ -149,7 +164,7 @@ export class I18nService {
 
   t(key: string): string {
     const language = this.language().toLowerCase().startsWith('de') ? 'de' : 'en';
-    return CALMER_COPY[language][key] ?? (language === 'de' ? DE[key] : EN[key]) ?? EN[key] ?? key;
+    return CALMER_COPY[language][key] ?? EXTENDED_COPY[language]?.[key] ?? (language === 'de' ? DE[key] : EN[key]) ?? EN[key] ?? key;
   }
 
   name(item: Pick<VocabularyItem, 'name' | 'translations'>): string {

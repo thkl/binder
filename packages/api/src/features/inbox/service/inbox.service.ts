@@ -1,11 +1,14 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import {
+  DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
   InboxAiProcessResponseSchema,
   InboxQueueResponseSchema
 } from '@binder/common';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { TitleSuggestionService } from '../../document/service/title-suggestion.service';
+import { DocumentService } from '../../document/service/document.service';
+import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { InboxItem } from '../models/inbox-item.entity';
 import { InboxItemStore } from '../store/inbox-item.store';
 
@@ -16,7 +19,9 @@ export class InboxService {
 
   constructor(
     private readonly items: InboxItemStore,
-    private readonly titleSuggestions: TitleSuggestionService
+    private readonly titleSuggestions: TitleSuggestionService,
+    private readonly documents: DocumentService,
+    private readonly settings: ApplicationSettingsService
   ) {}
 
   async list() {
@@ -40,6 +45,7 @@ export class InboxService {
     let processed = 0;
     let failed = 0;
     let skipped = 0;
+    const automaticApproval = await this.getAutomaticApprovalSettings();
     try {
       const candidates = await this.items.findAiCandidates();
       for (const item of candidates) {
@@ -55,9 +61,25 @@ export class InboxService {
 
         try {
           const suggestion = await this.titleSuggestions.suggest(item.ownerUuid, item.documentUuid);
+          let autoApplied = item.autoApplied;
+          if (automaticApproval.enabled && suggestion.confidence >= automaticApproval.confidence) {
+            try {
+              const result = await this.documents.applySuggestionToEmptyFields(item.ownerUuid, item.documentUuid, suggestion);
+              autoApplied = autoApplied || result.appliedFields.length > 0;
+              this.logger.info('Automatically applied inbox AI suggestion', {
+                inboxItemUuid: item.uuid,
+                documentUuid: item.documentUuid,
+                confidence: suggestion.confidence,
+                appliedFields: result.appliedFields
+              });
+            } catch (error) {
+              this.logger.warn(`Unable to auto-apply inbox AI suggestion for ${item.uuid}: ${error instanceof Error ? error.message : String(error)}`);
+            }
+          }
           await this.items.update(item.uuid, {
             aiStatus: 'ready',
             aiSuggestion: suggestion,
+            autoApplied,
             aiError: null
           });
           processed += 1;
@@ -81,6 +103,16 @@ export class InboxService {
     }
   }
 
+  private async getAutomaticApprovalSettings(): Promise<{ enabled: boolean; confidence: number }> {
+    const enabled = (await this.settings.get('ai.automaticClassification.enabled', 'false'))?.toLowerCase() === 'true';
+    const configured = Number(await this.settings.get('ai.automaticClassification.confidence', '0.8'));
+    const confidence = configured > 1 ? configured / 100 : configured;
+    return {
+      enabled,
+      confidence: Number.isFinite(confidence) ? Math.min(1, Math.max(0, confidence)) : 0.8
+    };
+  }
+
   private toResponse(item: InboxItem) {
     const suggestion = item.aiSuggestion ? DocumentTitleSuggestionSchema.safeParse(item.aiSuggestion) : null;
     return {
@@ -93,6 +125,7 @@ export class InboxService {
       status: item.status,
       aiStatus: item.aiStatus,
       aiSuggestion: suggestion?.success ? suggestion.data : null,
+      autoApplied: item.autoApplied,
       lastError: item.lastError,
       aiError: item.aiError,
       createdAt: item.createdAt.toISOString(),

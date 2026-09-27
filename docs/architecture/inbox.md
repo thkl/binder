@@ -12,6 +12,6 @@ This means the UI can distinguish a file waiting for the worker from an imported
 The admin-only API endpoints are:
 
 - `GET /api/v1/inbox` — returns queue items and the number of AI candidates
-- `POST /api/v1/inbox/ai-process` — creates persisted AI suggestions for all imported candidates; suggestions are reviewable and are not applied automatically
+- `POST /api/v1/inbox/ai-process` — creates persisted AI suggestions for all imported candidates. When `ai.automaticClassification.enabled` is enabled and the suggestion confidence reaches `ai.automaticClassification.confidence` (for example `0.8` means 80%), the API applies only fields that are still empty. Existing type, category, tags, custom metadata, and manually changed titles are never overwritten. A title equal to the original filename is treated as empty.
 
 The Angular inbox route is `/inbox`. The worker owns import state; the API owns the batch AI suggestion operation because the configured AI provider and controlled metadata vocabulary are API services.

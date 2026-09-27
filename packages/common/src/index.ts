@@ -76,6 +76,7 @@ export const InboxQueueItemSchema = z.object({
   status: InboxItemStatusSchema,
   aiStatus: InboxAiStatusSchema,
   aiSuggestion: DocumentTitleSuggestionSchema.nullable(),
+  autoApplied: z.boolean(),
   lastError: z.string().max(2000).nullable(),
   aiError: z.string().max(2000).nullable(),
   createdAt: z.iso.datetime(),

@@ -144,6 +144,12 @@
                     "users",
                     "documents"
                ]
+          },
+          "23": {
+               "required": [
+                    "inbox_items",
+                    "settings"
+               ]
           }
      }
 }

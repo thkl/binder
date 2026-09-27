@@ -48,6 +48,7 @@
               @if (suggestionTitle(item); as title) {
                 <span class="suggestion"><span aria-hidden="true">✦</span> {{ 'inbox.suggestion' | t }} <strong>{{ title }}</strong></span>
               }
+              @if (item.autoApplied) { <span class="auto-applied">✓ {{ 'inbox.autoApplied' | t }}</span> }
               @if (item.lastError; as error) { <span class="row-error">{{ error }}</span> }
               @if (item.aiError; as aiError) { <span class="row-error">{{ aiError }}</span> }
             </div>

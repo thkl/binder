@@ -86,6 +86,12 @@ export class SettingsComponent implements OnInit {
       ?? item.key;
   }
 
+  patternHint(item: SettingsMapItem): string {
+    const key = `setting.${item.key}.hint`;
+    const translated = this.i18n.t(key);
+    return translated === key ? (item.patternMessage ?? '') : translated;
+  }
+
   sectionLabel(key: string): string {
     const section = this.sections().find((candidate) => candidate.key === key);
     return section ? this.i18n.t(`settings.${section.key}`) : this.i18n.t('settings.title');

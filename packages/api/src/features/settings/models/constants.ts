@@ -133,6 +133,15 @@ export const settingsMap: SettingsMapItem[] = [
     label: 'Enable AI title suggestions', type: 'checkbox', section: 'ai',
   },
   {
+    key: 'ai.automaticClassification.enabled', valueFrom: 'ai.automaticClassification.enabled', encrypted: false, default: false,
+    label: 'Automatically apply high-confidence AI classification', type: 'checkbox', section: 'ai',
+  },
+  {
+    key: 'ai.automaticClassification.confidence', valueFrom: 'ai.automaticClassification.confidence', encrypted: false, default: '0.8',
+    label: 'Automatic classification confidence threshold (0–1)', type: 'text', required: true,
+    pattern: '^(0(?:\\.\\d+)?|1(?:\\.0+)?)$', patternMessage: 'Use a value from 0 to 1. Example: 0.8 means 80%.', section: 'ai',
+  },
+  {
     key: 'ai.provider', valueFrom: 'ai.provider', encrypted: false, default: 'openai-compatible',
     label: 'AI provider (shared)', type: 'text', required: true, section: 'ai',
   },

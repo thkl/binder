@@ -74,6 +74,9 @@ export class InboxItem extends Model {
   @Column({ field: 'ai_suggestion', type: DataType.JSONB, allowNull: true })
   declare aiSuggestion: Record<string, unknown> | null;
 
+  @Column({ field: 'ai_auto_applied', type: DataType.BOOLEAN })
+  declare autoApplied: boolean;
+
   @Column({ field: 'last_error', type: DataType.STRING(2000), allowNull: true })
   declare lastError: string | null;
 

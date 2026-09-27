@@ -78,6 +78,7 @@
                     [attr.pattern]="item.pattern || null"
                     (input)="updateText(item, $event)"> }
                   @if (item.encrypted) { <span class="field-hint">{{ 'settings.encrypted' | t }}</span> }
+                  @if (item.patternMessage) { <span class="field-hint">{{ patternHint(item) }}</span> }
                 </label>
               }
             }
