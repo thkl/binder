@@ -176,6 +176,11 @@
                "required": [
                     "documents"
                ]
+          },
+          "28": {
+               "required": [
+                    "settings"
+               ]
           }
      }
 }
