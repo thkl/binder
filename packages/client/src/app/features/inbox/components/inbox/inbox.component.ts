@@ -19,6 +19,8 @@ export class InboxComponent implements OnDestroy, OnInit {
   readonly newCount = computed(() => this.inbox.items().filter((item) => item.status === 'new').length);
   readonly processingCount = computed(() => this.inbox.items().filter((item) => item.status === 'processing').length);
   readonly importedCount = computed(() => this.inbox.items().filter((item) => item.status === 'imported').length);
+  readonly duplicateCount = computed(() => this.inbox.items().filter((item) => item.status === 'duplicate').length);
+  readonly rejectedCount = computed(() => this.inbox.items().filter((item) => item.status === 'rejected').length);
 
   ngOnInit(): void {
     void this.inbox.load();
@@ -35,6 +37,17 @@ export class InboxComponent implements OnDestroy, OnInit {
 
   async removeItem(uuid: string): Promise<void> {
     await this.inbox.remove(uuid);
+  }
+
+  async removeByStatus(status: 'duplicate' | 'rejected'): Promise<void> {
+    const count = status === 'duplicate' ? this.duplicateCount() : this.rejectedCount();
+    if (count === 0) return;
+
+    const message = status === 'duplicate'
+      ? this.i18n.t('inbox.confirmRemoveDuplicates')
+      : this.i18n.t('inbox.confirmRemoveRejected');
+    if (!window.confirm(message)) return;
+    await this.inbox.removeByStatus(status);
   }
 
   statusLabel(status: InboxItemStatus): string {

@@ -123,7 +123,11 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'setting.inbox.path': 'Inbox path (relative to storage root)',
     'setting.inbox.importOwnerUuid': 'Inbox import owner UUID',
     'setting.inbox.pollIntervalMs': 'Inbox polling interval (ms)',
-    'setting.inbox.stabilityMs': 'Inbox file stability delay (ms)'
+    'setting.inbox.stabilityMs': 'Inbox file stability delay (ms)',
+    'inbox.removeDuplicates': 'Remove duplicates',
+    'inbox.removeRejected': 'Remove rejected',
+    'inbox.confirmRemoveDuplicates': 'Remove all duplicate inbox items?',
+    'inbox.confirmRemoveRejected': 'Remove all rejected inbox items?'
   },
   de: {
     'app.loading': 'Arbeitsbereich wird geladen…',
@@ -162,7 +166,11 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'setting.inbox.path': 'Inbox-Pfad (relativ zum Speicherpfad)',
     'setting.inbox.importOwnerUuid': 'UUID des Besitzers für Inbox-Importe',
     'setting.inbox.pollIntervalMs': 'Abfrageintervall der Inbox (ms)',
-    'setting.inbox.stabilityMs': 'Wartezeit für stabile Inbox-Dateien (ms)'
+    'setting.inbox.stabilityMs': 'Wartezeit für stabile Inbox-Dateien (ms)',
+    'inbox.removeDuplicates': 'Duplikate entfernen',
+    'inbox.removeRejected': 'Abgelehnte entfernen',
+    'inbox.confirmRemoveDuplicates': 'Alle doppelten Inbox-Einträge entfernen?',
+    'inbox.confirmRemoveRejected': 'Alle abgelehnten Inbox-Einträge entfernen?'
   }
 };
 

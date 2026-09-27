@@ -204,6 +204,9 @@ export type InboxAiProcessResponse = z.infer<typeof InboxAiProcessResponseSchema
 export const InboxRemoveResponseSchema = z.object({ removed: z.boolean() });
 export type InboxRemoveResponse = z.infer<typeof InboxRemoveResponseSchema>;
 
+export const InboxBulkRemoveResponseSchema = z.object({ removed: z.number().int().nonnegative() });
+export type InboxBulkRemoveResponse = z.infer<typeof InboxBulkRemoveResponseSchema>;
+
 export const InboxChangeEventSchema = z.object({
   type: z.literal('inbox.changed'),
   occurredAt: z.iso.datetime(),

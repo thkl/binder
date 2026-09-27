@@ -5,6 +5,7 @@ import {
   InboxChangeEventSchema,
   InboxAiProcessResponse,
   InboxAiProcessResponseSchema,
+  InboxBulkRemoveResponseSchema,
   InboxRemoveResponseSchema,
   InboxQueueItem,
   InboxQueueResponseSchema
@@ -76,6 +77,21 @@ export class InboxService {
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
       return false;
+    }
+  }
+
+  async removeByStatus(status: 'duplicate' | 'rejected'): Promise<number> {
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.delete<ApiResponse<unknown>>(`/api/v1/inbox/status/${status}`, { withCredentials: true })
+      );
+      const result = InboxBulkRemoveResponseSchema.parse(response.data);
+      if (result.removed > 0) await this.load();
+      return result.removed;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return 0;
     }
   }
 

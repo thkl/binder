@@ -44,6 +44,17 @@
     opacity: .5;
 }
 
+.danger-action {
+    color: #ffd2d2;
+    border-color: rgba(255, 120, 120, .28);
+    background: rgba(255, 100, 100, .1);
+}
+
+.danger-action:hover:not(:disabled) {
+    border-color: rgba(255, 150, 150, .5);
+    background: rgba(255, 100, 100, .18);
+}
+
 .summary-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -405,4 +416,3 @@ button {
         grid-column: 2;
     }
 }
-

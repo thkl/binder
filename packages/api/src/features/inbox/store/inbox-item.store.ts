@@ -26,6 +26,10 @@ export class InboxItemStore extends BaseCrudStore<InboxItem> {
     return this.model.destroy({ where: { uuid } });
   }
 
+  async removeByStatus(status: 'duplicate' | 'rejected'): Promise<number> {
+    return this.model.destroy({ where: { status } });
+  }
+
   async changeToken(): Promise<string> {
     const latest = await this.model.findOne({
       attributes: ['uuid', 'updatedAt'],

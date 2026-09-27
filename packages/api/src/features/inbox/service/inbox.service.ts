@@ -123,6 +123,13 @@ export class InboxService {
     return InboxRemoveResponseSchema.parse({ removed: true });
   }
 
+  async removeByStatus(status: 'duplicate' | 'rejected') {
+    const removed = await this.items.removeByStatus(status);
+    this.emitChanged(`bulk-remove-${status}`);
+    this.logger.info('Removed inbox items by status', { status, removed });
+    return { removed };
+  }
+
   events(): Observable<MessageEvent> {
     return new Observable<MessageEvent>((subscriber) => {
       let lastToken: string | null = null;

@@ -12,6 +12,10 @@ const ProviderResponseSchema = z.object({
   choices: z.array(z.object({ message: z.object({ content: z.string() }) })).min(1)
 });
 
+const UuidSchema = z.uuid();
+
+type SuggestionRecord = Record<string, unknown>;
+
 @Injectable()
 export class TitleSuggestionService {
   private readonly logger = new BinderLogger(TitleSuggestionService.name);
@@ -77,7 +81,36 @@ export class TitleSuggestionService {
     if (!response.ok) throw new Error(`AI provider returned HTTP ${response.status}`);
     const body = ProviderResponseSchema.parse(await response.json());
     const content = body.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/\s*```$/, '');
-    const suggestion = DocumentTitleSuggestionSchema.parse(JSON.parse(content));
+    const rawSuggestion = JSON.parse(content) as unknown;
+    const invalidFields: string[] = [];
+    const raw = isSuggestionRecord(rawSuggestion) ? rawSuggestion : {};
+    if (!isSuggestionRecord(rawSuggestion)) invalidFields.push('suggestion');
+
+    const fallbackTitle = document.title?.trim() || document.originalFilename;
+    const suggestedTitle = typeof raw.suggestedTitle === 'string' && raw.suggestedTitle.trim()
+      ? raw.suggestedTitle.trim().slice(0, 255)
+      : fallbackTitle.slice(0, 255);
+    const confidence = parseConfidence(raw.confidence, invalidFields);
+    const issuerUuid = parseUuid(raw.issuerUuid, 'issuerUuid', invalidFields);
+    const documentTypeUuid = parseUuid(raw.documentTypeUuid, 'documentTypeUuid', invalidFields);
+    const categoryUuid = parseUuid(raw.categoryUuid, 'categoryUuid', invalidFields);
+    const tagUuids = parseUuidArray(raw.tagUuids, 'tagUuids', invalidFields);
+    const custom = parseCustom(raw.custom, invalidFields);
+    const suggestion = DocumentTitleSuggestionSchema.parse({
+      suggestedTitle,
+      confidence,
+      issuerUuid,
+      documentTypeUuid,
+      categoryUuid,
+      tagUuids,
+      custom
+    });
+    if (invalidFields.length > 0) {
+      this.logger.warn('AI returned invalid optional metadata; discarded invalid fields', {
+        documentUuid,
+        fields: [...new Set(invalidFields)]
+      });
+    }
     const allowedIssuerUuids = new Set(allowedIssuers.map((issuer) => issuer.uuid));
     const allowedTypeUuids = new Set(vocabulary.documentTypes.map((item) => item.uuid));
     const allowedCategoryUuids = new Set(vocabulary.categories.map((item) => item.uuid));
@@ -96,4 +129,52 @@ export class TitleSuggestionService {
     await document.update({ aiSuggestion: safeSuggestion });
     return safeSuggestion;
   }
+}
+
+function isSuggestionRecord(value: unknown): value is SuggestionRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseConfidence(value: unknown, invalidFields: string[]): number {
+  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+  if (!Number.isFinite(parsed)) {
+    if (value !== undefined && value !== null) invalidFields.push('confidence');
+    return 0;
+  }
+  return Math.min(1, Math.max(0, parsed));
+}
+
+function parseUuid(value: unknown, field: string, invalidFields: string[]): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = UuidSchema.safeParse(value);
+  if (!parsed.success) {
+    invalidFields.push(field);
+    return null;
+  }
+  return parsed.data;
+}
+
+function parseUuidArray(value: unknown, field: string, invalidFields: string[]): string[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) {
+    invalidFields.push(field);
+    return [];
+  }
+
+  const result: string[] = [];
+  for (const item of value) {
+    const parsed = UuidSchema.safeParse(item);
+    if (parsed.success) result.push(parsed.data);
+    else invalidFields.push(`${field}[]`);
+  }
+  return [...new Set(result)];
+}
+
+function parseCustom(value: unknown, invalidFields: string[]): SuggestionRecord {
+  if (value === undefined || value === null) return {};
+  if (!isSuggestionRecord(value)) {
+    invalidFields.push('custom');
+    return {};
+  }
+  return value;
 }
