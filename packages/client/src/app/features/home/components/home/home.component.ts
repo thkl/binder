@@ -36,8 +36,8 @@ export class HomeComponent {
         if (i1.semanticScore === null && i2.semanticScore === null) {
           return 0;
         }
-        if (i1.semanticScore ?? 0 > (i2.semanticScore ?? 0)) return -1;
-        if (i2.semanticScore ?? 0 > (i1.semanticScore ?? 0)) return 1;
+        if (i1.semanticScore ?? 0 > (i2.semanticScore ?? 0)) return 1;
+        if (i2.semanticScore ?? 0 > (i1.semanticScore ?? 0)) return -1;
         return 0
       })
       return sorted;
