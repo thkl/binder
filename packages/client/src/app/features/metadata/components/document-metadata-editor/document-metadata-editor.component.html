@@ -10,7 +10,7 @@
       <h3 id="metadata-editor-title">{{ 'editor.title' | t }}</h3>
     </div>
   </header>
-  @if (suggestion; as pending) {
+  @if (activeSuggestion(); as pending) {
     <section class="ai-suggestion" aria-label="AI metadata suggestions">
       <div class="suggestion-heading"><div><span class="section-kicker">{{ 'editor.aiReview' | t }}</span><strong>{{ 'editor.suggested' | t }}</strong></div><small>{{ (pending.confidence * 100) | number:'1.0-0' }}% confidence</small></div>
       <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('title')" (change)="acceptSuggestionField('title')"><span>{{ 'editor.titleField' | t }}: <strong>{{ pending.suggestedTitle }}</strong></span></label>
@@ -18,7 +18,7 @@
       <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('categoryUuid')" [disabled]="!pending.categoryUuid" (change)="acceptSuggestionField('categoryUuid')"><span>{{ 'editor.category' | t }}: {{ suggestedCategoryName(pending.categoryUuid) }}</span></label>
       <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('tagUuids')" [disabled]="pending.tagUuids.length === 0" (change)="acceptSuggestionField('tagUuids')"><span>{{ 'editor.tags' | t }}: {{ pending.tagUuids.length }} suggested</span></label>
       <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('custom')" [disabled]="suggestedCustomCount() === 0" (change)="acceptSuggestionField('custom')"><span>{{ 'editor.customFields' | t }}: {{ suggestedCustomCount() }} suggested</span></label>
-      <button type="button" class="accept-all-button" (click)="acceptAllSuggestion()">✓ {{ 'editor.acceptAll' | t }}</button>
+      <div class="suggestion-actions"><button type="button" class="accept-all-button" (click)="acceptAllSuggestion()">✓ {{ 'editor.acceptAll' | t }}</button><button type="button" class="dismiss-suggestion-button" (click)="dismissSuggestion()">{{ 'editor.dismissSuggestion' | t }}</button></div>
     </section>
   }
   <section class="issuer-section">

@@ -171,6 +171,11 @@
                     "settings",
                     "inbox_items"
                ]
+          },
+          "27": {
+               "required": [
+                    "documents"
+               ]
           }
      }
 }

@@ -8,7 +8,8 @@ import {
   DocumentListResponseSchema,
   SetDocumentTitleInputSchema,
   DocumentTitleSuggestion,
-  DocumentTitleSuggestionSchema
+  DocumentTitleSuggestionSchema,
+  ClearDocumentSuggestionResponseSchema
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -89,6 +90,19 @@ export class DocumentsService {
         this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1', `documents/${uuid}/title/suggest`), {}, { withCredentials: true })
       );
       return DocumentTitleSuggestionSchema.parse(response.data);
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  async clearSuggestion(uuid: string): Promise<boolean | null> {
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.delete<ApiResponse<unknown>>(this.appService.getApiUrl('v1', `documents/${uuid}/ai-suggestion`), { withCredentials: true })
+      );
+      return ClearDocumentSuggestionResponseSchema.parse(response.data).cleared;
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
       return null;

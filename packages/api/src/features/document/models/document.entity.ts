@@ -24,17 +24,19 @@ export interface DocumentAttributes {
   thumbnailKey: string | null;
   pageCount: number;
   issuerUuid: string | null;
+  aiSuggestion: Record<string, unknown> | null;
   searchVector: unknown;
   status: DocumentStatus;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'thumbnailKey' | 'pageCount' | 'issuerUuid'> & {
+export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'thumbnailKey' | 'pageCount' | 'issuerUuid' | 'aiSuggestion'> & {
   uuid?: string;
   thumbnailKey?: string | null;
   pageCount?: number;
   issuerUuid?: string | null;
+  aiSuggestion?: Record<string, unknown> | null;
   status?: DocumentStatus;
 };
 
@@ -82,6 +84,10 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
 
   @AllowNull @Column({ field: 'issuer_id', type: DataType.UUID })
   declare issuerUuid: string | null;
+
+  @AllowNull
+  @Column({ field: 'ai_suggestion', type: DataType.JSONB, allowNull: true })
+  declare aiSuggestion: Record<string, unknown> | null;
 
   @Column({ field: 'search_vector', type: DataType.TSVECTOR })
   declare searchVector: unknown;

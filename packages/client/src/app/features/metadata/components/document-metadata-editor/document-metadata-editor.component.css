@@ -50,4 +50,9 @@ h3 { margin:.3rem 0 0; color:#dceaff; font-size:1.05rem; letter-spacing:-.025em;
 .suggestion-heading small { color:#9db2ca; }
 .suggestion-item { display:flex; align-items:center; gap:.5rem; padding:.35rem 0; color:#b9cbe0; font-size:.75rem; }
 .suggestion-item input { accent-color:var(--cyan); }
-.accept-all-button { width:100%; margin-top:.55rem; border:1px solid rgba(97,215,244,.3); border-radius:.45rem; padding:.55rem; color:#061326; background:var(--cyan); cursor:pointer; font:inherit; font-size:.72rem; font-weight:800; }
+.suggestion-actions { display:flex; gap:.55rem; margin-top:.55rem; }
+.accept-all-button,.dismiss-suggestion-button { flex:1; border-radius:.45rem; padding:.55rem; cursor:pointer; font:inherit; font-size:.72rem; font-weight:800; }
+.accept-all-button { border:1px solid rgba(97,215,244,.3); color:#061326; background:var(--cyan); }
+.accept-all-button:hover { background:#8be7fa; }
+.dismiss-suggestion-button { border:1px solid rgba(157,190,232,.22); color:#b9cbe0; background:rgba(157,190,232,.07); }
+.dismiss-suggestion-button:hover { border-color:rgba(255,160,160,.45); color:#ffd0d0; background:rgba(255,120,120,.08); }

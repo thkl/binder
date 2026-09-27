@@ -12,7 +12,9 @@ This means the UI can distinguish a file waiting for the worker from an imported
 The admin-only API endpoints are:
 
 - `GET /api/v1/inbox` — returns queue items and the number of AI candidates
-- `POST /api/v1/inbox/ai-process` — creates persisted AI suggestions for all imported candidates. When `ai.automaticClassification.enabled` is enabled and the suggestion confidence reaches `ai.automaticClassification.confidence` (for example `0.8` means 80%), the API applies only fields that are still empty. Existing type, category, tags, custom metadata, and manually changed titles are never overwritten. A title equal to the original filename is treated as empty.
+- `POST /api/v1/inbox/ai-process` — creates persisted AI suggestions for all imported candidates. Suggestions are stored on the document before the confidence threshold is evaluated. When `ai.automaticClassification.enabled` is enabled and the suggestion confidence reaches `ai.automaticClassification.confidence` (for example `0.8` means 80%), the API applies only fields that are still empty and clears the suggestion after successful automatic approval. Suggestions below the threshold remain available in the document metadata panel for field-by-field or all-at-once review. Existing type, category, tags, custom metadata, and manually changed titles are never overwritten. A title equal to the original filename is treated as empty.
+- `DELETE /api/v1/inbox/:uuid` — manually removes an inbox item when a stale record remains after a completed import or analysis.
+- `DELETE /api/v1/documents/:uuid/ai-suggestion` — clears a pending document suggestion after it has been accepted or dismissed.
 
 The Angular inbox route is `/inbox`. The worker owns import state; the API owns the batch AI suggestion operation because the configured AI provider and controlled metadata vocabulary are API services.
 
@@ -26,3 +28,7 @@ The runtime setting `inbox.completionStage` controls when a successful inbox ite
 The default is `ai-analysis`. The API removes stale completed records when the queue is listed, so items already marked `aiStatus=ready` do not remain visible after the policy is enabled.
 
 Administrators can subscribe to `GET /api/v1/inbox/events` using an authenticated Server-Sent Events connection. The API emits application changes immediately and checks the database periodically for worker changes. The client uses this stream to reload the inbox queue without a browser refresh.
+
+## AI review persistence
+
+The document metadata response includes the pending `suggestion` when one exists. This allows the review flow to work even after the inbox item has been removed by the completion policy. The client clears the stored suggestion only after the user accepts all suggestions or explicitly dismisses them; accepting the title alone updates the title but leaves the remaining suggestion fields available for review.

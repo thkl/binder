@@ -59,7 +59,7 @@ export class MetadataStore {
       return definition ? [[definition.key, value.value]] : [];
     }));
 
-    return { issuer, documentType, category, tags, custom };
+    return { issuer, documentType, category, tags, custom, suggestion: document.aiSuggestion };
   }
 
   listDefinitions(ownerUuid: string) {

@@ -33,6 +33,10 @@ export class InboxComponent implements OnDestroy, OnInit {
     await this.inbox.processAllWithAi();
   }
 
+  async removeItem(uuid: string): Promise<void> {
+    await this.inbox.remove(uuid);
+  }
+
   statusLabel(status: InboxItemStatus): string {
     return this.i18n.t(`inbox.status.${status}`);
   }

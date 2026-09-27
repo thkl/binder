@@ -134,22 +134,23 @@ export class DocumentsComponent implements OnInit {
     this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
   }
 
-  dismissTitleSuggestion(uuid: string): void {
+  async dismissTitleSuggestion(uuid: string): Promise<void> {
+    if (await this.documents.clearSuggestion(uuid) === null) return;
     this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
   }
 
-  async acceptSuggestedMetadata(uuid: string): Promise<void> {
-    const suggestion = this.titleSuggestions()[uuid];
-    if (!suggestion) return;
-    if (await this.documents.updateTitle(uuid, suggestion.suggestedTitle)) {
-      this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
-    }
+  async acceptSuggestedMetadata(uuid: string, title: string): Promise<void> {
+    if (!(await this.documents.updateTitle(uuid, title))) return;
+    if (await this.documents.clearSuggestion(uuid) === null) return;
+    this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
   }
 
-  async acceptSuggestedField(uuid: string, field: string): Promise<void> {
-    if (field !== 'title') return;
-    const suggestion = this.titleSuggestions()[uuid];
-    if (suggestion) await this.documents.updateTitle(uuid, suggestion.suggestedTitle);
+  async acceptSuggestedTitleValue(uuid: string, title: string): Promise<void> {
+    await this.documents.updateTitle(uuid, title);
+  }
+
+  dismissLocalTitleSuggestion(uuid: string): void {
+    this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
   }
   
   private readViewMode(): DocumentViewMode {

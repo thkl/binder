@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -71,6 +72,11 @@ export class DocumentController {
   @Post(':uuid/title/suggest')
   async suggestTitle(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
     return { data: await this.documents.suggestTitle(user.userId, uuid) };
+  }
+
+  @Delete(':uuid/ai-suggestion')
+  async clearSuggestion(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.clearSuggestion(user.userId, uuid) };
   }
 
   @Get(':uuid/pipeline')

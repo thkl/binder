@@ -22,6 +22,7 @@ import {
   UpdateIssuerInput,
   UpdateIssuerInputSchema
 } from '@binder/common';
+import { ClearDocumentSuggestionResponseSchema } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
@@ -182,6 +183,18 @@ export class MetadataService {
       return null;
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  async clearDocumentSuggestion(uuid: string): Promise<boolean | null> {
+    try {
+      const response = await firstValueFrom(
+        this.http.delete<ApiResponse<unknown>>(`/api/v1/documents/${uuid}/ai-suggestion`, { withCredentials: true })
+      );
+      return ClearDocumentSuggestionResponseSchema.parse(response.data).cleared;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
     }
   }
 

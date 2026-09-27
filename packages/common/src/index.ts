@@ -75,6 +75,9 @@ export const DocumentTitleSuggestionSchema = z.object({
 });
 export type DocumentTitleSuggestion = z.infer<typeof DocumentTitleSuggestionSchema>;
 
+export const ClearDocumentSuggestionResponseSchema = z.object({ cleared: z.boolean() });
+export type ClearDocumentSuggestionResponse = z.infer<typeof ClearDocumentSuggestionResponseSchema>;
+
 export const InboxItemStatusSchema = z.enum([
   'new',
   'processing',
@@ -120,6 +123,9 @@ export const InboxAiProcessResponseSchema = z.object({
   items: z.array(InboxQueueItemSchema)
 });
 export type InboxAiProcessResponse = z.infer<typeof InboxAiProcessResponseSchema>;
+
+export const InboxRemoveResponseSchema = z.object({ removed: z.boolean() });
+export type InboxRemoveResponse = z.infer<typeof InboxRemoveResponseSchema>;
 
 export const InboxChangeEventSchema = z.object({
   type: z.literal('inbox.changed'),
@@ -418,7 +424,8 @@ export const DocumentMetadataSchema = z.object({
   documentType: VocabularyItemSchema.nullable(),
   category: VocabularyItemSchema.nullable(),
   tags: z.array(VocabularyItemSchema),
-  custom: z.record(z.string(), z.unknown())
+  custom: z.record(z.string(), z.unknown()),
+  suggestion: DocumentTitleSuggestionSchema.nullable()
 });
 export type DocumentMetadata = z.infer<typeof DocumentMetadataSchema>;
 

@@ -9,7 +9,7 @@ import {
   DocumentListResponse,
   DocumentListResponseSchema
 } from '@binder/common';
-import { DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
+import { ClearDocumentSuggestionResponseSchema, DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
 import { randomUUID } from 'node:crypto';
 import type { Express } from 'express';
 import { DocumentStore } from '../store/document.store';
@@ -152,6 +152,14 @@ export class DocumentService {
 
   async suggestTitle(ownerUuid: string, uuid: string) {
     return this.titleSuggestions.suggest(ownerUuid, uuid);
+  }
+
+  async clearSuggestion(ownerUuid: string, uuid: string) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) throw new NotFoundException('Document not found');
+    const cleared = document.aiSuggestion !== null;
+    if (cleared) await this.documents.update(uuid, { aiSuggestion: null });
+    return ClearDocumentSuggestionResponseSchema.parse({ cleared });
   }
 
   async getFile(ownerUuid: string, uuid: string) {

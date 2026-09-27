@@ -74,6 +74,7 @@ export class TitleSuggestionService {
       custom: safeCustom
     };
     this.logger.info('Document metadata suggestion received', { documentUuid, confidence: safeSuggestion.confidence, hasType: Boolean(safeSuggestion.documentTypeUuid), hasCategory: Boolean(safeSuggestion.categoryUuid), tagCount: safeSuggestion.tagUuids.length, customFieldCount: Object.keys(safeSuggestion.custom).length });
+    await document.update({ aiSuggestion: safeSuggestion });
     return safeSuggestion;
   }
 }

@@ -154,6 +154,9 @@ export class Document extends Model {
   @Column({ field: 'issuer_id', type: DataType.UUID, allowNull: true })
   declare issuerUuid: string | null;
 
+  @Column({ field: 'ai_suggestion', type: DataType.JSONB, allowNull: true })
+  declare aiSuggestion: Record<string, unknown> | null;
+
   @Column({ type: DataType.STRING })
   declare status: DocumentStatus;
 }

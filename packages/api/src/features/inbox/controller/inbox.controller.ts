@@ -1,4 +1,4 @@
-import { Controller, Get, MessageEvent, Post, Sse, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, MessageEvent, Param, Post, Sse, UseGuards } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
@@ -26,5 +26,10 @@ export class InboxController {
   @Post('ai-process')
   async processWithAi() {
     return { data: await this.inbox.processAllWithAi() };
+  }
+
+  @Delete(':uuid')
+  async remove(@Param('uuid') uuid: string) {
+    return { data: await this.inbox.remove(uuid) };
   }
 }

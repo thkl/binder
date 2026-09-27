@@ -4,6 +4,7 @@ import {
   CreateMetadataDefinition,
   MetadataDefinitionsResponseSchema,
   DocumentMetadataSchema,
+  DocumentTitleSuggestionSchema,
   SetDocumentMetadataInput,
   VocabularyItem,
   VocabularyResponseSchema
@@ -83,6 +84,7 @@ export class MetadataService {
   async getDocumentMetadata(ownerUuid: string, documentUuid: string) {
     const metadata = await this.store.getDocumentMetadata(ownerUuid, documentUuid);
     if (!metadata) throw new NotFoundException('Document not found');
+    const suggestion = metadata.suggestion ? DocumentTitleSuggestionSchema.safeParse(metadata.suggestion) : null;
     return DocumentMetadataSchema.parse({
       issuer: metadata.issuer ? {
         uuid: metadata.issuer.uuid,
@@ -99,7 +101,8 @@ export class MetadataService {
       documentType: metadata.documentType ? this.toResponse(metadata.documentType) : null,
       category: metadata.category ? this.toResponse(metadata.category) : null,
       tags: metadata.tags.map((tag) => this.toResponse(tag)),
-      custom: metadata.custom
+      custom: metadata.custom,
+      suggestion: suggestion?.success ? suggestion.data : null
     });
   }
 

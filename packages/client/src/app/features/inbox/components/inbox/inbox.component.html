@@ -59,6 +59,9 @@
             @if (item.documentUuid) {
               <a class="open-link" routerLink="/documents">{{ 'inbox.openDocuments' | t }} ↗</a>
             }
+            <button class="remove-link" type="button" (click)="removeItem(item.uuid)" [attr.aria-label]="'inbox.remove' | t">
+              {{ 'inbox.remove' | t }}
+            </button>
           </article>
         }
       </div>

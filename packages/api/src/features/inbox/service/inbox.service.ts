@@ -1,11 +1,12 @@
-import { ConflictException, Injectable, MessageEvent } from '@nestjs/common';
+import { ConflictException, Injectable, MessageEvent, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Observable } from 'rxjs';
 import {
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
   InboxAiProcessResponseSchema,
-  InboxQueueResponseSchema
+  InboxQueueResponseSchema,
+  InboxRemoveResponseSchema
 } from '@binder/common';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { TitleSuggestionService } from '../../document/service/title-suggestion.service';
@@ -78,6 +79,7 @@ export class InboxService {
                 confidence: suggestion.confidence,
                 appliedFields: result.appliedFields
               });
+              await this.documents.clearSuggestion(item.ownerUuid, item.documentUuid);
             } catch (error) {
               this.logger.warn(`Unable to auto-apply inbox AI suggestion for ${item.uuid}: ${error instanceof Error ? error.message : String(error)}`);
             }
@@ -111,6 +113,14 @@ export class InboxService {
     } finally {
       this.aiProcessing = false;
     }
+  }
+
+  async remove(uuid: string) {
+    const removed = await this.items.remove(uuid);
+    if (removed === 0) throw new NotFoundException('Inbox item not found');
+    this.emitChanged('manual-remove');
+    this.logger.info('Removed inbox item manually', { inboxItemUuid: uuid });
+    return InboxRemoveResponseSchema.parse({ removed: true });
   }
 
   events(): Observable<MessageEvent> {

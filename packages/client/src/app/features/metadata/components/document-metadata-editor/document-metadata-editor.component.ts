@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import type { CreateIssuerInput, DocumentTitleSuggestion, Issuer, UpdateIssuerInput } from '@binder/common';
+import type { CreateIssuerInput, DocumentMetadata, DocumentTitleSuggestion, Issuer, UpdateIssuerInput } from '@binder/common';
 import { MetadataService } from '../../services/metadata.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
@@ -15,8 +15,9 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
 export class DocumentMetadataEditorComponent implements OnChanges {
   @Input({ required: true }) documentUuid = '';
   @Input() suggestion: DocumentTitleSuggestion | null = null;
-  @Output() suggestionAccepted = new EventEmitter<void>();
-  @Output() suggestionFieldAccepted = new EventEmitter<string>();
+  @Output() suggestionAccepted = new EventEmitter<string>();
+  @Output() suggestionTitleAccepted = new EventEmitter<string>();
+  @Output() suggestionDismissed = new EventEmitter<void>();
 
   readonly metadata = inject(MetadataService);
   readonly i18n = inject(I18nService);
@@ -30,6 +31,9 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   readonly newTagName = signal('');
   readonly tagSearch = signal('');
   readonly acceptedSuggestionFields = signal<Set<string>>(new Set());
+  private readonly inputSuggestion = signal<DocumentTitleSuggestion | null>(null);
+  private readonly serverSuggestion = signal<DocumentTitleSuggestion | null>(null);
+  readonly activeSuggestion = computed(() => this.inputSuggestion() ?? this.serverSuggestion());
   readonly showIssuerForm = signal(false);
   readonly editingIssuerUuid = signal<string | null>(null);
   readonly issuerName = signal('');
@@ -45,8 +49,14 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   });
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['documentUuid'] && this.documentUuid) void this.load();
-    if (changes['suggestion']) this.acceptedSuggestionFields.set(new Set());
+    if (changes['documentUuid'] && this.documentUuid) {
+      this.serverSuggestion.set(null);
+      void this.load();
+    }
+    if (changes['suggestion']) {
+      this.inputSuggestion.set(this.suggestion);
+      this.acceptedSuggestionFields.set(new Set());
+    }
   }
 
   async load(): Promise<void> {
@@ -70,7 +80,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
 
   isTagSelected(uuid: string): boolean { return this.selectedTags().has(uuid); }
 
-  async save(): Promise<void> {
+  async save(): Promise<boolean> {
     const result = await this.metadata.setDocumentMetadata(this.documentUuid, {
       issuerUuid: this.issuerUuid() || null,
       documentTypeUuid: this.documentTypeUuid() || null,
@@ -82,11 +92,13 @@ export class DocumentMetadataEditorComponent implements OnChanges {
       const persisted = await this.metadata.getDocumentMetadata(this.documentUuid);
       this.applyMetadata(persisted ?? result);
       this.saved.set(true);
+      return true;
     }
+    return false;
   }
 
   acceptSuggestionField(field: string): void {
-    const suggestion = this.suggestion;
+    const suggestion = this.activeSuggestion();
     if (!suggestion) return;
     this.acceptedSuggestionFields.update((current) => {
       const next = new Set(current);
@@ -97,17 +109,28 @@ export class DocumentMetadataEditorComponent implements OnChanges {
     if (field === 'categoryUuid') this.categoryUuid.set(suggestion.categoryUuid ?? '');
     if (field === 'tagUuids') this.selectedTags.set(new Set(suggestion.tagUuids));
     if (field === 'custom') this.customValues.update((current) => ({ ...current, ...suggestion.custom }));
-    if (field === 'title') this.suggestionFieldAccepted.emit(field);
+    if (field === 'title') this.suggestionTitleAccepted.emit(suggestion.suggestedTitle);
     this.saved.set(false);
   }
 
   async acceptAllSuggestion(): Promise<void> {
-    if (!this.suggestion) return;
-    for (const field of ['documentTypeUuid', 'categoryUuid', 'tagUuids', 'custom']) {
+    const suggestion = this.activeSuggestion();
+    if (!suggestion) return;
+    for (const field of ['title', 'documentTypeUuid', 'categoryUuid', 'tagUuids', 'custom']) {
       if (!this.acceptedSuggestionFields().has(field)) this.acceptSuggestionField(field);
     }
-    await this.save();
-    this.suggestionAccepted.emit();
+    if (!await this.save()) return;
+    this.inputSuggestion.set(null);
+    this.serverSuggestion.set(null);
+    this.suggestionAccepted.emit(suggestion.suggestedTitle);
+  }
+
+  async dismissSuggestion(): Promise<void> {
+    if (await this.metadata.clearDocumentSuggestion(this.documentUuid) === null) return;
+    this.inputSuggestion.set(null);
+    this.serverSuggestion.set(null);
+    this.acceptedSuggestionFields.set(new Set());
+    this.suggestionDismissed.emit();
   }
 
   isSuggestionAccepted(field: string): boolean { return this.acceptedSuggestionFields().has(field); }
@@ -124,14 +147,18 @@ export class DocumentMetadataEditorComponent implements OnChanges {
 
   itemName(item: { name: string; translations: Record<string, string> }): string { return this.i18n.name(item); }
 
-  suggestedCustomCount(): number { return this.suggestion ? Object.keys(this.suggestion.custom).length : 0; }
+  suggestedCustomCount(): number {
+    const suggestion = this.activeSuggestion();
+    return suggestion ? Object.keys(suggestion.custom).length : 0;
+  }
 
-  private applyMetadata(current: { issuer?: { uuid: string } | null; documentType: { uuid: string } | null; category: { uuid: string } | null; tags: { uuid: string }[]; custom: Record<string, unknown> }): void {
+  private applyMetadata(current: DocumentMetadata): void {
     this.issuerUuid.set(current.issuer?.uuid ?? '');
     this.documentTypeUuid.set(current.documentType?.uuid ?? '');
     this.categoryUuid.set(current.category?.uuid ?? '');
     this.selectedTags.set(new Set(current.tags.map((tag) => tag.uuid)));
     this.customValues.set({ ...current.custom });
+    this.serverSuggestion.set(current.suggestion);
   }
 
   async addTag(event: Event): Promise<void> {

@@ -5,6 +5,7 @@ import {
   InboxChangeEventSchema,
   InboxAiProcessResponse,
   InboxAiProcessResponseSchema,
+  InboxRemoveResponseSchema,
   InboxQueueItem,
   InboxQueueResponseSchema
 } from '@binder/common';
@@ -54,6 +55,27 @@ export class InboxService {
       return null;
     } finally {
       this.processing.set(false);
+    }
+  }
+
+  async remove(uuid: string): Promise<boolean> {
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.delete<ApiResponse<unknown>>(`/api/v1/inbox/${uuid}`, { withCredentials: true })
+      );
+      const result = InboxRemoveResponseSchema.parse(response.data);
+      if (result.removed) {
+        const removedItem = this.items().find((item) => item.uuid === uuid);
+        this.items.update((items) => items.filter((item) => item.uuid !== uuid));
+        if (removedItem?.status === 'imported' && ['pending', 'failed'].includes(removedItem.aiStatus)) {
+          this.aiCandidates.update((count) => Math.max(0, count - 1));
+        }
+      }
+      return result.removed;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
     }
   }
 
