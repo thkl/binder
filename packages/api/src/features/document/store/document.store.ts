@@ -42,7 +42,13 @@ export class DocumentStore extends BaseCrudStore<Document> {
       ];
     }
 
-    const order: Order = [[query.sort, query.direction.toUpperCase() as 'ASC' | 'DESC']];
+    const sortDirection = query.direction.toUpperCase() as 'ASC' | 'DESC';
+    const order: Order = query.groupBy === 'none'
+      ? [[query.sort, sortDirection]]
+      : [
+        [this.groupField(query.groupBy), query.groupBy === 'isNew' ? 'DESC' : 'ASC'],
+        [query.sort, sortDirection]
+      ];
     const result = await this.model.findAndCountAll({
       where,
       order,
@@ -53,6 +59,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
     const total = result.count as number;
     return {
       items: result.rows,
+      groupBy: query.groupBy,
       page: query.page,
       pageSize: query.pageSize,
       total,
@@ -60,6 +67,28 @@ export class DocumentStore extends BaseCrudStore<Document> {
       hasNext: query.page * query.pageSize < total,
       hasPrev: query.page > 1
     };
+  }
+
+  private groupField(groupBy: DocumentListQuery['groupBy']): string {
+    switch (groupBy) {
+      case 'documentType':
+        return 'documentTypeUuid';
+      case 'category':
+        return 'categoryUuid';
+      case 'issuer':
+        return 'issuerUuid';
+      case 'status':
+        return 'status';
+      case 'isNew':
+        return 'isNew';
+      case 'tag':
+        // Tags are many-to-many and do not have a single document column.
+        // Keep the result deterministic until tag grouping gets a dedicated
+        // grouped query.
+        return 'uuid';
+      case 'none':
+        return 'uuid';
+    }
   }
 
   async searchOwned(ownerUuid: string, query: DocumentSearchQuery) {

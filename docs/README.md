@@ -20,6 +20,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Issuers](./architecture/issuers.md) — reusable sender records, document references, and deterministic worker matching
 - [Document search](./architecture/search.md) — page text search, snippets, and the semantic-search extension point
 - [Document bulk actions](./architecture/bulk-actions.md) — page-scoped selection and batch document operations
+- [Backup and scheduled maintenance](./architecture/backup-and-scheduling.md) — PostgreSQL backup/restore, retention, and recurring jobs
 - [AI assistance](./architecture/ai-assistance.md) — user-confirmed hosted title suggestions
 - [Localization](./architecture/localization.md) — extensible UI and vocabulary translations
 - [Container deployment](./architecture/containers.md) — API, client, worker, PostgreSQL, and shared storage
@@ -36,4 +37,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-P0 and P1 are implemented. The first P2 slice is implemented: inbox-folder import, duplicate handling, automatic pipeline handoff, high-confidence classification, issuer matching, and live inbox updates are in place. The next P2 work is general document bulk actions, followed by saved searches and then hardening/security verification. Email and scanner ingestion have moved to P3, alongside multiple configurable AI providers.
+P0 and P1 are implemented. The first P2 slice is implemented: inbox-folder import, duplicate handling, automatic pipeline handoff, high-confidence classification, issuer matching, and live inbox updates are in place. The next P2 work is general document bulk actions, followed by saved searches, database backup/restore with scheduled maintenance, and then hardening/security verification. Email and scanner ingestion have moved to P3, alongside multiple configurable AI providers.

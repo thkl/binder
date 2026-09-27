@@ -96,6 +96,7 @@ export class DocumentService {
     const summaries = await this.metadata.getDocumentMetadataSummaries(ownerUuid, result.items);
     return DocumentListResponseSchema.parse({
       ...result,
+      groupBy: query.groupBy,
       items: result.items.map((document) => this.toDocumentResponse(document, summaries.get(document.uuid)))
     });
   }

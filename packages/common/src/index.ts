@@ -51,6 +51,17 @@ export const DocumentSchema = z.object({
 
 export type Document = z.infer<typeof DocumentSchema>;
 
+export const DocumentGroupBySchema = z.enum([
+  'none',
+  'documentType',
+  'category',
+  'issuer',
+  'tag',
+  'status',
+  'isNew'
+]);
+export type DocumentGroupBy = z.infer<typeof DocumentGroupBySchema>;
+
 export const DocumentExtractedTextPageSchema = z.object({
   pageNumber: z.number().int().positive(),
   text: z.string()
@@ -213,6 +224,7 @@ export const DocumentListQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
   sort: z.enum(['createdAt', 'updatedAt', 'originalFilename', 'title', 'status']).default('createdAt'),
   direction: z.enum(['asc', 'desc']).default('desc'),
+  groupBy: DocumentGroupBySchema.default('none'),
   status: DocumentStatusSchema.optional(),
   issuerUuid: z.uuid().optional(),
   q: z.string().trim().max(200).optional()
@@ -222,6 +234,7 @@ export type DocumentListQuery = z.infer<typeof DocumentListQuerySchema>;
 
 export const DocumentListResponseSchema = z.object({
   items: z.array(DocumentSchema),
+  groupBy: DocumentGroupBySchema,
   page: z.number().int().min(1),
   pageSize: z.number().int().min(1),
   total: z.number().int().min(0),

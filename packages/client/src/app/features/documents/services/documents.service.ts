@@ -24,18 +24,21 @@ export class DocumentsService {
   readonly uploading = signal(false);
   readonly error = signal<string | null>(null);
   readonly appService = inject(ApplicationService);
+  private currentQuery = DocumentListQuerySchema.parse({});
 
   constructor(private readonly http: HttpClient) {}
 
   async load(query: Partial<DocumentListQuery> = {}): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
-    const parsed = DocumentListQuerySchema.parse(query);
+    const parsed = DocumentListQuerySchema.parse({ ...this.currentQuery, ...query });
+    this.currentQuery = parsed;
     const params = new URLSearchParams({
       page: String(parsed.page),
       pageSize: String(parsed.pageSize),
       sort: parsed.sort,
-      direction: parsed.direction
+      direction: parsed.direction,
+      groupBy: parsed.groupBy
     });
     if (parsed.status) params.set('status', parsed.status);
     if (parsed.q) params.set('q', parsed.q);

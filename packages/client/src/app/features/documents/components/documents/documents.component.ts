@@ -8,12 +8,13 @@ import type {
   Document,
   DocumentBulkAction,
   DocumentBulkActionResponse,
+  DocumentGroupBy,
   DocumentTitleSuggestion
 } from '@binder/common';
-import { TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 type DocumentViewMode = 'list' | 'icons';
-type DocumentGroupMode = 'none' | 'documentType' | 'category' | 'issuer' | 'tag';
+type DocumentGroupMode = DocumentGroupBy;
 type DocumentGroup = { key: string; label: string | null; documents: Document[] };
 
 @Component({
@@ -26,6 +27,7 @@ type DocumentGroup = { key: string; label: string | null; documents: Document[] 
 })
 export class DocumentsComponent implements OnInit {
   readonly documents = inject(DocumentsService);
+  private readonly i18n = inject(I18nService);
   private readonly document = inject(DOCUMENT);
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
   readonly viewMode = signal<DocumentViewMode>(this.readViewMode());
@@ -65,13 +67,7 @@ export class DocumentsComponent implements OnInit {
     if (mode === 'none') return [{ key: 'all', label: null, documents }];
     const groups = new Map<string, DocumentGroup>();
     for (const document of documents) {
-      const values = mode === 'documentType'
-        ? document.metadataSummary.documentType ? [{ key: document.metadataSummary.documentType.uuid, label: document.metadataSummary.documentType.name }] : []
-        : mode === 'category'
-          ? document.metadataSummary.category ? [{ key: document.metadataSummary.category.uuid, label: document.metadataSummary.category.name }] : []
-          : mode === 'issuer'
-            ? document.metadataSummary.issuer ? [{ key: document.metadataSummary.issuer.uuid, label: document.metadataSummary.issuer.name }] : []
-            : document.metadataSummary.tags.map((tag) => ({ key: tag.uuid, label: tag.name }));
+      const values = this.groupValues(document, mode);
       const groupValues = values.length > 0 ? values : [{ key: '__none', label: null }];
       for (const value of groupValues) {
         const group = groups.get(value.key) ?? { key: value.key, label: value.label, documents: [] };
@@ -83,7 +79,7 @@ export class DocumentsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    void this.documents.load();
+    void this.documents.load({ groupBy: this.groupMode() });
   }
 
   async fileSelected(event: Event): Promise<void> {
@@ -198,6 +194,7 @@ export class DocumentsComponent implements OnInit {
   setGroupMode(mode: DocumentGroupMode): void {
     this.groupMode.set(mode);
     localStorage.setItem('binder.documents.group-mode', mode);
+    void this.documents.load({ page: 1, groupBy: mode });
   }
 
   markDocumentReviewed(uuid: string): void {
@@ -348,7 +345,9 @@ export class DocumentsComponent implements OnInit {
 
   private readGroupMode(): DocumentGroupMode {
     const stored = localStorage.getItem('binder.documents.group-mode');
-    return stored === 'documentType' || stored === 'category' || stored === 'issuer' || stored === 'tag' ? stored : 'none';
+    return stored === 'documentType' || stored === 'category' || stored === 'issuer' || stored === 'tag' || stored === 'status' || stored === 'isNew'
+      ? stored
+      : 'none';
   }
   
   private readViewMode(): DocumentViewMode {
@@ -356,5 +355,33 @@ export class DocumentsComponent implements OnInit {
     return stored === 'small-icons' || stored === 'large-icons' || stored === 'icons'
       ? 'icons'
       : 'list';
+  }
+
+  private groupValues(document: Document, mode: DocumentGroupMode): Array<{ key: string; label: string | null }> {
+    switch (mode) {
+      case 'documentType':
+        return document.metadataSummary.documentType
+          ? [{ key: document.metadataSummary.documentType.uuid, label: document.metadataSummary.documentType.name }]
+          : [];
+      case 'category':
+        return document.metadataSummary.category
+          ? [{ key: document.metadataSummary.category.uuid, label: document.metadataSummary.category.name }]
+          : [];
+      case 'issuer':
+        return document.metadataSummary.issuer
+          ? [{ key: document.metadataSummary.issuer.uuid, label: document.metadataSummary.issuer.name }]
+          : [];
+      case 'tag':
+        return document.metadataSummary.tags.map((tag) => ({ key: tag.uuid, label: tag.name }));
+      case 'status':
+        return [{ key: document.status, label: this.i18n.t('documents.status.' + document.status) }];
+      case 'isNew':
+        return [{
+          key: document.isNew ? 'new' : 'reviewed',
+          label: this.i18n.t(document.isNew ? 'documents.new' : 'documents.reviewed')
+        }];
+      case 'none':
+        return [];
+    }
   }
 }
