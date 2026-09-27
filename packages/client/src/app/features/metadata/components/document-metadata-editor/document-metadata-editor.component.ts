@@ -22,7 +22,7 @@ export class DocumentMetadataEditorComponent {
   readonly suggestionDismissed = output<void>();
   readonly manuallySaved = output<void>();
   readonly dirtyChange = output<boolean>();
-  
+  readonly closeRequest = output<void>();
   readonly metadata = inject(MetadataService);
   readonly i18n = inject(I18nService);
   readonly documentTypeUuid = signal('');
@@ -117,6 +117,12 @@ export class DocumentMetadataEditorComponent {
       return true;
     }
     return false;
+  }
+
+  async saveAndClose(): Promise<boolean> {
+    await this.save();
+    this.closeRequest.emit();
+    return true;
   }
 
   setDocumentTypeUuid(uuid: string): void {

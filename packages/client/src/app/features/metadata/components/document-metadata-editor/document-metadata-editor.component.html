@@ -128,8 +128,9 @@
       }
     </section>
   }
-  <footer class="editor-footer">@if (saved()) { <span class="saved">✓ Saved</span> }<button type="button"
-      class="save-button" [disabled]="metadata.saving()" (click)="save()">{{ metadata.saving() ? 'Saving…' : 'Save
-      metadata' }}</button></footer>
+  <footer class="editor-footer">@if (saved()) { <span class="saved">✓ Saved</span> }
+   <button type="button" class="save-button" [disabled]="metadata.saving()" (click)="save()">{{ metadata.saving() ? 'Saving…' : 'Save metadata' }}</button>
+   <button type="button" class="secondary-button" [disabled]="metadata.saving()" (click)="saveAndClose()">{{ metadata.saving() ? 'Saving…' : 'Save metadata & Close' }}</button>
+  </footer>
 </section>
 }

@@ -371,6 +371,7 @@
           [suggestion]="titleSuggestions()[metadataUuid] || null"
           (dirtyChange)="metadataDirtyChanged($event)"
           (manuallySaved)="metadataSaved(metadataUuid)"
+          (closeRequest)="requestCloseMetadata()"
           (suggestionTitleAccepted)="acceptSuggestedTitleValue(metadataUuid, $event)"
           (suggestionDismissed)="dismissLocalTitleSuggestion(metadataUuid)"
           (suggestionAccepted)="acceptSuggestedMetadata(metadataUuid, $event)" />
