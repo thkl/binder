@@ -4,13 +4,14 @@ import { DocumentsService } from '../../services/documents.service';
 import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
 import { DocumentViewerComponent } from '../../../../common/components/document-viewer/document-viewer.component';
 import type { DocumentTitleSuggestion } from '@binder/common';
+import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 type DocumentViewMode = 'list' | 'details' | 'small-icons' | 'large-icons';
 
 @Component({
   selector: 'binder-documents',
   standalone: true,
-  imports: [CommonModule, DocumentMetadataEditorComponent, DocumentViewerComponent],
+  imports: [CommonModule, DocumentMetadataEditorComponent, DocumentViewerComponent, TranslatePipe],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush

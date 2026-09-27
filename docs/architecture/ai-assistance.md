@@ -10,9 +10,12 @@ Configuration is stored in the database. The provider and API key are shared by 
 - `ai.provider`
 - `ai.endpoint` / `ai.model` for assistant requests
 - `ai.apiKey` for both assistant and embedding requests
+- `ai.documentAnalysis.prompt` for the user-editable document analysis instructions
 - `embeddings.endpoint` / `embeddings.model` for embedding requests
 
 The default is disabled. Logs include document UUID, model, and text length, but never document text, prompts, API keys, or generated vectors.
+
+The analysis prompt is editable by administrators in the AI assistance settings. The API appends the required JSON shape, UUID allow-list rules, and title length constraint after the editable text, then validates and sanitizes the response against the current vocabulary and metadata definitions. This keeps customization useful without allowing an edited prompt to bypass server-side safety and data validation.
 
 ## P3 provider profiles
 

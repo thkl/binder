@@ -1,8 +1,8 @@
 <section class="home-page">
   <div class="home-hero">
-    <p class="section-kicker">PRIVATE DOCUMENT VAULT</p>
-    <h2>Find anything in your archive.</h2>
-    <p class="hero-copy">Search titles, filenames, and extracted document text. Ask naturally — semantic matches are included when embeddings are enabled.</p>
+    <p class="section-kicker">{{ 'home.kicker' | t }}</p>
+    <h2>{{ 'home.title' | t }}</h2>
+    <p class="hero-copy">{{ 'home.copy' | t }}</p>
 
     <form class="search-form" role="search" (submit)="submitSearch($event)">
       <span class="search-icon" aria-hidden="true">⌕</span>
@@ -10,36 +10,36 @@
         [value]="searchQuery()"
         (input)="searchQuery.set($any($event.target).value)"
         type="search"
-        placeholder="Find the document about my car inspection last summer"
-        aria-label="Search documents"
+        [placeholder]="'home.placeholder' | t"
+        [attr.aria-label]="'home.title' | t"
         autocomplete="off">
       <button type="submit" [disabled]="search.loading() || !searchQuery().trim()">
-        {{ search.loading() ? 'Searching…' : 'Search' }}
+        {{ search.loading() ? ('home.searching' | t) : ('home.search' | t) }}
       </button>
     </form>
     @if (search.vocabulary(); as vocabulary) {
       <div class="search-filters" aria-label="Search filters">
-        <label>Type
+        <label>{{ 'home.type' | t }}
           <select [value]="selectedType()" (change)="selectedType.set($any($event.target).value)">
-            <option value="">Any type</option>
-            @for (item of vocabulary.documentTypes; track item.uuid) { <option [value]="item.uuid">{{ item.name }}</option> }
+            <option value="">{{ 'home.anyType' | t }}</option>
+            @for (item of vocabulary.documentTypes; track item.uuid) { <option [value]="item.uuid">{{ itemName(item) }}</option> }
           </select>
         </label>
-        <label>Category
+        <label>{{ 'home.category' | t }}
           <select [value]="selectedCategory()" (change)="selectedCategory.set($any($event.target).value)">
-            <option value="">Any category</option>
-            @for (item of vocabulary.categories; track item.uuid) { <option [value]="item.uuid">{{ item.name }}</option> }
+            <option value="">{{ 'home.anyCategory' | t }}</option>
+            @for (item of vocabulary.categories; track item.uuid) { <option [value]="item.uuid">{{ itemName(item) }}</option> }
           </select>
         </label>
-        <label>Tag
+        <label>{{ 'home.tag' | t }}
           <select [value]="selectedTag()" (change)="selectedTag.set($any($event.target).value)">
-            <option value="">Any tag</option>
-            @for (item of vocabulary.tags; track item.uuid) { <option [value]="item.uuid">{{ item.name }}</option> }
+            <option value="">{{ 'home.anyTag' | t }}</option>
+            @for (item of vocabulary.tags; track item.uuid) { <option [value]="item.uuid">{{ itemName(item) }}</option> }
           </select>
         </label>
       </div>
     }
-    <p class="search-hint">Try a title, filename, or a phrase from the document.</p>
+    <p class="search-hint">{{ 'home.hint' | t }}</p>
   </div>
 
   @if (search.error(); as error) {

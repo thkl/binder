@@ -6,10 +6,12 @@ import {
   SetApplicationSettingInput
 } from '@binder/common';
 import { SettingsService } from '../../services/settings.service';
+import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 @Component({
   selector: 'binder-settings',
   standalone: true,
+  imports: [TranslatePipe],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -18,6 +20,7 @@ export class SettingsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly settingsService = inject(SettingsService);
+  readonly i18n = inject(I18nService);
 
   readonly activeSection = signal('');
   readonly saved = signal(false);
@@ -25,7 +28,7 @@ export class SettingsComponent implements OnInit {
 
   readonly sections = computed(() => this.settingsService.settings()?.template.sections ?? []);
   readonly activeSectionLabel = computed(() =>
-    this.sections().find((section) => section.key === this.activeSection())?.label ?? 'Settings'
+    this.sectionLabel(this.activeSection())
   );
   readonly activeItems = computed(() => {
     const response = this.settingsService.settings();
@@ -78,6 +81,17 @@ export class SettingsComponent implements OnInit {
   description(item: SettingsMapItem): string {
     return this.settingsService.settings()?.data.find((setting) => setting.key === item.key)?.description
       ?? item.key;
+  }
+
+  sectionLabel(key: string): string {
+    const section = this.sections().find((candidate) => candidate.key === key);
+    return section ? this.i18n.t(`settings.${section.key}`) : this.i18n.t('settings.title');
+  }
+
+  itemLabel(item: SettingsMapItem): string {
+    const key = `setting.${item.key}`;
+    const translated = this.i18n.t(key);
+    return translated === key ? item.label : translated;
   }
 
   updateText(item: SettingsMapItem, event: Event): void {

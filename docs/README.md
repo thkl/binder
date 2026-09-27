@@ -18,6 +18,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Controlled document metadata](./architecture/document-metadata.md) — system and personal classification vocabularies
 - [Document search](./architecture/search.md) — page text search, snippets, and the semantic-search extension point
 - [AI assistance](./architecture/ai-assistance.md) — user-confirmed hosted title suggestions
+- [Localization](./architecture/localization.md) — extensible UI and vocabulary translations
 - [Container deployment](./architecture/containers.md) — API, client, worker, PostgreSQL, and shared storage
 - [Configuration ownership](./architecture/configuration.md) — bootstrap environment versus database runtime settings
 - [Logging](./architecture/logging.md) — Winston logging, file rotation, and sensitive-data rules
@@ -32,4 +33,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-The project is in the P1 phase. The first implementation milestone is defined, but no application code or database schema has been created yet.
+P0 and P1 are implemented. The first usable document workflow is complete. Current work can move to P2 automation; multiple configurable AI providers are planned for P3.

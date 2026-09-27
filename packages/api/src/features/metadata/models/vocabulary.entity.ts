@@ -1,9 +1,11 @@
 import { AllowNull, Column, CreatedAt, DataType, Default, Model, PrimaryKey, Table, UpdatedAt } from 'sequelize-typescript';
+import type { LocalizedText } from '@binder/common';
 
 export interface VocabularyAttributes {
   uuid: string;
   ownerUuid: string | null;
   name: string;
+  translations: LocalizedText;
   description: string | null;
   active: boolean;
   createdAt: Date;
@@ -23,6 +25,9 @@ abstract class VocabularyBase<T extends VocabularyAttributes = VocabularyAttribu
 
   @Column({ type: DataType.STRING(150), allowNull: false })
   declare name: string;
+
+  @Column({ type: DataType.JSONB, allowNull: false, defaultValue: {} })
+  declare translations: LocalizedText;
 
   @AllowNull @Column({ type: DataType.STRING(500) })
   declare description: string | null;

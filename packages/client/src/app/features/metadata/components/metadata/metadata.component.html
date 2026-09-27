@@ -1,12 +1,12 @@
 <section class="metadata-page">
   <header class="page-heading">
     <div>
-      <p class="section-kicker">CLASSIFICATION / CONTROLLED VOCABULARY</p>
-      <h2>Metadata library</h2>
-      <p class="muted">Keep classification consistent so search and future AI suggestions stay precise.</p>
+      <p class="section-kicker">{{ 'metadata.kicker' | t }}</p>
+      <h2>{{ 'metadata.title' | t }}</h2>
+      <p class="muted">{{ 'metadata.copy' | t }}</p>
     </div>
     <button class="primary-button" type="button" (click)="showCreate.set(!showCreate())">
-      <span aria-hidden="true">＋</span> Add {{ kindLabel(activeKind()).replace('Document ', '') }}
+      <span aria-hidden="true">＋</span> {{ 'metadata.add' | t }} {{ kindLabel(activeKind()) }}
     </button>
   </header>
 
@@ -16,51 +16,55 @@
 
   <div class="metadata-layout">
     <aside class="library-nav glass-card" aria-label="Metadata categories">
-      <p class="sidebar-label">VOCABULARY</p>
+      <p class="sidebar-label">{{ 'metadata.vocabulary' | t }}</p>
       <button type="button" class="nav-item" [class.active]="activeKind() === 'documentTypes'" (click)="selectKind('documentTypes')">
-        <span class="nav-icon type-icon" aria-hidden="true">D</span><span>Document types</span>
+        <span class="nav-icon type-icon" aria-hidden="true">D</span><span>{{ 'metadata.types' | t }}</span>
         <small>{{ metadata.vocabulary()?.documentTypes?.length ?? 0 }}</small>
       </button>
       <button type="button" class="nav-item" [class.active]="activeKind() === 'categories'" (click)="selectKind('categories')">
-        <span class="nav-icon category-icon" aria-hidden="true">C</span><span>Categories</span>
+        <span class="nav-icon category-icon" aria-hidden="true">C</span><span>{{ 'metadata.categories' | t }}</span>
         <small>{{ metadata.vocabulary()?.categories?.length ?? 0 }}</small>
       </button>
       <button type="button" class="nav-item" [class.active]="activeKind() === 'tags'" (click)="selectKind('tags')">
-        <span class="nav-icon tag-icon" aria-hidden="true">#</span><span>Tags</span>
+        <span class="nav-icon tag-icon" aria-hidden="true">#</span><span>{{ 'metadata.tags' | t }}</span>
         <small>{{ metadata.vocabulary()?.tags?.length ?? 0 }}</small>
       </button>
-      <div class="nav-note"><span class="status-dot" aria-hidden="true"></span> System entries are shared across your workspace.</div>
+      <div class="nav-note"><span class="status-dot" aria-hidden="true"></span> {{ 'metadata.workspaceNote' | t }}</div>
     </aside>
 
     <main class="library-content glass-card">
       <header class="content-heading">
-        <div><p class="section-kicker">AVAILABLE VALUES</p><h3>{{ kindLabel(activeKind()) }}</h3></div>
-        <span class="count-badge">{{ activeItems().length }} entries</span>
+        <div><p class="section-kicker">{{ 'metadata.available' | t }}</p><h3>{{ kindLabel(activeKind()) }}</h3></div>
+        <span class="count-badge">{{ activeItems().length }} {{ 'metadata.entries' | t }}</span>
       </header>
 
       @if (showCreate()) {
         <form class="create-form" (submit)="$event.preventDefault(); create()">
-          <div class="form-title"><strong>Create a controlled value</strong><small>It will be available for document classification immediately.</small></div>
-          <label><span>Name</span><input [value]="name()" (input)="name.set($any($event.target).value)" maxlength="150" required autocomplete="off"></label>
-          <label><span>Description <em>Optional</em></span><input [value]="description()" (input)="description.set($any($event.target).value)" maxlength="500"></label>
+          <div class="form-title"><strong>{{ 'metadata.create' | t }}</strong><small>{{ 'metadata.createCopy' | t }}</small></div>
+          <label><span>{{ 'metadata.name' | t }}</span><input [value]="name()" (input)="name.set($any($event.target).value)" maxlength="150" required autocomplete="off"></label>
+          <label><span>{{ 'metadata.description' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="description()" (input)="description.set($any($event.target).value)" maxlength="500"></label>
+          <div class="translation-fields">
+            <label><span>English label <em>{{ 'metadata.optional' | t }}</em></span><input [value]="translationEn()" (input)="translationEn.set($any($event.target).value)" maxlength="150" placeholder="Invoice"></label>
+            <label><span>German label <em>{{ 'metadata.optional' | t }}</em></span><input [value]="translationDe()" (input)="translationDe.set($any($event.target).value)" maxlength="150" placeholder="Rechnung"></label>
+          </div>
           @if (auth.user()?.isAdmin) {
-            <label class="scope-toggle"><input type="checkbox" [checked]="systemScope()" (change)="systemScope.set($any($event.target).checked)"><span><strong>Workspace-wide value</strong><small>Make this available to every user.</small></span></label>
+            <label class="scope-toggle"><input type="checkbox" [checked]="systemScope()" (change)="systemScope.set($any($event.target).checked)"><span><strong>{{ 'metadata.workspaceValue' | t }}</strong><small>{{ 'metadata.workspaceValueCopy' | t }}</small></span></label>
           }
-          <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreate.set(false)">Cancel</button><button type="submit" class="primary-button" [disabled]="metadata.saving() || !name().trim()">{{ metadata.saving() ? 'Creating…' : 'Create value' }}</button></div>
+          <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreate.set(false)">{{ 'metadata.cancel' | t }}</button><button type="submit" class="primary-button" [disabled]="metadata.saving() || !name().trim()">{{ metadata.saving() ? ('metadata.creating' | t) : ('metadata.createValue' | t) }}</button></div>
         </form>
       }
 
       @if (metadata.loading()) {
-        <div class="empty-state"><span class="spinner"></span><p>Loading vocabulary…</p></div>
+        <div class="empty-state"><span class="spinner"></span><p>{{ 'metadata.loading' | t }}</p></div>
       } @else if (activeItems().length === 0) {
-        <div class="empty-state"><span class="empty-symbol" aria-hidden="true">＋</span><h4>No {{ kindLabel(activeKind()).toLowerCase() }} yet</h4><p>Create your first controlled value to make classification more precise.</p><button class="secondary-button" type="button" (click)="showCreate.set(true)">Create one</button></div>
+        <div class="empty-state"><span class="empty-symbol" aria-hidden="true">＋</span><h4>{{ 'metadata.noValues' | t }}</h4><p>{{ 'metadata.createFirst' | t }}</p><button class="secondary-button" type="button" (click)="showCreate.set(true)">{{ 'metadata.createOne' | t }}</button></div>
       } @else {
         <div class="value-list">
           @for (item of activeItems(); track item.uuid) {
             <article class="value-row">
               <span class="value-mark" [class.system]="item.scope === 'system'" aria-hidden="true">{{ item.scope === 'system' ? '◆' : '●' }}</span>
-              <div class="value-copy"><strong>{{ item.name }}</strong><small>{{ item.description || 'No description added' }}</small></div>
-              <span class="scope-badge" [class.system]="item.scope === 'system'">{{ item.scope === 'system' ? 'Workspace' : 'Personal' }}</span>
+              <div class="value-copy"><strong>{{ itemName(item) }}</strong><small>{{ item.description || ('metadata.noDescription' | t) }}</small></div>
+              <span class="scope-badge" [class.system]="item.scope === 'system'">{{ item.scope === 'system' ? ('metadata.workspace' | t) : ('metadata.personal' | t) }}</span>
             </article>
           }
         </div>
@@ -69,15 +73,15 @@
   </div>
 
   <section class="definitions-card glass-card">
-    <header class="content-heading"><div><p class="section-kicker">FLEXIBLE FIELDS</p><h3>Custom metadata</h3></div><span class="count-badge">{{ metadata.definitions().length }} fields</span></header>
-    <p class="definition-intro">Add fields such as project, issue date, or due date. They will appear in every document’s metadata editor.</p>
+    <header class="content-heading"><div><p class="section-kicker">{{ 'metadata.flexible' | t }}</p><h3>{{ 'metadata.custom' | t }}</h3></div><span class="count-badge">{{ metadata.definitions().length }} {{ 'settings.fields' | t }}</span></header>
+    <p class="definition-intro">{{ 'metadata.customCopy' | t }}</p>
     <form class="definition-form" (submit)="$event.preventDefault(); createDefinition()">
-      <label><span>Key</span><input [value]="definitionKey()" (input)="definitionKey.set($any($event.target).value)" placeholder="issueDate" pattern="[a-z][a-zA-Z0-9_]*" title="Start with a lowercase letter; then use only letters, numbers, or underscores." aria-describedby="metadata-key-help" required><small id="metadata-key-help" class="field-help">Lowercase letter first; then letters, numbers, or underscores only. Example: <code>issueDate</code></small></label>
-      <label><span>Label</span><input [value]="definitionLabel()" (input)="definitionLabel.set($any($event.target).value)" placeholder="Date of issue" required></label>
-      <label><span>Type</span><select [value]="definitionType()" (change)="definitionType.set($any($event.target).value)"><option value="text">Text</option><option value="number">Number</option><option value="date">Date</option><option value="datetime">Date and time</option><option value="boolean">Yes / no</option><option value="select">Select</option><option value="multi-select">Multiple select</option></select></label>
+      <label><span>{{ 'metadata.key' | t }}</span><input [value]="definitionKey()" (input)="definitionKey.set($any($event.target).value)" placeholder="issueDate" pattern="[a-z][a-zA-Z0-9_]*" title="Start with a lowercase letter; then use only letters, numbers, or underscores." aria-describedby="metadata-key-help" required><small id="metadata-key-help" class="field-help">Lowercase letter first; then letters, numbers, or underscores only. Example: <code>issueDate</code></small></label>
+      <label><span>{{ 'metadata.label' | t }}</span><input [value]="definitionLabel()" (input)="definitionLabel.set($any($event.target).value)" placeholder="Date of issue" required></label>
+      <label><span>{{ 'metadata.fieldType' | t }}</span><select [value]="definitionType()" (change)="definitionType.set($any($event.target).value)"><option value="text">Text</option><option value="number">Number</option><option value="date">{{ 'metadata.date' | t }}</option><option value="datetime">{{ 'metadata.dateTime' | t }}</option><option value="boolean">{{ 'metadata.yesNo' | t }}</option><option value="select">{{ 'metadata.select' | t }}</option><option value="multi-select">{{ 'metadata.multiSelect' | t }}</option></select></label>
       @if (definitionType() === 'select' || definitionType() === 'multi-select') { <label><span>Options <small>comma separated</small></span><input [value]="definitionOptions()" (input)="definitionOptions.set($any($event.target).value)" placeholder="Open, In progress, Done" required></label> }
-      <label class="definition-check"><input type="checkbox" [checked]="definitionMandatory()" (change)="definitionMandatory.set($any($event.target).checked)"><span>Required on documents</span></label>
-      <button class="primary-button" type="submit" [disabled]="metadata.saving() || !definitionKey().trim() || !definitionLabel().trim()">{{ metadata.saving() ? 'Adding…' : 'Add field' }}</button>
+      <label class="definition-check"><input type="checkbox" [checked]="definitionMandatory()" (change)="definitionMandatory.set($any($event.target).checked)"><span>{{ 'metadata.required' | t }}</span></label>
+      <button class="primary-button" type="submit" [disabled]="metadata.saving() || !definitionKey().trim() || !definitionLabel().trim()">{{ metadata.saving() ? ('metadata.adding' | t) : ('metadata.addField' | t) }}</button>
     </form>
     @if (metadata.definitions().length > 0) { <div class="definition-list">@for (definition of metadata.definitions(); track definition.uuid) { <div class="definition-row"><strong>{{ definition.label }}</strong><code>{{ definition.key }}</code><span>{{ definition.type }}{{ definition.mandatory ? ' · required' : '' }}</span></div> }</div> }
   </section>

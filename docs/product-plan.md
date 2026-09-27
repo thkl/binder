@@ -47,7 +47,7 @@ Expected result: the TÜV report from 05/2025, with a matching text snippet and 
 - PDF preview/download
 - Processing status and failure visibility
 
-### P1 — useful document system
+### P1 — useful document system ✅ Complete
 
 - Add optional OIDC authentication mapped to internal users
 - PDF/text extraction
@@ -58,6 +58,11 @@ Expected result: the TÜV report from 05/2025, with a matching text snippet and 
 - Tags and configurable document types
 - Suggested title and metadata with manual confirmation
 - Retry and reprocess actions
+- English and German client localization with an extensible language-code model
+- Localized document types, categories, and tags with canonical fallback names
+- Admin-editable document analysis prompt with a server-enforced JSON contract
+
+P1 is complete. The system supports the first usable document workflow: upload, durable storage, asynchronous extraction/OCR, controlled metadata, full-text search, optional hosted semantic search, hybrid ranking, user-confirmed AI title/metadata suggestions, and English/German localization. Localization uses flexible language codes so additional translations can be added without changing the contract.
 
 ### P2 — automation
 

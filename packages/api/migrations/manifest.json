@@ -116,6 +116,18 @@
                "required": [
                     "settings"
                ]
+          },
+          "19": {
+               "required": [
+                    "document_types",
+                    "document_categories",
+                    "document_tags"
+               ]
+          },
+          "20": {
+               "required": [
+                    "settings"
+               ]
           }
      }
 }

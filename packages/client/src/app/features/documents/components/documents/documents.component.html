@@ -1,14 +1,14 @@
 <section class="documents-page">
   <div class="documents-heading">
     <div>
-      <p class="section-kicker">PRIVATE DOCUMENT VAULT</p>
-      <h2>Documents</h2>
-      <p class="muted">Your originals stay in your controlled storage, ready for the processing pipeline.</p>
+      <p class="section-kicker">{{ 'documents.kicker' | t }}</p>
+      <h2>{{ 'documents.title' | t }}</h2>
+      <p class="muted">{{ 'documents.copy' | t }}</p>
     </div>
     <label class="upload-button">
       <input type="file" accept="application/pdf,.pdf" (change)="fileSelected($event)"
         [disabled]="documents.uploading()">
-      <span>＋</span> {{ documents.uploading() ? 'Uploading…' : 'Add PDF' }}
+      <span>＋</span> {{ documents.uploading() ? ('documents.uploading' | t) : ('documents.add' | t) }}
     </label>
   </div>
 
@@ -18,30 +18,30 @@
 
   <section class="document-card glass-card">
     <header class="list-header">
-      <span>All documents</span>
+      <span>{{ 'documents.all' | t }}</span>
       <div class="list-header-actions">
         @if (documents.page(); as page) { <small>{{ page.total }} total</small> }
         <div class="view-switcher" aria-label="Document view">
           <button type="button" [class.active]="viewMode() === 'list'" (click)="setViewMode('list')"
-            aria-label="List view" title="List view">☷</button>
+            [attr.aria-label]="'documents.list' | t" [title]="'documents.list' | t">☷</button>
           <button type="button" [class.active]="viewMode() === 'details'" (click)="setViewMode('details')"
-            aria-label="Details view" title="Details view">☰</button>
+            [attr.aria-label]="'documents.details' | t" [title]="'documents.details' | t">☰</button>
           <button type="button" [class.active]="viewMode() === 'small-icons'" (click)="setViewMode('small-icons')"
-            aria-label="Small icon view" title="Small icons">▦</button>
+            [attr.aria-label]="'documents.smallIcons' | t" [title]="'documents.smallIcons' | t">▦</button>
           <button type="button" [class.active]="viewMode() === 'large-icons'" (click)="setViewMode('large-icons')"
-            aria-label="Large icon view" title="Large icons">⊞</button>
+            [attr.aria-label]="'documents.largeIcons' | t" [title]="'documents.largeIcons' | t">⊞</button>
         </div>
       </div>
     </header>
 
     @if (documents.loading()) {
     <div class="empty-state"><span class="spinner"></span>
-      <p>Loading documents…</p>
+      <p>{{ 'documents.loading' | t }}</p>
     </div>
     } @else if (documents.page()?.items?.length === 0) {
     <div class="empty-state"><span class="empty-icon">▱</span>
-      <h3>Your vault is ready</h3>
-      <p>Upload your first PDF to start building your document history.</p>
+      <h3>{{ 'documents.ready' | t }}</h3>
+      <p>{{ 'documents.empty' | t }}</p>
     </div>
     } @else {
     @switch (viewMode()) {
@@ -55,7 +55,7 @@
         <div class="document-name"><div class="title-line"><input class="title-input" [value]="document.title || document.originalFilename" (change)="renameDocument(document.uuid, $event)" aria-label="Document title"><button class="suggest-title-button" type="button" (click)="suggestTitle(document.uuid)" [disabled]="titleSuggestionLoading()[document.uuid]">{{ titleSuggestionLoading()[document.uuid] ? '…' : '✦' }}</button></div>@if (titleSuggestions()[document.uuid]; as suggestion) { <div class="title-suggestion"><span>Suggested: <strong>{{ suggestion.suggestedTitle }}</strong></span><button type="button" (click)="toggleMetadata(document.uuid)">Review</button><button type="button" (click)="dismissTitleSuggestion(document.uuid)">Dismiss</button></div> }<small>{{ document.sizeBytes | number
             }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
         <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
-        <button class="metadata-button" type="button" (click)="toggleMetadata(document.uuid)" [attr.aria-expanded]="metadataDocumentUuid() === document.uuid">Metadata</button>
+        <button class="metadata-button" type="button" (click)="toggleMetadata(document.uuid)" [attr.aria-expanded]="metadataDocumentUuid() === document.uuid">{{ 'documents.metadata' | t }}</button>
         @if (document.status === 'failed' || document.status === 'ready') {
         <button (click)="requeueDocument(document.uuid)"><svg xmlns="http://www.w3.org/2000/svg" height="24px"
             viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">

@@ -207,7 +207,13 @@ export const AuthenticatedUserSchema = z.object({
 
 export type AuthenticatedUser = z.infer<typeof AuthenticatedUserSchema>;
 
-export const SettingControlTypeSchema = z.enum(['text', 'password', 'checkbox']);
+export const AppLanguageSchema = z.string().regex(/^[a-z]{2}(?:-[A-Z]{2})?$/);
+export type AppLanguage = z.infer<typeof AppLanguageSchema>;
+
+export const LocalizedTextSchema = z.record(AppLanguageSchema, z.string().trim().max(150));
+export type LocalizedText = z.infer<typeof LocalizedTextSchema>;
+
+export const SettingControlTypeSchema = z.enum(['text', 'password', 'textarea', 'checkbox']);
 export type SettingControlType = z.infer<typeof SettingControlTypeSchema>;
 
 export const SettingValueSchema = z.union([z.string(), z.number(), z.boolean()]);
@@ -281,6 +287,7 @@ export const VocabularyItemSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid().nullable(),
   name: z.string().trim().min(1).max(150),
+  translations: LocalizedTextSchema.default({}),
   description: z.string().max(500).nullable(),
   active: z.boolean(),
   scope: VocabularyScopeSchema,
@@ -298,6 +305,7 @@ export type VocabularyResponse = z.infer<typeof VocabularyResponseSchema>;
 
 export const CreateVocabularyItemSchema = z.object({
   name: z.string().trim().min(1).max(150),
+  translations: LocalizedTextSchema.optional(),
   description: z.string().trim().max(500).optional(),
   scope: VocabularyScopeSchema.optional().default('personal')
 });

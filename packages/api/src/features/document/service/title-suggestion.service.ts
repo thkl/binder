@@ -34,6 +34,10 @@ export class TitleSuggestionService {
 
     const endpoint = await this.settings.get('ai.endpoint', 'https://api.openai.com/v1/chat/completions');
     const model = await this.settings.get('ai.model', 'gpt-4o-mini');
+    const analysisPrompt = await this.settings.get(
+      'ai.documentAnalysis.prompt',
+      'Classify the document and create a concise human-readable title. Use only the supplied document types, categories, tags, and metadata keys. Never invent UUIDs, tags, types, categories, or custom keys. Use null or [] when uncertain. Return only the requested JSON object; never include markdown.'
+    );
     const pages = await DocumentPage.findAll({ where: { documentUuid }, order: [['pageNumber', 'ASC']], limit: 12 });
     const extractedText = pages.map((page) => page.text).join('\n\n').slice(0, 12_000);
     const vocabulary = await this.metadata.list(ownerUuid);
@@ -47,8 +51,8 @@ export class TitleSuggestionService {
         model,
         temperature: 0.2,
         messages: [
-          { role: 'system', content: 'You classify documents and create concise human-readable titles. Return only valid JSON with exactly this shape: {"suggestedTitle":"...","confidence":0.0,"documentTypeUuid":null,"categoryUuid":null,"tagUuids":[],"custom":{}}. Use only the supplied UUIDs and metadata keys. Never invent UUIDs, tags, types, categories, or custom keys. Use null or [] when uncertain. The title must be at most 255 characters. Never include markdown.' },
-          { role: 'user', content: `Original filename: ${document.originalFilename}\nCurrent title: ${document.title ?? ''}\nAllowed document types: ${JSON.stringify(vocabulary.documentTypes.map((item) => ({ uuid: item.uuid, name: item.name })))}\nAllowed categories: ${JSON.stringify(vocabulary.categories.map((item) => ({ uuid: item.uuid, name: item.name })))}\nAllowed tags: ${JSON.stringify(vocabulary.tags.map((item) => ({ uuid: item.uuid, name: item.name })))}\nAllowed custom metadata definitions: ${JSON.stringify(definitions.items.map((item) => ({ key: item.key, label: item.label, type: item.type, options: item.options })))}\nExtracted document text:\n${extractedText}` }
+          { role: 'system', content: `${analysisPrompt}\n\nThe response must be valid JSON with exactly this shape: {"suggestedTitle":"...","confidence":0.0,"documentTypeUuid":null,"categoryUuid":null,"tagUuids":[],"custom":{}}. The title must be at most 255 characters. Use only supplied UUIDs and metadata keys. Never include markdown.` },
+          { role: 'user', content: `Original filename: ${document.originalFilename}\nCurrent title: ${document.title ?? ''}\nAllowed document types: ${JSON.stringify(vocabulary.documentTypes.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed categories: ${JSON.stringify(vocabulary.categories.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed tags: ${JSON.stringify(vocabulary.tags.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed custom metadata definitions: ${JSON.stringify(definitions.items.map((item) => ({ key: item.key, label: item.label, type: item.type, options: item.options })))}\nExtracted document text:\n${extractedText}` }
         ]
       })
     });

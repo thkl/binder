@@ -3,26 +3,26 @@
     <div class="brand-panel">
       <div class="brand-line"><span class="brand-mark">B</span><span>BINDER</span></div>
       <div class="brand-copy">
-        <p class="eyebrow">PRIVATE DOCUMENT INTELLIGENCE</p>
-        <h1>Your documents.<br><span>Under control.</span></h1>
-        <p class="panel-copy">A calm, secure home for the documents that matter. Search naturally, keep ownership clear, and stay ready for what comes next.</p>
+        <p class="eyebrow">{{ 'login.privateIntelligence' | t }}</p>
+        <h1>{{ 'login.headline' | t }}</h1>
+        <p class="panel-copy">{{ 'login.copy' | t }}</p>
       </div>
-      <div class="trust-row"><span class="shield">⌁</span><span><strong>Built for privacy</strong><small>Your files stay in your controlled storage.</small></span></div>
+      <div class="trust-row"><span class="shield">⌁</span><span><strong>{{ 'login.privacy' | t }}</strong><small>{{ 'login.privacyCopy' | t }}</small></span></div>
     </div>
     <div class="card auth-card">
-      <div class="eyebrow">SECURE ACCESS</div>
-      <h2>Welcome back</h2>
-      <p class="muted">Sign in to open your document vault.</p>
+      <div class="eyebrow">{{ 'login.secureAccess' | t }}</div>
+      <h2>{{ 'login.welcome' | t }}</h2>
+      <p class="muted">{{ 'login.copyShort' | t }}</p>
 
     <form (submit)="submit($event)">
       <label>
-        Username
+        {{ 'login.username' | t }}
         <input type="text" autocomplete="username" [value]="username()" (input)="username.set(inputValue($event))"
           required>
       </label>
 
       <label>
-        Password
+        {{ 'login.password' | t }}
         <input type="password" autocomplete="current-password" [value]="password()"
           (input)="password.set(inputValue($event))" required>
       </label>
@@ -32,11 +32,11 @@
       }
 
       <button class="submit-button" type="submit" [disabled]="auth.submitting()">
-        {{ auth.submitting() ? 'Signing in…' : 'Sign in' }}
+        {{ auth.submitting() ? ('login.signingIn' | t) : ('login.signIn' | t) }}
       </button>
       @if(ssoActive()) {
-      <div class="separator"><span>or</span></div>
-      <a class="oidc-button" href="/api/v1/ssoauth/login">Continue with SSO</a>
+      <div class="separator"><span>{{ 'login.or' | t }}</span></div>
+      <a class="oidc-button" href="/api/v1/ssoauth/login">{{ 'login.sso' | t }}</a>
       }
     </form>
     </div>

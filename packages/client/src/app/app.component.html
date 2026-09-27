@@ -1,26 +1,30 @@
 @if (auth.loading()) {
-  <main class="loading"><div class="loading-mark">B</div><p>Securing your workspace…</p></main>
+  <main class="loading"><div class="loading-mark">B</div><p>{{ 'app.loading' | t }}</p></main>
 } @else if (!auth.user()) {
   <binder-login />
 } @else if (auth.user()?.mustChangePassword) {
   <binder-change-password
-    title="Choose a new password"
-    message="Your temporary password must be changed before continuing." />
+    [title]="'password.firstTitle' | t"
+    [message]="'password.firstMessage' | t" />
 } @else {
   <main class="workspace">
     <header class="topbar">
       <div class="brand-lockup click" routerLink="/">
         <span class="brand-mark">B</span>
         <div>
-          <div class="eyebrow">BINDER / PRIVATE CLOUD</div>
-          <h1>Your document vault</h1>
+        <div class="eyebrow">{{ 'app.privateCloud' | t }}</div>
+          <h1>{{ 'app.vault' | t }}</h1>
         </div>
       </div>
       <div class="topbar-actions">
-        <a class="nav-link" routerLink="/documents" routerLinkActive="active">Documents</a>
-        <a class="nav-link" routerLink="/metadata" routerLinkActive="active">Metadata</a>
-        <a class="nav-link" routerLink="/settings" routerLinkActive="active">Settings</a>
-        <button class="secondary" type="button" (click)="logout()">Sign out</button>
+        <a class="nav-link" routerLink="/documents" routerLinkActive="active">{{ 'nav.documents' | t }}</a>
+        <a class="nav-link" routerLink="/metadata" routerLinkActive="active">{{ 'nav.metadata' | t }}</a>
+        <a class="nav-link" routerLink="/settings" routerLinkActive="active">{{ 'nav.settings' | t }}</a>
+        <div class="language-switcher" aria-label="Language">
+          <button type="button" [class.active]="i18n.language() === 'en'" (click)="setLanguage('en')">EN</button>
+          <button type="button" [class.active]="i18n.language() === 'de'" (click)="setLanguage('de')">DE</button>
+        </div>
+        <button class="secondary" type="button" (click)="logout()">{{ 'nav.signOut' | t }}</button>
       </div>
     </header>
     <router-outlet />

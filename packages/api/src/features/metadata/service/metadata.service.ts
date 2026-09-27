@@ -35,7 +35,7 @@ export class MetadataService {
       throw new BadRequestException('Only administrators can create system vocabulary entries');
     }
     const model = this.modelFor(kind);
-    const item = await this.store.create(model, input.scope === 'system' ? null : ownerUuid, input.name, input.description ?? null);
+    const item = await this.store.create(model, input.scope === 'system' ? null : ownerUuid, input.name, input.description ?? null, input.translations ?? {});
     return this.toResponse(item);
   }
 
@@ -117,11 +117,12 @@ export class MetadataService {
     return DocumentTag;
   }
 
-  private toResponse(item: { uuid: string; ownerUuid: string | null; name: string; description: string | null; active: boolean; createdAt: Date; updatedAt: Date }): VocabularyItem {
+  private toResponse(item: { uuid: string; ownerUuid: string | null; name: string; translations: Record<string, string>; description: string | null; active: boolean; createdAt: Date; updatedAt: Date }): VocabularyItem {
     return {
       uuid: item.uuid,
       ownerUuid: item.ownerUuid,
       name: item.name,
+      translations: item.translations ?? {},
       description: item.description,
       active: item.active,
       scope: item.ownerUuid === null ? 'system' : 'personal',

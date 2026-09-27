@@ -1,58 +1,57 @@
 @if (!loaded()) {
-<div class="editor-loading"><span class="spinner"></span> Loading classification options…</div>
+<div class="editor-loading"><span class="spinner"></span> {{ 'editor.loading' | t }}</div>
 } @else if (metadata.error(); as error) {
 <div class="editor-error" role="alert">{{ error }}</div>
 } @else if (metadata.vocabulary(); as vocabulary) {
 <section class="metadata-editor" aria-labelledby="metadata-editor-title">
   <header class="editor-heading">
     <div>
-      <p class="section-kicker">DOCUMENT CLASSIFICATION</p>
-      <h3 id="metadata-editor-title">Metadata</h3>
+      <p class="section-kicker">{{ 'editor.kicker' | t }}</p>
+      <h3 id="metadata-editor-title">{{ 'editor.title' | t }}</h3>
     </div>
   </header>
   @if (suggestion; as pending) {
     <section class="ai-suggestion" aria-label="AI metadata suggestions">
-      <div class="suggestion-heading"><div><span class="section-kicker">AI REVIEW</span><strong>Suggested metadata</strong></div><small>{{ (pending.confidence * 100) | number:'1.0-0' }}% confidence</small></div>
-      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('title')" (change)="acceptSuggestionField('title')"><span>Title: <strong>{{ pending.suggestedTitle }}</strong></span></label>
-      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('documentTypeUuid')" [disabled]="!pending.documentTypeUuid" (change)="acceptSuggestionField('documentTypeUuid')"><span>Type: {{ suggestedTypeName(pending.documentTypeUuid) }}</span></label>
-      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('categoryUuid')" [disabled]="!pending.categoryUuid" (change)="acceptSuggestionField('categoryUuid')"><span>Category: {{ suggestedCategoryName(pending.categoryUuid) }}</span></label>
-      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('tagUuids')" [disabled]="pending.tagUuids.length === 0" (change)="acceptSuggestionField('tagUuids')"><span>Tags: {{ pending.tagUuids.length }} suggested</span></label>
-      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('custom')" [disabled]="suggestedCustomCount() === 0" (change)="acceptSuggestionField('custom')"><span>Custom fields: {{ suggestedCustomCount() }} suggested</span></label>
-      <button type="button" class="accept-all-button" (click)="acceptAllSuggestion()">✓ Accept all suggestions</button>
+      <div class="suggestion-heading"><div><span class="section-kicker">{{ 'editor.aiReview' | t }}</span><strong>{{ 'editor.suggested' | t }}</strong></div><small>{{ (pending.confidence * 100) | number:'1.0-0' }}% confidence</small></div>
+      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('title')" (change)="acceptSuggestionField('title')"><span>{{ 'editor.titleField' | t }}: <strong>{{ pending.suggestedTitle }}</strong></span></label>
+      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('documentTypeUuid')" [disabled]="!pending.documentTypeUuid" (change)="acceptSuggestionField('documentTypeUuid')"><span>{{ 'editor.type' | t }}: {{ suggestedTypeName(pending.documentTypeUuid) }}</span></label>
+      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('categoryUuid')" [disabled]="!pending.categoryUuid" (change)="acceptSuggestionField('categoryUuid')"><span>{{ 'editor.category' | t }}: {{ suggestedCategoryName(pending.categoryUuid) }}</span></label>
+      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('tagUuids')" [disabled]="pending.tagUuids.length === 0" (change)="acceptSuggestionField('tagUuids')"><span>{{ 'editor.tags' | t }}: {{ pending.tagUuids.length }} suggested</span></label>
+      <label class="suggestion-item"><input type="checkbox" [checked]="isSuggestionAccepted('custom')" [disabled]="suggestedCustomCount() === 0" (change)="acceptSuggestionField('custom')"><span>{{ 'editor.customFields' | t }}: {{ suggestedCustomCount() }} suggested</span></label>
+      <button type="button" class="accept-all-button" (click)="acceptAllSuggestion()">✓ {{ 'editor.acceptAll' | t }}</button>
     </section>
   }
   <div class="editor-fields">
     <label class="field"><span>Document type</span><select [value]="documentTypeUuid()"
         (change)="documentTypeUuid.set($any($event.target).value)">
-        <option value="">Not classified</option>
+        <option value="">{{ 'editor.notClassified' | t }}</option>
         @for (item of vocabulary.documentTypes; track item.uuid) { 
           <option [value]="item.uuid" [selected]="documentTypeUuid()===item.uuid ? 'selected':undefined" >{{ item.name }}{{ item.scope === 'system' ? ' · Workspace' : '' }}</option> 
         }
       </select></label>
     <label class="field"><span>Category</span><select [value]="categoryUuid()"
         (change)="categoryUuid.set($any($event.target).value)">
-        <option value="">No category</option>
+        <option value="">{{ 'editor.noCategory' | t }}</option>
         @for (item of vocabulary.categories; track item.uuid) { <option
           [value]="item.uuid" [selected]="categoryUuid()===item.uuid ? 'selected':undefined" >{{ item.name }}{{ item.scope === 'system' ? ' · Workspace' : '' }}</option> 
         }
       </select></label>
   </div>
   <div class="tag-section">
-    <div class="tag-label"><span>Tags</span><small>{{ selectedTags().size }} selected</small></div><input
+    <div class="tag-label"><span>{{ 'editor.tags' | t }}</span><small>{{ selectedTags().size }} {{ 'editor.selected' | t }}</small></div><input
       class="tag-search" [value]="tagSearch()" (input)="tagSearch.set($any($event.target).value)"
-      placeholder="Search known tags…" aria-label="Search known tags">
+      [placeholder]="'editor.searchTags' | t" [attr.aria-label]="'editor.searchTags' | t">
     <div class="tag-list">
       @for (tag of filteredTags(); track tag.uuid) { 
         <label class="tag-option"
         [class.selected]="isTagSelected(tag.uuid)"><input type="checkbox" [checked]="isTagSelected(tag.uuid)"
-          (change)="toggleTag(tag.uuid)"><span>{{ tag.name }}</span></label> 
+          (change)="toggleTag(tag.uuid)"><span>{{ itemName(tag) }}</span></label>
         } @empty { 
-          <small class="no-tags">No matching tags yet.</small> 
+          <small class="no-tags">{{ 'editor.noTags' | t }}</small>
         }</div>
     <form class="tag-create" (submit)="addTag($event)"><input [value]="newTagName()"
-        (input)="newTagName.set($any($event.target).value)" placeholder="Add a new personal tag…"
-        aria-label="New tag name"><button type="submit" [disabled]="metadata.saving() || !newTagName().trim()">Add
-        tag</button></form>
+        (input)="newTagName.set($any($event.target).value)" [placeholder]="'editor.newTag' | t"
+        [attr.aria-label]="'editor.newTag' | t"><button type="submit" [disabled]="metadata.saving() || !newTagName().trim()">{{ 'editor.addTag' | t }}</button></form>
   </div>
   @if (metadata.definitions().length > 0) {
   <div class="custom-fields">

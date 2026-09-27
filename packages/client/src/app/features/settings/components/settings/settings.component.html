@@ -1,9 +1,9 @@
 <section class="settings-page">
   <div class="settings-heading">
     <div>
-      <p class="section-kicker">ADMINISTRATION / CONFIGURATION</p>
-      <h2>Settings</h2>
-      <p class="muted">Shape how Binder works for your document workspace.</p>
+      <p class="section-kicker">{{ 'settings.kicker' | t }}</p>
+      <h2>{{ 'settings.title' | t }}</h2>
+      <p class="muted">{{ 'settings.copy' | t }}</p>
     </div>
   </div>
 
@@ -14,7 +14,7 @@
   } @else if (settingsService.settings(); as settings) {
     <div class="settings-layout">
       <aside class="section-sidebar glass-card" aria-label="Settings sections">
-        <p class="sidebar-label">SECTIONS</p>
+        <p class="sidebar-label">{{ 'settings.sections' | t }}</p>
         <nav>
           @for (section of sections(); track section.key) {
             <button
@@ -23,7 +23,7 @@
               [class.active]="activeSection() === section.key"
               (click)="selectSection(section.key)">
               <span class="section-symbol">◌</span>
-              <span>{{ section.label }}</span>
+              <span>{{ sectionLabel(section.key) }}</span>
               <span class="section-chevron">›</span>
             </button>
           }
@@ -36,11 +36,11 @@
             <p class="section-kicker">CONFIGURATION GROUP</p>
             <h3>{{ activeSectionLabel() }}</h3>
           </div>
-          <span class="field-count">{{ activeItems().length }} fields</span>
+          <span class="field-count">{{ activeItems().length }} {{ 'settings.fields' | t }}</span>
         </header>
 
         @if (activeItems().length === 0) {
-          <div class="empty-settings"><span>◌</span><p>No settings are available in this section yet.</p></div>
+          <div class="empty-settings"><span>◌</span><p>{{ 'settings.none' | t }}</p></div>
         } @else {
           <div class="fields">
             @for (item of activeItems(); track item.key) {
@@ -55,15 +55,20 @@
                 </label>
               } @else {
                 <label class="text-field">
-                  <span class="field-label"><strong>{{ item.label }}</strong>@if (item.required) { <em>Required</em> }</span>
+                  <span class="field-label"><strong>{{ itemLabel(item) }}</strong>@if (item.required) { <em>Required</em> }</span>
                   <small>{{ description(item) }}</small>
-                  <input
+                  @if (item.type === 'textarea') {
+                  <textarea
+                    [value]="stringValue(item)"
+                    [required]="item.required ?? false"
+                    (input)="updateText(item, $event)"></textarea>
+                  } @else { <input
                     [type]="item.type"
                     [value]="stringValue(item)"
                     [required]="item.required ?? false"
                     [attr.pattern]="item.pattern || null"
-                    (input)="updateText(item, $event)">
-                  @if (item.encrypted) { <span class="field-hint">Encrypted at rest</span> }
+                    (input)="updateText(item, $event)"> }
+                  @if (item.encrypted) { <span class="field-hint">{{ 'settings.encrypted' | t }}</span> }
                 </label>
               }
             }
@@ -73,7 +78,7 @@
         <footer class="form-footer">
           @if (saved()) { <span class="saved-message">✓ Settings saved</span> }
           <button class="save-button" type="submit" [disabled]="settingsService.saving()">
-            {{ settingsService.saving() ? 'Saving…' : 'Save changes' }}
+            {{ settingsService.saving() ? ('settings.saving' | t) : ('settings.save' | t) }}
           </button>
         </footer>
       </form>

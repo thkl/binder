@@ -128,6 +128,11 @@ export const settingsMap: SettingsMapItem[] = [
     key: 'ai.apiKey', valueFrom: 'ai.apiKey', encrypted: true, default: '',
     label: 'AI API key (shared)', type: 'password', required: false, section: 'ai',
   },
+  {
+    key: 'ai.documentAnalysis.prompt', valueFrom: 'ai.documentAnalysis.prompt', encrypted: false,
+    default: 'Classify the document and create a concise human-readable title. Use only the supplied document types, categories, tags, and metadata keys. Never invent UUIDs, tags, types, categories, or custom keys. Use null or [] when uncertain. Return only the requested JSON object; never include markdown.',
+    label: 'Document analysis prompt', type: 'textarea', required: true, section: 'ai',
+  },
     {
     key: 'oidc.ISSUER_URL',
     valueFrom: 'OIDC_ISSUER_URL',

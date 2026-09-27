@@ -2,12 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { CreateMetadataDefinition, CreateVocabularyItem, MetadataFieldType } from '@binder/common';
 import { AuthService } from '../../../authentication/services/auth.service';
 import { MetadataService } from '../../services/metadata.service';
+import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 type VocabularyKind = 'documentTypes' | 'categories' | 'tags';
 
 @Component({
   selector: 'binder-metadata',
   standalone: true,
+  imports: [TranslatePipe],
   templateUrl: './metadata.component.html',
   styleUrl: './metadata.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -15,9 +17,12 @@ type VocabularyKind = 'documentTypes' | 'categories' | 'tags';
 export class MetadataComponent implements OnInit {
   readonly metadata = inject(MetadataService);
   readonly auth = inject(AuthService);
+  readonly i18n = inject(I18nService);
   readonly activeKind = signal<VocabularyKind>('documentTypes');
   readonly name = signal('');
   readonly description = signal('');
+  readonly translationEn = signal('');
+  readonly translationDe = signal('');
   readonly systemScope = signal(false);
   readonly showCreate = signal(false);
   readonly definitionKey = signal('');
@@ -42,8 +47,10 @@ export class MetadataComponent implements OnInit {
   }
 
   kindLabel(kind: VocabularyKind): string {
-    return kind === 'documentTypes' ? 'Document types' : kind === 'categories' ? 'Categories' : 'Tags';
+    return kind === 'documentTypes' ? this.i18n.t('metadata.types') : kind === 'categories' ? this.i18n.t('metadata.categories') : this.i18n.t('metadata.tags');
   }
+
+  itemName(item: { name: string; translations: Record<string, string> }): string { return this.i18n.name(item); }
 
   async create(): Promise<void> {
     const name = this.name().trim();
@@ -53,11 +60,17 @@ export class MetadataComponent implements OnInit {
     const input: CreateVocabularyItem = {
       name,
       description: this.description().trim() || undefined,
+      translations: {
+        ...(this.translationEn().trim() ? { en: this.translationEn().trim() } : {}),
+        ...(this.translationDe().trim() ? { de: this.translationDe().trim() } : {})
+      },
       scope: this.systemScope() && this.auth.user()?.isAdmin ? 'system' : 'personal'
     };
     if (await this.metadata.create(kind, input)) {
       this.name.set('');
       this.description.set('');
+      this.translationEn.set('');
+      this.translationDe.set('');
       this.systemScope.set(false);
       this.showCreate.set(false);
     }

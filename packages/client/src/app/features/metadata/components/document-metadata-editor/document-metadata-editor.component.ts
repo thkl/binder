@@ -2,11 +2,12 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Out
 import { DecimalPipe } from '@angular/common';
 import type { DocumentTitleSuggestion } from '@binder/common';
 import { MetadataService } from '../../services/metadata.service';
+import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 @Component({
   selector: 'binder-document-metadata-editor',
   standalone: true,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, TranslatePipe],
   templateUrl: './document-metadata-editor.component.html',
   styleUrl: './document-metadata-editor.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -18,6 +19,7 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   @Output() suggestionFieldAccepted = new EventEmitter<string>();
 
   readonly metadata = inject(MetadataService);
+  readonly i18n = inject(I18nService);
   readonly documentTypeUuid = signal('');
   readonly categoryUuid = signal('');
   readonly selectedTags = signal<Set<string>>(new Set());
@@ -100,12 +102,16 @@ export class DocumentMetadataEditorComponent implements OnChanges {
   isSuggestionAccepted(field: string): boolean { return this.acceptedSuggestionFields().has(field); }
 
   suggestedTypeName(uuid: string | null): string {
-    return this.metadata.vocabulary()?.documentTypes.find((item) => item.uuid === uuid)?.name ?? 'No suggestion';
+    const item = this.metadata.vocabulary()?.documentTypes.find((candidate) => candidate.uuid === uuid);
+    return item ? this.i18n.name(item) : 'No suggestion';
   }
 
   suggestedCategoryName(uuid: string | null): string {
-    return this.metadata.vocabulary()?.categories.find((item) => item.uuid === uuid)?.name ?? 'No suggestion';
+    const item = this.metadata.vocabulary()?.categories.find((candidate) => candidate.uuid === uuid);
+    return item ? this.i18n.name(item) : 'No suggestion';
   }
+
+  itemName(item: { name: string; translations: Record<string, string> }): string { return this.i18n.name(item); }
 
   suggestedCustomCount(): number { return this.suggestion ? Object.keys(this.suggestion.custom).length : 0; }
 

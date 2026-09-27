@@ -9,6 +9,9 @@
 .eyebrow, .section-kicker { color: var(--cyan); font-size: .67rem; font-weight: 800; letter-spacing: .18em; }
 h1 { margin: .3rem 0 0; font-size: 1rem; letter-spacing: -.02em; }
 .topbar-actions { gap: 1rem; }
+.language-switcher { display: flex; gap: .15rem; padding: .15rem; border: 1px solid var(--glass-border); border-radius: .55rem; background: rgba(255,255,255,.04); }
+.language-switcher button { min-width: 2.25rem; padding: .4rem .45rem; color: var(--muted); background: transparent; font-size: .68rem; }
+.language-switcher button.active, .language-switcher button:hover { color: #061326; background: var(--cyan); }
 .nav-link { padding: .55rem .7rem; border-radius: .55rem; color: var(--muted); text-decoration: none; font-size: .83rem; font-weight: 700; }
 .nav-link:hover, .nav-link.active { color: var(--cyan); background: rgba(97,215,244,.08); }
 .secure-badge { color: #a8d9cd; font-size: .78rem; }

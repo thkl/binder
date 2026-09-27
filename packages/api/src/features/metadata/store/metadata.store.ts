@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Op } from 'sequelize';
+import type { LocalizedText } from '@binder/common';
 import { DocumentStore } from '../../document/store/document.store';
 import { DocumentCategory, DocumentMetadataValue, DocumentTag, DocumentTagAssignment, DocumentType, MetadataDefinition } from '../models/vocabulary.entity';
 
@@ -22,13 +23,14 @@ export class MetadataStore {
     });
   }
 
-  create(model: VocabularyModel, ownerUuid: string | null, name: string, description: string | null) {
+  create(model: VocabularyModel, ownerUuid: string | null, name: string, description: string | null, translations: LocalizedText = {}) {
     return model.findOne({ where: { ownerUuid, name: { [Op.iLike]: name } } }).then((existing) => {
       if (existing) throw new Error(`A value named '${name}' already exists`);
       return model.create({
       uuid: undefined,
       ownerUuid,
       name,
+      translations,
       description,
       active: true
       } as never);
