@@ -19,6 +19,7 @@ export class InboxController {
   }
 
   @Get()
+  @SkipThrottle()
   async list() {
     return { data: await this.inbox.list() };
   }
@@ -29,6 +30,7 @@ export class InboxController {
   }
 
   @Delete(':uuid')
+  @SkipThrottle()
   async remove(@Param('uuid') uuid: string) {
     return { data: await this.inbox.remove(uuid) };
   }
