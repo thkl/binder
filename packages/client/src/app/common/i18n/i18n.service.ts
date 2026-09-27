@@ -143,7 +143,11 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'logs.standardLog': 'Standard log',
     'logs.compressed': 'Compressed',
     'logs.plainText': 'Plain text',
-    'logs.download': 'Download'
+    'logs.download': 'Download',
+    'logs.view': 'View',
+    'logs.preview': 'LOG PREVIEW',
+    'logs.previewLoading': 'Loading log file…',
+    'logs.close': 'Close'
   },
   de: {
     'app.loading': 'Arbeitsbereich wird geladen…',
@@ -202,7 +206,11 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'logs.standardLog': 'Standardprotokoll',
     'logs.compressed': 'Komprimiert',
     'logs.plainText': 'Text',
-    'logs.download': 'Herunterladen'
+    'logs.download': 'Herunterladen',
+    'logs.view': 'Anzeigen',
+    'logs.preview': 'PROTOKOLLVORSCHAU',
+    'logs.previewLoading': 'Protokolldatei wird geladen…',
+    'logs.close': 'Schließen'
   }
 };
 

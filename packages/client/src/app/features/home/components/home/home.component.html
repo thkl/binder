@@ -81,7 +81,10 @@
                 </small>
                 <p>{{ item.snippet || 'No text snippet available.' }}</p>
               </div>
-              <a class="open-result" href="" (click)="openDocument($event, item.document.uuid)">Open ↗</a>
+              <div class="result-actions">
+                <a class="open-result" href="" (click)="openDocument($event, item.document.uuid)">{{ 'documents.open' | t }} ↗</a>
+                <button type="button" class="metadata-result" (click)="openMetadata($event, item.document.uuid)">{{ 'documents.metadata' | t }}</button>
+              </div>
             </article>
           }
         </div>
@@ -95,6 +98,20 @@
     </section>
   }
 </section>
-@if (viewerDocumentUuid(); as viewerUuid) {
-  <binder-document-viewer [documentUuid]="viewerUuid" [title]="viewerDocumentTitle()" (closed)="closeDocumentViewer()" />
+@if (drawerDocumentUuid(); as drawerUuid) {
+  @if (drawerDocument(); as drawerDocument) {
+    <binder-document-drawer
+      [documentUuid]="drawerUuid"
+      [documentData]="drawerDocument"
+      [initialTab]="drawerTab()"
+      [externalClosePrompt]="metadataClosePrompt()"
+      (dirtyChange)="metadataDirtyChanged($event)"
+      (manuallySaved)="metadataSaved()"
+      (closeRequest)="requestCloseDrawer()"
+      (keepEditingRequest)="metadataClosePrompt.set(false)"
+      (discardRequest)="discardMetadataChanges()"
+      (suggestionTitleAccepted)="titleSuggestionAccepted()"
+      (suggestionDismissed)="reloadSearch()"
+      (suggestionAccepted)="titleSuggestionAccepted()" />
+  }
 }

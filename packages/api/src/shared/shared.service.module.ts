@@ -13,7 +13,7 @@ import { ApplicationSettingStore } from '../features/settings/store/application-
             throttlers: [
                 {
                     ttl: 60000,
-                    limit: 10,
+                    limit: 60,
                 },
             ],
         }),

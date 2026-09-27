@@ -1,8 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
-import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
-import { DocumentViewerComponent } from '../../../../common/components/document-viewer/document-viewer.component';
+import { DocumentDrawerComponent, DocumentDrawerTab } from '../document-drawer/document-drawer.component';
 import { DocumentActionsComponent } from '../document-actions/document-actions.component';
 import type {
   Document,
@@ -21,7 +20,7 @@ type DocumentGroup = { key: string; label: string | null; documents: Document[] 
 @Component({
   selector: 'binder-documents',
   standalone: true,
-  imports: [CommonModule, DocumentMetadataEditorComponent, DocumentViewerComponent, DocumentActionsComponent, TranslatePipe],
+  imports: [CommonModule, DocumentDrawerComponent, DocumentActionsComponent, TranslatePipe],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -35,23 +34,23 @@ export class DocumentsComponent implements OnInit {
   readonly groupMode = signal<DocumentGroupMode>(this.readGroupMode());
   readonly sortDirection  = signal<DocumentSortDirection>(this.readSortDirection());
   readonly groupDirection = signal<DocumentSortDirection>(this.readGroupDirection());
-  readonly metadataDocumentUuid = signal<string | null>(null);
+  readonly drawerDocumentUuid = signal<string | null>(null);
+  readonly drawerTab = signal<DocumentDrawerTab>('preview');
+  readonly drawerDocumentSnapshot = signal<Document | null>(null);
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
   readonly editingTitleUuid = signal<string | null>(null);
-  readonly viewerDocumentUuid = signal<string | null>(null);
   readonly metadataDirty = signal(false);
   readonly metadataClosePrompt = signal(false);
   readonly selectedDocumentUuids = signal<Set<string>>(new Set());
   readonly bulkActionInProgress = signal<DocumentBulkAction | null>(null);
   readonly bulkActionResult = signal<DocumentBulkActionResponse | null>(null);
   
-  readonly metadataDocument = computed(() => {
-    const uuid = this.metadataDocumentUuid();
-    return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
+  readonly drawerDocument = computed(() => {
+    const uuid = this.drawerDocumentUuid();
+    const current = this.documents.page()?.items.find((document) => document.uuid === uuid);
+    return current ?? this.drawerDocumentSnapshot();
   });
-  
-  readonly documentData = this.metadataDocument;
 
   readonly selectedCount = computed(() => this.selectedDocumentUuids().size);
   readonly allVisibleSelected = computed(() => {
@@ -59,11 +58,6 @@ export class DocumentsComponent implements OnInit {
     return visible.length > 0 && visible.every((document) => this.selectedDocumentUuids().has(document.uuid));
   });
 
-  readonly viewerDocument = computed(() => {
-    const uuid = this.viewerDocumentUuid();
-    return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
-  });
-  
   readonly documentGroups = computed<DocumentGroup[]>(() => {
     const documents = this.documents.page()?.items ?? [];
     const mode = this.groupMode();
@@ -245,8 +239,7 @@ export class DocumentsComponent implements OnInit {
   }
 
   toggleMetadata(uuid: string): void {
-    const current = this.metadataDocumentUuid();
-    if (current === uuid) {
+    if (this.drawerDocumentUuid() === uuid && this.drawerTab() === 'metadata') {
       this.requestCloseMetadata();
       return;
     }
@@ -254,12 +247,13 @@ export class DocumentsComponent implements OnInit {
 
     this.metadataClosePrompt.set(false);
     this.metadataDirty.set(false);
-    this.viewerDocumentUuid.set(null);
-    this.metadataDocumentUuid.set(uuid);
+    this.drawerTab.set('metadata');
+    this.drawerDocumentSnapshot.set(this.findDocument(uuid));
+    this.drawerDocumentUuid.set(uuid);
   }
 
   requestCloseMetadata(): void {
-    if (!this.metadataDocumentUuid()) return;
+    if (!this.drawerDocumentUuid()) return;
     if (this.metadataDirty()) {
       this.metadataClosePrompt.set(true);
       return;
@@ -281,27 +275,21 @@ export class DocumentsComponent implements OnInit {
   private finishCloseMetadata(): void {
     this.metadataClosePrompt.set(false);
     this.metadataDirty.set(false);
-    this.metadataDocumentUuid.set(null);
+    this.drawerDocumentUuid.set(null);
+    this.drawerDocumentSnapshot.set(null);
   }
 
   openDocument(uuid: string): void {
     if (!this.canLeaveMetadata()) return;
-    this.metadataDocumentUuid.set(null);
-    this.viewerDocumentUuid.set(uuid);
-  }
-
-  closeDocumentViewer(): void {
-    this.viewerDocumentUuid.set(null);
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    this.requestCloseMetadata();
-    this.closeDocumentViewer();
+    this.metadataClosePrompt.set(false);
+    this.metadataDirty.set(false);
+    this.drawerTab.set('preview');
+    this.drawerDocumentSnapshot.set(this.findDocument(uuid));
+    this.drawerDocumentUuid.set(uuid);
   }
 
   private canLeaveMetadata(): boolean {
-    if (!this.metadataDocumentUuid() || !this.metadataDirty()) return true;
+    if (!this.drawerDocumentUuid() || !this.metadataDirty()) return true;
     this.metadataClosePrompt.set(true);
     return false;
   }
@@ -347,9 +335,10 @@ export class DocumentsComponent implements OnInit {
     this.titleSuggestionLoading.update((current) => ({ ...current, [uuid]: false }));
     if (suggestion) {
       this.titleSuggestions.update((current) => ({ ...current, [uuid]: suggestion }));
-      if (this.metadataDocumentUuid() !== uuid && !this.canLeaveMetadata()) return;
-      this.viewerDocumentUuid.set(null);
-      this.metadataDocumentUuid.set(uuid);
+      if (this.drawerDocumentUuid() !== uuid && !this.canLeaveMetadata()) return;
+      this.drawerTab.set('metadata');
+      this.drawerDocumentSnapshot.set(this.findDocument(uuid));
+      this.drawerDocumentUuid.set(uuid);
     }
   }
 
@@ -383,6 +372,10 @@ export class DocumentsComponent implements OnInit {
     return stored === 'asc' || stored === 'desc'
       ? stored
       : 'desc';
+  }
+
+  private findDocument(uuid: string): Document | null {
+    return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
   }
 
   private readGroupDirection(): DocumentSortDirection {

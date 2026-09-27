@@ -78,6 +78,35 @@
 .log-row time, .file-size { white-space: nowrap; }
 .download-link { color: var(--cyan); font-size: .75rem; font-weight: 800; text-decoration: none; white-space: nowrap; }
 .download-link:hover { text-decoration: underline; }
+.log-actions { display: flex; align-items: center; justify-content: flex-end; gap: .7rem; }
+.view-button, .close-button {
+  min-height: 2.2rem;
+  border: 1px solid rgba(157, 190, 232, .22);
+  border-radius: .55rem;
+  padding: .45rem .7rem;
+  color: #dceaff;
+  background: rgba(5, 18, 35, .46);
+  cursor: pointer;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 800;
+}
+.view-button:hover, .close-button:hover { border-color: var(--cyan); color: var(--cyan); }
+
+.preview-card { margin-top: 1.25rem; overflow: hidden; }
+.preview-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--glass-border); }
+.preview-header h3 { margin: .3rem 0 0; color: #dceaff; font-size: .95rem; overflow-wrap: anywhere; }
+.log-content {
+  max-height: 34rem;
+  margin: 0;
+  overflow: auto;
+  padding: 1.25rem 1.5rem;
+  color: #c7d8ed;
+  background: rgba(1, 9, 20, .5);
+  font: .74rem/1.65 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre;
+}
+.log-content:focus { outline: 2px solid var(--cyan); outline-offset: -2px; }
 
 .logs-state { display: grid; place-items: center; gap: .55rem; min-height: 16rem; padding: 2rem; color: var(--muted); text-align: center; }
 .logs-state p { margin: 0; }
@@ -89,5 +118,5 @@
   .logs-heading { align-items: flex-start; flex-direction: column; }
   .log-row { grid-template-columns: 2.2rem minmax(0, 1fr) auto; padding-left: 1rem; padding-right: 1rem; }
   .log-row time, .file-size { display: none; }
-  .download-link { grid-column: 2 / -1; }
+  .log-actions { grid-column: 2 / -1; justify-content: flex-start; }
 }

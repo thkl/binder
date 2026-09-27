@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Res, StreamableFile, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res, StreamableFile, UseGuards } from '@nestjs/common';
 import { createReadStream } from 'node:fs';
+import { createGunzip } from 'node:zlib';
 import type { Response } from 'express';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
@@ -18,8 +19,26 @@ export class LogsController {
   }
 
   @Get(':filename')
-  file(@Param('filename') filename: string, @Res({ passthrough: true }) response: Response) {
+  file(
+    @Param('filename') filename: string,
+    @Query('view') view: string | undefined,
+    @Res({ passthrough: true }) response: Response
+  ) {
     const file = this.logs.getFile(filename);
+
+    if (view === 'true') {
+      const stream = file.compressed
+        ? createReadStream(file.path).pipe(createGunzip())
+        : createReadStream(file.path);
+
+      response.setHeader('Cache-Control', 'private, no-store');
+      response.setHeader('Content-Disposition', `inline; filename="${file.name.replace(/\.gz$/, '')}"`);
+
+      return new StreamableFile(stream, {
+        type: 'text/plain; charset=utf-8'
+      });
+    }
+
     response.setHeader('Cache-Control', 'private, no-store');
     response.setHeader('Content-Disposition', `attachment; filename="${file.name}"`);
     return new StreamableFile(createReadStream(file.path), {

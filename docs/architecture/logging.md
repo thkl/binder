@@ -29,7 +29,7 @@ LOG_JSON=true
 
 Use a rotating-file transport with bounded size and retention. The log directory must be separate from document storage and must have appropriate filesystem permissions.
 
-The administrator-only API exposes available rotated files through `GET /api/v1/logs` and downloads through `GET /api/v1/logs/:filename`. Only validated `application-*` and `worker-*` rotated filenames are served. The Docker API and worker containers mount the same log volume so the API can list both services' files.
+The administrator-only API exposes available rotated files through `GET /api/v1/logs` and downloads through `GET /api/v1/logs/:filename`. Passing `?view=true` returns a text preview and transparently decompresses `.gz` rotations. Only validated `application-*` and `worker-*` rotated filenames are served. The Docker API and worker containers mount the same log volume so the API can list both services' files.
 
 ## Structured fields
 

@@ -9,6 +9,10 @@ export class LogsService {
   readonly files = signal<LogFile[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly previewFilename = signal<string | null>(null);
+  readonly previewText = signal<string | null>(null);
+  readonly previewLoading = signal(false);
+  readonly previewError = signal<string | null>(null);
   readonly application = inject(ApplicationService);
 
   constructor(private readonly http: HttpClient) {}
@@ -30,6 +34,37 @@ export class LogsService {
 
   downloadUrl(filename: string): string {
     return this.application.getApiUrl('v1', 'logs', `/${encodeURIComponent(filename)}`);
+  }
+
+  previewUrl(filename: string): string {
+    return `${this.downloadUrl(filename)}?view=true`;
+  }
+
+  async preview(filename: string): Promise<void> {
+    this.previewFilename.set(filename);
+    this.previewText.set(null);
+    this.previewLoading.set(true);
+    this.previewError.set(null);
+
+    try {
+      const text = await firstValueFrom(
+        this.http.get(this.previewUrl(filename), {
+          withCredentials: true,
+          responseType: 'text'
+        })
+      );
+      this.previewText.set(text);
+    } catch (error) {
+      this.previewError.set(this.getErrorMessage(error));
+    } finally {
+      this.previewLoading.set(false);
+    }
+  }
+
+  closePreview(): void {
+    this.previewFilename.set(null);
+    this.previewText.set(null);
+    this.previewError.set(null);
   }
 
   private getErrorMessage(error: unknown): string {

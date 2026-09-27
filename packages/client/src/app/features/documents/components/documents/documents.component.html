@@ -347,57 +347,23 @@
     }
   </section>
 
-  @if (metadataDocumentUuid(); as metadataUuid) {
-    <div class="property-backdrop" role="presentation" (click)="requestCloseMetadata()">
-      <aside
-        class="property-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="property-panel-title"
-        (click)="$event.stopPropagation()">
-        <header class="property-header">
-          <div>
-            <p class="section-kicker">DOCUMENT PROPERTIES</p>
-            <h3 id="property-panel-title">
-              {{ metadataDocument()?.title || metadataDocument()?.originalFilename || ('documents.metadata' | t) }}
-            </h3>
-          </div>
-          <button type="button" class="property-close" (click)="requestCloseMetadata()" aria-label="Close document properties">×</button>
-        </header>
+  @if (drawerDocumentUuid(); as drawerUuid) {
+    @if (drawerDocument(); as drawerDocument) {
+      <binder-document-drawer
+        [documentUuid]="drawerUuid"
+        [documentData]="drawerDocument"
+        [initialTab]="drawerTab()"
+        [suggestion]="titleSuggestions()[drawerUuid] || null"
+        [externalClosePrompt]="metadataClosePrompt()"
+        (dirtyChange)="metadataDirtyChanged($event)"
+        (manuallySaved)="metadataSaved(drawerUuid)"
+        (closeRequest)="requestCloseMetadata()"
+        (keepEditingRequest)="metadataClosePrompt.set(false)"
+        (discardRequest)="discardMetadataChanges()"
+        (suggestionTitleAccepted)="acceptSuggestedTitleValue(drawerUuid, $event)"
+        (suggestionDismissed)="dismissLocalTitleSuggestion(drawerUuid)"
+        (suggestionAccepted)="acceptSuggestedMetadata(drawerUuid, $event)" />
+    }
 
-        <binder-document-metadata-editor
-          [documentUuid]="metadataUuid"
-          [documentData]="documentData()"
-          [suggestion]="titleSuggestions()[metadataUuid] || null"
-          (dirtyChange)="metadataDirtyChanged($event)"
-          (manuallySaved)="metadataSaved(metadataUuid)"
-          (closeRequest)="requestCloseMetadata()"
-          (suggestionTitleAccepted)="acceptSuggestedTitleValue(metadataUuid, $event)"
-          (suggestionDismissed)="dismissLocalTitleSuggestion(metadataUuid)"
-          (suggestionAccepted)="acceptSuggestedMetadata(metadataUuid, $event)" />
-
-        @if (metadataClosePrompt()) {
-          <div class="unsaved-warning" role="alertdialog" aria-labelledby="unsaved-warning-title">
-            <strong id="unsaved-warning-title">{{ 'documents.unsavedTitle' | t }}</strong>
-            <p>{{ 'documents.unsavedCopy' | t }}</p>
-            <div class="unsaved-actions">
-              <button type="button" class="secondary-button" (click)="metadataClosePrompt.set(false)">
-                {{ 'documents.keepEditing' | t }}
-              </button>
-              <button type="button" class="danger-button" (click)="discardMetadataChanges()">
-                {{ 'documents.discardChanges' | t }}
-              </button>
-            </div>
-          </div>
-        }
-      </aside>
-    </div>
-  }
-
-  @if (viewerDocumentUuid(); as viewerUuid) {
-    <binder-document-viewer
-      [documentUuid]="viewerUuid"
-      [title]="viewerDocument()?.title || viewerDocument()?.originalFilename || 'Document'"
-      (closed)="closeDocumentViewer()" />
   }
 </section>
