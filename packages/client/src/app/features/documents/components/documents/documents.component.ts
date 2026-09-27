@@ -34,6 +34,7 @@ export class DocumentsComponent implements OnInit {
   readonly viewMode = signal<DocumentViewMode>(this.readViewMode());
   readonly groupMode = signal<DocumentGroupMode>(this.readGroupMode());
   readonly sortDirection  = signal<DocumentSortDirection>(this.readSortDirection());
+  readonly groupDirection = signal<DocumentSortDirection>(this.readGroupDirection());
   readonly metadataDocumentUuid = signal<string | null>(null);
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
@@ -77,7 +78,7 @@ export class DocumentsComponent implements OnInit {
         groups.set(value.key, group);
       }
     }
-    return [...groups.values()].sort((left, right) => (left.label ?? '').localeCompare(right.label ?? ''));
+    return [...groups.values()];
   });
 
   ngOnInit(): void {
@@ -216,6 +217,14 @@ export class DocumentsComponent implements OnInit {
     localStorage.setItem('binder.documents.sortDirection', direction);
     this.clearSelection();
     void this.documents.load({ page: 1, direction: direction });
+  }
+
+  setGroupDirection(direction: DocumentSortDirection): void {
+    if (!this.canLeaveMetadata()) return;
+    this.groupDirection.set(direction);
+    localStorage.setItem('binder.documents.groupDirection', direction);
+    this.clearSelection();
+    void this.documents.load({ page: 1, groupDirection: direction });
   }
 
   markDocumentReviewed(uuid: string): void {
@@ -369,6 +378,11 @@ export class DocumentsComponent implements OnInit {
     return stored === 'asc' || stored === 'desc'
       ? stored
       : 'desc';
+  }
+
+  private readGroupDirection(): DocumentSortDirection {
+    const stored = localStorage.getItem('binder.documents.groupDirection');
+    return stored === 'asc' || stored === 'desc' ? stored : 'asc';
   }
 
   private readGroupMode(): DocumentGroupMode {

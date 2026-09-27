@@ -112,6 +112,7 @@ export type SetDocumentTitleInput = z.infer<typeof SetDocumentTitleInputSchema>;
 export const DocumentTitleSuggestionSchema = z.object({
   suggestedTitle: z.string().trim().min(1).max(255),
   confidence: z.number().min(0).max(1),
+  issuerUuid: z.uuid().nullable().default(null),
   documentTypeUuid: z.uuid().nullable().default(null),
   categoryUuid: z.uuid().nullable().default(null),
   tagUuids: z.array(z.uuid()).max(50).default([]),
@@ -225,6 +226,7 @@ export const DocumentListQuerySchema = z.object({
   sort: z.enum(['createdAt', 'updatedAt', 'originalFilename', 'title', 'status']).default('createdAt'),
   direction: z.enum(['asc', 'desc']).default('desc'),
   groupBy: DocumentGroupBySchema.default('none'),
+  groupDirection: z.enum(['asc', 'desc']).default('asc'),
   status: DocumentStatusSchema.optional(),
   issuerUuid: z.uuid().optional(),
   q: z.string().trim().max(200).optional()

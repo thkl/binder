@@ -49,6 +49,19 @@
             <option value="asc">{{ 'documents.sortAsc' | t }}</option>
           </select>
         </label>
+        @if (groupMode() !== 'none') {
+          <label class="group-picker">
+            <span>{{ 'documents.groupDirection' | t }}</span>
+            <select [value]="groupDirection()" (change)="setGroupDirection($any($event.target).value)">
+              <option value="asc">
+                {{ groupMode() === 'isNew' ? ('documents.reviewedFirst' | t) : ('documents.groupAsc' | t) }}
+              </option>
+              <option value="desc">
+                {{ groupMode() === 'isNew' ? ('documents.newFirst' | t) : ('documents.groupDesc' | t) }}
+              </option>
+            </select>
+          </label>
+        }
         <div class="view-switcher" role="group" [attr.aria-label]="'documents.viewMode' | t">
           <button
             type="button"

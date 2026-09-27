@@ -47,10 +47,11 @@ export class DocumentStore extends BaseCrudStore<Document> {
     }
 
     const sortDirection = query.direction.toUpperCase() as 'ASC' | 'DESC';
+    const groupDirection = query.groupDirection.toUpperCase() as 'ASC' | 'DESC';
     const order: Order = query.groupBy === 'none'
       ? [[query.sort, sortDirection]]
       : [
-        [this.groupField(query.groupBy), query.groupBy === 'isNew' ? 'DESC' : 'ASC'],
+        [this.groupField(query.groupBy), groupDirection],
         [query.sort, sortDirection]
       ];
     const result = await this.model.findAndCountAll({
@@ -103,7 +104,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
       where: { documentUuid: { [Op.in]: candidateUuids } },
       attributes: ['documentUuid', 'tagUuid'],
       order: [
-        ['tagUuid', 'ASC'],
+        ['tagUuid', query.groupDirection.toUpperCase() as 'ASC' | 'DESC'],
         ['documentUuid', 'ASC']
       ]
     });

@@ -34,10 +34,11 @@ The document list accepts a `groupBy` query parameter and keeps it in the
 typed pagination contract:
 
 ```text
-GET /api/v1/documents?page=1&pageSize=25&groupBy=issuer
+GET /api/v1/documents?page=1&pageSize=25&groupBy=issuer&groupDirection=asc
 ```
 
-Grouping is applied before pagination. Scalar groups (`documentType`,
+Grouping is applied before pagination. `groupDirection` controls the group
+order independently from the document sort direction. Scalar groups (`documentType`,
 `category`, `issuer`, `status`, and `isNew`) are ordered by their database
 column before the requested secondary sort. Tag grouping uses the ORM-backed
 tag assignment table and deterministically assigns a multi-tag document to

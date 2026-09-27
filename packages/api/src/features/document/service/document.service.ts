@@ -321,6 +321,9 @@ export class DocumentService {
     }
 
     const classification: SetDocumentMetadataInput = {};
+    if (!metadata.issuer && suggestion.issuerUuid) {
+      classification.issuerUuid = suggestion.issuerUuid;
+    }
     if (!metadata.documentType && suggestion.documentTypeUuid) {
       classification.documentTypeUuid = suggestion.documentTypeUuid;
     }
@@ -333,6 +336,7 @@ export class DocumentService {
     if (Object.keys(classification).length > 0) {
       try {
         await this.metadata.setDocumentMetadata(ownerUuid, uuid, classification);
+        if (classification.issuerUuid) appliedFields.push('issuer');
         if (classification.documentTypeUuid) appliedFields.push('documentType');
         if (classification.categoryUuid) appliedFields.push('category');
         if (classification.tagUuids) appliedFields.push('tags');

@@ -39,7 +39,8 @@ export class DocumentsService {
       pageSize: String(parsed.pageSize),
       sort: parsed.sort,
       direction: parsed.direction,
-      groupBy: parsed.groupBy
+      groupBy: parsed.groupBy,
+      groupDirection: parsed.groupDirection
     });
     if (parsed.status) params.set('status', parsed.status);
     if (parsed.q) params.set('q', parsed.q);

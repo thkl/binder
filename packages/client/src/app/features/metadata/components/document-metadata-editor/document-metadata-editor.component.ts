@@ -149,6 +149,7 @@ export class DocumentMetadataEditorComponent {
     });
     if (field === 'documentTypeUuid') this.documentTypeUuid.set(suggestion.documentTypeUuid ?? '');
     if (field === 'categoryUuid') this.categoryUuid.set(suggestion.categoryUuid ?? '');
+    if (field === 'issuerUuid') this.issuerUuid.set(suggestion.issuerUuid ?? '');
     if (field === 'tagUuids') this.selectedTags.set(new Set(suggestion.tagUuids));
     if (field === 'custom') this.customValues.update((current) => ({ ...current, ...suggestion.custom }));
     if (field === 'title') this.suggestionTitleAccepted.emit(suggestion.suggestedTitle);
@@ -158,7 +159,13 @@ export class DocumentMetadataEditorComponent {
   async acceptAllSuggestion(): Promise<void> {
     const suggestion = this.activeSuggestion();
     if (!suggestion) return;
-    for (const field of ['title', 'documentTypeUuid', 'categoryUuid', 'tagUuids', 'custom']) {
+    const fields = ['title'];
+    if (suggestion.documentTypeUuid) fields.push('documentTypeUuid');
+    if (suggestion.categoryUuid) fields.push('categoryUuid');
+    if (suggestion.issuerUuid) fields.push('issuerUuid');
+    if (suggestion.tagUuids.length > 0) fields.push('tagUuids');
+    if (Object.keys(suggestion.custom).length > 0) fields.push('custom');
+    for (const field of fields) {
       if (!this.acceptedSuggestionFields().has(field)) this.acceptSuggestionField(field);
     }
     if (!await this.save()) return;
@@ -201,6 +208,11 @@ export class DocumentMetadataEditorComponent {
   suggestedCategoryName(uuid: string | null): string {
     const item = this.metadata.vocabulary()?.categories.find((candidate) => candidate.uuid === uuid);
     return item ? this.i18n.name(item) : 'No suggestion';
+  }
+
+  suggestedIssuerName(uuid: string | null): string {
+    const item = this.metadata.issuers().find((candidate) => candidate.uuid === uuid);
+    return item?.name ?? 'No suggestion';
   }
 
   itemName(item: { name: string; translations: Record<string, string> }): string { return this.i18n.name(item); }
