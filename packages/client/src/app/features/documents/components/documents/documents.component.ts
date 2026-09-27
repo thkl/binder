@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
 import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
 import { DocumentViewerComponent } from '../../../../common/components/document-viewer/document-viewer.component';
@@ -21,12 +21,14 @@ type DocumentGroup = { key: string; label: string | null; documents: Document[] 
 })
 export class DocumentsComponent implements OnInit {
   readonly documents = inject(DocumentsService);
+  private readonly document = inject(DOCUMENT);
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
   readonly viewMode = signal<DocumentViewMode>(this.readViewMode());
   readonly groupMode = signal<DocumentGroupMode>(this.readGroupMode());
   readonly metadataDocumentUuid = signal<string | null>(null);
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
+  readonly editingTitleUuid = signal<string | null>(null);
   readonly viewerDocumentUuid = signal<string | null>(null);
   readonly metadataDirty = signal(false);
   readonly metadataClosePrompt = signal(false);
@@ -203,6 +205,36 @@ export class DocumentsComponent implements OnInit {
   async renameDocument(uuid: string, event: Event): Promise<void> {
     const title = (event.target as HTMLInputElement).value.trim();
     if (title) await this.documents.updateTitle(uuid, title);
+  }
+
+  startInlineTitleEdit(uuid: string, event: Event): void {
+    event.stopPropagation();
+    this.editingTitleUuid.set(uuid);
+
+    queueMicrotask(() => {
+      const input = this.document.querySelector<HTMLInputElement>(`[data-title-editor="${uuid}"]`);
+      input?.focus();
+      input?.select();
+    });
+  }
+
+  async finishInlineTitleEdit(uuid: string, event: Event): Promise<void> {
+    if (this.editingTitleUuid() !== uuid) return;
+    await this.renameDocument(uuid, event);
+    if (this.editingTitleUuid() === uuid) this.editingTitleUuid.set(null);
+  }
+
+  handleInlineTitleKeydown(uuid: string, event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.editingTitleUuid.set(null);
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      (event.target as HTMLInputElement).blur();
+    }
   }
 
   async suggestTitle(uuid: string): Promise<void> {

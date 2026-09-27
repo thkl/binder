@@ -237,7 +237,7 @@ h2 {
 
 .document-name,
 .preview-card-body {
-  background: var(--glass-card-background-color);
+  background: rgba(5, 18, 35, 0.90);
   display: grid;
   min-width: 0;
   gap: .5rem;
@@ -428,6 +428,32 @@ h2 {
 
 .preview-card-body .title-input {
   font-size: .82rem;
+}
+
+.document-title-display {
+  display: -webkit-box;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: #dceaff;
+  cursor: text;
+  font-size: .82rem;
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: left;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.document-title-display:hover,
+.document-title-display:focus-visible {
+  color: var(--cyan);
+  outline: 2px solid rgba(97, 215, 244, .35);
+  outline-offset: 3px;
+}
+
+.preview-card-body .new-indicator {
+  margin-top: .1rem;
 }
 
 .preview-card-body .status {

@@ -182,11 +182,27 @@
 
                 <div class="preview-card-body">
                   <div class="title-line">
-                    <input
-                      class="title-input"
-                      [value]="document.title || document.originalFilename"
-                      (change)="renameDocument(document.uuid, $event)"
-                      [attr.aria-label]="'documents.titleField' | t">
+                    @if (editingTitleUuid() === document.uuid) {
+                      <input
+                        class="title-input"
+                        [attr.data-title-editor]="document.uuid"
+                        [value]="document.title || document.originalFilename"
+                        (blur)="finishInlineTitleEdit(document.uuid, $event)"
+                        (keydown)="handleInlineTitleKeydown(document.uuid, $event)"
+                        [attr.aria-label]="'documents.titleField' | t">
+                    } @else {
+                      <span
+                        class="document-title-display"
+                        role="button"
+                        tabindex="0"
+                        (click)="startInlineTitleEdit(document.uuid, $event)"
+                        (keydown.enter)="startInlineTitleEdit(document.uuid, $event)"
+                        (keydown.space)="startInlineTitleEdit(document.uuid, $event)"
+                        [attr.aria-label]="('documents.editTitle' | t) + ': ' + (document.title || document.originalFilename)"
+                        [title]="document.title || document.originalFilename">
+                        {{ document.title || document.originalFilename }}
+                      </span>
+                    }
                     @if (document.isNew) {
                       <span class="new-indicator">{{ 'documents.new' | t }}</span>
                     }
