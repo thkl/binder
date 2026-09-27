@@ -40,6 +40,8 @@ derived/<document-id>/thumbnail.png
 
 Thumbnail generation is best-effort derived work. A rendering failure leaves the immutable original available and leaves the thumbnail reference empty so a later pipeline retry can regenerate it.
 
+Document list, search, and detail responses expose a stable `thumbnailUrl` for the ownership-protected thumbnail route. The client does not need a separate thumbnail discovery request. The image route remains lazy: if the derived thumbnail is missing, the API generates it on demand.
+
 ### Directory meanings
 
 - `documents/`: immutable raw uploaded/imported files. This is the directory a malware scanner can monitor.
@@ -99,6 +101,7 @@ The document record should retain at least:
 - File size
 - SHA-256 hash
 - Relative original path
+- Page count (`pageCount`, defaulting to 1 until PDF extraction determines the exact count)
 - Processing status
 - Created and updated timestamps
 

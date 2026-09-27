@@ -66,7 +66,7 @@ export class DocumentsComponent implements OnInit {
   }
 
   thumbnailUrl(uuid: string): string | null {
-    return this.documents.thumbnailUrls()[uuid] ?? null;
+    return this.documents.page()?.items.find((document) => document.uuid === uuid)?.thumbnailUrl ?? null;
   }
 
   hasThumbnailFailed(uuid: string): boolean {

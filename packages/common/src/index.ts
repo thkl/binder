@@ -20,6 +20,8 @@ export const DocumentSchema = z.object({
   checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
   storageKey: z.string().min(1),
   thumbnailKey: z.string().min(1).nullable().optional(),
+  thumbnailUrl: z.string().min(1),
+  pageCount: z.number().int().min(1),
   issuerUuid: z.uuid().nullable(),
   status: DocumentStatusSchema,
   createdAt: z.iso.datetime(),
@@ -57,17 +59,6 @@ export type CreateIssuerInput = z.infer<typeof CreateIssuerInputSchema>;
 
 export const UpdateIssuerInputSchema = CreateIssuerInputSchema.partial();
 export type UpdateIssuerInput = z.infer<typeof UpdateIssuerInputSchema>;
-
-export const DocumentThumbnailSchema = z.object({
-  uuid: z.uuid(),
-  url: z.string().min(1)
-});
-export type DocumentThumbnail = z.infer<typeof DocumentThumbnailSchema>;
-
-export const DocumentThumbnailsResponseSchema = z.object({
-  items: z.array(DocumentThumbnailSchema)
-});
-export type DocumentThumbnailsResponse = z.infer<typeof DocumentThumbnailsResponseSchema>;
 
 export const SetDocumentTitleInputSchema = z.object({
   title: z.string().trim().min(1).max(255)

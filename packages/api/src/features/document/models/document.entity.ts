@@ -22,6 +22,7 @@ export interface DocumentAttributes {
   checksumSha256: string;
   storageKey: string;
   thumbnailKey: string | null;
+  pageCount: number;
   issuerUuid: string | null;
   searchVector: unknown;
   status: DocumentStatus;
@@ -29,9 +30,10 @@ export interface DocumentAttributes {
   updatedAt: Date;
 }
 
-export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'thumbnailKey' | 'issuerUuid'> & {
+export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'thumbnailKey' | 'pageCount' | 'issuerUuid'> & {
   uuid?: string;
   thumbnailKey?: string | null;
+  pageCount?: number;
   issuerUuid?: string | null;
   status?: DocumentStatus;
 };
@@ -68,6 +70,9 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   @AllowNull
   @Column({ field: 'thumbnail_key', type: DataType.STRING(500), allowNull: true })
   declare thumbnailKey: string | null;
+
+  @Column({ field: 'page_count', type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
+  declare pageCount: number;
 
   @AllowNull @Column({ field: 'document_type_id', type: DataType.UUID })
   declare documentTypeUuid: string | null;

@@ -94,18 +94,6 @@ export class DocumentController {
     return { data: await this.documents.requeue(user.userId, uuid) };
   }
 
-  @Get('thumbnails')
-  @SkipThrottle()
-  async thumbnails(@Query() query: Record<string, unknown>, @CurrentUser() user: ScopedUser) {
-    const uuids = typeof query.uuids === 'string'
-      ? query.uuids.split(',').map((uuid) => uuid.trim()).filter(Boolean)
-      : [];
-    if (uuids.length === 0) {
-      throw new BadRequestException('At least one document UUID is required');
-    }
-    return { data: await this.documents.getThumbnailUrls(user.userId, uuids) };
-  }
-
   @Get(':uuid/thumbnail')
   @SkipThrottle()
   async thumbnail(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser, @Res({ passthrough: true }) response: Response) {

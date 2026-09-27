@@ -148,6 +148,9 @@ export class Document extends Model {
   @Column({ field: 'thumbnail_key', type: DataType.STRING, allowNull: true })
   declare thumbnailKey: string | null;
 
+  @Column({ field: 'page_count', type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
+  declare pageCount: number;
+
   @Column({ field: 'issuer_id', type: DataType.UUID, allowNull: true })
   declare issuerUuid: string | null;
 

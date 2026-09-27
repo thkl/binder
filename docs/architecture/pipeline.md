@@ -42,4 +42,6 @@ The first worker operations are:
 2. OCR for scanned PDFs (job is queued when no text layer is found; processor still needs an OCR engine)
 3. chunking and search indexing
 
+Text extraction and OCR persist one `document_pages` row per extracted PDF page and update `documents.page_count`. Existing records and non-PDF records use `pageCount = 1` as the safe default.
+
 Every operation must be idempotent, retryable, observable, and safe to run again without changing the original file.

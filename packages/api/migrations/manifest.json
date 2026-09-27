@@ -159,6 +159,12 @@
                     "users",
                     "documents"
                ]
+          },
+          "25": {
+               "required": [
+                    "documents",
+                    "document_pages"
+               ]
           }
      }
 }

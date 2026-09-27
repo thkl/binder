@@ -9,9 +9,8 @@ import {
   DocumentListResponse,
   DocumentListResponseSchema
 } from '@binder/common';
-import { DocumentThumbnailsResponseSchema, DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
+import { DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
 import { randomUUID } from 'node:crypto';
-import { Op } from 'sequelize';
 import type { Express } from 'express';
 import { DocumentStore } from '../store/document.store';
 import { DocumentStorageService } from './document-storage.service';
@@ -73,6 +72,7 @@ export class DocumentService {
         ...input,
         storageKey: stored.storageKey,
         thumbnailKey,
+        pageCount: 1,
         issuerUuid: null,
         status: 'uploaded'
       });
@@ -174,24 +174,6 @@ export class DocumentService {
       document: this.toDocumentResponse(document),
       stream: await this.storage.openReadStream(thumbnailKey)
     };
-  }
-
-  async getThumbnailUrls(ownerUuid: string, uuids: string[]) {
-    const uniqueUuids = [...new Set(uuids)].slice(0, 100);
-    const documents = await this.documents.findAll({
-      where: { ownerUuid, uuid: { [Op.in]: uniqueUuids } }
-    });
-    const items = [];
-    for (const document of documents) {
-      try {
-        await this.ensureThumbnail(document);
-        const apiPrefix = this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
-        items.push({ uuid: document.uuid, url: `/${apiPrefix}/documents/${document.uuid}/thumbnail` });
-      } catch (error) {
-        this.logger.warn(`Unable to prepare thumbnail URL for ${document.uuid}: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-    return DocumentThumbnailsResponseSchema.parse({ items });
   }
 
   private async ensureThumbnail(document: import('../models/document.entity').Document): Promise<string> {
@@ -308,11 +290,18 @@ export class DocumentService {
       checksumSha256: document.checksumSha256,
       storageKey: document.storageKey,
       thumbnailKey: document.thumbnailKey,
+      thumbnailUrl: this.thumbnailUrl(document.uuid),
+      pageCount: document.pageCount || 1,
       issuerUuid: document.issuerUuid,
       status: document.status,
       createdAt: document.createdAt.toISOString(),
       updatedAt: document.updatedAt.toISOString()
     };
+  }
+
+  private thumbnailUrl(uuid: string): string {
+    const apiPrefix = this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
+    return `/${apiPrefix}/documents/${uuid}/thumbnail`;
   }
 
   private createSnippet(text: string, query: string): string {
