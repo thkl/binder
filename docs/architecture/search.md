@@ -15,7 +15,7 @@ The authenticated API exposes a hybrid search endpoint:
 GET /api/v1/documents/search?q=car+inspection&limit=20
 ```
 
-Search is ownership-scoped and checks document titles, original filenames, and page text with PostgreSQL `tsvector`/GIN indexes. When hosted embeddings are enabled, the query is embedded with the configured provider and compared with stored document chunks using cosine similarity. Results contain the document, a page number, a bounded snippet, and the match type (`title`, `text`, or `semantic`). If embeddings are disabled or unavailable, full-text search continues to work.
+Search is ownership-scoped and checks document titles, original filenames, and page text with PostgreSQL `tsvector`/GIN indexes. When hosted embeddings are enabled, the query is embedded with the configured provider and compared with stored document chunks using cosine similarity. Results contain the document, a page number, a bounded snippet, the match type (`title`, `text`, or `semantic`), and an optional normalized `semanticScore` from `0` to `1`. The score is a similarity indicator, not a probability or factual confidence; it is shown for semantic and hybrid results so a future minimum-score filter can be added without changing the response contract. If embeddings are disabled or unavailable, full-text search continues to work.
 
 The client home page provides the primary search surface. The response contract is deliberately independent of the search implementation so semantic and hybrid ranking can be added behind the same UI later.
 

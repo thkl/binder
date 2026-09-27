@@ -5,169 +5,291 @@
       <h2>{{ 'documents.title' | t }}</h2>
       <p class="muted">{{ 'documents.copy' | t }}</p>
     </div>
+
     <label class="upload-button">
-      <input type="file" accept="application/pdf,.pdf" (change)="fileSelected($event)"
+      <input
+        type="file"
+        accept="application/pdf,.pdf"
+        (change)="fileSelected($event)"
         [disabled]="documents.uploading()">
-      <span>＋</span> {{ documents.uploading() ? ('documents.uploading' | t) : ('documents.add' | t) }}
+      <span aria-hidden="true">＋</span>
+      {{ documents.uploading() ? ('documents.uploading' | t) : ('documents.add' | t) }}
     </label>
   </div>
 
   @if (documents.error(); as error) {
-  <div class="notice error" role="alert">{{ error }}</div>
+    <div class="notice error" role="alert">{{ error }}</div>
   }
 
   <section class="document-card glass-card">
     <header class="list-header">
       <span>{{ 'documents.all' | t }}</span>
+
       <div class="list-header-actions">
-        @if (documents.page(); as page) { <small>{{ page.total }} total</small> }
-        <label class="group-picker"><span>{{ 'documents.groupBy' | t }}</span><select [value]="groupMode()" (change)="setGroupMode($any($event.target).value)">
-          <option value="none">{{ 'documents.noGrouping' | t }}</option>
-          <option value="documentType">{{ 'documents.groupType' | t }}</option>
-          <option value="category">{{ 'documents.groupCategory' | t }}</option>
-          <option value="issuer">{{ 'documents.groupIssuer' | t }}</option>
-          <option value="tag">{{ 'documents.groupTag' | t }}</option>
-        </select></label>
-        <div class="view-switcher" aria-label="Document view">
-          <button type="button" [class.active]="viewMode() === 'list'" (click)="setViewMode('list')"
-            [attr.aria-label]="'documents.list' | t" [title]="'documents.list' | t">☷</button>
-          <button type="button" [class.active]="viewMode() === 'details'" (click)="setViewMode('details')"
-            [attr.aria-label]="'documents.details' | t" [title]="'documents.details' | t">☰</button>
-          <button type="button" [class.active]="viewMode() === 'small-icons'" (click)="setViewMode('small-icons')"
-            [attr.aria-label]="'documents.smallIcons' | t" [title]="'documents.smallIcons' | t">▦</button>
-          <button type="button" [class.active]="viewMode() === 'large-icons'" (click)="setViewMode('large-icons')"
-            [attr.aria-label]="'documents.largeIcons' | t" [title]="'documents.largeIcons' | t">⊞</button>
+        @if (documents.page(); as page) {
+          <small>{{ page.total }} total</small>
+        }
+
+        <label class="group-picker">
+          <span>{{ 'documents.groupBy' | t }}</span>
+          <select [value]="groupMode()" (change)="setGroupMode($any($event.target).value)">
+            <option value="none">{{ 'documents.noGrouping' | t }}</option>
+            <option value="documentType">{{ 'documents.groupType' | t }}</option>
+            <option value="category">{{ 'documents.groupCategory' | t }}</option>
+            <option value="issuer">{{ 'documents.groupIssuer' | t }}</option>
+            <option value="tag">{{ 'documents.groupTag' | t }}</option>
+          </select>
+        </label>
+
+        <div class="view-switcher" role="group" [attr.aria-label]="'documents.viewMode' | t">
+          <button
+            type="button"
+            [class.active]="viewMode() === 'list'"
+            [attr.aria-pressed]="viewMode() === 'list'"
+            (click)="setViewMode('list')">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 6h14M5 12h14M5 18h14" />
+            </svg>
+            <span>{{ 'documents.list' | t }}</span>
+          </button>
+          <button
+            type="button"
+            [class.active]="viewMode() === 'icons'"
+            [attr.aria-pressed]="viewMode() === 'icons'"
+            (click)="setViewMode('icons')">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="5" y="4" width="14" height="16" rx="1.5" />
+              <path d="M8 16h8M8 13h8" />
+            </svg>
+            <span>{{ 'documents.icons' | t }}</span>
+          </button>
         </div>
       </div>
     </header>
 
     @if (documents.loading()) {
-    <div class="empty-state"><span class="spinner"></span>
-      <p>{{ 'documents.loading' | t }}</p>
-    </div>
-    } @else if (documents.page()?.items?.length === 0) {
-    <div class="empty-state"><span class="empty-icon">▱</span>
-      <h3>{{ 'documents.ready' | t }}</h3>
-      <p>{{ 'documents.empty' | t }}</p>
-    </div>
-    } @else {
-    @switch (viewMode()) {
-    @case ('list') {
-    <div class="document-list">
-      @for (group of documentGroups(); track group.key) {
-      @if (groupMode() !== 'none') { <div class="document-group-heading">{{ group.label || ('documents.ungrouped' | t) }} <small>{{ group.documents.length }}</small></div> }
-      @for (document of group.documents; track document.uuid) {
-      <article class="document-row">
-        @if (thumbnailUrl(document.uuid) && !hasThumbnailFailed(document.uuid)) { <img class="thumbnail" [src]="thumbnailUrl(document.uuid)"
-          [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
-        <span class="file-icon">PDF</span> }
-        <div class="document-name"><div class="title-line"><input class="title-input" [value]="document.title || document.originalFilename" (change)="renameDocument(document.uuid, $event)" aria-label="Document title"><button class="suggest-title-button" type="button" (click)="suggestTitle(document.uuid)" [disabled]="titleSuggestionLoading()[document.uuid]">{{ titleSuggestionLoading()[document.uuid] ? '…' : '✦' }}</button>@if (document.isNew) { <span class="new-indicator">{{ 'documents.new' | t }}</span> }</div>@if (titleSuggestions()[document.uuid]; as suggestion) { <div class="title-suggestion"><span>Suggested: <strong>{{ suggestion.suggestedTitle }}</strong></span><button type="button" (click)="toggleMetadata(document.uuid)">Review</button><button type="button" (click)="dismissTitleSuggestion(document.uuid)">Dismiss</button></div> }<small>{{ document.sizeBytes | number
-            }} bytes · {{ document.createdAt | date:'mediumDate' }}</small></div>
-        <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
-        <button class="metadata-button" type="button" (click)="toggleMetadata(document.uuid)" [attr.aria-expanded]="metadataDocumentUuid() === document.uuid">{{ 'documents.metadata' | t }}</button>
-        @if (document.status === 'failed' || document.status === 'ready') {
-        <button (click)="requeueDocument(document.uuid)"><svg xmlns="http://www.w3.org/2000/svg" height="24px"
-            viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
-            <path
-              d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z" />
-          </svg></button>
-        }
-        <a class="open-link" href="" (click)="openDocument($event, document.uuid)">Open
-          ↗</a>
-      </article>
-      }
-      }
-    </div>
-    }
-    @case ('details') {
-    <div class="details-list">
-      <div class="details-heading">
-        <span>Name</span><span>Type</span><span>Size</span><span>Status</span><span>Added</span><span></span>
+      <div class="empty-state">
+        <span class="spinner"></span>
+        <p>{{ 'documents.loading' | t }}</p>
       </div>
-      @for (group of documentGroups(); track group.key) {
-      @if (groupMode() !== 'none') { <div class="document-group-heading details-group-heading">{{ group.label || ('documents.ungrouped' | t) }} <small>{{ group.documents.length }}</small></div> }
-      @for (document of group.documents; track document.uuid) {
-      <article class="details-row">
-        <div class="document-name"><strong>{{ document.title || document.originalFilename }} @if (document.isNew) { <span class="new-indicator">{{ 'documents.new' | t }}</span> }</strong><small>{{ document.checksumSha256
-            }}</small></div>
-        <span>PDF</span><span>{{ document.sizeBytes | number }} bytes</span>
-        <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
-        @if (document.status === 'failed' || document.status === 'ready') {
-        <button (click)="requeueDocument(document.uuid)"><svg xmlns="http://www.w3.org/2000/svg" height="24px"
-            viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
-            <path
-              d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z" />
-          </svg></button>
-        }
-        <span>{{ document.createdAt | date:'mediumDate' }}</span>
-        <a class="open-link" href="" (click)="openDocument($event, document.uuid)">Open
-          ↗</a>
-      </article>
+    } @else if (documents.page()?.items?.length === 0) {
+      <div class="empty-state">
+        <span class="empty-icon">▱</span>
+        <h3>{{ 'documents.ready' | t }}</h3>
+        <p>{{ 'documents.empty' | t }}</p>
+      </div>
+    } @else {
+      @if (viewMode() === 'list') {
+        <div class="document-list">
+          @for (group of documentGroups(); track group.key) {
+            @if (groupMode() !== 'none') {
+              <div class="document-group-heading">
+                <span>{{ group.label || ('documents.ungrouped' | t) }}</span>
+                <small>{{ group.documents.length }}</small>
+              </div>
+            }
+
+            @for (document of group.documents; track document.uuid) {
+              <article class="document-row">
+                <button
+                  type="button"
+                  class="row-preview"
+                  (click)="openDocument(document.uuid)"
+                  [attr.aria-label]="('documents.open' | t) + ': ' + (document.title || document.originalFilename)">
+                  @if (thumbnailUrl(document.uuid) && !hasThumbnailFailed(document.uuid)) {
+                    <img
+                      class="thumbnail"
+                      [src]="thumbnailUrl(document.uuid)"
+                      [alt]="'Preview of ' + (document.title || document.originalFilename)"
+                      loading="lazy"
+                      (error)="markThumbnailFailed(document.uuid)">
+                  } @else {
+                    <span class="file-icon">{{ documentFormat(document) }}</span>
+                  }
+                </button>
+
+                <div class="document-name">
+                  <div class="title-line">
+                    <input
+                      class="title-input"
+                      [value]="document.title || document.originalFilename"
+                      (change)="renameDocument(document.uuid, $event)"
+                      [attr.aria-label]="'documents.titleField' | t">
+                    @if (document.isNew) {
+                      <span class="new-indicator">{{ 'documents.new' | t }}</span>
+                    }
+                  </div>
+
+                  @if (titleSuggestions()[document.uuid]; as suggestion) {
+                    <div class="title-suggestion">
+                      <span>{{ 'documents.suggestion' | t }} <strong>{{ suggestion.suggestedTitle }}</strong></span>
+                      <button type="button" (click)="toggleMetadata(document.uuid)">{{ 'documents.review' | t }}</button>
+                      <button type="button" (click)="dismissTitleSuggestion(document.uuid)">{{ 'documents.dismiss' | t }}</button>
+                    </div>
+                  }
+
+                  <dl class="document-facts">
+                    <div><dt>{{ 'documents.type' | t }}</dt><dd>{{ documentFormat(document) }}</dd></div>
+                    <div><dt>{{ 'documents.size' | t }}</dt><dd>{{ document.sizeBytes | number }} bytes</dd></div>
+                    <div><dt>{{ 'documents.pages' | t }}</dt><dd>{{ document.pageCount }}</dd></div>
+                    <div><dt>{{ 'documents.issuer' | t }}</dt><dd>{{ document.metadataSummary.issuer?.name || ('documents.notSet' | t) }}</dd></div>
+                    <div><dt>{{ 'documents.modified' | t }}</dt><dd>{{ document.updatedAt | date:'mediumDate' }}</dd></div>
+                  </dl>
+                </div>
+
+                <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
+
+                <binder-document-actions
+                  class="document-row-actions"
+                  [document]="document"
+                  [suggestionLoading]="titleSuggestionLoading()[document.uuid] === true"
+                  (open)="openDocument(document.uuid)"
+                  (metadata)="toggleMetadata(document.uuid)"
+                  (suggest)="suggestTitle(document.uuid)"
+                  (requeue)="requeueDocument(document.uuid)" />
+              </article>
+            }
+          }
+        </div>
+      } @else {
+        <div class="icon-grid">
+          @for (group of documentGroups(); track group.key) {
+            @if (groupMode() !== 'none') {
+              <div class="document-group-heading icon-group-heading">
+                <span>{{ group.label || ('documents.ungrouped' | t) }}</span>
+                <small>{{ group.documents.length }}</small>
+              </div>
+            }
+
+            @for (document of group.documents; track document.uuid) {
+              <article class="preview-card">
+                <button
+                  type="button"
+                  class="preview-card-image"
+                  (click)="openDocument(document.uuid)"
+                  [attr.aria-label]="('documents.open' | t) + ': ' + (document.title || document.originalFilename)">
+                  @if (thumbnailUrl(document.uuid) && !hasThumbnailFailed(document.uuid)) {
+                    <img
+                      class="icon-preview"
+                      [src]="thumbnailUrl(document.uuid)"
+                      [alt]="'Preview of ' + (document.title || document.originalFilename)"
+                      loading="lazy"
+                      (error)="markThumbnailFailed(document.uuid)">
+                  } @else {
+                    <span class="file-icon">{{ documentFormat(document) }}</span>
+                  }
+                </button>
+
+                <div class="preview-card-body">
+                  <div class="title-line">
+                    <input
+                      class="title-input"
+                      [value]="document.title || document.originalFilename"
+                      (change)="renameDocument(document.uuid, $event)"
+                      [attr.aria-label]="'documents.titleField' | t">
+                    @if (document.isNew) {
+                      <span class="new-indicator">{{ 'documents.new' | t }}</span>
+                    }
+                  </div>
+
+                  @if (titleSuggestions()[document.uuid]; as suggestion) {
+                    <div class="title-suggestion">
+                      <span>{{ 'documents.suggestion' | t }} <strong>{{ suggestion.suggestedTitle }}</strong></span>
+                      <button type="button" (click)="toggleMetadata(document.uuid)">{{ 'documents.review' | t }}</button>
+                      <button type="button" (click)="dismissTitleSuggestion(document.uuid)">{{ 'documents.dismiss' | t }}</button>
+                    </div>
+                  }
+
+                  <dl class="document-facts">
+                    <div><dt>{{ 'documents.type' | t }}</dt><dd>{{ documentFormat(document) }}</dd></div>
+                    <div><dt>{{ 'documents.size' | t }}</dt><dd>{{ document.sizeBytes | number }} bytes</dd></div>
+                    <div><dt>{{ 'documents.pages' | t }}</dt><dd>{{ document.pageCount }}</dd></div>
+                    <div><dt>{{ 'documents.issuer' | t }}</dt><dd>{{ document.metadataSummary.issuer?.name || ('documents.notSet' | t) }}</dd></div>
+                    <div><dt>{{ 'documents.modified' | t }}</dt><dd>{{ document.updatedAt | date:'mediumDate' }}</dd></div>
+                  </dl>
+
+                  <span class="status" [class]="'status ' + document.status">{{ document.status }}</span>
+                </div>
+
+                <binder-document-actions
+                  class="preview-card-actions"
+                  [document]="document"
+                  [compact]="true"
+                  [suggestionLoading]="titleSuggestionLoading()[document.uuid] === true"
+                  (open)="openDocument(document.uuid)"
+                  (metadata)="toggleMetadata(document.uuid)"
+                  (suggest)="suggestTitle(document.uuid)"
+                  (requeue)="requeueDocument(document.uuid)" />
+              </article>
+            }
+          }
+        </div>
       }
+
+      @if (documents.page(); as page) {
+        <footer class="pagination">
+          <button type="button" (click)="previousPage()" [disabled]="!page.hasPrev">
+            ← {{ 'documents.previous' | t }}
+          </button>
+          <span>{{ page.page }} / {{ page.totalPages || 1 }}</span>
+          <button type="button" (click)="nextPage()" [disabled]="!page.hasNext">
+            {{ 'documents.next' | t }} →
+          </button>
+        </footer>
       }
-    </div>
-    }
-    @case ('small-icons') {
-    <div class="icon-grid small-icons">
-      @for (group of documentGroups(); track group.key) {
-      @if (groupMode() !== 'none') { <div class="document-group-heading">{{ group.label || ('documents.ungrouped' | t) }} <small>{{ group.documents.length }}</small></div> }
-      @for (document of group.documents; track document.uuid) {
-      <a class="icon-card" href="" (click)="openDocument($event, document.uuid)">
-        @if (thumbnailUrl(document.uuid) && !hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
-          [alt]="''" (error)="markThumbnailFailed(document.uuid)"> } @else { <span class="file-icon">PDF</span> }
-        <strong>{{ document.title || document.originalFilename }} @if (document.isNew) { <span class="new-indicator">{{ 'documents.new' | t }}</span> }</strong><small>{{ document.status }}</small>
-      </a>
-      }
-      }
-    </div>
-    }
-    @case ('large-icons') {
-    <div class="icon-grid large-icons">
-      @for (group of documentGroups(); track group.key) {
-      @if (groupMode() !== 'none') { <div class="document-group-heading">{{ group.label || ('documents.ungrouped' | t) }} <small>{{ group.documents.length }}</small></div> }
-      @for (document of group.documents; track document.uuid) {
-      <a class="icon-card" href="" (click)="openDocument($event, document.uuid)">
-        @if (thumbnailUrl(document.uuid) && !hasThumbnailFailed(document.uuid)) { <img class="icon-preview" [src]="thumbnailUrl(document.uuid)"
-          [alt]="'Preview of ' + document.originalFilename" (error)="markThumbnailFailed(document.uuid)"> } @else {
-        <span class="file-icon">PDF</span> }
-        <strong>{{ document.title || document.originalFilename }} @if (document.isNew) { <span class="new-indicator">{{ 'documents.new' | t }}</span> }</strong><small>{{ document.sizeBytes | number }} bytes · {{
-          document.status }}</small>
-      </a>
-      }
-      }
-    </div>
-    }
-    }
-    @if (documents.page(); as page) {
-    <footer class="pagination"><button type="button" (click)="previousPage()" [disabled]="!page.hasPrev">←
-        Previous</button><span>Page {{ page.page }} of {{ page.totalPages || 1 }}</span><button type="button"
-        (click)="nextPage()" [disabled]="!page.hasNext">Next →</button></footer>
-    }
     }
   </section>
 
   @if (metadataDocumentUuid(); as metadataUuid) {
-    <div class="property-backdrop" role="presentation" (click)="closeMetadata()">
-      <aside class="property-panel" role="dialog" aria-modal="true" aria-labelledby="property-panel-title" (click)="$event.stopPropagation()">
+    <div class="property-backdrop" role="presentation" (click)="requestCloseMetadata()">
+      <aside
+        class="property-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="property-panel-title"
+        (click)="$event.stopPropagation()">
         <header class="property-header">
           <div>
             <p class="section-kicker">DOCUMENT PROPERTIES</p>
-            <h3 id="property-panel-title">{{ metadataDocument()?.title || metadataDocument()?.originalFilename || 'Metadata' }}</h3>
+            <h3 id="property-panel-title">
+              {{ metadataDocument()?.title || metadataDocument()?.originalFilename || ('documents.metadata' | t) }}
+            </h3>
           </div>
-          <button type="button" class="property-close" (click)="closeMetadata()" aria-label="Close document properties">×</button>
+          <button type="button" class="property-close" (click)="requestCloseMetadata()" aria-label="Close document properties">×</button>
         </header>
-        <binder-document-metadata-editor 
-          [documentUuid]="metadataUuid" 
+
+        <binder-document-metadata-editor
+          [documentUuid]="metadataUuid"
           [documentData]="documentData()"
-          [suggestion]="titleSuggestions()[metadataUuid] || null" 
-          (manuallySaved)="markDocumentReviewed(metadataUuid)" 
-          (suggestionTitleAccepted)="acceptSuggestedTitleValue(metadataUuid, $event)" 
-          (suggestionDismissed)="dismissLocalTitleSuggestion(metadataUuid)" 
+          [suggestion]="titleSuggestions()[metadataUuid] || null"
+          (dirtyChange)="metadataDirtyChanged($event)"
+          (manuallySaved)="markDocumentReviewed(metadataUuid)"
+          (suggestionTitleAccepted)="acceptSuggestedTitleValue(metadataUuid, $event)"
+          (suggestionDismissed)="dismissLocalTitleSuggestion(metadataUuid)"
           (suggestionAccepted)="acceptSuggestedMetadata(metadataUuid, $event)" />
+
+        @if (metadataClosePrompt()) {
+          <div class="unsaved-warning" role="alertdialog" aria-labelledby="unsaved-warning-title">
+            <strong id="unsaved-warning-title">{{ 'documents.unsavedTitle' | t }}</strong>
+            <p>{{ 'documents.unsavedCopy' | t }}</p>
+            <div class="unsaved-actions">
+              <button type="button" class="secondary-button" (click)="metadataClosePrompt.set(false)">
+                {{ 'documents.keepEditing' | t }}
+              </button>
+              <button type="button" class="danger-button" (click)="discardMetadataChanges()">
+                {{ 'documents.discardChanges' | t }}
+              </button>
+            </div>
+          </div>
+        }
       </aside>
     </div>
   }
+
   @if (viewerDocumentUuid(); as viewerUuid) {
-    <binder-document-viewer [documentUuid]="viewerUuid" [title]="viewerDocument()?.title || viewerDocument()?.originalFilename || 'Document'" (closed)="closeDocumentViewer()" />
+    <binder-document-viewer
+      [documentUuid]="viewerUuid"
+      [title]="viewerDocument()?.title || viewerDocument()?.originalFilename || 'Document'"
+      (closed)="closeDocumentViewer()" />
   }
 </section>

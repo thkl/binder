@@ -225,7 +225,8 @@ export const DocumentSearchResultSchema = z.object({
   document: DocumentSchema,
   pageNumber: z.number().int().positive().nullable(),
   snippet: z.string().max(1000),
-  matchType: z.enum(['text', 'title', 'semantic'])
+  matchType: z.enum(['text', 'title', 'semantic']),
+  semanticScore: z.number().min(0).max(1).nullable()
 });
 export type DocumentSearchResult = z.infer<typeof DocumentSearchResultSchema>;
 

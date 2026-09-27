@@ -21,6 +21,7 @@ export class DocumentMetadataEditorComponent {
   readonly suggestionTitleAccepted = output<string>();
   readonly suggestionDismissed = output<void>();
   readonly manuallySaved = output<void>();
+  readonly dirtyChange = output<boolean>();
   
   readonly metadata = inject(MetadataService);
   readonly i18n = inject(I18nService);
@@ -30,6 +31,9 @@ export class DocumentMetadataEditorComponent {
   readonly selectedTags = signal<Set<string>>(new Set());
   readonly loaded = signal(false);
   readonly saved = signal(false);
+  readonly dirty = signal(false);
+  private readonly metadataDirty = signal(false);
+  private readonly issuerFormDirty = signal(false);
   readonly customValues = signal<Record<string, unknown>>({});
   readonly newTagName = signal('');
   readonly tagSearch = signal('');
@@ -82,6 +86,7 @@ export class DocumentMetadataEditorComponent {
     ]);
     if (uuid !== this.documentUuid()) return;
     if (current) this.applyMetadata(current);
+    else this.markClean();
     this.loaded.set(true);
   }
 
@@ -91,7 +96,7 @@ export class DocumentMetadataEditorComponent {
       if (next.has(uuid)) next.delete(uuid); else next.add(uuid);
       return next;
     });
-    this.saved.set(false);
+    this.markMetadataDirty();
   }
 
   isTagSelected(uuid: string): boolean { return this.selectedTags().has(uuid); }
@@ -114,6 +119,26 @@ export class DocumentMetadataEditorComponent {
     return false;
   }
 
+  setDocumentTypeUuid(uuid: string): void {
+    this.documentTypeUuid.set(uuid);
+    this.markMetadataDirty();
+  }
+
+  setCategoryUuid(uuid: string): void {
+    this.categoryUuid.set(uuid);
+    this.markMetadataDirty();
+  }
+
+  setIssuerUuid(uuid: string): void {
+    this.issuerUuid.set(uuid);
+    this.markMetadataDirty();
+  }
+
+  markIssuerFormDirty(): void {
+    this.issuerFormDirty.set(true);
+    this.updateDirtyState();
+  }
+
   acceptSuggestionField(field: string): void {
     const suggestion = this.activeSuggestion();
     if (!suggestion) return;
@@ -127,7 +152,7 @@ export class DocumentMetadataEditorComponent {
     if (field === 'tagUuids') this.selectedTags.set(new Set(suggestion.tagUuids));
     if (field === 'custom') this.customValues.update((current) => ({ ...current, ...suggestion.custom }));
     if (field === 'title') this.suggestionTitleAccepted.emit(suggestion.suggestedTitle);
-    this.saved.set(false);
+    this.markMetadataDirty();
   }
 
   async acceptAllSuggestion(): Promise<void> {
@@ -192,6 +217,7 @@ export class DocumentMetadataEditorComponent {
     this.selectedTags.set(new Set(current.tags.map((tag) => tag.uuid)));
     this.customValues.set({ ...current.custom });
     this.serverSuggestion.set(current.suggestion);
+    this.markClean();
   }
 
   async addTag(event: Event): Promise<void> {
@@ -203,6 +229,7 @@ export class DocumentMetadataEditorComponent {
       if (tag) this.selectedTags.update((selected) => new Set(selected).add(tag.uuid));
       this.newTagName.set('');
       this.tagSearch.set('');
+      this.markMetadataDirty();
     }
   }
 
@@ -210,7 +237,7 @@ export class DocumentMetadataEditorComponent {
 
   setCustomValue(key: string, value: unknown): void {
     this.customValues.update((current) => ({ ...current, [key]: value }));
-    this.saved.set(false);
+    this.markMetadataDirty();
   }
 
   setTypedValue(key: string, type: string, value: string): void {
@@ -235,11 +262,15 @@ export class DocumentMetadataEditorComponent {
     this.issuerCountry.set(selected?.country ?? '');
     this.issuerCustomJson.set(JSON.stringify(selected?.custom ?? {}, null, 2));
     this.issuerError.set(null);
+    this.issuerFormDirty.set(false);
+    this.updateDirtyState();
     this.showIssuerForm.set(true);
   }
 
   cancelIssuerForm(): void {
     this.issuerError.set(null);
+    this.issuerFormDirty.set(false);
+    this.updateDirtyState();
     this.showIssuerForm.set(false);
   }
 
@@ -269,8 +300,30 @@ export class DocumentMetadataEditorComponent {
     if (result) {
       this.issuerUuid.set(result.uuid);
       this.showIssuerForm.set(false);
-      this.saved.set(false);
+      this.issuerFormDirty.set(false);
+      this.markMetadataDirty();
       await this.save();
     }
+  }
+
+  private markMetadataDirty(): void {
+    if (!this.loaded()) return;
+    this.saved.set(false);
+    this.metadataDirty.set(true);
+    this.updateDirtyState();
+  }
+
+  private markClean(): void {
+    this.saved.set(false);
+    this.metadataDirty.set(false);
+    this.issuerFormDirty.set(false);
+    this.updateDirtyState();
+  }
+
+  private updateDirtyState(): void {
+    const next = this.metadataDirty() || this.issuerFormDirty();
+    if (next === this.dirty()) return;
+    this.dirty.set(next);
+    this.dirtyChange.emit(next);
   }
 }

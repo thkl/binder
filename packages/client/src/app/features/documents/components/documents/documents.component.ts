@@ -3,17 +3,18 @@ import { CommonModule } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
 import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
 import { DocumentViewerComponent } from '../../../../common/components/document-viewer/document-viewer.component';
+import { DocumentActionsComponent } from '../document-actions/document-actions.component';
 import type { Document, DocumentTitleSuggestion } from '@binder/common';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 
-type DocumentViewMode = 'list' | 'details' | 'small-icons' | 'large-icons';
+type DocumentViewMode = 'list' | 'icons';
 type DocumentGroupMode = 'none' | 'documentType' | 'category' | 'issuer' | 'tag';
 type DocumentGroup = { key: string; label: string | null; documents: Document[] };
 
 @Component({
   selector: 'binder-documents',
   standalone: true,
-  imports: [CommonModule, DocumentMetadataEditorComponent, DocumentViewerComponent, TranslatePipe],
+  imports: [CommonModule, DocumentMetadataEditorComponent, DocumentViewerComponent, DocumentActionsComponent, TranslatePipe],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -27,6 +28,8 @@ export class DocumentsComponent implements OnInit {
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
   readonly viewerDocumentUuid = signal<string | null>(null);
+  readonly metadataDirty = signal(false);
+  readonly metadataClosePrompt = signal(false);
   
   readonly metadataDocument = computed(() => {
     const uuid = this.metadataDocumentUuid();
@@ -99,6 +102,12 @@ export class DocumentsComponent implements OnInit {
     return this.documents.page()?.items.find((document) => document.uuid === uuid)?.thumbnailUrl ?? null;
   }
 
+  documentFormat(document: Document): string {
+    if (document.mimeType === 'application/pdf') return 'PDF';
+    const parts = document.mimeType.split('/');
+    return (parts[1] || parts[0] || 'FILE').toUpperCase();
+  }
+
   hasThumbnailFailed(uuid: string): boolean {
     return this.thumbnailFailed()[uuid] === true;
   }
@@ -130,16 +139,47 @@ export class DocumentsComponent implements OnInit {
   }
 
   toggleMetadata(uuid: string): void {
+    const current = this.metadataDocumentUuid();
+    if (current === uuid) {
+      this.requestCloseMetadata();
+      return;
+    }
+    if (!this.canLeaveMetadata()) return;
+
+    this.metadataClosePrompt.set(false);
+    this.metadataDirty.set(false);
     this.viewerDocumentUuid.set(null);
-    this.metadataDocumentUuid.update((current) => current === uuid ? null : uuid);
+    this.metadataDocumentUuid.set(uuid);
   }
 
-  closeMetadata(): void {
+  requestCloseMetadata(): void {
+    if (!this.metadataDocumentUuid()) return;
+    if (this.metadataDirty()) {
+      this.metadataClosePrompt.set(true);
+      return;
+    }
+    this.finishCloseMetadata();
+  }
+
+  metadataDirtyChanged(dirty: boolean): void {
+    this.metadataDirty.set(dirty);
+    if (!dirty) this.metadataClosePrompt.set(false);
+  }
+
+  discardMetadataChanges(): void {
+    this.metadataClosePrompt.set(false);
+    this.metadataDirty.set(false);
+    this.finishCloseMetadata();
+  }
+
+  private finishCloseMetadata(): void {
+    this.metadataClosePrompt.set(false);
+    this.metadataDirty.set(false);
     this.metadataDocumentUuid.set(null);
   }
 
-  openDocument(event: Event, uuid: string): void {
-    event.preventDefault();
+  openDocument(uuid: string): void {
+    if (!this.canLeaveMetadata()) return;
     this.metadataDocumentUuid.set(null);
     this.viewerDocumentUuid.set(uuid);
   }
@@ -150,8 +190,14 @@ export class DocumentsComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    this.closeMetadata();
+    this.requestCloseMetadata();
     this.closeDocumentViewer();
+  }
+
+  private canLeaveMetadata(): boolean {
+    if (!this.metadataDocumentUuid() || !this.metadataDirty()) return true;
+    this.metadataClosePrompt.set(true);
+    return false;
   }
 
   async renameDocument(uuid: string, event: Event): Promise<void> {
@@ -165,6 +211,7 @@ export class DocumentsComponent implements OnInit {
     this.titleSuggestionLoading.update((current) => ({ ...current, [uuid]: false }));
     if (suggestion) {
       this.titleSuggestions.update((current) => ({ ...current, [uuid]: suggestion }));
+      if (this.metadataDocumentUuid() !== uuid && !this.canLeaveMetadata()) return;
       this.viewerDocumentUuid.set(null);
       this.metadataDocumentUuid.set(uuid);
     }
@@ -202,8 +249,8 @@ export class DocumentsComponent implements OnInit {
   
   private readViewMode(): DocumentViewMode {
     const stored = localStorage.getItem('binder.documents.view-mode');
-    return stored === 'details' || stored === 'small-icons' || stored === 'large-icons'
-      ? stored
+    return stored === 'small-icons' || stored === 'large-icons' || stored === 'icons'
+      ? 'icons'
       : 'list';
   }
 }

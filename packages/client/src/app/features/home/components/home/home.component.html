@@ -69,7 +69,16 @@
               <div class="result-mark" aria-hidden="true">{{ item.matchType === 'semantic' ? '✦' : item.matchType === 'text' ? '¶' : 'T' }}</div>
               <div class="result-copy">
                 <a href="" (click)="openDocument($event, item.document.uuid)">{{ item.document.title || item.document.originalFilename }}</a>
-                <small>{{ item.document.originalFilename }}{{ item.pageNumber ? ' · Page ' + item.pageNumber : ' · Title match' }}</small>
+                <small>
+                  {{ item.document.originalFilename }}{{ item.pageNumber ? ' · Page ' + item.pageNumber : ' · Title match' }}
+                  @if (item.semanticScore !== null) {
+                    <span
+                      class="semantic-score"
+                      [attr.aria-label]="('home.semanticMatch' | t) + ': ' + (item.semanticScore | percent:'1.0-0')">
+                      {{ 'home.semanticMatch' | t }} {{ item.semanticScore | percent:'1.0-0' }}
+                    </span>
+                  }
+                </small>
                 <p>{{ item.snippet || 'No text snippet available.' }}</p>
               </div>
               <a class="open-result" href="" (click)="openDocument($event, item.document.uuid)">Open ↗</a>

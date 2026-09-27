@@ -114,7 +114,8 @@ export class DocumentService {
         document: this.toDocumentResponse(hit.document),
         pageNumber: hit.pageNumber,
         snippet: this.createSnippet(hit.text, query.q),
-        matchType: hit.matchType
+        matchType: hit.matchType,
+        semanticScore: hit.semanticScore
       }))
     });
   }
@@ -124,14 +125,35 @@ export class DocumentService {
     semanticResult: Array<{ document: import('../models/document.entity').Document; pageNumber: number; text: string; score: number }>,
     limit: number
   ) {
-    const merged = new Map<string, { document: import('../models/document.entity').Document; pageNumber: number | null; text: string; score: number; matchType: 'text' | 'title' | 'semantic' }>();
-    for (const hit of keywordResult) merged.set(hit.document.uuid, { ...hit, matchType: hit.pageNumber === null ? 'title' : 'text' });
+    const merged = new Map<string, {
+      document: import('../models/document.entity').Document;
+      pageNumber: number | null;
+      text: string;
+      score: number;
+      semanticScore: number | null;
+      matchType: 'text' | 'title' | 'semantic';
+    }>();
+    for (const hit of keywordResult) {
+      merged.set(hit.document.uuid, {
+        ...hit,
+        semanticScore: null,
+        matchType: hit.pageNumber === null ? 'title' : 'text'
+      });
+    }
     for (const hit of semanticResult) {
       const existing = merged.get(hit.document.uuid);
       if (!existing || hit.score > existing.score) {
-        merged.set(hit.document.uuid, { ...hit, matchType: 'semantic' });
+        merged.set(hit.document.uuid, {
+          ...hit,
+          semanticScore: hit.score,
+          matchType: 'semantic'
+        });
       } else {
-        merged.set(hit.document.uuid, { ...existing, matchType: 'semantic' });
+        merged.set(hit.document.uuid, {
+          ...existing,
+          semanticScore: hit.score,
+          matchType: 'semantic'
+        });
       }
     }
     return [...merged.values()].sort((left, right) => right.score - left.score).slice(0, limit);

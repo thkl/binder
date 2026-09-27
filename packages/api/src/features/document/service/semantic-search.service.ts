@@ -76,7 +76,7 @@ export class SemanticSearchService {
         document: (embedding as DocumentEmbedding & { document?: Document }).document!,
         pageNumber: embedding.pageNumber,
         text: embedding.content,
-        score: 1 - Number((embedding as DocumentEmbedding & { cosineDistance?: number }).get('cosineDistance'))
+        score: normalizeSimilarity(Number((embedding as DocumentEmbedding & { cosineDistance?: number }).get('cosineDistance')))
       }))
       .filter((hit) => hit.document && Number.isFinite(hit.score) && hit.score >= 0.35)
       .sort((left, right) => right.score - left.score)
@@ -90,4 +90,9 @@ export class SemanticSearchService {
     });
     return hits;
   }
+}
+
+function normalizeSimilarity(cosineDistance: number): number {
+  if (!Number.isFinite(cosineDistance)) return Number.NaN;
+  return Math.min(1, Math.max(0, 1 - cosineDistance));
 }
