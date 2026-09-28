@@ -1,11 +1,17 @@
 :host {
   display: block;
   min-width: 0;
+  position: sticky;
+  top: 1.5rem;
+  align-self: start;
+  z-index: 2;
 }
 
 .folder-tree {
   min-height: 20rem;
-  overflow: hidden;
+  max-height: calc(100vh - 3rem);
+  overflow-x: hidden;
+  overflow-y: auto;
   border: 1px solid var(--glass-border);
   border-radius: 1.1rem;
   background: linear-gradient(145deg, rgba(20, 52, 88, .76), rgba(7, 22, 41, .86));
@@ -315,5 +321,16 @@
   .folder-disclosure span,
   .folder-actions {
     transition: none;
+  }
+}
+
+@media (max-width: 980px) {
+  :host {
+    position: static;
+  }
+
+  .folder-tree {
+    max-height: none;
+    overflow: hidden;
   }
 }
