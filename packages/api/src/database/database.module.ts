@@ -17,6 +17,8 @@ import { InboxItem } from '../features/inbox/models/inbox-item.entity';
 import { Issuer } from '../features/issuer/models/issuer.entity';
 import { MaintenanceRun } from '../features/maintenance/models/maintenance-run.entity';
 import { MaintenanceRequest } from '../features/maintenance/models/maintenance-request.entity';
+import { Folder } from '../features/folder/models/folder.entity';
+import { DocumentFolder } from '../features/folder/models/document-folder.entity';
 
 @Global()
 @Module({
@@ -68,7 +70,8 @@ import { MaintenanceRequest } from '../features/maintenance/models/maintenance-r
     SequelizeModule.forFeature([
       User, ApplicationSetting, Document, DocumentPage, DocumentEmbedding, PipelineJob, PipelineJobEvent,
       DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment,
-      MetadataDefinition, DocumentMetadataValue, InboxItem, Issuer, MaintenanceRun, MaintenanceRequest
+      MetadataDefinition, DocumentMetadataValue, InboxItem, Issuer, MaintenanceRun, MaintenanceRequest,
+      Folder, DocumentFolder
     ]),
   ],
   providers: [DatabaseConnectionService,DatabaseMigrationService],

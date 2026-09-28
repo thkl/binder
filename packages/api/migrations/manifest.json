@@ -217,6 +217,16 @@
                "required": [
                     "maintenance_runs"
                ]
+          },
+          "35": {
+               "created": [
+                    "folders",
+                    "document_folders"
+               ],
+               "required": [
+                    "users",
+                    "documents"
+               ]
           }
      }
 }

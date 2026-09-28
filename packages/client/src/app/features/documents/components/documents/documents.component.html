@@ -21,6 +21,9 @@
     <div class="notice error" role="alert">{{ error }}</div>
   }
 
+  <div class="documents-layout">
+    <binder-folder-tree (folderSelected)="selectFolder($event)" />
+
   <section class="document-card glass-card">
     <header class="list-header">
       <span>{{ 'documents.all' | t }}</span>
@@ -121,6 +124,22 @@
             (click)="runBulkAction('mark-reviewed')">
             {{ 'documents.markReviewed' | t }}
           </button>
+          @if (folders.selectedFolderUuid()) {
+            <button
+              type="button"
+              class="bulk-action-button"
+              [disabled]="folderActionInProgress() !== null"
+              (click)="changeFolderMembership('add')">
+              {{ folderActionInProgress() === 'add' ? ('folders.updating' | t) : ('folders.addSelected' | t) }}
+            </button>
+            <button
+              type="button"
+              class="bulk-action-button"
+              [disabled]="folderActionInProgress() !== null"
+              (click)="changeFolderMembership('remove')">
+              {{ folderActionInProgress() === 'remove' ? ('folders.updating' | t) : ('folders.removeSelected' | t) }}
+            </button>
+          }
           <button
             type="button"
             class="bulk-action-button quiet"
@@ -138,6 +157,9 @@
             · {{ result.failed }} {{ 'documents.failed' | t }}
           }
         </span>
+      }
+      @if (folderActionMessage(); as message) {
+        <span class="bulk-result" role="status">{{ message }}</span>
       }
     </div>
 
@@ -346,6 +368,7 @@
       }
     }
   </section>
+  </div>
 
   @if (drawerDocumentUuid(); as drawerUuid) {
     @if (drawerDocument(); as drawerDocument) {

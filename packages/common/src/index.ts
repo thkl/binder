@@ -93,6 +93,64 @@ export const DocumentSchema = z.object({
 
 export type Document = z.infer<typeof DocumentSchema>;
 
+export const FolderNodeSchema = z.object({
+  uuid: z.uuid(),
+  ownerUuid: z.uuid(),
+  parentUuid: z.uuid().nullable(),
+  name: z.string().trim().min(1).max(255),
+  sortPosition: z.number().int().nonnegative(),
+  childCount: z.number().int().nonnegative(),
+  documentCount: z.number().int().nonnegative(),
+  hasChildren: z.boolean(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime()
+});
+export type FolderNode = z.infer<typeof FolderNodeSchema>;
+
+export const FolderListResponseSchema = z.object({
+  parentUuid: z.uuid().nullable(),
+  items: z.array(FolderNodeSchema)
+});
+export type FolderListResponse = z.infer<typeof FolderListResponseSchema>;
+
+export const CreateFolderInputSchema = z.object({
+  name: z.string().trim().min(1).max(255),
+  parentUuid: z.uuid().nullable().optional(),
+  sortPosition: z.number().int().nonnegative().optional()
+});
+export type CreateFolderInput = z.infer<typeof CreateFolderInputSchema>;
+
+export const UpdateFolderInputSchema = z.object({
+  name: z.string().trim().min(1).max(255).optional(),
+  sortPosition: z.number().int().nonnegative().optional()
+}).refine((input) => Object.keys(input).length > 0, 'At least one folder property is required');
+export type UpdateFolderInput = z.infer<typeof UpdateFolderInputSchema>;
+
+export const MoveFolderInputSchema = z.object({
+  parentUuid: z.uuid().nullable(),
+  sortPosition: z.number().int().nonnegative().optional()
+});
+export type MoveFolderInput = z.infer<typeof MoveFolderInputSchema>;
+
+export const FolderDocumentInputSchema = z.object({
+  documentUuids: z.array(z.uuid()).min(1).max(1000)
+});
+export type FolderDocumentInput = z.infer<typeof FolderDocumentInputSchema>;
+
+export const FolderDocumentActionResponseSchema = z.object({
+  folderUuid: z.uuid(),
+  affected: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative()
+});
+export type FolderDocumentActionResponse = z.infer<typeof FolderDocumentActionResponseSchema>;
+
+export const FolderDeleteResponseSchema = z.object({
+  deleted: z.boolean(),
+  promotedChildren: z.number().int().nonnegative(),
+  removedLinks: z.number().int().nonnegative()
+});
+export type FolderDeleteResponse = z.infer<typeof FolderDeleteResponseSchema>;
+
 export const DocumentGroupBySchema = z.enum([
   'none',
   'documentType',
@@ -292,6 +350,7 @@ export const DocumentListQuerySchema = z.object({
   groupDirection: z.enum(['asc', 'desc']).default('asc'),
   status: DocumentStatusSchema.optional(),
   issuerUuid: z.uuid().optional(),
+  folderUuid: z.uuid().optional(),
   q: z.string().trim().max(200).optional()
 });
 
@@ -317,6 +376,7 @@ export const DocumentSearchQuerySchema = z.object({
   documentTypeUuid: z.uuid().optional(),
   categoryUuid: z.uuid().optional(),
   issuerUuid: z.uuid().optional(),
+  folderUuid: z.uuid().optional(),
   tagUuids: z.preprocess(
     (value) => typeof value === 'string' ? value.split(',').map((item) => item.trim()).filter(Boolean) : value,
     z.array(z.uuid()).max(20).optional()

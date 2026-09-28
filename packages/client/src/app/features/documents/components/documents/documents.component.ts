@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
+import { FoldersService } from '../../services/folders.service';
 import { DocumentDrawerComponent, DocumentDrawerTab } from '../document-drawer/document-drawer.component';
 import { DocumentActionsComponent } from '../document-actions/document-actions.component';
+import { FolderTreeComponent } from '../folder-tree/folder-tree.component';
 import type {
   Document,
   DocumentBulkAction,
@@ -20,13 +22,14 @@ type DocumentGroup = { key: string; label: string | null; documents: Document[] 
 @Component({
   selector: 'binder-documents',
   standalone: true,
-  imports: [CommonModule, DocumentDrawerComponent, DocumentActionsComponent, TranslatePipe],
+  imports: [CommonModule, DocumentDrawerComponent, DocumentActionsComponent, FolderTreeComponent, TranslatePipe],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DocumentsComponent implements OnInit {
   readonly documents = inject(DocumentsService);
+  readonly folders = inject(FoldersService);
   private readonly i18n = inject(I18nService);
   private readonly document = inject(DOCUMENT);
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
@@ -45,6 +48,8 @@ export class DocumentsComponent implements OnInit {
   readonly selectedDocumentUuids = signal<Set<string>>(new Set());
   readonly bulkActionInProgress = signal<DocumentBulkAction | null>(null);
   readonly bulkActionResult = signal<DocumentBulkActionResponse | null>(null);
+  readonly folderActionInProgress = signal<'add' | 'remove' | null>(null);
+  readonly folderActionMessage = signal<string | null>(null);
   
   readonly drawerDocument = computed(() => {
     const uuid = this.drawerDocumentUuid();
@@ -76,7 +81,31 @@ export class DocumentsComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    void this.folders.loadChildren(null);
     void this.documents.load({ groupBy: this.groupMode() });
+  }
+
+  async selectFolder(folderUuid: string | null): Promise<void> {
+    if (!this.canLeaveMetadata()) return;
+    this.folders.select(folderUuid);
+    this.clearSelection();
+    await this.documents.load({ page: 1, folderUuid: folderUuid ?? undefined });
+  }
+
+  async changeFolderMembership(action: 'add' | 'remove'): Promise<void> {
+    const folderUuid = this.folders.selectedFolderUuid();
+    if (!folderUuid || this.selectedCount() === 0 || this.folderActionInProgress()) return;
+    this.folderActionInProgress.set(action);
+    this.folderActionMessage.set(null);
+    const result = action === 'add'
+      ? await this.folders.linkDocuments(folderUuid, [...this.selectedDocumentUuids()])
+      : await this.folders.unlinkDocuments(folderUuid, [...this.selectedDocumentUuids()]);
+    this.folderActionInProgress.set(null);
+    if (result) {
+      this.folderActionMessage.set(`${result.affected} ${action === 'add' ? 'document(s) added to' : 'document(s) removed from'} folder.`);
+      this.clearSelection();
+      await this.documents.load();
+    }
   }
 
   async fileSelected(event: Event): Promise<void> {

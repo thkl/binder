@@ -47,6 +47,29 @@ feature adapter translates tree selection, create, rename, move, and delete
 events into whitelisted Zod inputs. The tree must not know storage paths or
 construct unrestricted database filters.
 
+## First implementation
+
+The first implementation uses the same owner-scoped API boundary for every
+operation:
+
+- `GET /api/v1/folders?parentUuid=...` loads one level of the tree lazily;
+- `POST /api/v1/folders` creates a root or child folder;
+- `PATCH /api/v1/folders/:uuid` renames or reorders a folder;
+- `POST /api/v1/folders/:uuid/move` moves a folder after cycle validation;
+- `DELETE /api/v1/folders/:uuid` removes the folder links and promotes its
+  children to the parent level without deleting documents;
+- `POST` and `DELETE /api/v1/folders/:uuid/documents` link or unlink selected
+  documents.
+
+The document list accepts `folderUuid` and resolves membership through the
+folder link table. A folder never grants access to a document: both the folder
+and every linked document are checked against the authenticated owner.
+
+The current client renders a keyboard-operable lazy tree in the document
+sidebar. `agrid` remains a suitable future adapter if it is added as a
+workspace dependency; the API contract deliberately does not depend on a
+particular tree widget.
+
 The document drawer remains the document detail surface. A folder can be
 selected beside the document list, and linking/unlinking documents should be
 available through the same bulk-selection flow used elsewhere in the list.

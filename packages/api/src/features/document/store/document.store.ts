@@ -5,6 +5,7 @@ import { Document } from '../models/document.entity';
 import { DocumentPage } from '../models/document-page.entity';
 import { DocumentListQuery, DocumentSearchQuery } from '@binder/common';
 import { DocumentTagAssignment, DocumentMetadataValue, MetadataDefinition } from '../../metadata/models/vocabulary.entity';
+import { DocumentFolder } from '../../folder/models/document-folder.entity';
 
 @Injectable()
 export class DocumentStore extends BaseCrudStore<Document> {
@@ -15,6 +16,11 @@ export class DocumentStore extends BaseCrudStore<Document> {
 
   async findOwnedByUuid(ownerUuid: string, uuid: string): Promise<Document | null> {
     return this.model.findOne({ where: { uuid, ownerUuid } });
+  }
+
+  async findOwnedByUuids(ownerUuid: string, uuids: string[]): Promise<Document[]> {
+    if (uuids.length === 0) return [];
+    return this.model.findAll({ where: { ownerUuid, uuid: { [Op.in]: uuids } } });
   }
 
   async findOwnedPageText(ownerUuid: string, uuid: string) {
@@ -32,6 +38,14 @@ export class DocumentStore extends BaseCrudStore<Document> {
     }
     if (query.issuerUuid) {
       where.issuerUuid = query.issuerUuid;
+    }
+
+    if (query.folderUuid) {
+      const links = await DocumentFolder.findAll({
+        where: { folderUuid: query.folderUuid },
+        attributes: ['documentUuid']
+      });
+      where.uuid = { [Op.in]: links.map((link) => link.documentUuid) };
     }
 
     if (query.q) {
@@ -212,13 +226,20 @@ export class DocumentStore extends BaseCrudStore<Document> {
   }
 
   private async findMetadataMatches(ownerUuid: string, query: DocumentSearchQuery): Promise<string[] | null> {
-    const hasFilters = Boolean(query.status || query.issuerUuid || query.documentTypeUuid || query.categoryUuid || query.tagUuids?.length || query.metadata);
+    const hasFilters = Boolean(query.status || query.issuerUuid || query.documentTypeUuid || query.categoryUuid || query.folderUuid || query.tagUuids?.length || query.metadata);
     if (!hasFilters) return null;
     const documents = await this.model.findAll({
       where: { ownerUuid, ...(query.status ? { status: query.status } : {}) },
       attributes: ['uuid', 'issuerUuid', 'documentTypeUuid', 'categoryUuid']
     });
     let allowed = new Set(documents.map((document) => document.uuid));
+    if (query.folderUuid && allowed.size > 0) {
+      const links = await DocumentFolder.findAll({
+        where: { folderUuid: query.folderUuid, documentUuid: { [Op.in]: [...allowed] } },
+        attributes: ['documentUuid']
+      });
+      allowed = new Set(links.map((link) => link.documentUuid));
+    }
     if (query.issuerUuid || query.documentTypeUuid || query.categoryUuid) {
       const matching = documents.filter((document) =>
         (!query.issuerUuid || document.issuerUuid === query.issuerUuid) &&

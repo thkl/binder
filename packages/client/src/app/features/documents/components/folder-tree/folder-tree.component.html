@@ -1,0 +1,82 @@
+<aside class="folder-tree" aria-labelledby="folder-tree-title">
+  <header class="folder-tree-header">
+    <div>
+      <span class="folder-tree-kicker">{{ 'folders.kicker' | t }}</span>
+      <h3 id="folder-tree-title">{{ 'folders.title' | t }}</h3>
+    </div>
+    <button class="folder-icon-button" type="button" (click)="beginCreate(null)" [attr.aria-label]="'folders.newRoot' | t">+</button>
+  </header>
+
+  <p class="folder-tree-copy">{{ 'folders.copy' | t }}</p>
+
+  @if (folders.error(); as error) {
+    <div class="folder-tree-error" role="alert">{{ error }}</div>
+  }
+
+  @if (creatingParentUuid() !== undefined) {
+    <form class="folder-create-form" (submit)="$event.preventDefault(); create()">
+      <label for="new-folder-name">{{ creatingParentUuid() ? ('folders.newChild' | t) : ('folders.newRoot' | t) }}</label>
+      <div class="folder-form-row">
+        <input id="new-folder-name" [value]="createName()" (input)="createName.set($any($event.target).value)" maxlength="255" autocomplete="off" required>
+        <button type="submit" [disabled]="!createName().trim()">{{ 'folders.create' | t }}</button>
+        <button type="button" class="quiet" (click)="cancelCreate()">{{ 'folders.cancel' | t }}</button>
+      </div>
+    </form>
+  }
+
+  @if (movingUuid(); as movingUuid) {
+    <form class="folder-create-form" (submit)="$event.preventDefault(); move()">
+      <label for="move-folder-target">{{ 'folders.moveTo' | t }}</label>
+      <div class="folder-form-row">
+        <select id="move-folder-target" [value]="moveTargetUuid()" (change)="moveTargetUuid.set($any($event.target).value)">
+          <option value="">{{ 'folders.root' | t }}</option>
+          @for (target of folders.loadedFolders(); track target.uuid) {
+            @if (target.uuid !== movingUuid) {
+              <option [value]="target.uuid">{{ target.name }}</option>
+            }
+          }
+        </select>
+        <button type="submit">{{ 'folders.move' | t }}</button>
+        <button type="button" class="quiet" (click)="cancelMove()">{{ 'folders.cancel' | t }}</button>
+      </div>
+    </form>
+  }
+
+  <div class="folder-tree-list" role="tree" [attr.aria-label]="'folders.title' | t">
+    <button
+      class="folder-root-row"
+      type="button"
+      role="treeitem"
+      [class.selected]="folders.selectedFolderUuid() === null"
+      (click)="select(null)">
+      <span class="folder-disclosure empty" aria-hidden="true"></span>
+      <span class="folder-glyph" aria-hidden="true">/</span>
+      <span class="folder-label">{{ 'folders.allDocuments' | t }}</span>
+    </button>
+
+    @for (row of folders.rows(); track trackRow($index, row)) {
+      <div class="folder-row" [style.padding-left.rem]="0.7 + row.depth * 1.15" role="treeitem" [attr.aria-expanded]="row.folder.hasChildren ? row.expanded : null">
+        <button class="folder-disclosure" type="button" [disabled]="!row.folder.hasChildren" (click)="toggle(row)" [attr.aria-label]="row.expanded ? ('folders.collapse' | t) : ('folders.expand' | t)">
+          @if (row.folder.hasChildren) { <span [class.rotated]="row.expanded">›</span> }
+        </button>
+        <button class="folder-select" type="button" [class.selected]="folders.selectedFolderUuid() === row.folder.uuid" (click)="select(row.folder.uuid)">
+          <span class="folder-glyph" aria-hidden="true">□</span>
+          @if (editingUuid() === row.folder.uuid) {
+            <input class="folder-editor" [attr.data-folder-editor]="row.folder.uuid" [value]="row.folder.name" (blur)="finishRename(row.folder.uuid, $event)" (keydown)="handleRenameKeydown(row.folder.uuid, $event)" aria-label="Folder name">
+          } @else {
+            <span class="folder-label">{{ row.folder.name }}</span>
+            <span class="folder-count">{{ row.folder.documentCount }}</span>
+          }
+        </button>
+        <span class="folder-actions">
+          <button type="button" (click)="beginCreate(row.folder.uuid)" [attr.aria-label]="'folders.newChild' | t">+</button>
+          <button type="button" (click)="beginRename(row.folder.uuid, row.folder.name)" [attr.aria-label]="'folders.rename' | t">…</button>
+          <button type="button" (click)="beginMove(row.folder.uuid)" [attr.aria-label]="'folders.move' | t">↗</button>
+          <button type="button" class="danger" (click)="remove(row.folder.uuid, row.folder.name)" [attr.aria-label]="'folders.delete' | t">×</button>
+        </span>
+      </div>
+    } @empty {
+      <p class="folder-empty">{{ 'folders.empty' | t }}</p>
+    }
+  </div>
+</aside>

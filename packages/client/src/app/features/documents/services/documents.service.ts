@@ -43,6 +43,7 @@ export class DocumentsService {
       groupDirection: parsed.groupDirection
     });
     if (parsed.status) params.set('status', parsed.status);
+    if (parsed.folderUuid) params.set('folderUuid', parsed.folderUuid);
     if (parsed.q) params.set('q', parsed.q);
 
     try {
