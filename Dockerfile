@@ -45,12 +45,23 @@ FROM node:24-bookworm-slim AS worker
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
     ghostscript \
+    gnupg \
     ocrmypdf \
-    postgresql-client \
     tesseract-ocr \
     tesseract-ocr-deu \
     tesseract-ocr-eng \
+  && install -d /usr/share/postgresql-common/pgdg \
+  && curl --fail --silent --show-error --location \
+    https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+  && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+    > /etc/apt/sources.list.d/pgdg.list \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends postgresql-client-17 \
+  && pg_dump --version \
   && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
