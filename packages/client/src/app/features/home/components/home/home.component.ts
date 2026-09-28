@@ -55,6 +55,12 @@ export class HomeComponent {
 
   itemName(item: { name: string; translations: Record<string, string> }): string { return this.i18n.name(item); }
 
+  formatCustomMetadata(value: unknown): string {
+    if (Array.isArray(value)) return value.map((item) => this.formatCustomMetadata(item)).join(', ');
+    if (value !== null && typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  }
+
   async submitSearch(event: Event): Promise<void> {
     event.preventDefault();
     await this.search.search(this.searchQuery(), {

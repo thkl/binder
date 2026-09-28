@@ -121,7 +121,8 @@ export class MetadataService {
         translations: summary.category.translations ?? {}
       } : null,
       issuer: summary.issuer ? { uuid: summary.issuer.uuid, name: summary.issuer.name } : null,
-      tags: summary.tags.map((tag) => ({ uuid: tag.uuid, name: tag.name, translations: tag.translations ?? {} }))
+      tags: summary.tags.map((tag) => ({ uuid: tag.uuid, name: tag.name, translations: tag.translations ?? {} })),
+      custom: summary.custom
     })]));
   }
 

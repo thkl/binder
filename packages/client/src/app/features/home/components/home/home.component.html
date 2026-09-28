@@ -79,7 +79,7 @@
                     </span>
                   }
                 </small>
-                @if (item.document.metadataSummary.documentType || item.document.metadataSummary.category || item.document.metadataSummary.issuer || item.document.metadataSummary.tags.length > 0) {
+                @if (item.document.metadataSummary.documentType || item.document.metadataSummary.category || item.document.metadataSummary.issuer || item.document.metadataSummary.tags.length > 0 || item.document.metadataSummary.custom.length > 0) {
                   <div class="metadata-pills" [attr.aria-label]="'documents.metadata' | t">
                     @if (item.document.metadataSummary.documentType; as documentType) {
                       <span class="metadata-pill type-pill">{{ itemName(documentType) }}</span>
@@ -92,6 +92,11 @@
                     }
                     @for (tag of item.document.metadataSummary.tags; track tag.uuid) {
                       <span class="metadata-pill tag-pill">#{{ itemName(tag) }}</span>
+                    }
+                    @for (custom of item.document.metadataSummary.custom; track custom.key) {
+                      <span class="metadata-pill custom-pill" [attr.title]="custom.label + ': ' + formatCustomMetadata(custom.value)">
+                        {{ custom.label }}: {{ formatCustomMetadata(custom.value) }}
+                      </span>
                     }
                   </div>
                 }

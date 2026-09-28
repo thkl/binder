@@ -380,7 +380,7 @@ export class DocumentService {
       pageCount: document.pageCount || 1,
       issuerUuid: document.issuerUuid,
       isNew: document.isNew,
-      metadataSummary: metadataSummary ?? { documentType: null, category: null, issuer: null, tags: [] },
+      metadataSummary: metadataSummary ?? { documentType: null, category: null, issuer: null, tags: [], custom: [] },
       status: document.status,
       createdAt: document.createdAt.toISOString(),
       updatedAt: document.updatedAt.toISOString()

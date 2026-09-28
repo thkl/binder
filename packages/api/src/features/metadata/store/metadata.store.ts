@@ -69,17 +69,26 @@ export class MetadataStore {
   }
 
   async getDocumentMetadataSummaries(ownerUuid: string, documents: DocumentMetadataSummarySource[]) {
-    if (documents.length === 0) return new Map<string, { documentType: DocumentType | null; category: DocumentCategory | null; issuer: Issuer | null; tags: DocumentTag[] }>();
+    if (documents.length === 0) {
+      return new Map<string, {
+        documentType: DocumentType | null;
+        category: DocumentCategory | null;
+        issuer: Issuer | null;
+        tags: DocumentTag[];
+        custom: Array<{ key: string; label: string; value: unknown }>;
+      }>();
+    }
 
     const documentUuids = documents.map((document) => document.uuid);
     const typeUuids = documents.flatMap((document) => document.documentTypeUuid ?? []);
     const categoryUuids = documents.flatMap((document) => document.categoryUuid ?? []);
     const issuerUuids = documents.flatMap((document) => document.issuerUuid ?? []);
-    const [documentTypes, categories, issuers, assignments] = await Promise.all([
+    const [documentTypes, categories, issuers, assignments, definitions] = await Promise.all([
       typeUuids.length > 0 ? DocumentType.findAll({ where: { uuid: { [Op.in]: typeUuids }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } }) : [],
       categoryUuids.length > 0 ? DocumentCategory.findAll({ where: { uuid: { [Op.in]: categoryUuids }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } }) : [],
       issuerUuids.length > 0 ? Issuer.findAll({ where: { uuid: { [Op.in]: issuerUuids }, ownerUuid } }) : [],
-      DocumentTagAssignment.findAll({ where: { documentUuid: { [Op.in]: documentUuids } } })
+      DocumentTagAssignment.findAll({ where: { documentUuid: { [Op.in]: documentUuids } } }),
+      this.listDefinitions(ownerUuid)
     ]);
     const tagUuids = [...new Set(assignments.map((assignment) => assignment.tagUuid))];
     const tags = tagUuids.length > 0
@@ -95,11 +104,33 @@ export class MetadataStore {
       if (tag) tagsByDocument.set(assignment.documentUuid, [...(tagsByDocument.get(assignment.documentUuid) ?? []), tag]);
     }
 
+    const definitionUuids = definitions.map((definition) => definition.uuid);
+    const values = definitionUuids.length > 0
+      ? await DocumentMetadataValue.findAll({
+        where: {
+          documentUuid: { [Op.in]: documentUuids },
+          definitionUuid: { [Op.in]: definitionUuids }
+        }
+      })
+      : [];
+    const definitionsByUuid = new Map(definitions.map((definition) => [definition.uuid, definition]));
+    const customByDocument = new Map<string, Array<{ key: string; label: string; value: unknown }>>();
+    for (const item of values) {
+      const definition = definitionsByUuid.get(item.definitionUuid);
+      if (!definition || this.isEmptyMetadataValue(item.value)) continue;
+
+      customByDocument.set(item.documentUuid, [
+        ...(customByDocument.get(item.documentUuid) ?? []),
+        { key: definition.key, label: definition.label, value: item.value }
+      ]);
+    }
+
     return new Map(documents.map((document) => [document.uuid, {
       documentType: document.documentTypeUuid ? typesByUuid.get(document.documentTypeUuid) ?? null : null,
       category: document.categoryUuid ? categoriesByUuid.get(document.categoryUuid) ?? null : null,
       issuer: document.issuerUuid ? issuersByUuid.get(document.issuerUuid) ?? null : null,
-      tags: tagsByDocument.get(document.uuid) ?? []
+      tags: tagsByDocument.get(document.uuid) ?? [],
+      custom: customByDocument.get(document.uuid) ?? []
     }]));
   }
 
@@ -173,6 +204,13 @@ export class MetadataStore {
       const values = Array.isArray(value) ? value : [value];
       if (values.some((item) => !definition.options?.includes(String(item)))) throw new Error(`Metadata field '${definition.label}' has an invalid option`);
     }
+  }
+
+  private isEmptyMetadataValue(value: unknown): boolean {
+    return value === null
+      || value === undefined
+      || value === ''
+      || (Array.isArray(value) && value.length === 0);
   }
 
   async setDocumentMetadata(

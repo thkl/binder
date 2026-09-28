@@ -21,11 +21,19 @@ export const DocumentGroupIssuerValueSchema = z.object({
   name: z.string().trim().min(1).max(200)
 });
 
+export const DocumentCustomMetadataSummarySchema = z.object({
+  key: z.string().trim().min(1),
+  label: z.string().trim().min(1),
+  value: z.unknown()
+});
+export type DocumentCustomMetadataSummary = z.infer<typeof DocumentCustomMetadataSummarySchema>;
+
 export const DocumentMetadataSummarySchema = z.object({
   documentType: DocumentGroupVocabularyValueSchema.nullable(),
   category: DocumentGroupVocabularyValueSchema.nullable(),
   issuer: DocumentGroupIssuerValueSchema.nullable(),
-  tags: z.array(DocumentGroupVocabularyValueSchema)
+  tags: z.array(DocumentGroupVocabularyValueSchema),
+  custom: z.array(DocumentCustomMetadataSummarySchema).default([])
 });
 export type DocumentMetadataSummary = z.infer<typeof DocumentMetadataSummarySchema>;
 
