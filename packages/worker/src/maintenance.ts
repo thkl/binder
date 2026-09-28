@@ -135,7 +135,7 @@ export class MaintenanceScheduler {
   }
 
   private async createBackup(backupRoot: string): Promise<{ artifactName: string; sizeBytes: number }> {
-    await fs.mkdir(backupRoot, { recursive: true, mode: 0o700 });
+    await fs.mkdir(backupRoot, { recursive: true, mode: 0o770 });
 
     const artifactName = `binder-${this.timestamp(new Date())}.dump`;
     const temporaryPath = path.join(backupRoot, `.${artifactName}.${process.pid}.${randomUUID()}.tmp`);
@@ -155,7 +155,7 @@ export class MaintenanceScheduler {
       });
 
       if (stderr.trim()) logger.warn('pg_dump reported warnings', { stderr: stderr.trim().slice(0, 2000) });
-      await fs.chmod(temporaryPath, 0o600);
+      await fs.chmod(temporaryPath, 0o660);
       await fs.rename(temporaryPath, artifactPath);
       const stats = await fs.stat(artifactPath);
       await fs.writeFile(manifestPath, `${JSON.stringify({
@@ -167,7 +167,7 @@ export class MaintenanceScheduler {
         applicationVersion: process.env.APP_VERSION ?? 'unknown',
         artifactName,
         sizeBytes: stats.size
-      }, null, 2)}\n`, { mode: 0o600 });
+      }, null, 2)}\n`, { mode: 0o660 });
 
       return { artifactName, sizeBytes: stats.size };
     } catch (error) {
