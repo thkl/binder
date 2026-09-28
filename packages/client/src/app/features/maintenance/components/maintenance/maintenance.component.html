@@ -5,11 +5,21 @@
       <h2>{{ 'maintenance.title' | t }}</h2>
       <p class="muted">{{ 'maintenance.copy' | t }}</p>
     </div>
-    <button class="refresh-button" type="button" (click)="maintenance.load()" [disabled]="maintenance.loading()">
-      @if (maintenance.loading()) { <span class="spinner"></span> }
-      {{ maintenance.loading() ? ('maintenance.loading' | t) : ('maintenance.refresh' | t) }}
-    </button>
+    <div class="heading-actions">
+      <button class="run-button" type="button" (click)="requestBackup()" [disabled]="requestingBackup()">
+        @if (requestingBackup()) { <span class="spinner"></span> }
+        {{ requestingBackup() ? ('maintenance.requesting' | t) : ('maintenance.runNow' | t) }}
+      </button>
+      <button class="refresh-button" type="button" (click)="maintenance.load()" [disabled]="maintenance.loading()">
+        @if (maintenance.loading()) { <span class="spinner"></span> }
+        {{ maintenance.loading() ? ('maintenance.loading' | t) : ('maintenance.refresh' | t) }}
+      </button>
+    </div>
   </header>
+
+  @if (actionMessage(); as message) {
+    <div class="notice success" role="status">{{ message }}</div>
+  }
 
   @if (maintenance.error(); as error) {
     <div class="notice error" role="alert">{{ error }}</div>

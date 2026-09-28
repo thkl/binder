@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Op } from 'sequelize';
 import { BaseCrudStore } from '../../../shared/datastore/base-crud.store';
 import { MaintenanceRequest } from '../models/maintenance-request.entity';
 
@@ -17,7 +16,4 @@ export class MaintenanceRequestStore extends BaseCrudStore<MaintenanceRequest> {
     });
   }
 
-  async removePendingBackups(): Promise<number> {
-    return this.model.destroy({ where: { jobKey: { [Op.eq]: 'backup' } } });
-  }
 }

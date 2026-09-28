@@ -4,7 +4,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
 import { Op } from 'sequelize';
-import { ApplicationSetting, MaintenanceRun } from './models.js';
+import { ApplicationSetting, MaintenanceRequest, MaintenanceRun } from './models.js';
 import { sequelize } from './database.js';
 import { logger } from './logger.js';
 import { CronSchedule } from './maintenance-cron.js';
@@ -44,7 +44,7 @@ export class MaintenanceScheduler {
         error: this.errorMessage(error)
       });
     }
-    this.timer = setInterval(() => void this.triggerTick(), 60_000);
+    this.timer = setInterval(() => void this.triggerTick(), 5_000);
     logger.info('Worker maintenance scheduler started');
   }
 
@@ -69,6 +69,12 @@ export class MaintenanceScheduler {
 
     try {
       const settings = await this.loadSettings();
+      const manualRun = await this.claimManualBackup();
+      if (manualRun) {
+        await this.executeBackup(manualRun, settings.root);
+        return;
+      }
+
       if (!settings.enabled) return;
 
       const schedule = new CronSchedule(settings.schedule);
@@ -90,6 +96,10 @@ export class MaintenanceScheduler {
   private async runBackup(backupRoot: string, nextRunAt: Date | null): Promise<void> {
     if (await this.hasRunning('backup')) return;
     const run = await this.startRun('backup', nextRunAt);
+    await this.executeBackup(run, backupRoot);
+  }
+
+  private async executeBackup(run: MaintenanceRun, backupRoot: string): Promise<void> {
     const started = Date.now();
 
     try {
@@ -210,6 +220,27 @@ export class MaintenanceScheduler {
 
   private async hasRunning(jobKey: 'backup' | 'backup-retention'): Promise<boolean> {
     return Boolean(await MaintenanceRun.findOne({ where: { jobKey, status: 'running' } }));
+  }
+
+  private async claimManualBackup(): Promise<MaintenanceRun | null> {
+    return sequelize.transaction(async (transaction) => {
+      const request = await MaintenanceRequest.findOne({
+        where: { jobKey: 'backup' },
+        order: [['createdAt', 'ASC']],
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+        skipLocked: true
+      });
+      if (!request) return null;
+
+      const run = await MaintenanceRun.create({
+        uuid: randomUUID(), jobKey: 'backup', status: 'running', startedAt: new Date(), finishedAt: null,
+        nextRunAt: null, durationMs: null, artifactName: null, sizeBytes: null, deletedFiles: null, error: null
+      }, { transaction });
+      await request.destroy({ transaction });
+      logger.info('Claimed manual PostgreSQL backup request', { requestUuid: request.uuid, runUuid: run.uuid });
+      return run;
+    });
   }
 
   private startRun(jobKey: 'backup' | 'backup-retention', nextRunAt: Date | null): Promise<MaintenanceRun> {

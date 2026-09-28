@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import type { MaintenanceRun } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
@@ -15,6 +15,8 @@ import { MaintenanceService } from '../../services/maintenance.service';
 export class MaintenanceComponent implements OnInit {
   readonly maintenance = inject(MaintenanceService);
   readonly i18n = inject(I18nService);
+  readonly requestingBackup = signal(false);
+  readonly actionMessage = signal<string | null>(null);
   readonly latestRuns = computed(() => {
     const latest = new Map<string, MaintenanceRun>();
     for (const run of this.maintenance.status()?.items ?? []) {
@@ -25,6 +27,21 @@ export class MaintenanceComponent implements OnInit {
 
   ngOnInit(): void {
     void this.maintenance.load();
+  }
+
+  async requestBackup(): Promise<void> {
+    if (this.requestingBackup()) return;
+
+    this.requestingBackup.set(true);
+    this.actionMessage.set(null);
+    const requestUuid = await this.maintenance.requestBackup();
+    this.requestingBackup.set(false);
+
+    if (!requestUuid) return;
+
+    this.actionMessage.set(this.i18n.t('maintenance.requested'));
+    await this.maintenance.load();
+    window.setTimeout(() => void this.maintenance.load(), 3_000);
   }
 
   jobLabel(jobKey: MaintenanceRun['jobKey']): string {

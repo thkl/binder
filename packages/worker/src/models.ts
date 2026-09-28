@@ -71,6 +71,19 @@ export class MaintenanceRun extends Model {
   @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
 }
 
+@Table({ tableName: 'maintenance_requests', underscored: true, timestamps: true })
+export class MaintenanceRequest extends Model {
+  @PrimaryKey @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ field: 'job_key', type: DataType.STRING(64) })
+  declare jobKey: 'backup';
+
+  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
+  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
+}
+
 @Table({ tableName: 'users', timestamps: false })
 export class User extends Model {
   @PrimaryKey

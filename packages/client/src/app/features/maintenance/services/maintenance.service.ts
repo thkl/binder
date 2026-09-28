@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { ApiResponse, MaintenanceStatusResponse, MaintenanceStatusResponseSchema } from '@binder/common';
+import { ApiResponse, MaintenanceRequestResponseSchema, MaintenanceStatusResponse, MaintenanceStatusResponseSchema } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
 
@@ -28,9 +28,25 @@ export class MaintenanceService {
     }
   }
 
+  async requestBackup(): Promise<string | null> {
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(this.application.getApiUrl('v1', 'maintenance/backup'), {}, { withCredentials: true })
+      );
+      return MaintenanceRequestResponseSchema.parse(response.data).uuid;
+    } catch (error) {
+      this.error.set(this.errorMessage(error));
+      return null;
+    }
+  }
+
   private errorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse && error.status === 401) {
       return 'Your session has expired. Please sign in again.';
+    }
+    if (error instanceof HttpErrorResponse && error.status === 409) {
+      return 'A database backup is already queued or running.';
     }
     if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
       return error.error.message;
