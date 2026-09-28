@@ -17,4 +17,8 @@ export class MaintenanceRunStore extends BaseCrudStore<MaintenanceRun> {
       limit
     });
   }
+
+  findRunning(jobKey: MaintenanceRun['jobKey']): Promise<MaintenanceRun | null> {
+    return this.model.findOne({ where: { jobKey, status: 'running' } });
+  }
 }

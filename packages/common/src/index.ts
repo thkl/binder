@@ -39,6 +39,11 @@ export const MaintenanceStatusResponseSchema = z.object({
 });
 export type MaintenanceStatusResponse = z.infer<typeof MaintenanceStatusResponseSchema>;
 
+export const MaintenanceRequestResponseSchema = z.object({
+  uuid: z.uuid()
+});
+export type MaintenanceRequestResponse = z.infer<typeof MaintenanceRequestResponseSchema>;
+
 export const DocumentGroupVocabularyValueSchema = z.object({
   uuid: z.uuid(),
   name: z.string().trim().min(1).max(150),

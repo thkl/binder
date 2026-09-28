@@ -209,6 +209,14 @@
                "required": [
                     "settings"
                ]
+          },
+          "34": {
+               "created": [
+                    "maintenance_requests"
+               ],
+               "required": [
+                    "maintenance_runs"
+               ]
           }
      }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { ScopeGuard } from '../../../shared/guards/scope.guard';
@@ -16,5 +16,11 @@ export class MaintenanceController {
   @Get('status')
   async status() {
     return { data: await this.maintenance.getStatus() };
+  }
+
+  @Post('backup')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async requestBackup() {
+    return { data: await this.maintenance.requestBackup() };
   }
 }
