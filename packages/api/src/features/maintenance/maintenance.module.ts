@@ -3,9 +3,10 @@ import { AuthenticationServiceModule } from '../authentication/authentication.se
 import { MaintenanceController } from './controller/maintenance.controller';
 import { MaintenanceService } from './service/maintenance.service';
 import { MaintenanceRunStore } from './store/maintenance-run.store';
+import { SharedModule } from '../../shared/shared.service.module';
 
 @Module({
-  imports: [AuthenticationServiceModule],
+  imports: [AuthenticationServiceModule, SharedModule],
   controllers: [MaintenanceController],
   providers: [MaintenanceService, MaintenanceRunStore]
 })

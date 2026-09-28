@@ -1,21 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { MaintenanceStatusResponseSchema } from '@binder/common';
-import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { MaintenanceRunStore } from '../store/maintenance-run.store';
+import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 
 @Injectable()
 export class MaintenanceService {
   constructor(
     private readonly runs: MaintenanceRunStore,
-    private readonly config: ConfigService<BinderConfig>
+    private readonly settings: ApplicationSettingsService
   ) {}
 
   async getStatus() {
     const items = await this.runs.listRecent();
 
     return MaintenanceStatusResponseSchema.parse({
-      backupRootConfigured: Boolean(this.config.get<string>(ConfigKeys.BACKUP_ROOT_PATH)),
+      backupRootConfigured: Boolean((await this.settings.get('backup.root'))?.trim()),
       items: items.map((item) => ({
         uuid: item.uuid,
         jobKey: item.jobKey,

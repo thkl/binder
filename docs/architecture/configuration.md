@@ -21,15 +21,18 @@ The client path is derived from `APP_ROOT_PATH` as `<APP_ROOT_PATH>/client`.
 The following settings are seeded into the `settings` table and managed through the Settings UI:
 
 - `documents.storageRoot`
+- `backup.root`
 - `documents.maxUploadBytes`
 - `pipeline.pollIntervalMs`
 - `pipeline.lockTimeoutMs`
 - `pipeline.reconcileIntervalMs`
+- `inbox.path` and the other inbox runtime settings
 - OIDC settings
 
 The API uses safe defaults when a runtime setting is not present. The worker loads the runtime values after connecting to PostgreSQL. Relative storage paths are resolved against `APP_ROOT_PATH`, which keeps the API and worker on the same shared storage path in containers.
 
-The worker uses `BACKUP_ROOT_PATH` for PostgreSQL dump files and `PG_DUMP_PATH`
-to override the `pg_dump` executable when needed. Backup scheduling and
-retention are runtime settings in PostgreSQL; the destination remains
-deployment configuration.
+The worker uses the database setting `backup.root` for PostgreSQL dump files.
+It should normally be an absolute path such as `/app/backup`; relative values
+remain supported and are resolved against `APP_ROOT_PATH` for compatibility.
+`PG_DUMP_PATH` only overrides the `pg_dump` executable when needed. Backup
+scheduling, retention, and destination are runtime settings in PostgreSQL.

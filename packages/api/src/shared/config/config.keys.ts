@@ -22,7 +22,6 @@ export const ConfigKeys = {
   ROOT_URI: 'ROOT_URI',
   NODE_ENV: 'NODE_ENV',
   DOCUMENT_STORAGE_ROOT:'DOCUMENT_STORAGE_ROOT', // this only exists in dev
-  BACKUP_ROOT_PATH: 'BACKUP_ROOT_PATH',
   PG_DUMP_PATH: 'PG_DUMP_PATH',
   
   
@@ -52,6 +51,5 @@ export interface BinderConfig {
   SESSION_SECRET: string;
   SESSION_TTL_MS?: string;
   DOCUMENT_STORAGE_ROOT?:string;
-  BACKUP_ROOT_PATH?: string;
   PG_DUMP_PATH?: string;
 }

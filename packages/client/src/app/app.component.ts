@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, signal } from '@angular/core';
 import { AuthService } from './features/authentication/services/auth.service';
 import { ChangePasswordComponent } from './features/authentication/components/change-password/change-password.component';
 import { LoginComponent } from './features/authentication/components/login/login.component';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { I18nService, TranslatePipe } from './common/i18n/i18n.service';
+
+type NavigationMenu = 'documents' | 'settings';
 
 @Component({
   selector: 'binder-root',
@@ -14,6 +16,8 @@ import { I18nService, TranslatePipe } from './common/i18n/i18n.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent implements OnInit {
+  readonly openMenu = signal<NavigationMenu | null>(null);
+
   constructor(readonly auth: AuthService, readonly i18n: I18nService) {}
 
   ngOnInit(): void {
@@ -26,5 +30,22 @@ export class AppComponent implements OnInit {
 
   setLanguage(language: 'en' | 'de'): void {
     this.i18n.setLanguage(language);
+  }
+
+  toggleMenu(menu: NavigationMenu, event: Event): void {
+    event.stopPropagation();
+    this.openMenu.update((current) => current === menu ? null : menu);
+  }
+
+  closeMenu(): void {
+    this.openMenu.set(null);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target;
+    if (target instanceof Element && !target.closest('.nav-menu')) {
+      this.closeMenu();
+    }
   }
 }

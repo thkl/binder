@@ -32,7 +32,6 @@ services:
       DATABASE_NAME: binder
       DATABASE_USER: binder
       DATABASE_PASSWORD: binder
-      BACKUP_ROOT_PATH: /backup
     depends_on:
       postgres:
         condition: service_healthy
@@ -62,14 +61,13 @@ services:
       DATABASE_USER: binder
       DATABASE_PASSWORD: binder
       APP_ROOT_PATH: /app
-      BACKUP_ROOT_PATH: /backup
     depends_on:
       api:
         condition: service_healthy
     volumes:
       - binder-document-storage:/app/storage
       - binder-logs:/app/logs
-      - binder-backup-data:/backup
+      - binder-backup-data:/app/backup
 
 volumes:
   binder-postgres-data:

@@ -79,8 +79,10 @@ The next maintenance jobs are planned as:
 - temporary/derived-file cleanup after a configurable age
 - document-storage consistency audit
 
-Backup destination, database connection, and encryption-related deployment
-values remain deployment configuration. Schedule, retention, enabled state, and
-maintenance thresholds belong in runtime settings once the database is
-available. A failed backup must be visible and must not be treated as a
-successful maintenance run.
+The backup destination is the database setting `backup.root` and should be an
+absolute path such as `/app/backup`. This allows Docker to mount a dedicated
+volume at that path without adding another destination environment variable.
+Database connection and encryption-related bootstrap values remain deployment
+configuration. Schedule, retention, and enabled state belong in runtime
+settings once the database is available. A failed backup must be visible and
+must not be treated as a successful maintenance run.

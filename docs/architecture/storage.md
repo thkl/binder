@@ -55,10 +55,24 @@ Processing must not begin until the configured malware-scanning policy has accep
 
 ## Configuration
 
-The initial configuration should be environment-based:
+The initial bootstrap configuration contains only the application root and
+database access. Runtime filesystem paths are stored in PostgreSQL settings:
 
 ```text
-DOCUMENT_STORAGE_ROOT=./storage
+documents.storageRoot=/app
+inbox.path=/app/documents/inbox
+backup.root=/app/backup
+```
+
+With the current storage-key format (`documents/YYYY/MM/<id>.pdf`), using
+`documents.storageRoot=/app` places raw documents in `/app/documents` while
+keeping derived files under the same application storage base. Absolute paths
+are recommended for deployments; relative values remain supported for existing
+installations.
+
+The remaining document defaults are:
+
+```text
 DOCUMENT_MAX_UPLOAD_BYTES=52428800
 DOCUMENT_ALLOWED_EXTENSIONS=pdf,jpg,jpeg,png,txt
 DOCUMENT_KEEP_DERIVED_FILES=true
@@ -69,7 +83,7 @@ Runtime inbox settings are stored in PostgreSQL and editable by an administrator
 
 ```text
 inbox.enabled=false
-inbox.path=inbox
+inbox.path=/app/documents/inbox
 inbox.importOwnerUuid=<internal user UUID>
 inbox.pollIntervalMs=5000
 inbox.stabilityMs=2000

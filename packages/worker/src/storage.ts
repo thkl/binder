@@ -5,7 +5,7 @@ import { config } from './config.js';
 import { Document } from './models.js';
 
 export function resolveStoragePath(storageKey: string): string {
-  const absolute = normalize(join(config.storageRoot, storageKey));
+  const absolute = normalize(isAbsolute(storageKey) ? storageKey : join(config.storageRoot, storageKey));
   const rel = relative(config.storageRoot, absolute);
   if (rel.startsWith('..') || isAbsolute(rel)) throw new Error('Invalid document storage path');
   return absolute;

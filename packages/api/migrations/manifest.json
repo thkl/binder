@@ -204,6 +204,11 @@
                "required": [
                     "settings"
                ]
+          },
+          "33": {
+               "required": [
+                    "settings"
+               ]
           }
      }
 }

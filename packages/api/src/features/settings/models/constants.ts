@@ -33,6 +33,10 @@ export const settingsSections: SettingsSection[] = [
 
 export const settingsMap: SettingsMapItem[] = [
   {
+    key: 'backup.root', valueFrom: 'backup.root', encrypted: false, default: '/app/backup',
+    label: 'Backup root path', type: 'text', required: true, section: 'maintenance',
+  },
+  {
     key: 'backup.enabled', valueFrom: 'backup.enabled', encrypted: false, default: false,
     label: 'Enable scheduled backups', type: 'checkbox', section: 'maintenance',
   },
@@ -53,7 +57,7 @@ export const settingsMap: SettingsMapItem[] = [
     valueFrom: 'documents.storageRoot',
     encrypted: false,
     default: '',
-    label: 'Storage root',
+    label: 'Storage root (absolute or application base path)',
     type: 'text',
     required: false,
     section: 'documents',
@@ -104,7 +108,7 @@ export const settingsMap: SettingsMapItem[] = [
   },
   {
     key: 'inbox.path', valueFrom: 'inbox.path', encrypted: false, default: 'inbox',
-    label: 'Inbox path (relative to storage root)', type: 'text', required: true, section: 'documents',
+    label: 'Inbox path (absolute or relative to storage root)', type: 'text', required: true, section: 'documents',
   },
   {
     key: 'inbox.importOwnerUuid', valueFrom: 'inbox.importOwnerUuid', encrypted: false, default: '',

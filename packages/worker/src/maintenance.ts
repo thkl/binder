@@ -13,6 +13,7 @@ const execFileAsync = promisify(execFile);
 const BACKUP_NAME = /^binder-\d{8}-\d{6}\.dump$/;
 
 interface MaintenanceSettings {
+  root: string;
   enabled: boolean;
   schedule: string;
   retentionDays: number;
@@ -20,6 +21,7 @@ interface MaintenanceSettings {
 }
 
 const DEFAULT_SETTINGS: MaintenanceSettings = {
+  root: path.resolve(process.env.APP_ROOT_PATH ?? process.cwd(), 'backup'),
   enabled: false,
   schedule: '0 2 * * *',
   retentionDays: 30,
@@ -76,8 +78,8 @@ export class MaintenanceScheduler {
 
       this.lastTriggeredMinute = minute;
       const nextRunAt = schedule.nextOccurrence(now, settings.timezone);
-      await this.runBackup(nextRunAt);
-      await this.runRetention(settings, nextRunAt);
+      await this.runBackup(settings.root, nextRunAt);
+      await this.runRetention(settings.root, settings.retentionDays, nextRunAt);
     } catch (error) {
       logger.error('Maintenance tick failed; will retry', { error: this.errorMessage(error) });
     } finally {
@@ -85,13 +87,13 @@ export class MaintenanceScheduler {
     }
   }
 
-  private async runBackup(nextRunAt: Date | null): Promise<void> {
+  private async runBackup(backupRoot: string, nextRunAt: Date | null): Promise<void> {
     if (await this.hasRunning('backup')) return;
     const run = await this.startRun('backup', nextRunAt);
     const started = Date.now();
 
     try {
-      const result = await this.createBackup();
+      const result = await this.createBackup(backupRoot);
       await run.update({
         status: 'succeeded',
         finishedAt: new Date(),
@@ -107,23 +109,22 @@ export class MaintenanceScheduler {
     }
   }
 
-  private async runRetention(settings: MaintenanceSettings, nextRunAt: Date | null): Promise<void> {
+  private async runRetention(backupRoot: string, retentionDays: number, nextRunAt: Date | null): Promise<void> {
     if (await this.hasRunning('backup-retention')) return;
     const run = await this.startRun('backup-retention', nextRunAt);
     const started = Date.now();
 
     try {
-      const deletedFiles = await this.removeExpired(settings.retentionDays);
+      const deletedFiles = await this.removeExpired(backupRoot, retentionDays);
       await run.update({ status: 'succeeded', finishedAt: new Date(), durationMs: Date.now() - started, deletedFiles, error: null });
-      logger.info('Backup retention cleanup completed', { deletedFiles, retentionDays: settings.retentionDays });
+      logger.info('Backup retention cleanup completed', { deletedFiles, retentionDays });
     } catch (error) {
       await run.update({ status: 'failed', finishedAt: new Date(), durationMs: Date.now() - started, error: this.errorMessage(error) });
       logger.error('Backup retention cleanup failed', { error: this.errorMessage(error) });
     }
   }
 
-  private async createBackup(): Promise<{ artifactName: string; sizeBytes: number }> {
-    const backupRoot = this.requireBackupRoot();
+  private async createBackup(backupRoot: string): Promise<{ artifactName: string; sizeBytes: number }> {
     await fs.mkdir(backupRoot, { recursive: true, mode: 0o700 });
 
     const artifactName = `binder-${this.timestamp(new Date())}.dump`;
@@ -165,8 +166,7 @@ export class MaintenanceScheduler {
     }
   }
 
-  private async removeExpired(retentionDays: number): Promise<number> {
-    const backupRoot = this.requireBackupRoot();
+  private async removeExpired(backupRoot: string, retentionDays: number): Promise<number> {
     const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
     const entries = await fs.readdir(backupRoot, { withFileTypes: true }).catch(() => []);
     let deletedFiles = 0;
@@ -185,12 +185,13 @@ export class MaintenanceScheduler {
 
   private async loadSettings(): Promise<MaintenanceSettings> {
     const settings = await ApplicationSetting.findAll({
-      where: { key: { [Op.in]: ['backup.enabled', 'backup.schedule', 'backup.retentionDays', 'maintenance.timezone'] } }
+      where: { key: { [Op.in]: ['backup.root', 'backup.enabled', 'backup.schedule', 'backup.retentionDays', 'maintenance.timezone'] } }
     });
     const values = new Map(settings.map((setting) => [setting.key, setting.value]));
     const retentionDays = Number(values.get('backup.retentionDays'));
 
     return {
+      root: this.resolveConfiguredPath(values.get('backup.root')?.trim() || DEFAULT_SETTINGS.root),
       enabled: values.get('backup.enabled') === undefined ? DEFAULT_SETTINGS.enabled : values.get('backup.enabled')?.toLowerCase() === 'true',
       schedule: values.get('backup.schedule')?.trim() || DEFAULT_SETTINGS.schedule,
       retentionDays: Number.isInteger(retentionDays) && retentionDays > 0 ? retentionDays : DEFAULT_SETTINGS.retentionDays,
@@ -218,10 +219,10 @@ export class MaintenanceScheduler {
     } as never);
   }
 
-  private requireBackupRoot(): string {
-    const backupRoot = process.env.BACKUP_ROOT_PATH?.trim();
-    if (!backupRoot) throw new Error('BACKUP_ROOT_PATH is not configured');
-    return path.resolve(backupRoot);
+  private resolveConfiguredPath(configuredPath: string): string {
+    return path.isAbsolute(configuredPath)
+      ? path.normalize(configuredPath)
+      : path.resolve(process.env.APP_ROOT_PATH ?? process.cwd(), configuredPath);
   }
 
   private timestamp(date: Date): string {

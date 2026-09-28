@@ -17,36 +17,52 @@
         </div>
       </div>
       <div class="topbar-actions">
-        <details class="nav-menu">
-          <summary class="nav-link">
+        <div class="nav-menu" [class.is-open]="openMenu() === 'documents'">
+          <button
+            class="nav-link nav-menu-toggle"
+            type="button"
+            aria-haspopup="true"
+            aria-controls="documents-menu"
+            [attr.aria-expanded]="openMenu() === 'documents'"
+            (click)="toggleMenu('documents', $event)">
             {{ 'nav.documents' | t }}
             <span class="menu-caret" aria-hidden="true">⌄</span>
-          </summary>
-          <nav class="nav-panel" [attr.aria-label]="'nav.documents' | t">
-            <a class="nav-menu-link" routerLink="/documents" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          </button>
+          @if (openMenu() === 'documents') {
+            <nav class="nav-panel" id="documents-menu" [attr.aria-label]="'nav.documents' | t">
+              <a class="nav-menu-link" routerLink="/documents" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
               {{ 'nav.documentList' | t }}
-            </a>
-            @if (auth.user()?.isAdmin) {
-              <a class="nav-menu-link" routerLink="/inbox" routerLinkActive="active">{{ 'nav.inbox' | t }}</a>
-            }
-          </nav>
-        </details>
-        <details class="nav-menu">
-          <summary class="nav-link">
+              </a>
+              @if (auth.user()?.isAdmin) {
+                <a class="nav-menu-link" routerLink="/inbox" routerLinkActive="active" (click)="closeMenu()">{{ 'nav.inbox' | t }}</a>
+              }
+            </nav>
+          }
+        </div>
+        <div class="nav-menu" [class.is-open]="openMenu() === 'settings'">
+          <button
+            class="nav-link nav-menu-toggle"
+            type="button"
+            aria-haspopup="true"
+            aria-controls="settings-menu"
+            [attr.aria-expanded]="openMenu() === 'settings'"
+            (click)="toggleMenu('settings', $event)">
             {{ 'nav.settings' | t }}
             <span class="menu-caret" aria-hidden="true">⌄</span>
-          </summary>
-          <nav class="nav-panel" [attr.aria-label]="'nav.settings' | t">
-            @if (auth.user()?.isAdmin) {
-              <a class="nav-menu-link" routerLink="/settings/common" routerLinkActive="active">{{ 'nav.applicationSettings' | t }}</a>
-            }
-            <a class="nav-menu-link" routerLink="/metadata" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{ 'nav.metadata' | t }}</a>
-            @if (auth.user()?.isAdmin) {
-              <a class="nav-menu-link" routerLink="/logs" routerLinkActive="active">{{ 'nav.logs' | t }}</a>
-              <a class="nav-menu-link" routerLink="/maintenance" routerLinkActive="active">{{ 'nav.maintenance' | t }}</a>
-            }
-          </nav>
-        </details>
+          </button>
+          @if (openMenu() === 'settings') {
+            <nav class="nav-panel" id="settings-menu" [attr.aria-label]="'nav.settings' | t">
+              @if (auth.user()?.isAdmin) {
+                <a class="nav-menu-link" routerLink="/settings/common" routerLinkActive="active" (click)="closeMenu()">{{ 'nav.applicationSettings' | t }}</a>
+              }
+              <a class="nav-menu-link" routerLink="/metadata" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">{{ 'nav.metadata' | t }}</a>
+              @if (auth.user()?.isAdmin) {
+                <a class="nav-menu-link" routerLink="/logs" routerLinkActive="active" (click)="closeMenu()">{{ 'nav.logs' | t }}</a>
+                <a class="nav-menu-link" routerLink="/maintenance" routerLinkActive="active" (click)="closeMenu()">{{ 'nav.maintenance' | t }}</a>
+              }
+            </nav>
+          }
+        </div>
         <div class="language-switcher" aria-label="Language">
           <button type="button" [class.active]="i18n.language() === 'en'" (click)="setLanguage('en')">EN</button>
           <button type="button" [class.active]="i18n.language() === 'de'" (click)="setLanguage('de')">DE</button>
