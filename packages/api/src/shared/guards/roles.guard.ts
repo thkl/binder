@@ -25,10 +25,10 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     // Get required roles from @Roles() decorator
-    const requiredRoles = this.reflector.get<string[]>(
-      'roles',
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
       context.getHandler(),
-    );
+      context.getClass(),
+    ]);
 
     // If no roles specified, allow access (will be protected by JwtAuthGuard)
     if (!requiredRoles) {

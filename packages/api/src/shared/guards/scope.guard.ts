@@ -26,9 +26,9 @@ export class ScopeGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     // Get required scopes from @Scopes() decorator
-    const requiredScopes = this.reflector.get<string[]>(
+    const requiredScopes = this.reflector.getAllAndOverride<string[]>(
       'scopes',
-      context.getHandler(),
+      [context.getHandler(), context.getClass()],
     );
 
     // If no scopes specified, DENY access (require explicit @Scopes decorator)

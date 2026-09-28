@@ -5,7 +5,7 @@ type TranslationMap = Record<string, string>;
 
 const EN: TranslationMap = {
   'app.loading': 'Loading your workspace…', 'app.privateCloud': 'BINDER / DOCUMENTS', 'app.vault': 'Document workspace',
-  'nav.inbox': 'Inbox', 'nav.documents': 'Documents', 'nav.metadata': 'Metadata', 'nav.settings': 'Settings', 'nav.logs': 'Logs', 'nav.maintenance': 'Maintenance', 'nav.signOut': 'Sign out',
+  'nav.inbox': 'Inbox', 'nav.documents': 'Documents', 'nav.documentList': 'Document list', 'nav.metadata': 'Metadata', 'nav.settings': 'Settings', 'nav.applicationSettings': 'Application settings', 'nav.logs': 'Logs', 'nav.maintenance': 'Maintenance', 'nav.signOut': 'Sign out',
   'language.english': 'English', 'language.german': 'German',
   'login.privateIntelligence': 'DOCUMENT MANAGEMENT', 'login.headline': 'Your documents.\nOrganized.',
   'login.copy': 'Store, organize, and search your documents in one place. Files remain in your configured storage.',
@@ -55,7 +55,7 @@ const EN: TranslationMap = {
 
 const DE: TranslationMap = {
   'app.loading': 'Arbeitsbereich wird gesichert…', 'app.privateCloud': 'BINDER / PRIVATE CLOUD', 'app.vault': 'Ihr Dokumentenarchiv',
-  'nav.inbox': 'Inbox', 'nav.documents': 'Dokumente', 'nav.metadata': 'Metadaten', 'nav.settings': 'Einstellungen', 'nav.logs': 'Protokolle', 'nav.maintenance': 'Wartung', 'nav.signOut': 'Abmelden',
+  'nav.inbox': 'Inbox', 'nav.documents': 'Dokumente', 'nav.documentList': 'Dokumentenliste', 'nav.metadata': 'Metadaten', 'nav.settings': 'Einstellungen', 'nav.applicationSettings': 'Anwendungseinstellungen', 'nav.logs': 'Protokolle', 'nav.maintenance': 'Wartung', 'nav.signOut': 'Abmelden',
   'language.english': 'Englisch', 'language.german': 'Deutsch',
   'login.privateIntelligence': 'PRIVATE DOKUMENTENINTELLIGENZ', 'login.headline': 'Ihre Dokumente.\nUnter Kontrolle.',
   'login.copy': 'Ein ruhiger, sicherer Ort für wichtige Dokumente. Natürlich suchen, Eigentümerschaft klar halten und für alles Kommende bereit sein.',
