@@ -10,6 +10,35 @@ export const DocumentStatusSchema = z.enum([
 
 export type DocumentStatus = z.infer<typeof DocumentStatusSchema>;
 
+export const MaintenanceJobSchema = z.enum(['backup', 'backup-retention']);
+export type MaintenanceJob = z.infer<typeof MaintenanceJobSchema>;
+
+export const MaintenanceRunStatusSchema = z.enum(['running', 'succeeded', 'failed']);
+export type MaintenanceRunStatus = z.infer<typeof MaintenanceRunStatusSchema>;
+
+export const MaintenanceRunSchema = z.object({
+  uuid: z.uuid(),
+  jobKey: MaintenanceJobSchema,
+  status: MaintenanceRunStatusSchema,
+  startedAt: z.iso.datetime(),
+  finishedAt: z.iso.datetime().nullable(),
+  nextRunAt: z.iso.datetime().nullable(),
+  durationMs: z.number().int().nonnegative().nullable(),
+  artifactName: z.string().nullable(),
+  sizeBytes: z.number().int().nonnegative().nullable(),
+  deletedFiles: z.number().int().nonnegative().nullable(),
+  error: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime()
+});
+export type MaintenanceRun = z.infer<typeof MaintenanceRunSchema>;
+
+export const MaintenanceStatusResponseSchema = z.object({
+  backupRootConfigured: z.boolean(),
+  items: z.array(MaintenanceRunSchema)
+});
+export type MaintenanceStatusResponse = z.infer<typeof MaintenanceStatusResponseSchema>;
+
 export const DocumentGroupVocabularyValueSchema = z.object({
   uuid: z.uuid(),
   name: z.string().trim().min(1).max(150),

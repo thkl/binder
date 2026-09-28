@@ -31,6 +31,46 @@ export class ApplicationSetting extends Model {
   declare valueIv: string | null;
 }
 
+@Table({ tableName: 'maintenance_runs', underscored: true, timestamps: true })
+export class MaintenanceRun extends Model {
+  @PrimaryKey @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ field: 'job_key', type: DataType.STRING(64) })
+  declare jobKey: 'backup' | 'backup-retention';
+
+  @Column({ type: DataType.STRING(32) })
+  declare status: 'running' | 'succeeded' | 'failed';
+
+  @Column({ field: 'started_at', type: DataType.DATE })
+  declare startedAt: Date;
+
+  @Column({ field: 'finished_at', type: DataType.DATE, allowNull: true })
+  declare finishedAt: Date | null;
+
+  @Column({ field: 'next_run_at', type: DataType.DATE, allowNull: true })
+  declare nextRunAt: Date | null;
+
+  @Column({ field: 'duration_ms', type: DataType.INTEGER, allowNull: true })
+  declare durationMs: number | null;
+
+  @Column({ field: 'artifact_name', type: DataType.STRING(255), allowNull: true })
+  declare artifactName: string | null;
+
+  @Column({ field: 'size_bytes', type: DataType.BIGINT, allowNull: true })
+  declare sizeBytes: number | null;
+
+  @Column({ field: 'deleted_files', type: DataType.INTEGER, allowNull: true })
+  declare deletedFiles: number | null;
+
+  @Column({ type: DataType.TEXT, allowNull: true })
+  declare error: string | null;
+
+  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
+  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
+}
+
 @Table({ tableName: 'users', timestamps: false })
 export class User extends Model {
   @PrimaryKey

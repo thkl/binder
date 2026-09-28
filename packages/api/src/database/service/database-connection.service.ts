@@ -18,6 +18,7 @@ import { DocumentCategory, DocumentTag, DocumentTagAssignment, DocumentType } fr
 import { DocumentMetadataValue, MetadataDefinition } from '../../features/metadata/models/vocabulary.entity';
 import { InboxItem } from '../../features/inbox/models/inbox-item.entity';
 import { Issuer } from '../../features/issuer/models/issuer.entity';
+import { MaintenanceRun } from '../../features/maintenance/models/maintenance-run.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -48,7 +49,7 @@ export class DatabaseConnectionService {
         this.registerModels([
             User, ApplicationSetting, Document, DocumentPage, DocumentEmbedding, PipelineJob, PipelineJobEvent,
             DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment,
-            MetadataDefinition, DocumentMetadataValue, InboxItem, Issuer
+            MetadataDefinition, DocumentMetadataValue, InboxItem, Issuer, MaintenanceRun
         ]);
         await this.initialize();
     }

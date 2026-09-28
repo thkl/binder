@@ -40,4 +40,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-P0 and P1 are implemented. The first P2 slice is implemented: inbox-folder import, duplicate handling, automatic pipeline handoff, high-confidence classification, issuer matching, and live inbox updates are in place. The next P2 work is general document bulk actions, followed by saved searches, database backup/restore with scheduled maintenance, and then hardening/security verification. Email and scanner ingestion have moved to P3, alongside multiple configurable AI providers.
+P0 and P1 are implemented. The first P2 slice is implemented: inbox-folder import, duplicate handling, automatic pipeline handoff, high-confidence classification, issuer matching, and live inbox updates are in place. Bulk document actions are also available. Current P2 work starts with database backup and scheduled retention maintenance, followed by virtual folders, ZIP exports, saved searches, and hardening/security verification. Email and scanner ingestion have moved to P3, alongside multiple configurable AI providers.

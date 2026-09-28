@@ -25,9 +25,29 @@ export const settingsSections: SettingsSection[] = [
     key: 'ai',
     label: 'AI assistance',
   },
+  {
+    key: 'maintenance',
+    label: 'Backup and maintenance',
+  },
 ];
 
 export const settingsMap: SettingsMapItem[] = [
+  {
+    key: 'backup.enabled', valueFrom: 'backup.enabled', encrypted: false, default: false,
+    label: 'Enable scheduled backups', type: 'checkbox', section: 'maintenance',
+  },
+  {
+    key: 'backup.schedule', valueFrom: 'backup.schedule', encrypted: false, default: '0 2 * * *',
+    label: 'Backup schedule (cron)', type: 'text', required: true, section: 'maintenance',
+  },
+  {
+    key: 'backup.retentionDays', valueFrom: 'backup.retentionDays', encrypted: false, default: '30',
+    label: 'Keep backups for (days)', type: 'text', required: true, section: 'maintenance',
+  },
+  {
+    key: 'maintenance.timezone', valueFrom: 'maintenance.timezone', encrypted: false, default: 'UTC',
+    label: 'Maintenance timezone', type: 'text', required: true, section: 'maintenance',
+  },
   {
     key: 'documents.storageRoot',
     valueFrom: 'documents.storageRoot',

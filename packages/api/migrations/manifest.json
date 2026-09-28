@@ -186,6 +186,24 @@
                "required": [
                     "documents"
                ]
+          },
+          "30": {
+               "created": [
+                    "maintenance_runs"
+               ],
+               "required": [
+                    "settings"
+               ]
+          },
+          "31": {
+               "required": [
+                    "settings"
+               ]
+          },
+          "32": {
+               "required": [
+                    "settings"
+               ]
           }
      }
 }

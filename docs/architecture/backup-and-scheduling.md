@@ -36,7 +36,7 @@ without copying the originals.
 Restore is an explicit operational action, not a normal HTTP endpoint. The
 documented restore flow will:
 
-1. stop API, worker, and scheduler consumers;
+1. stop API and worker consumers;
 2. create or select an empty target database;
 3. restore with pg_restore;
 4. run migrations and consistency checks;
@@ -45,27 +45,37 @@ documented restore flow will:
 
 Restore must require an explicit target database and confirmation so a normal
 backup job cannot overwrite a live database accidentally. Restore tests belong
-to the P2 hardening phase.
+to the P2 hardening phase. The repository includes a guarded operator script at
+`scripts/restore-database.sh`; it requires `BACKUP_FILE`, `TARGET_DATABASE`,
+and `RESTORE_CONFIRM=YES`, and refuses to target the configured live database
+unless `ALLOW_LIVE_RESTORE=YES` is explicitly supplied.
 
 ## Scheduler boundary
 
-Recurring maintenance must run in a dedicated scheduler process/container,
-separate from the API request process and the pipeline worker. This prevents
-an API restart or a busy OCR worker from silently disabling backups.
+Recurring maintenance currently runs inside the persistent worker process,
+separate from the API request process. The worker already owns database and
+filesystem access, structured logging, and restart handling, so this keeps the
+deployment small while the maintenance workload is light. Maintenance lives in
+its own worker module and can later be moved to a second worker process or
+container without changing the database or API contracts if backup and cleanup
+jobs become expensive.
 
-The scheduler will:
+The worker maintenance loop will:
 
 - load enabled job definitions and schedules from database settings;
 - use an explicit timezone;
 - prevent overlapping executions of the same job;
 - persist the last run, next run, status, duration, and error;
 - emit structured Winston logs and expose an admin-only status view;
-- shut down cleanly and recover missed jobs according to each job policy.
+- shut down cleanly and mark interrupted runs as failed for operator review.
 
-The first scheduled jobs are:
+The first implemented scheduled jobs are:
 
 - PostgreSQL backup
 - backup retention cleanup
+
+The next maintenance jobs are planned as:
+
 - temporary/derived-file cleanup after a configurable age
 - document-storage consistency audit
 

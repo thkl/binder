@@ -28,3 +28,8 @@ The following settings are seeded into the `settings` table and managed through 
 - OIDC settings
 
 The API uses safe defaults when a runtime setting is not present. The worker loads the runtime values after connecting to PostgreSQL. Relative storage paths are resolved against `APP_ROOT_PATH`, which keeps the API and worker on the same shared storage path in containers.
+
+The worker uses `BACKUP_ROOT_PATH` for PostgreSQL dump files and `PG_DUMP_PATH`
+to override the `pg_dump` executable when needed. Backup scheduling and
+retention are runtime settings in PostgreSQL; the destination remains
+deployment configuration.

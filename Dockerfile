@@ -33,6 +33,7 @@ ENV APP_ROOT_PATH=/app
 WORKDIR /app
 
 COPY --from=builder /out/api ./
+COPY --from=builder /workspace/packages/api/migrations ./migrations
 COPY --from=builder /workspace/packages/client/dist/client ./client
 
 RUN mkdir -p /app/storage /app/logs
@@ -46,6 +47,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     ghostscript \
     ocrmypdf \
+    postgresql-client \
     tesseract-ocr \
     tesseract-ocr-deu \
     tesseract-ocr-eng \

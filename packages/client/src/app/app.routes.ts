@@ -12,6 +12,11 @@ export const appRoutes: Routes = [
       .then(({ LogsComponent }) => LogsComponent)
   },
   {
+    path: 'maintenance',
+    loadComponent: () => import('./features/maintenance/components/maintenance/maintenance.component')
+      .then(({ MaintenanceComponent }) => MaintenanceComponent)
+  },
+  {
     path: 'documents',
     loadComponent: () => import('./features/documents/components/documents/documents.component')
       .then(({ DocumentsComponent }) => DocumentsComponent)

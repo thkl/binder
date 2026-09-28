@@ -15,6 +15,7 @@ import { DocumentCategory, DocumentTag, DocumentTagAssignment, DocumentType } fr
 import { DocumentMetadataValue, MetadataDefinition } from '../features/metadata/models/vocabulary.entity';
 import { InboxItem } from '../features/inbox/models/inbox-item.entity';
 import { Issuer } from '../features/issuer/models/issuer.entity';
+import { MaintenanceRun } from '../features/maintenance/models/maintenance-run.entity';
 
 @Global()
 @Module({
@@ -66,7 +67,7 @@ import { Issuer } from '../features/issuer/models/issuer.entity';
     SequelizeModule.forFeature([
       User, ApplicationSetting, Document, DocumentPage, DocumentEmbedding, PipelineJob, PipelineJobEvent,
       DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment,
-      MetadataDefinition, DocumentMetadataValue, InboxItem, Issuer
+      MetadataDefinition, DocumentMetadataValue, InboxItem, Issuer, MaintenanceRun
     ]),
   ],
   providers: [DatabaseConnectionService,DatabaseMigrationService],
