@@ -9,6 +9,7 @@ export interface IssuerAttributes {
   city: string | null;
   country: string | null;
   custom: Record<string, unknown>;
+  folderUuid: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +42,9 @@ export class Issuer extends Model<IssuerAttributes, IssuerCreationAttributes> {
 
   @Column({ type: DataType.JSONB, allowNull: false, defaultValue: {} })
   declare custom: Record<string, unknown>;
+
+  @AllowNull @Column({ field: 'folder_id', type: DataType.UUID, allowNull: true })
+  declare folderUuid: string | null;
 
   @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare readonly createdAt: Date;
   @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare readonly updatedAt: Date;

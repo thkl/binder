@@ -121,8 +121,23 @@ export class Issuer extends Model {
   @Column({ type: DataType.JSONB })
   declare custom: Record<string, unknown>;
 
+  @Column({ field: 'folder_id', type: DataType.UUID, allowNull: true })
+  declare folderUuid: string | null;
+
   @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
   @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
+}
+
+@Table({ tableName: 'document_folders', underscored: true, timestamps: false })
+export class DocumentFolder extends Model {
+  @PrimaryKey @Column({ field: 'document_id', type: DataType.UUID })
+  declare documentUuid: string;
+
+  @PrimaryKey @Column({ field: 'folder_id', type: DataType.UUID })
+  declare folderUuid: string;
+
+  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE })
+  declare createdAt: Date;
 }
 
 export type InboxItemStatus = 'new' | 'processing' | 'imported' | 'duplicate' | 'rejected' | 'failed';

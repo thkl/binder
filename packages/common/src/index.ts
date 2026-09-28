@@ -113,6 +113,11 @@ export const FolderListResponseSchema = z.object({
 });
 export type FolderListResponse = z.infer<typeof FolderListResponseSchema>;
 
+export const FolderDocumentListResponseSchema = z.object({
+  items: z.array(FolderNodeSchema)
+});
+export type FolderDocumentListResponse = z.infer<typeof FolderDocumentListResponseSchema>;
+
 export const CreateFolderInputSchema = z.object({
   name: z.string().trim().min(1).max(255),
   parentUuid: z.uuid().nullable().optional(),
@@ -183,6 +188,7 @@ export const IssuerSchema = z.object({
   city: z.string().max(150).nullable(),
   country: z.string().max(100).nullable(),
   custom: z.record(z.string(), z.unknown()),
+  folderUuid: z.uuid().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime()
 });
@@ -197,7 +203,8 @@ export const CreateIssuerInputSchema = z.object({
   zipCode: z.string().trim().max(32).nullable().optional(),
   city: z.string().trim().max(150).nullable().optional(),
   country: z.string().trim().max(100).nullable().optional(),
-  custom: z.record(z.string(), z.unknown()).optional().default({})
+  custom: z.record(z.string(), z.unknown()).optional().default({}),
+  folderUuid: z.uuid().nullable().optional()
 });
 export type CreateIssuerInput = z.infer<typeof CreateIssuerInputSchema>;
 
@@ -601,6 +608,7 @@ export const VocabularyItemSchema = z.object({
   name: z.string().trim().min(1).max(150),
   translations: LocalizedTextSchema.default({}),
   description: z.string().max(500).nullable(),
+  folderUuid: z.uuid().nullable(),
   active: z.boolean(),
   scope: VocabularyScopeSchema,
   createdAt: z.string().datetime(),
@@ -619,9 +627,18 @@ export const CreateVocabularyItemSchema = z.object({
   name: z.string().trim().min(1).max(150),
   translations: LocalizedTextSchema.optional(),
   description: z.string().trim().max(500).optional(),
-  scope: VocabularyScopeSchema.optional().default('personal')
+  scope: VocabularyScopeSchema.optional().default('personal'),
+  folderUuid: z.uuid().nullable().optional()
 });
 export type CreateVocabularyItem = z.infer<typeof CreateVocabularyItemSchema>;
+
+export const UpdateVocabularyItemSchema = z.object({
+  name: z.string().trim().min(1).max(150).optional(),
+  translations: LocalizedTextSchema.optional(),
+  description: z.string().trim().max(500).nullable().optional(),
+  folderUuid: z.uuid().nullable().optional()
+});
+export type UpdateVocabularyItem = z.infer<typeof UpdateVocabularyItemSchema>;
 
 export const DocumentMetadataSchema = z.object({
   issuer: IssuerSchema.nullable(),

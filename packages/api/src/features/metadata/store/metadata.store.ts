@@ -30,18 +30,26 @@ export class MetadataStore {
     });
   }
 
-  create(model: VocabularyModel, ownerUuid: string | null, name: string, description: string | null, translations: LocalizedText = {}) {
+  create(model: VocabularyModel, ownerUuid: string | null, name: string, description: string | null, translations: LocalizedText = {}, folderUuid: string | null = null) {
     return model.findOne({ where: { ownerUuid, name: { [Op.iLike]: name } } }).then((existing) => {
       if (existing) throw new Error(`A value named '${name}' already exists`);
       return model.create({
-      uuid: undefined,
-      ownerUuid,
-      name,
-      translations,
-      description,
-      active: true
+        uuid: undefined,
+        ownerUuid,
+        name,
+        translations,
+        description,
+        ...(folderUuid === null ? {} : { folderUuid }),
+        active: true
       } as never);
     });
+  }
+
+  async update(model: VocabularyModel, uuid: string, values: Record<string, unknown>) {
+    const item = await model.findByPk(uuid);
+    if (!item) return null;
+    await item.update(values as never);
+    return item;
   }
 
   async getDocumentMetadata(ownerUuid: string, documentUuid: string) {

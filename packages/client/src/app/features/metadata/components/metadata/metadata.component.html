@@ -50,6 +50,9 @@
           @if (auth.user()?.isAdmin) {
             <label class="scope-toggle"><input type="checkbox" [checked]="systemScope()" (change)="systemScope.set($any($event.target).checked)"><span><strong>{{ 'metadata.workspaceValue' | t }}</strong><small>{{ 'metadata.workspaceValueCopy' | t }}</small></span></label>
           }
+          @if (activeKind() !== 'tags' && !systemScope() && folders.allFolders().length > 0) {
+            <label><span>{{ 'metadata.folderRouting' | t }}</span><select [value]="folderUuid()" (change)="folderUuid.set($any($event.target).value)"><option value="">{{ 'metadata.noFolderRouting' | t }}</option>@for (folder of folders.allFolders(); track folder.uuid) { <option [value]="folder.uuid">{{ folder.name }}</option> }</select><small class="field-help">{{ 'metadata.folderRoutingHint' | t }}</small></label>
+          }
           <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreate.set(false)">{{ 'metadata.cancel' | t }}</button><button type="submit" class="primary-button" [disabled]="metadata.saving() || !name().trim()">{{ metadata.saving() ? ('metadata.creating' | t) : ('metadata.createValue' | t) }}</button></div>
         </form>
       }
@@ -63,7 +66,26 @@
           @for (item of activeItems(); track item.uuid) {
             <article class="value-row">
               <span class="value-mark" [class.system]="item.scope === 'system'" aria-hidden="true">{{ item.scope === 'system' ? '◆' : '●' }}</span>
-              <div class="value-copy"><strong>{{ itemName(item) }}</strong><small>{{ item.description || ('metadata.noDescription' | t) }}</small></div>
+              @if (editingUuid() === item.uuid) {
+                <div class="value-edit">
+                  <strong>{{ itemName(item) }}</strong>
+                  <select [value]="editingFolderUuid()" (change)="editingFolderUuid.set($any($event.target).value)">
+                    <option value="">{{ 'metadata.noFolderRouting' | t }}</option>
+                    @for (folder of folders.allFolders(); track folder.uuid) {
+                      <option [value]="folder.uuid">{{ folderPath(folder.uuid) }}</option>
+                    }
+                  </select>
+                  <div class="value-edit-actions">
+                    <button type="button" class="secondary-button" (click)="cancelEdit()">{{ 'metadata.cancel' | t }}</button>
+                    <button type="button" class="primary-button" [disabled]="metadata.saving()" (click)="saveEdit(item)">{{ 'metadata.save' | t }}</button>
+                  </div>
+                </div>
+              } @else {
+                <div class="value-copy"><strong>{{ itemName(item) }}</strong><small>{{ item.description || ('metadata.noDescription' | t) }}</small>@if (item.folderUuid) { <small class="routing-note">→ {{ folderPath(item.folderUuid) }}</small> }</div>
+                @if (activeKind() !== 'tags' && item.scope === 'personal') {
+                  <button type="button" class="row-action" (click)="startEdit(item)">{{ 'metadata.edit' | t }}</button>
+                }
+              }
               <span class="scope-badge" [class.system]="item.scope === 'system'">{{ item.scope === 'system' ? ('metadata.workspace' | t) : ('metadata.personal' | t) }}</span>
             </article>
           }

@@ -4,6 +4,8 @@ import {
   ApiResponse,
   CreateVocabularyItem,
   CreateVocabularyItemSchema,
+  UpdateVocabularyItem,
+  UpdateVocabularyItemSchema,
   CreateMetadataDefinition,
   CreateMetadataDefinitionSchema,
   DocumentMetadata,
@@ -146,6 +148,24 @@ export class MetadataService {
     try {
       const payload = CreateVocabularyItemSchema.parse(input);
       await firstValueFrom(this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}`, payload, {
+        withCredentials: true
+      }));
+      await this.loadVocabulary();
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async updateVocabulary(kind: 'document-types' | 'categories' | 'tags', uuid: string, input: UpdateVocabularyItem): Promise<boolean> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      const payload = UpdateVocabularyItemSchema.parse(input);
+      await firstValueFrom(this.http.patch<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}/${uuid}`, payload, {
         withCredentials: true
       }));
       await this.loadVocabulary();

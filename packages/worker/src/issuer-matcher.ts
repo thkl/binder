@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Document, Issuer } from './models.js';
+import { Document, DocumentFolder, Issuer } from './models.js';
 import { logger } from './logger.js';
 
 interface Candidate {
@@ -42,6 +42,27 @@ export async function matchDocumentIssuer(documentUuid: string, ownerUuid: strin
     { where: { uuid: documentUuid, ownerUuid, issuerUuid: { [Op.is]: null } } }
   );
   if (updated > 0) {
+    if (best.issuer.folderUuid) {
+      try {
+        await DocumentFolder.findOrCreate({
+          where: {
+            documentUuid,
+            folderUuid: best.issuer.folderUuid
+          },
+          defaults: {
+            documentUuid,
+            folderUuid: best.issuer.folderUuid
+          }
+        });
+      } catch (error) {
+        logger.warn('Unable to apply issuer folder routing', {
+          documentUuid,
+          issuerUuid: best.issuer.uuid,
+          folderUuid: best.issuer.folderUuid,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
     logger.info('Assigned issuer from extracted text', {
       documentUuid,
       issuerUuid: best.issuer.uuid,

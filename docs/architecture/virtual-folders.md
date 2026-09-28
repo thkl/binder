@@ -74,6 +74,17 @@ The document drawer remains the document detail surface. A folder can be
 selected beside the document list, and linking/unlinking documents should be
 available through the same bulk-selection flow used elsewhere in the list.
 
+Personal document types, categories, and issuers may optionally define an
+automatic folder. When metadata is saved, including metadata accepted from an
+AI classification, Binder adds the document to each configured target folder.
+System/workspace vocabulary values cannot point to personal folders. Automatic
+routing is additive: it never removes a folder link that a user assigned
+manually or that was previously created by another routing rule.
+
+The metadata editor also exposes the document's personal folder memberships,
+so documents opened from the list or from search can be assigned to multiple
+folders without returning to the folder view.
+
 ## Future considerations
 
 - Drag-and-drop moves need an explicit keyboard alternative.

@@ -25,6 +25,26 @@ export class FolderStore extends BaseCrudStore<Folder> {
     });
   }
 
+  listAll(ownerUuid: string): Promise<Folder[]> {
+    return this.model.findAll({
+      where: { ownerUuid },
+      order: [['name', 'ASC'], ['uuid', 'ASC']]
+    });
+  }
+
+  async listForDocument(ownerUuid: string, documentUuid: string): Promise<Folder[]> {
+    const links = await DocumentFolder.findAll({
+      where: { documentUuid },
+      attributes: ['folderUuid']
+    });
+    const folderUuids = links.map((link) => link.folderUuid);
+    if (folderUuids.length === 0) return [];
+    return this.model.findAll({
+      where: { ownerUuid, uuid: { [Op.in]: folderUuids } },
+      order: [['name', 'ASC'], ['uuid', 'ASC']]
+    });
+  }
+
   countChildren(ownerUuid: string, parentUuid: string): Promise<number> {
     return this.model.count({ where: { ownerUuid, parentUuid } });
   }

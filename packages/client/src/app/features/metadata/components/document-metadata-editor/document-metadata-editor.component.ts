@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import type { CreateIssuerInput, Document, DocumentMetadata, DocumentTitleSuggestion, Issuer, UpdateIssuerInput } from '@binder/common';
+import type { CreateIssuerInput, Document, DocumentMetadata, DocumentTitleSuggestion, FolderNode, Issuer, UpdateIssuerInput } from '@binder/common';
 import { MetadataService } from '../../services/metadata.service';
+import { FoldersService } from '../../../documents/services/folders.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 @Component({
@@ -24,6 +25,7 @@ export class DocumentMetadataEditorComponent {
   readonly dirtyChange = output<boolean>();
   readonly closeRequest = output<void>();
   readonly metadata = inject(MetadataService);
+  readonly folders = inject(FoldersService);
   readonly i18n = inject(I18nService);
   readonly documentTypeUuid = signal('');
   readonly categoryUuid = signal('');
@@ -48,6 +50,7 @@ export class DocumentMetadataEditorComponent {
   readonly issuerZipCode = signal('');
   readonly issuerCity = signal('');
   readonly issuerCountry = signal('');
+  readonly issuerFolderUuid = signal('');
   readonly issuerCustomJson = signal('{}');
   readonly issuerError = signal<string | null>(null);
   readonly previewTab = signal<'thumbnail' | 'text'>('thumbnail');
@@ -55,6 +58,9 @@ export class DocumentMetadataEditorComponent {
   readonly extractedTextLoading = signal(false);
   readonly extractedTextLoaded = signal(false);
   readonly extractedTextError = signal<string | null>(null);
+  readonly folderOptions = signal<FolderNode[]>([]);
+  readonly selectedFolderUuids = signal<Set<string>>(new Set());
+  readonly originalFolderUuids = signal<string[]>([]);
   readonly filteredTags = computed(() => {
     const search = this.tagSearch().trim().toLowerCase();
     return (this.metadata.vocabulary()?.tags ?? []).filter((tag) => !search || tag.name.toLowerCase().includes(search));
@@ -79,14 +85,18 @@ export class DocumentMetadataEditorComponent {
 
   async load(uuid = this.documentUuid()): Promise<void> {
     this.loaded.set(false);
-    const [, current] = await Promise.all([
+    const [, current, allFolders, currentFolders] = await Promise.all([
       this.metadata.loadVocabulary(),
-      this.metadata.getDocumentMetadata(uuid)
+      this.metadata.getDocumentMetadata(uuid),
+      this.folders.listAll(),
+      this.folders.listForDocument(uuid)
 
     ]);
     if (uuid !== this.documentUuid()) return;
     if (current) this.applyMetadata(current);
     else this.markClean();
+    this.folderOptions.set(allFolders);
+    this.applyFolderSelection(currentFolders);
     this.loaded.set(true);
   }
 
@@ -101,6 +111,30 @@ export class DocumentMetadataEditorComponent {
 
   isTagSelected(uuid: string): boolean { return this.selectedTags().has(uuid); }
 
+  toggleFolder(uuid: string): void {
+    this.selectedFolderUuids.update((selected) => {
+      const next = new Set(selected);
+      if (next.has(uuid)) next.delete(uuid); else next.add(uuid);
+      return next;
+    });
+    this.markMetadataDirty();
+  }
+
+  isFolderSelected(uuid: string): boolean { return this.selectedFolderUuids().has(uuid); }
+
+  folderPath(uuid: string): string {
+    const byUuid = new Map(this.folderOptions().map((folder) => [folder.uuid, folder]));
+    const parts: string[] = [];
+    const visited = new Set<string>();
+    let current = byUuid.get(uuid);
+    while (current && !visited.has(current.uuid)) {
+      visited.add(current.uuid);
+      parts.unshift(current.name);
+      current = current.parentUuid ? byUuid.get(current.parentUuid) : undefined;
+    }
+    return parts.join(' / ');
+  }
+
   async save(): Promise<boolean> {
     const result = await this.metadata.setDocumentMetadata(this.documentUuid(), {
       issuerUuid: this.issuerUuid() || null,
@@ -111,7 +145,25 @@ export class DocumentMetadataEditorComponent {
     });
     if (result) {
       const persisted = await this.metadata.getDocumentMetadata(this.documentUuid());
-      this.applyMetadata(persisted ?? result);
+      const persistedMetadata = persisted ?? result;
+      const routingFolderUuids = [
+        persistedMetadata.issuer?.folderUuid,
+        persistedMetadata.documentType?.folderUuid,
+        persistedMetadata.category?.folderUuid
+      ].filter((uuid): uuid is string => Boolean(uuid));
+      const selectedFolderUuids = new Set([
+        ...this.selectedFolderUuids(),
+        ...routingFolderUuids
+      ]);
+      const foldersSaved = await this.folders.setDocumentFolders(
+        this.documentUuid(),
+        [...selectedFolderUuids],
+        this.originalFolderUuids()
+      );
+      if (!foldersSaved) return false;
+      const persistedFolders = await this.folders.listForDocument(this.documentUuid());
+      this.applyMetadata(persistedMetadata);
+      this.applyFolderSelection(persistedFolders);
       this.saved.set(true);
       this.manuallySaved.emit();
       return true;
@@ -238,6 +290,12 @@ export class DocumentMetadataEditorComponent {
     this.markClean();
   }
 
+  private applyFolderSelection(folders: FolderNode[]): void {
+    const uuids = folders.map((folder) => folder.uuid);
+    this.selectedFolderUuids.set(new Set(uuids));
+    this.originalFolderUuids.set(uuids);
+  }
+
   async addTag(event: Event): Promise<void> {
     event.preventDefault();
     const name = this.newTagName().trim();
@@ -278,6 +336,7 @@ export class DocumentMetadataEditorComponent {
     this.issuerZipCode.set(selected?.zipCode ?? '');
     this.issuerCity.set(selected?.city ?? '');
     this.issuerCountry.set(selected?.country ?? '');
+    this.issuerFolderUuid.set(selected?.folderUuid ?? '');
     this.issuerCustomJson.set(JSON.stringify(selected?.custom ?? {}, null, 2));
     this.issuerError.set(null);
     this.issuerFormDirty.set(false);
@@ -309,7 +368,8 @@ export class DocumentMetadataEditorComponent {
       zipCode: this.issuerZipCode().trim() || null,
       city: this.issuerCity().trim() || null,
       country: this.issuerCountry().trim() || null,
-      custom
+      custom,
+      folderUuid: this.issuerFolderUuid() || null
     };
     const editingUuid = this.editingIssuerUuid();
     const result = editingUuid

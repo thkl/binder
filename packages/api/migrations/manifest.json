@@ -227,6 +227,14 @@
                     "users",
                     "documents"
                ]
+          },
+          "36": {
+               "required": [
+                    "folders",
+                    "issuers",
+                    "document_types",
+                    "document_categories"
+               ]
           }
      }
 }

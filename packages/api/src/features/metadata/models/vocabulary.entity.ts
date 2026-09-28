@@ -7,6 +7,7 @@ export interface VocabularyAttributes {
   name: string;
   translations: LocalizedText;
   description: string | null;
+  folderUuid?: string | null;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -43,10 +44,18 @@ abstract class VocabularyBase<T extends VocabularyAttributes = VocabularyAttribu
 }
 
 @Table({ tableName: 'document_types', underscored: true, timestamps: true })
-export class DocumentType extends VocabularyBase {}
+export class DocumentType extends VocabularyBase {
+  @AllowNull
+  @Column({ field: 'folder_id', type: DataType.UUID, allowNull: true })
+  declare folderUuid: string | null;
+}
 
 @Table({ tableName: 'document_categories', underscored: true, timestamps: true })
 export class DocumentCategory extends VocabularyBase {
+  @AllowNull
+  @Column({ field: 'folder_id', type: DataType.UUID, allowNull: true })
+  declare folderUuid: string | null;
+
   @AllowNull @Column({ field: 'parent_id', type: DataType.UUID })
   declare parentUuid: string | null;
 }

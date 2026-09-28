@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { CreateMetadataDefinitionSchema, CreateVocabularyItemSchema } from '@binder/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { CreateMetadataDefinitionSchema, CreateVocabularyItemSchema, UpdateVocabularyItemSchema } from '@binder/common';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
 import { MetadataService } from '../service/metadata.service';
@@ -37,5 +37,18 @@ export class MetadataController {
   @Post('vocabulary/tags')
   async createTag(@Body() body: unknown, @CurrentUser() user: ScopedUser) {
     return { data: await this.metadata.create('tags', user.userId, CreateVocabularyItemSchema.parse(body), user.isAdmin) };
+  }
+
+  @Patch('vocabulary/:kind/:uuid')
+  async updateVocabulary(@Param('kind') kindParam: string, @Param('uuid') uuid: string, @Body() body: unknown, @CurrentUser() user: ScopedUser) {
+    const kind = this.parseKind(kindParam);
+    return { data: await this.metadata.update(kind, user.userId, uuid, UpdateVocabularyItemSchema.parse(body), user.isAdmin) };
+  }
+
+  private parseKind(kind: string): 'documentTypes' | 'categories' | 'tags' {
+    if (kind === 'document-types') return 'documentTypes';
+    if (kind === 'categories') return 'categories';
+    if (kind === 'tags') return 'tags';
+    throw new BadRequestException('Unknown vocabulary kind');
   }
 }

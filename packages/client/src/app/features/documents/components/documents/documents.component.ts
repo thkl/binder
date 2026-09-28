@@ -50,6 +50,9 @@ export class DocumentsComponent implements OnInit {
   readonly bulkActionResult = signal<DocumentBulkActionResponse | null>(null);
   readonly folderActionInProgress = signal<'add' | 'remove' | null>(null);
   readonly folderActionMessage = signal<string | null>(null);
+
+  private readonly folderPages = signal<Record<string, number>>({});
+  private readonly allDocumentsFolderKey = '__all-documents__';
   
   readonly drawerDocument = computed(() => {
     const uuid = this.drawerDocumentUuid();
@@ -77,7 +80,7 @@ export class DocumentsComponent implements OnInit {
         groups.set(value.key, group);
       }
     }
-    return [...groups.values()];
+    return this.sortGroups([...groups.values()]);
   });
 
   ngOnInit(): void {
@@ -87,9 +90,10 @@ export class DocumentsComponent implements OnInit {
 
   async selectFolder(folderUuid: string | null): Promise<void> {
     if (!this.canLeaveMetadata()) return;
+
+    this.rememberCurrentFolderPage();
     this.folders.select(folderUuid);
-    this.clearSelection();
-    await this.documents.load({ page: 1, folderUuid: folderUuid ?? undefined });
+    await this.loadFolderPage(folderUuid);
   }
 
   async changeFolderMembership(action: 'add' | 'remove'): Promise<void> {
@@ -127,6 +131,7 @@ export class DocumentsComponent implements OnInit {
     if (page?.hasNext) {
       this.clearSelection();
       await this.documents.load({ page: page.page + 1, pageSize: page.pageSize });
+      this.rememberCurrentFolderPage();
     }
   }
 
@@ -135,6 +140,7 @@ export class DocumentsComponent implements OnInit {
     if (page && page.hasPrev) {
       this.clearSelection();
       await this.documents.load({ page: page.page - 1, pageSize: page.pageSize });
+      this.rememberCurrentFolderPage();
     }
   }
 
@@ -225,6 +231,7 @@ export class DocumentsComponent implements OnInit {
     console.log("Set Group Mode ",mode)
     this.groupMode.set(mode);
     localStorage.setItem('binder.documents.group-mode', mode);
+    this.folderPages.set({});
     this.clearSelection();
     void this.documents.load({ page: 1, groupBy: mode });
   }
@@ -238,6 +245,7 @@ export class DocumentsComponent implements OnInit {
     console.log("Set SortDirection",direction)
     this.sortDirection.set(direction);
     localStorage.setItem('binder.documents.sortDirection', direction);
+    this.folderPages.set({});
     this.clearSelection();
     void this.documents.load({ page: 1, direction: direction });
   }
@@ -246,6 +254,7 @@ export class DocumentsComponent implements OnInit {
     if (!this.canLeaveMetadata()) return;
     this.groupDirection.set(direction);
     localStorage.setItem('binder.documents.groupDirection', direction);
+    this.folderPages.set({});
     this.clearSelection();
     void this.documents.load({ page: 1, groupDirection: direction });
   }
@@ -405,6 +414,68 @@ export class DocumentsComponent implements OnInit {
 
   private findDocument(uuid: string): Document | null {
     return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
+  }
+
+  private async loadFolderPage(folderUuid: string | null): Promise<void> {
+    const rememberedPage = this.folderPages()[this.folderPageKey(folderUuid)] ?? 1;
+
+    await this.documents.load({
+      page: rememberedPage,
+      folderUuid: folderUuid ?? undefined
+    });
+
+    if (this.documents.error()) return;
+
+    const page = this.documents.page();
+    if (!page) return;
+
+    const fallbackPage = this.getFallbackPage(page.page, page.totalPages);
+    if (fallbackPage !== null) {
+      this.rememberFolderPage(folderUuid, fallbackPage);
+      await this.documents.load({ page: fallbackPage });
+      return;
+    }
+
+    this.rememberFolderPage(folderUuid, page.page);
+  }
+
+  private rememberCurrentFolderPage(): void {
+    const page = this.documents.page();
+    if (!page) return;
+
+    this.rememberFolderPage(this.folders.selectedFolderUuid(), page.page);
+  }
+
+  private rememberFolderPage(folderUuid: string | null, page: number): void {
+    this.folderPages.update((pages) => ({
+      ...pages,
+      [this.folderPageKey(folderUuid)]: page
+    }));
+  }
+
+  private folderPageKey(folderUuid: string | null): string {
+    return folderUuid ?? this.allDocumentsFolderKey;
+  }
+
+  private getFallbackPage(page: number, totalPages: number): number | null {
+    if (totalPages === 0 && page > 1) return 1;
+    if (totalPages > 0 && page > totalPages) return totalPages;
+    return null;
+  }
+
+  private sortGroups(groups: DocumentGroup[]): DocumentGroup[] {
+    const direction = this.groupDirection() === 'asc' ? 1 : -1;
+    const collator = new Intl.Collator(undefined, {
+      numeric: true,
+      sensitivity: 'base'
+    });
+
+    return groups.sort((left, right) => {
+      if (left.label === null) return right.label === null ? 0 : 1;
+      if (right.label === null) return -1;
+
+      return collator.compare(left.label, right.label) * direction;
+    });
   }
 
   private readGroupDirection(): DocumentSortDirection {

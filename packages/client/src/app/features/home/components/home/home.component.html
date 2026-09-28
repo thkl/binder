@@ -43,6 +43,13 @@
             @for (issuer of search.issuers(); track issuer.uuid) { <option [value]="issuer.uuid">{{ issuer.name }}</option> }
           </select>
         </label>
+         <label>{{ 'home.results' | t }}
+          <select (change)="onlySemantic.set($any($event.target).value==='true')">
+            <option value="true" [selected]="onlySemantic()?'selected':undefined">{{ 'home.resultSemantic' | t }}</option>
+            <option value="false" [selected]="onlySemantic()?undefined:'selected'">{{ 'home.resultAll' | t }}</option>
+
+          </select>
+        </label>
       </div>
     }
     <p class="search-hint">{{ 'home.hint' | t }}</p>

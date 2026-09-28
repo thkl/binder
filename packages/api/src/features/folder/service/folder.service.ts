@@ -4,6 +4,7 @@ import {
   FolderDeleteResponseSchema,
   FolderDocumentActionResponseSchema,
   FolderDocumentInput,
+  FolderDocumentListResponseSchema,
   FolderListResponseSchema,
   FolderNodeSchema,
   MoveFolderInput,
@@ -27,6 +28,22 @@ export class FolderService {
     const folders = await this.folders.listChildren(ownerUuid, parentUuid);
     const items = await Promise.all(folders.map(async (folder) => this.toNode(folder)));
     return FolderListResponseSchema.parse({ parentUuid, items });
+  }
+
+  async listAll(ownerUuid: string) {
+    const folders = await this.folders.listAll(ownerUuid);
+    return FolderDocumentListResponseSchema.parse({
+      items: await Promise.all(folders.map((folder) => this.toNode(folder)))
+    });
+  }
+
+  async listForDocument(ownerUuid: string, documentUuid: string) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, documentUuid);
+    if (!document) throw new NotFoundException('Document not found');
+    const folders = await this.folders.listForDocument(ownerUuid, documentUuid);
+    return FolderDocumentListResponseSchema.parse({
+      items: await Promise.all(folders.map((folder) => this.toNode(folder)))
+    });
   }
 
   async create(ownerUuid: string, input: CreateFolderInput) {
@@ -110,6 +127,16 @@ export class FolderService {
       affected: created,
       skipped: duplicate + documentUuids.length - eligibleUuids.length
     });
+  }
+
+  async ensureOwned(ownerUuid: string, uuid: string): Promise<void> {
+    await this.requireFolder(ownerUuid, uuid);
+  }
+
+  async applyMetadataRouting(ownerUuid: string, documentUuid: string, folderUuids: string[]): Promise<void> {
+    for (const folderUuid of [...new Set(folderUuids)]) {
+      await this.linkDocuments(ownerUuid, folderUuid, { documentUuids: [documentUuid] });
+    }
   }
 
   async unlinkDocuments(ownerUuid: string, folderUuid: string, input: FolderDocumentInput) {

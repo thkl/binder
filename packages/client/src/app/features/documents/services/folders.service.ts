@@ -5,6 +5,7 @@ import {
   CreateFolderInputSchema,
   FolderDocumentActionResponse,
   FolderDocumentActionResponseSchema,
+  FolderDocumentListResponseSchema,
   FolderDocumentInputSchema,
   FolderListResponseSchema,
   FolderNode,
@@ -26,6 +27,7 @@ export class FoldersService {
   readonly expanded = signal<Set<string>>(new Set());
   readonly loadedParents = signal<Set<string>>(new Set());
   readonly loadingParents = signal<Set<string>>(new Set());
+  readonly allFolders = signal<FolderNode[]>([]);
   readonly error = signal<string | null>(null);
   readonly selectedFolderUuid = signal<string | null>(null);
   readonly rows = computed<FolderTreeRow[]>(() => {
@@ -81,6 +83,44 @@ export class FoldersService {
     }
     await this.loadChildren(folder.uuid);
     this.expanded.update((current) => new Set(current).add(folder.uuid));
+  }
+
+  async listAll(): Promise<FolderNode[]> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(this.application.getApiUrl('v1', 'folders/all'), { withCredentials: true })
+      );
+      const folders = FolderDocumentListResponseSchema.parse(response.data).items;
+      this.allFolders.set(folders);
+      return folders;
+    } catch (error) {
+      this.error.set(this.errorMessage(error));
+      return [];
+    }
+  }
+
+  async listForDocument(documentUuid: string): Promise<FolderNode[]> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(this.application.getApiUrl('v1', `folders/for-document/${documentUuid}`), { withCredentials: true })
+      );
+      return FolderDocumentListResponseSchema.parse(response.data).items;
+    } catch (error) {
+      this.error.set(this.errorMessage(error));
+      return [];
+    }
+  }
+
+  async setDocumentFolders(documentUuid: string, selectedUuids: string[], originalUuids: string[]): Promise<boolean> {
+    const selected = new Set(selectedUuids);
+    const original = new Set(originalUuids);
+    const additions = [...selected].filter((uuid) => !original.has(uuid));
+    const removals = [...original].filter((uuid) => !selected.has(uuid));
+    const results = await Promise.all([
+      ...additions.map((folderUuid) => this.linkDocuments(folderUuid, [documentUuid])),
+      ...removals.map((folderUuid) => this.unlinkDocuments(folderUuid, [documentUuid]))
+    ]);
+    return results.every((result) => result !== null);
   }
 
   async create(name: string, parentUuid: string | null): Promise<FolderNode | null> {

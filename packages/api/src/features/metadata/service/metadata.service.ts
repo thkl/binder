@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Op } from 'sequelize';
 import {
   CreateVocabularyItem,
   CreateMetadataDefinition,
@@ -7,17 +8,22 @@ import {
   DocumentMetadataSummarySchema,
   DocumentTitleSuggestionSchema,
   SetDocumentMetadataInput,
+  UpdateVocabularyItem,
   VocabularyItem,
   VocabularyResponseSchema
 } from '@binder/common';
 import { DocumentCategory, DocumentTag, DocumentType } from '../models/vocabulary.entity';
 import { MetadataStore } from '../store/metadata.store';
+import { FolderService } from '../../folder/service/folder.service';
 
 type VocabularyKind = 'documentTypes' | 'categories' | 'tags';
 
 @Injectable()
 export class MetadataService {
-  constructor(private readonly store: MetadataStore) {}
+  constructor(
+    private readonly store: MetadataStore,
+    private readonly folders: FolderService
+  ) {}
 
   async list(ownerUuid: string) {
     const [documentTypes, categories, tags] = await Promise.all([
@@ -36,9 +42,52 @@ export class MetadataService {
     if (input.scope === 'system' && !isAdmin) {
       throw new BadRequestException('Only administrators can create system vocabulary entries');
     }
+    if (input.folderUuid && input.scope === 'system') {
+      throw new BadRequestException('Workspace vocabulary entries cannot be linked to personal folders');
+    }
+    if (input.folderUuid && kind === 'tags') {
+      throw new BadRequestException('Tags cannot be linked to automatic folders');
+    }
+    if (input.folderUuid) await this.folders.ensureOwned(ownerUuid, input.folderUuid);
     const model = this.modelFor(kind);
-    const item = await this.store.create(model, input.scope === 'system' ? null : ownerUuid, input.name, input.description ?? null, input.translations ?? {});
+    const item = await this.store.create(model, input.scope === 'system' ? null : ownerUuid, input.name, input.description ?? null, input.translations ?? {}, input.folderUuid ?? null);
     return this.toResponse(item);
+  }
+
+  async update(kind: VocabularyKind, ownerUuid: string, uuid: string, input: UpdateVocabularyItem, isAdmin: boolean): Promise<VocabularyItem> {
+    const model = this.modelFor(kind);
+    const existing = await model.findByPk(uuid);
+    if (!existing || (existing.ownerUuid !== null && existing.ownerUuid !== ownerUuid)) {
+      throw new NotFoundException('Metadata value not found');
+    }
+    if (existing.ownerUuid === null && !isAdmin) {
+      throw new BadRequestException('Only administrators can update workspace vocabulary entries');
+    }
+    if (input.folderUuid && kind === 'tags') {
+      throw new BadRequestException('Tags cannot be linked to automatic folders');
+    }
+    if (input.folderUuid && existing.ownerUuid === null) {
+      throw new BadRequestException('Workspace vocabulary entries cannot be linked to personal folders');
+    }
+    if (input.folderUuid) await this.folders.ensureOwned(ownerUuid, input.folderUuid);
+    if (input.name && input.name.toLocaleLowerCase() !== existing.name.toLocaleLowerCase()) {
+      const duplicate = await model.findOne({
+        where: {
+          uuid: { [Op.ne]: uuid },
+          ownerUuid: existing.ownerUuid,
+          name: { [Op.iLike]: input.name }
+        }
+      });
+      if (duplicate) throw new BadRequestException(`A value named '${input.name}' already exists`);
+    }
+    const updated = await this.store.update(model, uuid, {
+      ...(input.name === undefined ? {} : { name: input.name }),
+      ...(input.description === undefined ? {} : { description: input.description }),
+      ...(input.translations === undefined ? {} : { translations: input.translations }),
+      ...(kind === 'tags' || input.folderUuid === undefined ? {} : { folderUuid: input.folderUuid })
+    });
+    if (!updated) throw new NotFoundException('Metadata value not found');
+    return this.toResponse(updated);
   }
 
   async listDefinitions(ownerUuid: string) {
@@ -96,6 +145,7 @@ export class MetadataService {
         city: metadata.issuer.city,
         country: metadata.issuer.country,
         custom: metadata.issuer.custom ?? {},
+        folderUuid: metadata.issuer.folderUuid,
         createdAt: metadata.issuer.createdAt.toISOString(),
         updatedAt: metadata.issuer.updatedAt.toISOString()
       } : null,
@@ -140,7 +190,13 @@ export class MetadataService {
       if (input.custom !== undefined) {
         await this.store.setCustomValues(ownerUuid, documentUuid, input.custom);
       }
-      return this.getDocumentMetadata(ownerUuid, documentUuid);
+      const result = await this.getDocumentMetadata(ownerUuid, documentUuid);
+      const routingFolders = [result?.issuer?.folderUuid, result?.documentType?.folderUuid, result?.category?.folderUuid]
+        .filter((uuid): uuid is string => Boolean(uuid));
+      if (routingFolders.length > 0) {
+        await this.folders.applyMetadataRouting(ownerUuid, documentUuid, routingFolders);
+      }
+      return result;
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw new BadRequestException(error instanceof Error ? error.message : 'Invalid document metadata');
@@ -153,13 +209,14 @@ export class MetadataService {
     return DocumentTag;
   }
 
-  private toResponse(item: { uuid: string; ownerUuid: string | null; name: string; translations: Record<string, string>; description: string | null; active: boolean; createdAt: Date; updatedAt: Date }): VocabularyItem {
+  private toResponse(item: { uuid: string; ownerUuid: string | null; name: string; translations: Record<string, string>; description: string | null; folderUuid?: string | null; active: boolean; createdAt: Date; updatedAt: Date }): VocabularyItem {
     return {
       uuid: item.uuid,
       ownerUuid: item.ownerUuid,
       name: item.name,
       translations: item.translations ?? {},
       description: item.description,
+      folderUuid: item.folderUuid ?? null,
       active: item.active,
       scope: item.ownerUuid === null ? 'system' : 'personal',
       createdAt: item.createdAt.toISOString(),

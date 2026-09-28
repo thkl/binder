@@ -19,6 +19,16 @@ export class FolderController {
     return { data: await this.folders.list(user.userId, parentUuid || null) };
   }
 
+  @Get('all')
+  async listAll(@CurrentUser() user: ScopedUser) {
+    return { data: await this.folders.listAll(user.userId) };
+  }
+
+  @Get('for-document/:documentUuid')
+  async listForDocument(@CurrentUser() user: ScopedUser, @Param('documentUuid') documentUuid: string) {
+    return { data: await this.folders.listForDocument(user.userId, documentUuid) };
+  }
+
   @Post()
   async create(@CurrentUser() user: ScopedUser, @Body() body: unknown) {
     return { data: await this.folders.create(user.userId, CreateFolderInputSchema.parse(body)) };

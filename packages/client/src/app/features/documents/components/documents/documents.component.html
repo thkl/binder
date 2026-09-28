@@ -91,6 +91,18 @@
       </div>
     </header>
 
+    @if (documents.page(); as page) {
+       <div class="pagination">
+          <button type="button" (click)="previousPage()" [disabled]="!page.hasPrev">
+            ← {{ 'documents.previous' | t }}
+          </button>
+          <span>{{ page.page }} / {{ page.totalPages || 1 }}</span>
+          <button type="button" (click)="nextPage()" [disabled]="!page.hasNext">
+            {{ 'documents.next' | t }} →
+          </button>
+        </div>
+      }
+
     <div class="bulk-toolbar" [class.visible]="selectedCount() > 0">
       <label class="select-all-control">
         <input

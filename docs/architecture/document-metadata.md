@@ -17,6 +17,7 @@ GET  /api/v1/metadata/vocabulary
 POST /api/v1/metadata/vocabulary/document-types
 POST /api/v1/metadata/vocabulary/categories
 POST /api/v1/metadata/vocabulary/tags
+PATCH /api/v1/metadata/vocabulary/:kind/:uuid
 GET  /api/v1/metadata/definitions
 POST /api/v1/metadata/definitions
 
@@ -35,5 +36,11 @@ The document metadata endpoint accepts document type, category, tag UUIDs, and a
 Custom metadata definitions have a stable `key`, display `label`, `type`, optional `options`, and `unique`/`mandatory` flags. Supported types are `text`, `number`, `date`, `datetime`, `boolean`, `select`, and `multi-select`. Values are stored as JSON per document, so new fields do not require a table migration. The client exposes personal definitions and renders the corresponding controls in the document editor.
 
 Tags remain controlled vocabulary values, but the document editor provides search and inline creation of a personal tag. This keeps AI classification bounded to known UUIDs while allowing users to extend their own vocabulary at the point of use.
+
+Personal document types, categories, and issuers can optionally be linked to a
+personal virtual folder. Saving document metadata applies those routing links
+automatically, including when an AI suggestion is accepted. Workspace/system
+vocabulary entries cannot target a personal folder. Routing only adds links;
+manual memberships are not removed when metadata changes.
 
 AI classification will later receive this same allowed vocabulary and must return existing UUIDs. The API will reject unknown or inaccessible UUIDs; AI processing must never create vocabulary entries automatically.
