@@ -1,0 +1,59 @@
+# Virtual folders
+
+## Decision
+
+Folders are a per-user organizational layer. They do not change the original
+filesystem path, storage key, malware-scanner location, or document identity.
+A document may be linked to more than one folder, which keeps folders useful
+for projects, topics, and temporary working sets at the same time.
+
+Example:
+
+```text
+Projects/
+├── Project 1/
+└── Project 2/
+Ideas/
+└── Foo/
+    └── Bar/
+```
+
+## Data model
+
+The first implementation should use two owner-scoped relations:
+
+- `folders`: `uuid`, `owner_uuid`, `parent_uuid`, `name`, timestamps, and an
+  optional sort position;
+- `document_folders`: `document_uuid`, `folder_uuid`, timestamps, and a unique
+  pair constraint.
+
+Folder names are unique among siblings for the same owner. `parent_uuid` must
+refer to a folder owned by the same user, and cycles must be rejected before a
+move is persisted. Documents remain protected by their existing owner checks;
+folder membership must never grant access to another user's document.
+
+Deleting a folder should initially remove only the links and keep its
+documents. A later version may offer recursive delete-link behavior, but it
+must never delete the original document implicitly.
+
+## API and client
+
+The API should expose a typed tree endpoint with lazy child loading and
+document membership commands. Folder filters should also be accepted by the
+document list, search, bulk-action, and export contracts.
+
+The client should use `agrid` as a presentation component for the tree. A
+feature adapter translates tree selection, create, rename, move, and delete
+events into whitelisted Zod inputs. The tree must not know storage paths or
+construct unrestricted database filters.
+
+The document drawer remains the document detail surface. A folder can be
+selected beside the document list, and linking/unlinking documents should be
+available through the same bulk-selection flow used elsewhere in the list.
+
+## Future considerations
+
+- Drag-and-drop moves need an explicit keyboard alternative.
+- Folder membership should be included in saved searches and export manifests.
+- Shared folders belong to the later multi-user organization model, not the
+  first per-user implementation.

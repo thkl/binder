@@ -79,6 +79,22 @@
                     </span>
                   }
                 </small>
+                @if (item.document.metadataSummary.documentType || item.document.metadataSummary.category || item.document.metadataSummary.issuer || item.document.metadataSummary.tags.length > 0) {
+                  <div class="metadata-pills" [attr.aria-label]="'documents.metadata' | t">
+                    @if (item.document.metadataSummary.documentType; as documentType) {
+                      <span class="metadata-pill type-pill">{{ itemName(documentType) }}</span>
+                    }
+                    @if (item.document.metadataSummary.category; as category) {
+                      <span class="metadata-pill category-pill">{{ itemName(category) }}</span>
+                    }
+                    @if (item.document.metadataSummary.issuer; as issuer) {
+                      <span class="metadata-pill issuer-pill">{{ issuer.name }}</span>
+                    }
+                    @for (tag of item.document.metadataSummary.tags; track tag.uuid) {
+                      <span class="metadata-pill tag-pill">#{{ itemName(tag) }}</span>
+                    }
+                  </div>
+                }
                 <p>{{ item.snippet || 'No text snippet available.' }}</p>
               </div>
               <div class="result-actions">

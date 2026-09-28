@@ -64,38 +64,42 @@ Expected result: the TÜV report from 05/2025, with a matching text snippet and 
 
 P1 is complete. The system supports the first usable document workflow: upload, durable storage, asynchronous extraction/OCR, controlled metadata, full-text search, optional hosted semantic search, hybrid ranking, user-confirmed AI title/metadata suggestions, and English/German localization. Localization uses flexible language codes so additional translations can be added without changing the contract.
 
-### P2 — automation
+### P2 — organize and protect documents
 
-- Inbox folder import with explicit owner assignment
-- Duplicate detection
-- Automatic classification and tagging
-- Reusable issuers with owner-scoped document references and deterministic sender matching
-- General document bulk actions
-- Saved searches
-- Database backup and restore with scheduled maintenance jobs
-- P2 hardening and security verification
+- Bring files in through an inbox folder with clear ownership
+- Keep duplicate documents under control
+- Automatically classify documents and apply known tags
+- Reuse issuers so documents can be found by sender
+- Select and manage multiple documents at once
+- Organize documents in private, nested folders
+- Export selected documents or a folder as a ZIP file
+- Save useful searches for later
+- Back up and restore the archive
+- Keep document access, imports, exports, and recovery reliable
 
 The first P2 slice is the inbox folder. Files copied into the configured `inbox/` directory are treated as external input: the worker claims them safely, validates them, assigns the configured import owner, creates normal document and pipeline records, and moves or marks the source after successful handoff. The inbox must be restart-safe and must not create duplicate documents when the same file is observed more than once. The admin inbox queue persists import state and offers a batch AI analysis action. Optional automatic classification applies only high-confidence suggestions to empty fields; existing metadata and manually changed titles are preserved.
 
-The remaining P2 work is intentionally ordered as follows:
+The remaining P2 work is intentionally ordered by user value as follows:
 
-1. General document bulk actions, so a larger document set can be prepared and managed efficiently.
-2. Saved searches, including reusable metadata filters and semantic-search thresholds.
-3. Database backup/restore and the scheduler, including retention cleanup and maintenance job observability.
-4. Hardening and security verification for ownership isolation, imports, retries, automation thresholds, bulk actions, and restore procedures.
+1. Protect the archive with backup, restore, and visible recovery status.
+2. Organize documents in nested personal folders without changing the stored originals.
+3. Manage and export groups of documents, including complete folders.
+4. Save searches with reusable filters and semantic-search thresholds.
+5. Make ownership, imports, exports, automation, and recovery dependable.
 
-### P3 — provider management and advanced AI
+### P3 — connect Binder to the rest of life
 
-- Email and scanner ingestion adapters
-- Administrator log viewer for API and worker rotation files
-- Configure multiple named AI providers
-- Store provider-specific endpoints, models, and encrypted credentials
-- Select the provider independently for embeddings and AI assistant features
-- Test provider connectivity and model capabilities from the settings UI
-- Support different providers for privacy-sensitive and general-purpose workloads
+- Add extensions and integrations without changing the core document workflow
+- Turn invoice due dates into calendar entries
+- Import documents from email
+- Connect scanners and other external sources
+- Let administrators inspect API and worker activity
+- Choose different AI providers for embeddings and document assistance
+- Test providers and choose privacy-appropriate services for each task
 
 ### Later
 
+- Third-party plugin distribution or marketplace
 - Multi-user organizations and permissions
 - Mobile client
 - Advanced workflow automation

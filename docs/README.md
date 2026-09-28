@@ -20,7 +20,10 @@ This folder contains the living documentation for the lightweight document manag
 - [Issuers](./architecture/issuers.md) — reusable sender records, document references, and deterministic worker matching
 - [Document search](./architecture/search.md) — page text search, snippets, and the semantic-search extension point
 - [Document bulk actions](./architecture/bulk-actions.md) — page-scoped selection and batch document operations
+- [Virtual folders](./architecture/virtual-folders.md) — owner-scoped logical folder trees and document links
+- [Document exports](./architecture/document-exports.md) — selected-document and folder ZIP exports
 - [Backup and scheduled maintenance](./architecture/backup-and-scheduling.md) — PostgreSQL backup/restore, retention, and recurring jobs
+- [Extensions and plugins](./architecture/extensions.md) — versioned extension points, calendar automation, and email import
 - [AI assistance](./architecture/ai-assistance.md) — user-confirmed hosted title suggestions
 - [Localization](./architecture/localization.md) — extensible UI and vocabulary translations
 - [Container deployment](./architecture/containers.md) — API, client, worker, PostgreSQL, and shared storage

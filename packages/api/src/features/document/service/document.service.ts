@@ -110,11 +110,13 @@ export class DocumentService {
       })
     ]);
     const result = this.mergeSearchResults(keywordResult, semanticResult, query.limit);
+    const documents = [...new Map(result.map((hit) => [hit.document.uuid, hit.document])).values()];
+    const summaries = await this.metadata.getDocumentMetadataSummaries(ownerUuid, documents);
     return DocumentSearchResponseSchema.parse({
       query: query.q,
       total: result.length,
       items: result.map((hit) => ({
-        document: this.toDocumentResponse(hit.document),
+        document: this.toDocumentResponse(hit.document, summaries.get(hit.document.uuid)),
         pageNumber: hit.pageNumber,
         snippet: this.createSnippet(hit.text, query.q),
         matchType: hit.matchType,

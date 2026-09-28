@@ -61,7 +61,7 @@ Likely uses in this application:
 | --- | --- |
 | Document inbox/list | Server-filtered and paginated grid |
 | Metadata browsing | Typed columns and controlled cell renderers |
-| Folder/category navigation | Tree with lazy-loaded children if needed |
+| Virtual folder navigation | Owner-scoped tree with lazy-loaded children |
 | Bulk actions | Row selection and explicit application-service commands |
 | Search results | Server-side query state; result snippets rendered as cells/details |
 
