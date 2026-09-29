@@ -524,7 +524,11 @@ export class DocumentService {
       throw new BadRequestException('The original document file is not available in storage');
     }
 
-    const updated = await this.documents.update(document.uuid, { status: 'uploaded' });
+    const updated = await this.documents.update(document.uuid, {
+      status: 'uploaded',
+      isNew: true,
+      aiSuggestion: null
+    });
     if (!updated) {
       throw new NotFoundException('Document not found');
     }

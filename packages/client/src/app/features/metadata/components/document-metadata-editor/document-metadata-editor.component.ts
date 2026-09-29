@@ -45,6 +45,7 @@ export class DocumentMetadataEditorComponent {
   readonly acceptedSuggestionFields = signal<Set<string>>(new Set());
   private readonly inputSuggestion = signal<DocumentTitleSuggestion | null>(null);
   private readonly serverSuggestion = signal<DocumentTitleSuggestion | null>(null);
+  private applyingAllSuggestion = false;
   readonly activeSuggestion = computed(() => this.inputSuggestion() ?? this.serverSuggestion());
   readonly showIssuerForm = signal(false);
   readonly editingIssuerUuid = signal<string | null>(null);
@@ -229,7 +230,9 @@ export class DocumentMetadataEditorComponent {
     if (field === 'custom') this.customValues.update((current) => ({ ...current, ...suggestion.custom }));
     if (field === 'title') {
       this.title.set(suggestion.suggestedTitle);
-      this.suggestionTitleAccepted.emit(suggestion.suggestedTitle);
+      if (!this.applyingAllSuggestion) {
+        this.suggestionTitleAccepted.emit(suggestion.suggestedTitle);
+      }
     }
     this.markMetadataDirty();
   }
@@ -243,10 +246,16 @@ export class DocumentMetadataEditorComponent {
     if (suggestion.issuerUuid) fields.push('issuerUuid');
     if (suggestion.tagUuids.length > 0) fields.push('tagUuids');
     if (Object.keys(suggestion.custom).length > 0) fields.push('custom');
-    for (const field of fields) {
-      if (!this.acceptedSuggestionFields().has(field)) this.acceptSuggestionField(field);
+    this.applyingAllSuggestion = true;
+    try {
+      for (const field of fields) {
+        if (!this.acceptedSuggestionFields().has(field)) this.acceptSuggestionField(field);
+      }
+    } finally {
+      this.applyingAllSuggestion = false;
     }
     if (!await this.save()) return;
+    if (await this.metadata.clearDocumentSuggestion(this.documentUuid()) === null) return;
     this.inputSuggestion.set(null);
     this.serverSuggestion.set(null);
     this.suggestionAccepted.emit(suggestion.suggestedTitle);

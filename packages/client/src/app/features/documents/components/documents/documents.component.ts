@@ -528,9 +528,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
   }
 
-  async acceptSuggestedMetadata(uuid: string, title: string): Promise<void> {
-    if (!(await this.documents.updateTitle(uuid, title))) return;
-    if (await this.documents.clearSuggestion(uuid) === null) return;
+  acceptSuggestedMetadata(uuid: string, _title: string): void {
     this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
   }
 
