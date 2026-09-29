@@ -5,6 +5,7 @@ import { normalizeOcrSpacing } from './text-normalization.js';
 export interface ExtractedPdfPages {
   pages: string[];
   text: string;
+  requiresOcr: boolean;
 }
 
 /**
@@ -40,8 +41,27 @@ export async function extractPdfPages(storageKey: string): Promise<ExtractedPdfP
     document.destroy();
   }
 
+  const text = pages.join('\n\n').trim();
+
   return {
     pages,
-    text: pages.join('\n\n').trim()
+    text,
+    requiresOcr: requiresOcr(text)
   };
+}
+
+/**
+ * MuPDF uses the replacement character when a PDF text layer contains glyphs
+ * without a usable Unicode mapping. Such text looks like `����` in the UI and
+ * is not useful for search or AI analysis, even though it is technically
+ * non-empty. Send it through OCR instead of persisting the broken text.
+ */
+export function requiresOcr(text: string): boolean {
+  if (!text.trim()) return true;
+
+  const replacementCharacters = [...text].filter((character) => character === '\uFFFD').length;
+  if (replacementCharacters === 0) return false;
+
+  const visibleCharacters = [...text].filter((character) => !/\s/u.test(character)).length;
+  return replacementCharacters >= 3 || replacementCharacters / Math.max(visibleCharacters, 1) >= 0.01;
 }

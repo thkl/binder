@@ -17,6 +17,7 @@ This folder contains the living documentation for the lightweight document manag
 - [OCR architecture](./architecture/ocr.md) — OCRmyPDF/Tesseract worker design
 - [PDF/A archives](./architecture/pdfa-archives.md) — validated archival derivatives and original-file preservation
 - [Document audit history](./architecture/document-audit.md) — owner-visible document change history
+- [First-run onboarding](./architecture/onboarding.md) — secure administrator creation and guided initial configuration
 - [Document pipeline](./architecture/pipeline.md) — durable jobs, retries, events, and worker boundaries
 - [Controlled document metadata](./architecture/document-metadata.md) — system and personal classification vocabularies
 - [Issuers](./architecture/issuers.md) — reusable sender records, document references, and deterministic worker matching
@@ -44,4 +45,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-P0, P1, and P2 are implemented. The inbox slice, bulk document actions, virtual folders, recursive ZIP exports, saved searches, backup scheduling, retention cleanup, visible status, manual backup requests, restore instructions, and scheduled document-storage consistency checks are in place. A real restore drill remains recommended as operational verification. Email, scanner ingestion, multiple configurable AI providers, and the Swift iOS companion have moved to P3.
+P0, P1, and P2 are implemented. The inbox slice, bulk document actions, virtual folders, recursive ZIP exports, saved searches, backup scheduling, retention cleanup, visible status, manual backup requests, restore instructions, and scheduled document-storage consistency checks are in place. A real restore drill remains recommended as operational verification. Email, scanner ingestion, multiple configurable AI providers, the Swift iOS companion, and first-run onboarding have moved to P3.

@@ -18,6 +18,13 @@ The bootstrap operation must be idempotent and safe when multiple API instances 
 
 The temporary password must not be regenerated or logged again on every restart. If the bootstrap credential is lost, an explicit administrator-reset procedure is required rather than silently creating another account.
 
+The current bootstrap behavior is a safe fallback for development and headless
+deployments. A planned P3 onboarding flow will provide the preferred user
+experience: the administrator chooses the initial password in a protected setup
+screen instead of receiving a generated password through logs. The setup flow
+must still require a one-time setup proof and must never allow an unauthenticated
+remote request to create the first administrator.
+
 The initial implementation lives in the authentication feature and uses the SQL migrations:
 
 ```text
@@ -38,6 +45,35 @@ packages/api/migrations/002_create_user_sessions.sql
 - Production must use a shared persistent session store; the default in-memory Express session store is for development only.
 
 The initial production session store is `connect-pg-simple` using the application's PostgreSQL connection pool. It keeps session state server-side without introducing Redis solely for authentication sessions. The session table is managed as an explicit database migration, not created implicitly at runtime in production.
+
+### Password reset by email
+
+Email-based password reset is a planned P3 feature for local accounts. It
+must use a single-use, short-lived opaque token. Only a hash of the token is
+stored in PostgreSQL; the raw token is sent through the configured mailer and
+is never logged or included in API responses.
+
+Required behavior:
+
+- The reset request always returns the same response whether or not the
+  username or email exists, preventing account enumeration.
+- Requests and token attempts are rate limited and expire after a short,
+  explicit period.
+- A successful reset invalidates the token, clears `mustChangePassword` when
+  appropriate, and invalidates existing sessions for the account.
+- Reset tokens are not accepted for OIDC-only authentication; those users must
+  use the identity provider's password-recovery flow.
+- The reset form must enforce the same password policy as local login and
+  password-change endpoints.
+- Mail delivery failures must be visible to operators without exposing the
+  requested account or reset token in logs.
+
+The planned endpoints are:
+
+```text
+POST /api/v1/auth/password-reset/request
+POST /api/v1/auth/password-reset/confirm
+```
 
 ### OIDC login
 

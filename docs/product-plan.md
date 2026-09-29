@@ -93,11 +93,13 @@ verification.
 - Add extensions and integrations without changing the core document workflow
 - Turn invoice due dates into calendar entries
 - Import documents from email
+- Add secure email-based password reset for local accounts
 - Connect scanners and other external sources
 - Add a Swift iOS companion app with Share Sheet document ingestion
 - Queue shared documents locally when offline and upload them automatically when the backend is reachable again
 - Generate validated PDF/A-2b archive derivatives while preserving the original upload
 - Record an owner-visible audit history for every document
+- Add a secure first-run onboarding assistant that creates the administrator and validates the basic runtime settings
 - Let administrators inspect API and worker activity
 - Choose different AI providers for embeddings and document assistance
 - Test providers and choose privacy-appropriate services for each task

@@ -163,6 +163,7 @@
 .folder-root-row,
 .folder-row {
   display: flex;
+  position: relative;
   width: 100%;
   min-height: 2.75rem;
   align-items: center;
@@ -246,8 +247,13 @@
 }
 
 .folder-label {
+  display: block;
+  flex: 1 1 auto;
   min-width: 0;
-  overflow-wrap: anywhere;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
 }
 
 .folder-count {
@@ -259,15 +265,26 @@
 
 .folder-actions {
   display: flex;
-  flex: 0 0 auto;
+  position: absolute;
+  top: 50%;
+  right: .35rem;
+  z-index: 1;
   gap: .1rem;
+  padding: .1rem;
+  border: 1px solid rgba(97, 215, 244, .16);
+  border-radius: .5rem;
+  background: rgba(7, 22, 41, .92);
+  backdrop-filter: blur(8px);
   opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
   transition: opacity .15s ease;
 }
 
 .folder-row:hover .folder-actions,
 .folder-row:focus-within .folder-actions {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .folder-actions button {
@@ -310,10 +327,6 @@
 
 .folder-row-root select{
   background-color:rgba(97, 215, 244, .13);;
-}
-
-.folder-action-spacer {
-  width: calc(2.1rem * 3);
 }
 
 @media (prefers-reduced-motion: reduce) {

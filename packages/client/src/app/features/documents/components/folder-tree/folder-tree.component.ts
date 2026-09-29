@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { FoldersService, FolderTreeRow } from '../../services/folders.service';
-import { TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 @Component({
   selector: 'binder-folder-tree',
@@ -12,6 +12,7 @@ import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 })
 export class FolderTreeComponent {
   readonly folderSelected = output<string | null>();
+  readonly i18n = inject(I18nService);
   readonly creatingParentUuid = signal<string | null | undefined>(undefined);
   readonly createName = signal('');
   readonly editingUuid = signal<string | null>(null);

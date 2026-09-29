@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ZipArchive } from 'archiver';
 import {
   CreateDocumentInputSchema,
@@ -32,6 +33,7 @@ import { TitleSuggestionService } from './title-suggestion.service';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { FolderStore } from '../../folder/store/folder.store';
 import { DocumentStorageIssueStore } from '../store/document-storage-issue.store';
+import { InboxItemStore } from '../../inbox/store/inbox-item.store';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -52,7 +54,9 @@ export class DocumentService {
     private readonly titleSuggestions: TitleSuggestionService,
     private readonly config: ConfigService<BinderConfig>,
     private readonly folders: FolderStore,
-    private readonly storageIssues: DocumentStorageIssueStore
+    private readonly storageIssues: DocumentStorageIssueStore,
+    private readonly inboxItems: InboxItemStore,
+    private readonly eventEmitter: EventEmitter2
   ) { }
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -89,6 +93,7 @@ export class DocumentService {
         isNew: true,
         status: 'uploaded'
       });
+      await this.addManualUploadToInbox(document.uuid, ownerUuid, file, stored.checksumSha256, stored.sizeBytes);
       try {
         await this.pipeline.enqueue(document.uuid, ownerUuid);
       } catch (error) {
@@ -98,6 +103,33 @@ export class DocumentService {
     } catch (error) {
       await this.storage.remove(stored.storageKey).catch(() => undefined);
       throw error;
+    }
+  }
+
+  private async addManualUploadToInbox(
+    documentUuid: string,
+    ownerUuid: string,
+    file: UploadedDocumentFile,
+    checksumSha256: string,
+    sizeBytes: number
+  ): Promise<void> {
+    try {
+      await this.inboxItems.create({
+        ownerUuid,
+        documentUuid,
+        originalFilename: file.originalname,
+        checksumSha256,
+        sizeBytes,
+        status: 'imported',
+        aiStatus: 'pending',
+        aiSuggestion: null,
+        autoApplied: false,
+        lastError: null,
+        aiError: null
+      });
+      this.eventEmitter.emit('inbox.changed', { reason: 'manual-upload' });
+    } catch (error) {
+      this.logger.error(`Unable to add manually uploaded document ${documentUuid} to the inbox`, error);
     }
   }
 

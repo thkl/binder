@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, ou
 import { DecimalPipe } from '@angular/common';
 import type { CreateIssuerInput, Document, DocumentMetadata, DocumentTitleSuggestion, FolderNode, Issuer, UpdateIssuerInput } from '@binder/common';
 import { MetadataService } from '../../services/metadata.service';
+import { DocumentsService } from '../../../documents/services/documents.service';
 import { FoldersService } from '../../../documents/services/folders.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
@@ -25,9 +26,11 @@ export class DocumentMetadataEditorComponent {
   readonly dirtyChange = output<boolean>();
   readonly closeRequest = output<void>();
   readonly metadata = inject(MetadataService);
+  readonly documents = inject(DocumentsService);
   readonly folders = inject(FoldersService);
   readonly i18n = inject(I18nService);
   readonly documentTypeUuid = signal('');
+  readonly title = signal('');
   readonly categoryUuid = signal('');
   readonly issuerUuid = signal('');
   readonly selectedTags = signal<Set<string>>(new Set());
@@ -85,6 +88,8 @@ export class DocumentMetadataEditorComponent {
 
   async load(uuid = this.documentUuid()): Promise<void> {
     this.loaded.set(false);
+    const document = this.documentData();
+    this.title.set(document?.title?.trim() || document?.originalFilename?.trim() || '');
     const [, current, allFolders, currentFolders] = await Promise.all([
       this.metadata.loadVocabulary(),
       this.metadata.getDocumentMetadata(uuid),
@@ -136,6 +141,13 @@ export class DocumentMetadataEditorComponent {
   }
 
   async save(): Promise<boolean> {
+    const document = this.documentData();
+    const title = this.title().trim();
+    const currentTitle = document?.title?.trim() || document?.originalFilename?.trim() || '';
+    if (title !== currentTitle && !(await this.documents.updateTitle(this.documentUuid(), title))) {
+      return false;
+    }
+
     const result = await this.metadata.setDocumentMetadata(this.documentUuid(), {
       issuerUuid: this.issuerUuid() || null,
       documentTypeUuid: this.documentTypeUuid() || null,
@@ -182,6 +194,11 @@ export class DocumentMetadataEditorComponent {
     this.markMetadataDirty();
   }
 
+  setTitle(title: string): void {
+    this.title.set(title);
+    this.markMetadataDirty();
+  }
+
   setCategoryUuid(uuid: string): void {
     this.categoryUuid.set(uuid);
     this.markMetadataDirty();
@@ -210,7 +227,10 @@ export class DocumentMetadataEditorComponent {
     if (field === 'issuerUuid') this.issuerUuid.set(suggestion.issuerUuid ?? '');
     if (field === 'tagUuids') this.selectedTags.set(new Set(suggestion.tagUuids));
     if (field === 'custom') this.customValues.update((current) => ({ ...current, ...suggestion.custom }));
-    if (field === 'title') this.suggestionTitleAccepted.emit(suggestion.suggestedTitle);
+    if (field === 'title') {
+      this.title.set(suggestion.suggestedTitle);
+      this.suggestionTitleAccepted.emit(suggestion.suggestedTitle);
+    }
     this.markMetadataDirty();
   }
 

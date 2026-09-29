@@ -22,6 +22,18 @@
       <div class="suggestion-actions"><button type="button" class="accept-all-button" (click)="acceptAllSuggestion()">✓ {{ 'editor.acceptAll' | t }}</button><button type="button" class="dismiss-suggestion-button" (click)="dismissSuggestion()">{{ 'editor.dismissSuggestion' | t }}</button></div>
     </section>
   }
+  <section class="title-section">
+    <label class="field title-field">
+      <span>{{ 'editor.titleField' | t }}</span>
+      <input
+        type="text"
+        [value]="title()"
+        maxlength="255"
+        required
+        (input)="setTitle($any($event.target).value)"
+        [attr.aria-label]="'editor.titleField' | t">
+    </label>
+  </section>
   <section class="issuer-section">
     <div class="tag-label"><span>{{ 'editor.issuer' | t }}</span><small>{{ 'editor.issuerHint' | t }}</small></div>
     <div class="issuer-picker">

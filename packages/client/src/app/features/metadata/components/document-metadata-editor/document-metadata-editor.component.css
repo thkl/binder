@@ -35,6 +35,20 @@ h3 {
     letter-spacing: -.025em;
 }
 
+.title-section {
+    padding: 1.15rem 1.35rem 1.25rem;
+    border-top: 1px solid rgba(157, 190, 232, .1);
+}
+
+.title-field {
+    max-width: none;
+}
+
+.title-field input {
+    font-size: .82rem;
+    font-weight: 650;
+}
+
 .helper,
 .tag-label small,
 .no-tags {

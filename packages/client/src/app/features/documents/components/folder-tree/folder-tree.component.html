@@ -51,11 +51,10 @@
       (click)="select(null)">
       <span class="folder-disclosure empty" aria-hidden="true"></span>
       <span class="folder-glyph" aria-hidden="true">/</span>
-      <span class="folder-label">{{ 'folders.allDocuments' | t }}</span>
+      <span class="folder-label" [attr.lang]="i18n.language()">{{ 'folders.allDocuments' | t }}</span>
     </button>
       <span class="folder-actions">
         <button  type="button" (click)="beginCreate(null)" [attr.aria-label]="'folders.newRoot' | t">+</button>
-        <div class="folder-action-spacer"></div>
       </span>
       </div>    
 
@@ -70,7 +69,7 @@
           @if (editingUuid() === row.folder.uuid) {
             <input class="folder-editor" [attr.data-folder-editor]="row.folder.uuid" [value]="row.folder.name" (blur)="finishRename(row.folder.uuid, $event)" (keydown)="handleRenameKeydown(row.folder.uuid, $event)" aria-label="Folder name">
           } @else {
-            <span class="folder-label">{{ row.folder.name }}</span>
+            <span class="folder-label" [attr.lang]="i18n.language()">{{ row.folder.name }}</span>
             <span class="folder-count">{{ row.folder.documentCount }}</span>
           }
         </button>
