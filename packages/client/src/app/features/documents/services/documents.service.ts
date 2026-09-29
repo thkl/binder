@@ -5,6 +5,8 @@ import {
   DocumentBulkActionInput,
   DocumentBulkActionResponse,
   DocumentBulkActionResponseSchema,
+  DocumentListFacetsResponse,
+  DocumentListFacetsResponseSchema,
   DocumentListQuery,
   DocumentListQuerySchema,
   DocumentListResponse,
@@ -20,6 +22,7 @@ import { ApplicationService } from '../../../common/application.service';
 @Injectable({ providedIn: 'root' })
 export class DocumentsService {
   readonly page = signal<DocumentListResponse | null>(null);
+  readonly facets = signal<DocumentListFacetsResponse | null>(null);
   readonly loading = signal(false);
   readonly uploading = signal(false);
   readonly error = signal<string | null>(null);
@@ -31,32 +34,67 @@ export class DocumentsService {
   async load(query: Partial<DocumentListQuery> = {}): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
-    const schemaQuery = { ...this.currentQuery, ...query }
+    const schemaQuery = { ...this.currentQuery, ...query };
     const parsed = DocumentListQuerySchema.parse(schemaQuery);
     this.currentQuery = parsed;
-    const params = new URLSearchParams({
-      page: String(parsed.page),
-      pageSize: String(parsed.pageSize),
-      sort: parsed.sort,
-      direction: parsed.direction,
-      groupBy: parsed.groupBy,
-      groupDirection: parsed.groupDirection
-    });
-    if (parsed.status) params.set('status', parsed.status);
-    if (parsed.folderUuid) params.set('folderUuid', parsed.folderUuid);
-    if (parsed.q) params.set('q', parsed.q);
 
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1','documents',`?${params.toString()}`), { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', 'documents', `?${this.buildParams(parsed).toString()}`),
+          { withCredentials: true }
+        )
       );
       const page = DocumentListResponseSchema.parse(response.data);
       this.page.set(page);
+      await this.loadFacets(parsed);
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private async loadFacets(query: DocumentListQuery): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', 'documents/facets', `?${this.buildParams(query, false).toString()}`),
+          { withCredentials: true }
+        )
+      );
+      this.facets.set(DocumentListFacetsResponseSchema.parse(response.data));
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+    }
+  }
+
+  private buildParams(query: DocumentListQuery, includePagination = true): URLSearchParams {
+    const params = new URLSearchParams();
+    if (includePagination) {
+      params.set('page', String(query.page));
+      params.set('pageSize', String(query.pageSize));
+      params.set('sort', query.sort);
+      params.set('direction', query.direction);
+      params.set('groupBy', query.groupBy);
+      params.set('groupDirection', query.groupDirection);
+    }
+
+    if (query.status) params.set('status', query.status);
+    if (query.issuerUuid) params.set('issuerUuid', query.issuerUuid);
+    if (query.folderUuid) params.set('folderUuid', query.folderUuid);
+    if (query.q) params.set('q', query.q);
+    this.setArrayParam(params, 'documentTypeUuids', query.documentTypeUuids);
+    this.setArrayParam(params, 'categoryUuids', query.categoryUuids);
+    this.setArrayParam(params, 'issuerUuids', query.issuerUuids);
+    this.setArrayParam(params, 'tagUuids', query.tagUuids);
+    this.setArrayParam(params, 'statuses', query.statuses);
+    this.setArrayParam(params, 'reviewStates', query.reviewStates);
+    return params;
+  }
+
+  private setArrayParam(params: URLSearchParams, key: string, values: string[] | undefined): void {
+    if (values !== undefined) params.set(key, values.join(','));
   }
 
   async requeueDocument(uuid:string): Promise<boolean> {

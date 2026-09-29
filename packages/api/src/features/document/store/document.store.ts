@@ -3,9 +3,24 @@ import { fn, Op, Order, WhereOptions } from 'sequelize';
 import { BaseCrudStore } from '../../../shared/datastore/base-crud.store';
 import { Document } from '../models/document.entity';
 import { DocumentPage } from '../models/document-page.entity';
-import { DocumentListQuery, DocumentSearchQuery } from '@binder/common';
-import { DocumentTagAssignment, DocumentMetadataValue, MetadataDefinition } from '../../metadata/models/vocabulary.entity';
+import {
+  DocumentListFacetOption,
+  DocumentListFacetsResponse,
+  DocumentListQuery,
+  DocumentSearchQuery
+} from '@binder/common';
+import {
+  DocumentCategory,
+  DocumentTag,
+  DocumentTagAssignment,
+  DocumentMetadataValue,
+  DocumentType,
+  MetadataDefinition
+} from '../../metadata/models/vocabulary.entity';
 import { DocumentFolder } from '../../folder/models/document-folder.entity';
+import { Issuer } from '../../issuer/models/issuer.entity';
+
+type DocumentFacetKey = 'documentType' | 'category' | 'issuer' | 'tag' | 'status' | 'reviewState';
 
 @Injectable()
 export class DocumentStore extends BaseCrudStore<Document> {
@@ -31,30 +46,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
   }
 
   async findOwnedPage(ownerUuid: string, query: DocumentListQuery) {
-    const where: WhereOptions<Document> = { ownerUuid };
-
-    if (query.status) {
-      where.status = query.status;
-    }
-    if (query.issuerUuid) {
-      where.issuerUuid = query.issuerUuid;
-    }
-
-    if (query.folderUuid) {
-      const links = await DocumentFolder.findAll({
-        where: { folderUuid: query.folderUuid },
-        attributes: ['documentUuid']
-      });
-      where.uuid = { [Op.in]: links.map((link) => link.documentUuid) };
-    }
-
-    if (query.q) {
-      (where as unknown as Record<PropertyKey, unknown>)[Op.or] = [
-        { title: { [Op.iLike]: `%${query.q}%` } },
-        { originalFilename: { [Op.iLike]: `%${query.q}%` } },
-        { checksumSha256: { [Op.iLike]: `%${query.q}%` } }
-      ];
-    }
+    const where = await this.createOwnedWhere(ownerUuid, query);
 
     if (query.groupBy === 'tag') {
       return this.findOwnedTagGroupedPage(where, query);
@@ -86,6 +78,252 @@ export class DocumentStore extends BaseCrudStore<Document> {
       hasNext: query.page * query.pageSize < total,
       hasPrev: query.page > 1
     };
+  }
+
+  async findOwnedFacets(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListFacetsResponse> {
+    const [typeDocuments, categoryDocuments, issuerDocuments, tagDocuments, statusDocuments, reviewDocuments] = await Promise.all([
+      this.findFacetDocuments(ownerUuid, query, 'documentType'),
+      this.findFacetDocuments(ownerUuid, query, 'category'),
+      this.findFacetDocuments(ownerUuid, query, 'issuer'),
+      this.findFacetDocuments(ownerUuid, query, 'tag'),
+      this.findFacetDocuments(ownerUuid, query, 'status'),
+      this.findFacetDocuments(ownerUuid, query, 'reviewState')
+    ]);
+
+    const [documentType, category, issuer, tag] = await Promise.all([
+      this.buildVocabularyFacetOptions(DocumentType, typeDocuments, 'documentTypeUuid', ownerUuid),
+      this.buildVocabularyFacetOptions(DocumentCategory, categoryDocuments, 'categoryUuid', ownerUuid),
+      this.buildIssuerFacetOptions(issuerDocuments, ownerUuid),
+      this.buildTagFacetOptions(tagDocuments, ownerUuid)
+    ]);
+
+    return {
+      documentType,
+      category,
+      issuer,
+      tag,
+      status: this.buildScalarFacetOptions(
+        statusDocuments.map((document) => document.status),
+        (status) => status
+      ),
+      reviewState: this.buildScalarFacetOptions(
+        reviewDocuments.map((document) => document.isNew ? 'new' : 'reviewed'),
+        (state) => state === 'new' ? 'New' : 'Reviewed'
+      )
+    };
+  }
+
+  private async findFacetDocuments(
+    ownerUuid: string,
+    query: DocumentListQuery,
+    excludedFacet: DocumentFacetKey
+  ): Promise<Document[]> {
+    const where = await this.createOwnedWhere(ownerUuid, query, excludedFacet);
+    return this.model.findAll({
+      where,
+      attributes: ['uuid', 'documentTypeUuid', 'categoryUuid', 'issuerUuid', 'status', 'isNew']
+    });
+  }
+
+  private async createOwnedWhere(
+    ownerUuid: string,
+    query: DocumentListQuery,
+    excludedFacet?: DocumentFacetKey
+  ): Promise<WhereOptions<Document>> {
+    const where: WhereOptions<Document> = { ownerUuid };
+
+    if (query.folderUuid) {
+      const links = await DocumentFolder.findAll({
+        where: { folderUuid: query.folderUuid },
+        attributes: ['documentUuid']
+      });
+      this.restrictToDocumentUuids(where, links.map((link) => link.documentUuid));
+    }
+
+    if (query.q) {
+      (where as unknown as Record<PropertyKey, unknown>)[Op.or] = [
+        { title: { [Op.iLike]: `%${query.q}%` } },
+        { originalFilename: { [Op.iLike]: `%${query.q}%` } },
+        { checksumSha256: { [Op.iLike]: `%${query.q}%` } }
+      ];
+    }
+
+    if (excludedFacet !== 'status') {
+      if (query.statuses !== undefined) {
+        this.setFieldValues(where, 'status', query.statuses);
+      } else if (query.status) {
+        where.status = query.status;
+      }
+    }
+
+    if (excludedFacet !== 'issuer') {
+      if (query.issuerUuids !== undefined) {
+        this.setFieldValues(where, 'issuerUuid', query.issuerUuids);
+      } else if (query.issuerUuid) {
+        where.issuerUuid = query.issuerUuid;
+      }
+    }
+
+    if (excludedFacet !== 'documentType' && query.documentTypeUuids !== undefined) {
+      this.setFieldValues(where, 'documentTypeUuid', query.documentTypeUuids);
+    }
+
+    if (excludedFacet !== 'category' && query.categoryUuids !== undefined) {
+      this.setFieldValues(where, 'categoryUuid', query.categoryUuids);
+    }
+
+    if (excludedFacet !== 'reviewState' && query.reviewStates !== undefined) {
+      const includesNew = query.reviewStates.includes('new');
+      const includesReviewed = query.reviewStates.includes('reviewed');
+      if (includesNew && !includesReviewed) {
+        where.isNew = true;
+      } else if (!includesNew && includesReviewed) {
+        where.isNew = false;
+      } else if (!includesNew && !includesReviewed) {
+        this.restrictToDocumentUuids(where, []);
+      }
+    }
+
+    if (excludedFacet !== 'tag' && query.tagUuids !== undefined) {
+      await this.applyTagFilter(where, query.tagUuids);
+    }
+
+    return where;
+  }
+
+  private async applyTagFilter(where: WhereOptions<Document>, tagUuids: string[]): Promise<void> {
+    if (tagUuids.length === 0) {
+      this.restrictToDocumentUuids(where, []);
+      return;
+    }
+
+    const candidates = await this.model.findAll({ where, attributes: ['uuid'] });
+    const candidateUuids = candidates.map((document) => document.uuid);
+    if (candidateUuids.length === 0) return;
+
+    const assignments = await DocumentTagAssignment.findAll({
+      where: {
+        documentUuid: { [Op.in]: candidateUuids },
+        tagUuid: { [Op.in]: tagUuids }
+      },
+      attributes: ['documentUuid', 'tagUuid']
+    });
+    const tagsByDocument = new Map<string, Set<string>>();
+    for (const assignment of assignments) {
+      const tags = tagsByDocument.get(assignment.documentUuid) ?? new Set<string>();
+      tags.add(assignment.tagUuid);
+      tagsByDocument.set(assignment.documentUuid, tags);
+    }
+
+    this.restrictToDocumentUuids(
+      where,
+      candidateUuids.filter((uuid) => tagUuids.every((tagUuid) => tagsByDocument.get(uuid)?.has(tagUuid)))
+    );
+  }
+
+  private restrictToDocumentUuids(where: WhereOptions<Document>, uuids: string[]): void {
+    const whereRecord = where as unknown as Record<string, unknown>;
+    const currentUuid = whereRecord.uuid;
+    const currentIn = currentUuid && typeof currentUuid === 'object'
+      ? (currentUuid as Record<PropertyKey, unknown>)[Op.in]
+      : undefined;
+    const currentValues = Array.isArray(currentIn) ? currentIn as string[] : null;
+    const restricted = currentValues
+      ? uuids.filter((uuid) => currentValues.includes(uuid))
+      : uuids;
+    whereRecord.uuid = { [Op.in]: restricted };
+  }
+
+  private setFieldValues(where: WhereOptions<Document>, field: string, values: string[]): void {
+    (where as unknown as Record<string, unknown>)[field] = { [Op.in]: values };
+  }
+
+  private async buildVocabularyFacetOptions(
+    model: typeof DocumentType | typeof DocumentCategory,
+    documents: Document[],
+    field: 'documentTypeUuid' | 'categoryUuid',
+    ownerUuid: string
+  ): Promise<DocumentListFacetOption[]> {
+    const ids = [...new Set(documents.map((document) => document[field]).filter((uuid): uuid is string => Boolean(uuid)))];
+    if (ids.length === 0) return [];
+
+    const values = await model.findAll({
+      where: {
+        uuid: { [Op.in]: ids },
+        active: true,
+        ownerUuid: { [Op.or]: [null, ownerUuid] }
+      },
+      attributes: ['uuid', 'name']
+    });
+    const counts = this.countBy(documents, (document) => document[field]);
+    return this.optionsFromValues(values, counts);
+  }
+
+  private async buildIssuerFacetOptions(documents: Document[], ownerUuid: string): Promise<DocumentListFacetOption[]> {
+    const ids = [...new Set(documents.map((document) => document.issuerUuid).filter((uuid): uuid is string => Boolean(uuid)))];
+    if (ids.length === 0) return [];
+
+    const values = await Issuer.findAll({
+      where: { uuid: { [Op.in]: ids }, ownerUuid },
+      attributes: ['uuid', 'name']
+    });
+    const counts = this.countBy(documents, (document) => document.issuerUuid);
+    return this.optionsFromValues(values, counts);
+  }
+
+  private async buildTagFacetOptions(documents: Document[], ownerUuid: string): Promise<DocumentListFacetOption[]> {
+    const documentUuids = documents.map((document) => document.uuid);
+    if (documentUuids.length === 0) return [];
+
+    const assignments = await DocumentTagAssignment.findAll({
+      where: { documentUuid: { [Op.in]: documentUuids } },
+      attributes: ['documentUuid', 'tagUuid']
+    });
+    const tagIds = [...new Set(assignments.map((assignment) => assignment.tagUuid))];
+    if (tagIds.length === 0) return [];
+
+    const values = await DocumentTag.findAll({
+      where: {
+        uuid: { [Op.in]: tagIds },
+        active: true,
+        ownerUuid: { [Op.or]: [null, ownerUuid] }
+      },
+      attributes: ['uuid', 'name']
+    });
+    const counts = new Map<string, number>();
+    for (const assignment of assignments) {
+      counts.set(assignment.tagUuid, (counts.get(assignment.tagUuid) ?? 0) + 1);
+    }
+    return this.optionsFromValues(values, counts);
+  }
+
+  private optionsFromValues(
+    values: Array<{ uuid: string; name: string }>,
+    counts: Map<string, number>
+  ): DocumentListFacetOption[] {
+    return values
+      .map((value) => ({ value: value.uuid, label: value.name, count: counts.get(value.uuid) ?? 0 }))
+      .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base', numeric: true }));
+  }
+
+  private buildScalarFacetOptions<T extends string>(
+    values: T[],
+    label: (value: T) => string
+  ): DocumentListFacetOption[] {
+    const counts = new Map<T, number>();
+    for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
+    return [...counts.entries()]
+      .map(([value, count]) => ({ value, label: label(value), count }))
+      .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base' }));
+  }
+
+  private countBy<T>(items: Document[], selector: (item: Document) => T | null): Map<T, number> {
+    const counts = new Map<T, number>();
+    for (const item of items) {
+      const value = selector(item);
+      if (value !== null) counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+    return counts;
   }
 
   private async findOwnedTagGroupedPage(where: WhereOptions<Document>, query: DocumentListQuery) {

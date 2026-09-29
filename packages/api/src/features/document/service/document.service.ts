@@ -8,6 +8,8 @@ import {
   DocumentBulkActionInput,
   DocumentBulkActionResponseSchema,
   DocumentListQuery,
+  DocumentListFacetsResponse,
+  DocumentListFacetsResponseSchema,
   DocumentListResponse,
   DocumentListResponseSchema
 } from '@binder/common';
@@ -99,6 +101,12 @@ export class DocumentService {
       groupBy: query.groupBy,
       items: result.items.map((document) => this.toDocumentResponse(document, summaries.get(document.uuid)))
     });
+  }
+
+  async facets(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListFacetsResponse> {
+    return DocumentListFacetsResponseSchema.parse(
+      await this.documents.findOwnedFacets(ownerUuid, query)
+    );
   }
 
   async search(ownerUuid: string, query: DocumentSearchQuery) {

@@ -12,8 +12,8 @@
   "dependencies": {
     "dotenv": "18.0.3",
     "mupdf": "^1.28.1",
-    "sequelize": "^6.0.0",
-    "sequelize-typescript": "^2.1.0",
+    "sequelize": "6.37.8",
+    "sequelize-typescript": "2.1.6",
     "winston": "^3.0.0",
     "winston-daily-rotate-file": "^5.0.0"
   },

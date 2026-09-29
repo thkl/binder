@@ -29,6 +29,67 @@
       <span>{{ 'documents.all' | t }}</span>
 
       <div class="list-header-actions">
+        <label class="document-list-search">
+          <span class="sr-only">{{ 'documents.searchList' | t }}</span>
+          <input
+            type="search"
+            [value]="listSearch()"
+            [placeholder]="'documents.searchList' | t"
+            [attr.aria-label]="'documents.searchList' | t"
+            (input)="onListSearch($event)">
+        </label>
+
+        <div class="filter-picker-row" role="group" [attr.aria-label]="'documents.filters' | t">
+          <binder-document-filter-menu
+            [label]="'documents.filterType' | t"
+            [options]="facetOptions('documentType')"
+            [selectedValues]="filterValues().documentType"
+            [open]="activeFilterMenu() === 'documentType'"
+            (toggle)="toggleFilterMenu('documentType')"
+            (applied)="applyFilter('documentType', $event)"
+            (closed)="closeFilterMenu()" />
+          <binder-document-filter-menu
+            [label]="'documents.filterCategory' | t"
+            [options]="facetOptions('category')"
+            [selectedValues]="filterValues().category"
+            [open]="activeFilterMenu() === 'category'"
+            (toggle)="toggleFilterMenu('category')"
+            (applied)="applyFilter('category', $event)"
+            (closed)="closeFilterMenu()" />
+          <binder-document-filter-menu
+            [label]="'documents.filterIssuer' | t"
+            [options]="facetOptions('issuer')"
+            [selectedValues]="filterValues().issuer"
+            [open]="activeFilterMenu() === 'issuer'"
+            (toggle)="toggleFilterMenu('issuer')"
+            (applied)="applyFilter('issuer', $event)"
+            (closed)="closeFilterMenu()" />
+          <binder-document-filter-menu
+            [label]="'documents.filterTag' | t"
+            [options]="facetOptions('tag')"
+            [selectedValues]="filterValues().tag"
+            [open]="activeFilterMenu() === 'tag'"
+            (toggle)="toggleFilterMenu('tag')"
+            (applied)="applyFilter('tag', $event)"
+            (closed)="closeFilterMenu()" />
+          <binder-document-filter-menu
+            [label]="'documents.filterStatus' | t"
+            [options]="facetOptions('status')"
+            [selectedValues]="filterValues().status"
+            [open]="activeFilterMenu() === 'status'"
+            (toggle)="toggleFilterMenu('status')"
+            (applied)="applyFilter('status', $event)"
+            (closed)="closeFilterMenu()" />
+          <binder-document-filter-menu
+            [label]="'documents.filterReviewState' | t"
+            [options]="facetOptions('reviewState')"
+            [selectedValues]="filterValues().reviewState"
+            [open]="activeFilterMenu() === 'reviewState'"
+            (toggle)="toggleFilterMenu('reviewState')"
+            (applied)="applyFilter('reviewState', $event)"
+            (closed)="closeFilterMenu()" />
+        </div>
+
         @if (documents.page(); as page) {
           <small>{{ page.total }} total</small>
         }
@@ -90,6 +151,13 @@
         </div>
       </div>
     </header>
+
+    @if (hasActiveFilters()) {
+      <div class="active-filter-bar">
+        <span>{{ activeFilterCount() }} {{ 'documents.activeFilters' | t }}</span>
+        <button type="button" (click)="clearAllFilters()">{{ 'documents.clearFilters' | t }}</button>
+      </div>
+    }
 
     @if (documents.page(); as page) {
        <div class="pagination">

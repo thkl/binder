@@ -348,6 +348,12 @@ export const CreateDocumentInputSchema = z.object({
 
 export type CreateDocumentInput = z.infer<typeof CreateDocumentInputSchema>;
 
+const parseQueryArray = (value: unknown): unknown => {
+  if (typeof value !== 'string') return value;
+  if (value.trim() === '') return [];
+  return value.split(',').map((item) => item.trim()).filter(Boolean);
+};
+
 export const DocumentListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
@@ -358,10 +364,51 @@ export const DocumentListQuerySchema = z.object({
   status: DocumentStatusSchema.optional(),
   issuerUuid: z.uuid().optional(),
   folderUuid: z.uuid().optional(),
-  q: z.string().trim().max(200).optional()
+  q: z.string().trim().max(200).optional(),
+  documentTypeUuids: z.preprocess(
+    parseQueryArray,
+    z.array(z.uuid()).max(100).optional()
+  ),
+  categoryUuids: z.preprocess(
+    parseQueryArray,
+    z.array(z.uuid()).max(100).optional()
+  ),
+  issuerUuids: z.preprocess(
+    parseQueryArray,
+    z.array(z.uuid()).max(100).optional()
+  ),
+  tagUuids: z.preprocess(
+    parseQueryArray,
+    z.array(z.uuid()).max(100).optional()
+  ),
+  statuses: z.preprocess(
+    parseQueryArray,
+    z.array(DocumentStatusSchema).max(20).optional()
+  ),
+  reviewStates: z.preprocess(
+    parseQueryArray,
+    z.array(z.enum(['new', 'reviewed'])).max(2).optional()
+  )
 });
 
 export type DocumentListQuery = z.infer<typeof DocumentListQuerySchema>;
+
+export const DocumentListFacetOptionSchema = z.object({
+  value: z.string().trim().min(1).max(200),
+  label: z.string().trim().min(1).max(200),
+  count: z.number().int().nonnegative()
+});
+export type DocumentListFacetOption = z.infer<typeof DocumentListFacetOptionSchema>;
+
+export const DocumentListFacetsResponseSchema = z.object({
+  documentType: z.array(DocumentListFacetOptionSchema),
+  category: z.array(DocumentListFacetOptionSchema),
+  issuer: z.array(DocumentListFacetOptionSchema),
+  tag: z.array(DocumentListFacetOptionSchema),
+  status: z.array(DocumentListFacetOptionSchema),
+  reviewState: z.array(DocumentListFacetOptionSchema)
+});
+export type DocumentListFacetsResponse = z.infer<typeof DocumentListFacetsResponseSchema>;
 
 export const DocumentListResponseSchema = z.object({
   items: z.array(DocumentSchema),

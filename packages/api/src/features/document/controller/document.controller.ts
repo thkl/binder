@@ -56,6 +56,12 @@ export class DocumentController {
     return { data: await this.documents.list(user.userId, input) };
   }
 
+  @Get('facets')
+  async facets(@Query() query: Record<string, unknown>, @CurrentUser() user: ScopedUser) {
+    const input = DocumentListQuerySchema.parse(query);
+    return { data: await this.documents.facets(user.userId, input) };
+  }
+
   @Get('search')
   async search(@Query() query: Record<string, unknown>, @CurrentUser() user: ScopedUser) {
     return { data: await this.documents.search(user.userId, DocumentSearchQuerySchema.parse(query)) };

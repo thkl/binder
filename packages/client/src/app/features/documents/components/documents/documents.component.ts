@@ -1,15 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
 import { FoldersService } from '../../services/folders.service';
 import { DocumentDrawerComponent, DocumentDrawerTab } from '../document-drawer/document-drawer.component';
 import { DocumentActionsComponent } from '../document-actions/document-actions.component';
+import { DocumentFilterMenuComponent } from '../document-filter-menu/document-filter-menu.component';
 import { FolderTreeComponent } from '../folder-tree/folder-tree.component';
 import type {
   Document,
   DocumentBulkAction,
   DocumentBulkActionResponse,
+  DocumentListFacetOption,
+  DocumentListQuery,
   DocumentGroupBy,
+  DocumentStatus,
   DocumentTitleSuggestion
 } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
@@ -18,16 +22,32 @@ type DocumentViewMode = 'list' | 'icons';
 type DocumentGroupMode = DocumentGroupBy;
 type DocumentSortDirection = 'asc' | 'desc';
 type DocumentGroup = { key: string; label: string | null; documents: Document[] };
+type DocumentFilterKey = 'documentType' | 'category' | 'issuer' | 'tag' | 'status' | 'reviewState';
+type DocumentFilterValues = {
+  documentType: string[] | undefined;
+  category: string[] | undefined;
+  issuer: string[] | undefined;
+  tag: string[] | undefined;
+  status: DocumentStatus[] | undefined;
+  reviewState: Array<'new' | 'reviewed'> | undefined;
+};
 
 @Component({
   selector: 'binder-documents',
   standalone: true,
-  imports: [CommonModule, DocumentDrawerComponent, DocumentActionsComponent, FolderTreeComponent, TranslatePipe],
+  imports: [
+    CommonModule,
+    DocumentDrawerComponent,
+    DocumentActionsComponent,
+    DocumentFilterMenuComponent,
+    FolderTreeComponent,
+    TranslatePipe
+  ],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DocumentsComponent implements OnInit {
+export class DocumentsComponent implements OnInit, OnDestroy {
   readonly documents = inject(DocumentsService);
   readonly folders = inject(FoldersService);
   private readonly i18n = inject(I18nService);
@@ -50,9 +70,20 @@ export class DocumentsComponent implements OnInit {
   readonly bulkActionResult = signal<DocumentBulkActionResponse | null>(null);
   readonly folderActionInProgress = signal<'add' | 'remove' | null>(null);
   readonly folderActionMessage = signal<string | null>(null);
+  readonly listSearch = signal('');
+  readonly activeFilterMenu = signal<DocumentFilterKey | null>(null);
+  readonly filterValues = signal<DocumentFilterValues>({
+    documentType: undefined,
+    category: undefined,
+    issuer: undefined,
+    tag: undefined,
+    status: undefined,
+    reviewState: undefined
+  });
 
   private readonly folderPages = signal<Record<string, number>>({});
   private readonly allDocumentsFolderKey = '__all-documents__';
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
   
   readonly drawerDocument = computed(() => {
     const uuid = this.drawerDocumentUuid();
@@ -61,6 +92,12 @@ export class DocumentsComponent implements OnInit {
   });
 
   readonly selectedCount = computed(() => this.selectedDocumentUuids().size);
+  readonly activeFilterCount = computed(() => {
+    const values = this.filterValues();
+    const selectedFilters = Object.values(values).filter((selection) => selection !== undefined).length;
+    return selectedFilters + (this.listSearch().trim() ? 1 : 0);
+  });
+  readonly hasActiveFilters = computed(() => this.activeFilterCount() > 0);
   readonly allVisibleSelected = computed(() => {
     const visible = this.documents.page()?.items ?? [];
     return visible.length > 0 && visible.every((document) => this.selectedDocumentUuids().has(document.uuid));
@@ -88,12 +125,67 @@ export class DocumentsComponent implements OnInit {
     void this.documents.load({ groupBy: this.groupMode() });
   }
 
+  ngOnDestroy(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+  }
+
   async selectFolder(folderUuid: string | null): Promise<void> {
     if (!this.canLeaveMetadata()) return;
 
+    this.activeFilterMenu.set(null);
     this.rememberCurrentFolderPage();
     this.folders.select(folderUuid);
     await this.loadFolderPage(folderUuid);
+  }
+
+  onListSearch(event: Event): void {
+    if (!this.canLeaveMetadata()) return;
+
+    const value = (event.target as HTMLInputElement).value;
+    this.listSearch.set(value);
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+
+    this.searchTimer = setTimeout(() => {
+      this.applyListQuery(this.buildFilterQuery());
+    }, 300);
+  }
+
+  toggleFilterMenu(key: DocumentFilterKey): void {
+    this.activeFilterMenu.update((current) => current === key ? null : key);
+  }
+
+  closeFilterMenu(): void {
+    this.activeFilterMenu.set(null);
+  }
+
+  applyFilter(key: DocumentFilterKey, values: string[] | undefined): void {
+    if (!this.canLeaveMetadata()) return;
+
+    this.filterValues.update((current) => ({ ...current, [key]: values }));
+    this.applyListQuery(this.buildFilterQuery());
+  }
+
+  clearAllFilters(): void {
+    if (!this.canLeaveMetadata()) return;
+
+    this.listSearch.set('');
+    this.filterValues.set({
+      documentType: undefined,
+      category: undefined,
+      issuer: undefined,
+      tag: undefined,
+      status: undefined,
+      reviewState: undefined
+    });
+    this.applyListQuery(this.buildFilterQuery());
+  }
+
+  facetOptions(key: DocumentFilterKey): DocumentListFacetOption[] {
+    const options = this.documents.facets()?.[key] ?? [];
+    return options.map((option) => ({
+      ...option,
+      label: this.facetLabel(key, option)
+    }));
   }
 
   async changeFolderMembership(action: 'add' | 'remove'): Promise<void> {
@@ -437,6 +529,35 @@ export class DocumentsComponent implements OnInit {
     }
 
     this.rememberFolderPage(folderUuid, page.page);
+  }
+
+  private applyListQuery(query: Partial<DocumentListQuery>): void {
+    this.activeFilterMenu.set(null);
+    this.folderPages.set({});
+    this.clearSelection();
+    void this.documents.load({ page: 1, ...query });
+  }
+
+  private buildFilterQuery(): Partial<DocumentListQuery> {
+    const filters = this.filterValues();
+    const q = this.listSearch().trim();
+    return {
+      q: q || undefined,
+      status: undefined,
+      issuerUuid: undefined,
+      documentTypeUuids: filters.documentType,
+      categoryUuids: filters.category,
+      issuerUuids: filters.issuer,
+      tagUuids: filters.tag,
+      statuses: filters.status,
+      reviewStates: filters.reviewState
+    };
+  }
+
+  private facetLabel(key: DocumentFilterKey, option: DocumentListFacetOption): string {
+    if (key === 'status') return this.i18n.t('documents.status.' + option.value);
+    if (key === 'reviewState') return this.i18n.t(option.value === 'new' ? 'documents.new' : 'documents.reviewed');
+    return option.label;
   }
 
   private rememberCurrentFolderPage(): void {
