@@ -64,7 +64,7 @@ Expected result: the TÜV report from 05/2025, with a matching text snippet and 
 
 P1 is complete. The system supports the first usable document workflow: upload, durable storage, asynchronous extraction/OCR, controlled metadata, full-text search, optional hosted semantic search, hybrid ranking, user-confirmed AI title/metadata suggestions, and English/German localization. Localization uses flexible language codes so additional translations can be added without changing the contract.
 
-### P2 — organize and protect documents
+### P2 — organize and protect documents ✅ Complete
 
 - Bring files in through an inbox folder with clear ownership
 - Keep duplicate documents under control
@@ -74,19 +74,19 @@ P1 is complete. The system supports the first usable document workflow: upload, 
 - Organize documents in private, nested folders
 - Export selected documents or a folder as a ZIP file
 - Save useful searches for later
+- Make homepage PDF ingestion quick through drag-and-drop and a file-picker fallback
 - Back up and restore the archive
 - Detect missing or changed originals and notify the document owner
 - Keep document access, imports, exports, and recovery reliable
 
 The first P2 slice is the inbox folder. Files copied into the configured `inbox/` directory are treated as external input: the worker claims them safely, validates them, assigns the configured import owner, creates normal document and pipeline records, and moves or marks the source after successful handoff. The inbox must be restart-safe and must not create duplicate documents when the same file is observed more than once. The admin inbox queue persists import state and offers a batch AI analysis action. Optional automatic classification applies only high-confidence suggestions to empty fields; existing metadata and manually changed titles are preserved.
 
-The remaining P2 work is intentionally ordered by user value as follows:
-
-1. Protect the archive with backup, restore, and visible recovery status.
-2. Organize documents in nested personal folders without changing the stored originals.
-3. Manage and export groups of documents, including complete folders.
-4. Save searches with reusable filters and semantic-search thresholds. ✅
-5. Make ownership, imports, exports, automation, and recovery dependable. Scheduled storage consistency checks now compare every original against its database size and SHA-256 checksum and surface owner-scoped issues.
+P2 is complete. The archive now has backup and restore workflows, nested
+virtual folders, recursive ZIP exports, reusable searches, dependable ownership
+and import handling, and scheduled storage consistency checks that compare
+originals against their database size and SHA-256 checksum and surface
+owner-scoped issues. A real restore drill remains recommended as deployment
+verification.
 
 ### P3 — connect Binder to the rest of life
 
@@ -94,6 +94,10 @@ The remaining P2 work is intentionally ordered by user value as follows:
 - Turn invoice due dates into calendar entries
 - Import documents from email
 - Connect scanners and other external sources
+- Add a Swift iOS companion app with Share Sheet document ingestion
+- Queue shared documents locally when offline and upload them automatically when the backend is reachable again
+- Generate validated PDF/A-2b archive derivatives while preserving the original upload
+- Record an owner-visible audit history for every document
 - Let administrators inspect API and worker activity
 - Choose different AI providers for embeddings and document assistance
 - Test providers and choose privacy-appropriate services for each task
@@ -102,7 +106,6 @@ The remaining P2 work is intentionally ordered by user value as follows:
 
 - Third-party plugin distribution or marketplace
 - Multi-user organizations and permissions
-- Mobile client
 - Advanced workflow automation
 - Digital signatures and compliance features
 - Distributed workers and object storage

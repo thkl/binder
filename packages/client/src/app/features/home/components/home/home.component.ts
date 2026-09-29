@@ -2,6 +2,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SearchService } from '../../services/search.service';
+import { DocumentsService } from '../../../documents/services/documents.service';
 import { DocumentDrawerComponent, DocumentDrawerTab } from '../../../documents/components/document-drawer/document-drawer.component';
 import { SavedSearchMenuComponent } from '../../../documents/components/saved-search-menu/saved-search-menu.component';
 import { SavedSearchService } from '../../../documents/services/saved-search.service';
@@ -19,6 +20,7 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
 })
 export class HomeComponent {
   readonly search = inject(SearchService);
+  readonly documents = inject(DocumentsService);
   readonly savedSearches = inject(SavedSearchService);
   readonly i18n = inject(I18nService);
   readonly searchQuery = signal('');
@@ -34,6 +36,9 @@ export class HomeComponent {
   readonly onlySemantic = signal(true);
   readonly semanticThreshold = signal(0.35);
   readonly selectedSavedSearchUuid = signal<string | null>(null);
+  readonly uploadDragActive = signal(false);
+  readonly uploadMessage = signal<'success' | null>(null);
+  readonly uploadError = signal<string | null>(null);
 
   constructor() {
     void this.savedSearches.load();
@@ -80,6 +85,54 @@ export class HomeComponent {
   onSearchInput(event: Event): void {
     this.searchQuery.set((event.target as HTMLInputElement).value);
     this.selectedSavedSearchUuid.set(null);
+  }
+
+  onUploadDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (this.documents.uploading()) return;
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+    this.uploadDragActive.set(true);
+  }
+
+  onUploadDragLeave(event: DragEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    const relatedTarget = event.relatedTarget as Node | null;
+    if (relatedTarget && target.contains(relatedTarget)) return;
+    this.uploadDragActive.set(false);
+  }
+
+  async onUploadDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    this.uploadDragActive.set(false);
+    if (this.documents.uploading()) return;
+    await this.uploadFile(event.dataTransfer?.files.item(0) ?? null);
+  }
+
+  async onUploadSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.item(0) ?? null;
+    input.value = '';
+    await this.uploadFile(file);
+  }
+
+  private async uploadFile(file: File | null): Promise<void> {
+    this.uploadMessage.set(null);
+    this.uploadError.set(null);
+    if (!file) return;
+
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      this.uploadError.set(this.i18n.t('home.uploadOnlyPdf'));
+      return;
+    }
+
+    const uploaded = await this.documents.upload(file);
+    if (uploaded) {
+      this.uploadMessage.set('success');
+      return;
+    }
+
+    this.uploadError.set(this.documents.error() ?? this.i18n.t('home.uploadFailed'));
   }
 
   async saveCurrentSearch(name: string): Promise<void> {

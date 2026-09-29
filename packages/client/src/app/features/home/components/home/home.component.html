@@ -17,6 +17,48 @@
         {{ search.loading() ? ('home.searching' | t) : ('home.search' | t) }}
       </button>
     </form>
+
+    <section
+      class="home-upload-card"
+      [class.drag-active]="uploadDragActive()"
+      [class.uploading]="documents.uploading()"
+      aria-labelledby="home-upload-title"
+      (dragover)="onUploadDragOver($event)"
+      (dragleave)="onUploadDragLeave($event)"
+      (drop)="onUploadDrop($event)">
+      <div class="home-upload-copy">
+        <span class="home-upload-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M12 15V4m0 0L8 8m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+          </svg>
+        </span>
+        <div>
+          <h3 id="home-upload-title">{{ 'home.uploadTitle' | t }}</h3>
+          <p>{{ 'home.uploadCopy' | t }}</p>
+        </div>
+      </div>
+      <input
+        #uploadInput
+        class="home-upload-input"
+        type="file"
+        accept="application/pdf,.pdf"
+        [disabled]="documents.uploading()"
+        (change)="onUploadSelected($event)">
+      <button
+        type="button"
+        class="home-upload-button"
+        [disabled]="documents.uploading()"
+        (click)="uploadInput.click()">
+        {{ documents.uploading() ? ('documents.uploading' | t) : ('home.chooseFile' | t) }}
+      </button>
+      @if (uploadMessage() === 'success') {
+        <p class="home-upload-status success" role="status">{{ 'home.uploaded' | t }}</p>
+      }
+      @if (uploadError(); as error) {
+        <p class="home-upload-status error" role="alert">{{ error }}</p>
+      }
+    </section>
+
     @if (search.vocabulary(); as vocabulary) {
       <div class="search-filters" aria-label="Search filters">
         <label>{{ 'home.type' | t }}

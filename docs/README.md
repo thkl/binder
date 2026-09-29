@@ -15,6 +15,8 @@ This folder contains the living documentation for the lightweight document manag
 - [Client assets](./architecture/client-assets.md) — reuse plan for `ng_store` and `agrid`
 - [Authentication and API](./architecture/authentication-and-api.md) — local login, optional OIDC, sessions, versioning, and endpoint conventions
 - [OCR architecture](./architecture/ocr.md) — OCRmyPDF/Tesseract worker design
+- [PDF/A archives](./architecture/pdfa-archives.md) — validated archival derivatives and original-file preservation
+- [Document audit history](./architecture/document-audit.md) — owner-visible document change history
 - [Document pipeline](./architecture/pipeline.md) — durable jobs, retries, events, and worker boundaries
 - [Controlled document metadata](./architecture/document-metadata.md) — system and personal classification vocabularies
 - [Issuers](./architecture/issuers.md) — reusable sender records, document references, and deterministic worker matching
@@ -25,6 +27,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Saved searches](./architecture/saved-searches.md) — owner-scoped reusable list and semantic searches
 - [Backup and scheduled maintenance](./architecture/backup-and-scheduling.md) — PostgreSQL backup/restore, retention, and recurring jobs
 - [Extensions and plugins](./architecture/extensions.md) — versioned extension points, calendar automation, and email import
+- [iOS companion](./architecture/ios-companion.md) — Share Sheet ingestion, web UI hosting, and offline upload queueing
 - [AI assistance](./architecture/ai-assistance.md) — user-confirmed hosted title suggestions
 - [Localization](./architecture/localization.md) — extensible UI and vocabulary translations
 - [Container deployment](./architecture/containers.md) — API, client, worker, PostgreSQL, and shared storage
@@ -41,4 +44,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-P0 and P1 are implemented. The inbox slice, bulk document actions, virtual folders, recursive ZIP exports, and saved searches are in place. Backup scheduling, retention cleanup, visible status, manual backup requests, restore instructions, and scheduled document-storage consistency checks are implemented; restore remains an operator workflow that still needs a real restore test. The remaining P2 work is recovery verification and final hardening/security verification. Email and scanner ingestion have moved to P3, alongside multiple configurable AI providers.
+P0, P1, and P2 are implemented. The inbox slice, bulk document actions, virtual folders, recursive ZIP exports, saved searches, backup scheduling, retention cleanup, visible status, manual backup requests, restore instructions, and scheduled document-storage consistency checks are in place. A real restore drill remains recommended as operational verification. Email, scanner ingestion, multiple configurable AI providers, and the Swift iOS companion have moved to P3.
