@@ -396,6 +396,12 @@ const parseQueryArray = (value: unknown): unknown => {
   return value.split(',').map((item) => item.trim()).filter(Boolean);
 };
 
+const parseQueryBoolean = (value: unknown): unknown => {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return value;
+};
+
 export const DocumentListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
@@ -406,6 +412,7 @@ export const DocumentListQuerySchema = z.object({
   status: DocumentStatusSchema.optional(),
   issuerUuid: z.uuid().optional(),
   folderUuid: z.uuid().optional(),
+  unassigned: z.preprocess(parseQueryBoolean, z.boolean().default(false)),
   q: z.string().trim().max(200).optional(),
   documentTypeUuids: z.preprocess(
     parseQueryArray,

@@ -103,6 +103,7 @@ verification.
 - Let administrators inspect API and worker activity
 - Choose different AI providers for embeddings and document assistance
 - Test providers and choose privacy-appropriate services for each task
+- Add bulk metadata editing for selected documents, including type, category, issuer, tags, custom fields, and virtual-folder assignments
 
 ### Later
 

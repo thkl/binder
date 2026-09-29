@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { FoldersService, FolderTreeRow } from '../../services/folders.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
@@ -12,6 +12,8 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
 })
 export class FolderTreeComponent {
   readonly folderSelected = output<string | null>();
+  readonly unassignedRequested = output<void>();
+  readonly unassignedSelected = input(false);
   readonly i18n = inject(I18nService);
   readonly creatingParentUuid = signal<string | null | undefined>(undefined);
   readonly createName = signal('');
@@ -26,8 +28,11 @@ export class FolderTreeComponent {
   }
 
   select(folderUuid: string | null): void {
-    this.folders.select(folderUuid);
     this.folderSelected.emit(folderUuid);
+  }
+
+  selectUnassigned(): void {
+    this.unassignedRequested.emit();
   }
 
   beginCreate(parentUuid: string | null): void {

@@ -325,6 +325,56 @@
   font-size: .72rem;
 }
 
+.folder-tree-divider {
+  height: 1px;
+  margin: .65rem .5rem;
+  background: rgba(157, 190, 232, .14);
+}
+
+.unassigned-folder-row {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: .45rem;
+  border: 0;
+  border-radius: .5rem;
+  padding: .25rem .4rem;
+  color: #a9bfd8;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: .75rem;
+  text-align: left;
+}
+
+.unassigned-folder-row:hover,
+.unassigned-folder-row:focus-visible,
+.unassigned-folder-row.selected {
+  color: #e5f1ff;
+  background: rgba(97, 215, 244, .13);
+  outline: none;
+}
+
+.folder-unassigned-icon {
+  display: grid;
+  flex: 0 0 1.55rem;
+  width: 1.55rem;
+  height: 1.55rem;
+  place-items: center;
+  color: var(--cyan);
+}
+
+.folder-unassigned-icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
 .folder-row-root select{
   background-color:rgba(97, 215, 244, .13);;
 }

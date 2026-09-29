@@ -83,5 +83,21 @@
     } @empty {
       <p class="folder-empty">{{ 'folders.empty' | t }}</p>
     }
+
+    <div class="folder-tree-divider" aria-hidden="true"></div>
+    <button
+      class="unassigned-folder-row"
+      type="button"
+      [class.selected]="unassignedSelected()"
+      (click)="selectUnassigned()"
+      [attr.aria-label]="'folders.unassigned' | t">
+      <span class="folder-unassigned-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path d="M5 5.5h14v13H5zM8 8.5h8M8 12h5M8 15.5h3" />
+          <path d="m16 15 4 4M20 15l-4 4" />
+        </svg>
+      </span>
+      <span class="folder-label" [attr.lang]="i18n.language()">{{ 'folders.unassigned' | t }}</span>
+    </button>
   </div>
 </aside>

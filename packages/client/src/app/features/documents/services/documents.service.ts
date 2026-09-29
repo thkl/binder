@@ -108,6 +108,7 @@ export class DocumentsService {
     if (query.status) params.set('status', query.status);
     if (query.issuerUuid) params.set('issuerUuid', query.issuerUuid);
     if (query.folderUuid) params.set('folderUuid', query.folderUuid);
+    if (query.unassigned) params.set('unassigned', 'true');
     if (query.q) params.set('q', query.q);
     this.setArrayParam(params, 'documentTypeUuids', query.documentTypeUuids);
     this.setArrayParam(params, 'categoryUuids', query.categoryUuids);

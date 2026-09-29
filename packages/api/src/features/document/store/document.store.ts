@@ -145,12 +145,16 @@ export class DocumentStore extends BaseCrudStore<Document> {
   ): Promise<WhereOptions<Document>> {
     const where: WhereOptions<Document> = { ownerUuid };
 
-    if (query.folderUuid) {
+    if (query.folderUuid && query.unassigned) {
+      this.restrictToDocumentUuids(where, []);
+    } else if (query.folderUuid) {
       const links = await DocumentFolder.findAll({
         where: { folderUuid: query.folderUuid },
         attributes: ['documentUuid']
       });
       this.restrictToDocumentUuids(where, links.map((link) => link.documentUuid));
+    } else if (query.unassigned) {
+      await this.restrictToUnassignedDocuments(where);
     }
 
     if (query.q) {
@@ -245,6 +249,25 @@ export class DocumentStore extends BaseCrudStore<Document> {
       ? uuids.filter((uuid) => currentValues.includes(uuid))
       : uuids;
     whereRecord.uuid = { [Op.in]: restricted };
+  }
+
+  private async restrictToUnassignedDocuments(where: WhereOptions<Document>): Promise<void> {
+    const links = await DocumentFolder.findAll({
+      attributes: ['documentUuid']
+    });
+    const assignedDocumentUuids = [...new Set(links.map((link) => link.documentUuid))];
+    if (assignedDocumentUuids.length === 0) return;
+
+    const whereRecord = where as unknown as Record<PropertyKey, unknown>;
+    const existingAnd = whereRecord[Op.and];
+    const conditions = Array.isArray(existingAnd)
+      ? existingAnd
+      : existingAnd
+        ? [existingAnd]
+        : [];
+
+    conditions.push({ uuid: { [Op.notIn]: assignedDocumentUuids } });
+    whereRecord[Op.and] = conditions;
   }
 
   private setFieldValues(where: WhereOptions<Document>, field: string, values: string[]): void {

@@ -66,6 +66,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly drawerDocumentUuid = signal<string | null>(null);
   readonly drawerTab = signal<DocumentDrawerTab>('preview');
   readonly drawerDocumentSnapshot = signal<Document | null>(null);
+  readonly unassignedFolderSelected = signal(false);
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
   readonly editingTitleUuid = signal<string | null>(null);
@@ -90,6 +91,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   private readonly folderPages = signal<Record<string, number>>({});
   private readonly allDocumentsFolderKey = '__all-documents__';
+  private readonly unassignedFolderKey = '__unassigned-documents__';
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   
   readonly drawerDocument = computed(() => {
@@ -108,6 +110,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly savedSearchParameters = computed<SavedSearchParameter[]>(() => this.createSavedSearchParameters());
   readonly exportScope = computed<'selected' | 'filtered' | 'folder' | null>(() => {
     if (this.selectedCount() > 0) return 'selected';
+    if (this.unassignedFolderSelected()) return 'filtered';
     if (this.hasActiveFilters()) return 'filtered';
     return this.folders.selectedFolderUuid() ? 'folder' : null;
   });
@@ -137,9 +140,15 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    this.unassignedFolderSelected.set(false);
+    this.folders.select(null);
     void this.folders.loadChildren(null);
     void this.savedSearches.load();
-    void this.documents.load({ groupBy: this.groupMode() });
+    void this.documents.load({
+      groupBy: this.groupMode(),
+      folderUuid: undefined,
+      unassigned: false
+    });
   }
 
   ngOnDestroy(): void {
@@ -152,8 +161,20 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.activeFilterMenu.set(null);
     this.selectedSavedSearchUuid.set(null);
     this.rememberCurrentFolderPage();
+    this.unassignedFolderSelected.set(false);
     this.folders.select(folderUuid);
-    await this.loadFolderPage(folderUuid);
+    await this.loadFolderPage(folderUuid, false);
+  }
+
+  async selectUnassigned(): Promise<void> {
+    if (!this.canLeaveMetadata()) return;
+
+    this.activeFilterMenu.set(null);
+    this.selectedSavedSearchUuid.set(null);
+    this.rememberCurrentFolderPage();
+    this.unassignedFolderSelected.set(true);
+    this.folders.select(null);
+    await this.loadFolderPage(null, true);
   }
 
   async exportCurrentScope(): Promise<void> {
@@ -551,12 +572,13 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
   }
 
-  private async loadFolderPage(folderUuid: string | null): Promise<void> {
-    const rememberedPage = this.folderPages()[this.folderPageKey(folderUuid)] ?? 1;
+  private async loadFolderPage(folderUuid: string | null, unassigned: boolean): Promise<void> {
+    const rememberedPage = this.folderPages()[this.folderPageKey(folderUuid, unassigned)] ?? 1;
 
     await this.documents.load({
       page: rememberedPage,
-      folderUuid: folderUuid ?? undefined
+      folderUuid: folderUuid ?? undefined,
+      unassigned
     });
 
     if (this.documents.error()) return;
@@ -566,12 +588,16 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
     const fallbackPage = this.getFallbackPage(page.page, page.totalPages);
     if (fallbackPage !== null) {
-      this.rememberFolderPage(folderUuid, fallbackPage);
-      await this.documents.load({ page: fallbackPage });
+      this.rememberFolderPage(folderUuid, fallbackPage, unassigned);
+      await this.documents.load({
+        page: fallbackPage,
+        folderUuid: folderUuid ?? undefined,
+        unassigned
+      });
       return;
     }
 
-    this.rememberFolderPage(folderUuid, page.page);
+    this.rememberFolderPage(folderUuid, page.page, unassigned);
   }
 
   private applyListQuery(query: Partial<DocumentListQuery>): void {
@@ -586,6 +612,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     const filters = this.filterValues();
     const q = this.listSearch().trim();
     return {
+      folderUuid: this.unassignedFolderSelected() ? undefined : this.folders.selectedFolderUuid() ?? undefined,
+      unassigned: this.unassignedFolderSelected() ? true : undefined,
       q: q || undefined,
       status: undefined,
       issuerUuid: undefined,
@@ -634,7 +662,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     localStorage.setItem('binder.documents.group-mode', this.groupMode());
     localStorage.setItem('binder.documents.groupDirection', this.groupDirection());
     localStorage.setItem('binder.documents.sortDirection', this.sortDirection());
-    this.folders.select(query.folderUuid ?? null);
+    this.unassignedFolderSelected.set(query.unassigned === true);
+    this.folders.select(this.unassignedFolderSelected() ? null : query.folderUuid ?? null);
     this.activeFilterMenu.set(null);
     this.folderPages.set({});
     this.clearSelection();
@@ -662,7 +691,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       direction: this.sortDirection(),
       groupBy: this.groupMode(),
       groupDirection: this.groupDirection(),
-      folderUuid: current.folderUuid
+      folderUuid: current.folderUuid,
+      unassigned: this.unassignedFolderSelected()
     });
   }
 
@@ -676,7 +706,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       { label: this.i18n.t('documents.filterTag'), value: this.facetSelectionLabel('tag', query.tagUuids) },
       { label: this.i18n.t('documents.filterStatus'), value: this.scalarSelectionLabel(query.statuses, 'documents.status.') },
       { label: this.i18n.t('documents.filterReviewState'), value: this.scalarSelectionLabel(query.reviewStates, 'documents.') },
-      { label: this.i18n.t('folders.allDocuments'), value: this.folderSelectionLabel(query.folderUuid) },
+      { label: this.i18n.t('folders.allDocuments'), value: this.folderSelectionLabel(query) },
       { label: this.i18n.t('documents.sortDirection'), value: this.sortSelectionLabel(query) },
       { label: this.i18n.t('documents.groupBy'), value: this.groupSelectionLabel(query.groupBy) },
       { label: this.i18n.t('documents.groupDirection'), value: this.groupDirectionLabel(query) },
@@ -698,7 +728,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     return values.map((value) => this.i18n.t(prefix + value)).join(', ');
   }
 
-  private folderSelectionLabel(folderUuid: string | undefined): string {
+  private folderSelectionLabel(query: DocumentListQuery): string {
+    if (query.unassigned) return this.i18n.t('folders.unassigned');
+    const folderUuid = query.folderUuid;
     if (!folderUuid) return this.i18n.t('folders.allDocuments');
     return this.folders.loadedFolders().find((folder) => folder.uuid === folderUuid)?.name
       ?? `${this.i18n.t('documents.savedSearchSelected')}: ${folderUuid}`;
@@ -752,17 +784,18 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     const page = this.documents.page();
     if (!page) return;
 
-    this.rememberFolderPage(this.folders.selectedFolderUuid(), page.page);
+    this.rememberFolderPage(this.folders.selectedFolderUuid(), page.page, this.unassignedFolderSelected());
   }
 
-  private rememberFolderPage(folderUuid: string | null, page: number): void {
+  private rememberFolderPage(folderUuid: string | null, page: number, unassigned = false): void {
     this.folderPages.update((pages) => ({
       ...pages,
-      [this.folderPageKey(folderUuid)]: page
+      [this.folderPageKey(folderUuid, unassigned)]: page
     }));
   }
 
-  private folderPageKey(folderUuid: string | null): string {
+  private folderPageKey(folderUuid: string | null, unassigned = false): string {
+    if (unassigned) return this.unassignedFolderKey;
     return folderUuid ?? this.allDocumentsFolderKey;
   }
 
