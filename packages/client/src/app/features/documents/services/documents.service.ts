@@ -1,4 +1,5 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { DOCUMENT } from '@angular/common';
+import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import {
   ApiResponse,
@@ -11,6 +12,7 @@ import {
   DocumentListQuerySchema,
   DocumentListResponse,
   DocumentListResponseSchema,
+  DocumentExportSelectionInput,
   SetDocumentTitleInputSchema,
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
@@ -25,8 +27,10 @@ export class DocumentsService {
   readonly facets = signal<DocumentListFacetsResponse | null>(null);
   readonly loading = signal(false);
   readonly uploading = signal(false);
+  readonly exporting = signal(false);
   readonly error = signal<string | null>(null);
   readonly appService = inject(ApplicationService);
+  private readonly document = inject(DOCUMENT);
   private currentQuery = DocumentListQuerySchema.parse({});
 
   constructor(private readonly http: HttpClient) {}
@@ -130,6 +134,52 @@ export class DocumentsService {
     }
   }
 
+  async exportSelected(documentUuids: string[]): Promise<boolean> {
+    this.exporting.set(true);
+    this.error.set(null);
+
+    const input: DocumentExportSelectionInput = { documentUuids };
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post(
+          this.appService.getApiUrl('v1', 'documents/export'),
+          input,
+          { observe: 'response', responseType: 'blob', withCredentials: true }
+        )
+      );
+      this.downloadArchive(response, 'selected-documents.zip');
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+
+  async exportFiltered(query: Partial<DocumentListQuery> = {}): Promise<boolean> {
+    this.exporting.set(true);
+    this.error.set(null);
+
+    try {
+      const parsed = DocumentListQuerySchema.parse({ ...this.currentQuery, ...query });
+      const response = await firstValueFrom(
+        this.http.get(
+          this.appService.getApiUrl('v1', 'documents/export', `?${this.buildParams(parsed, false).toString()}`),
+          { observe: 'response', responseType: 'blob', withCredentials: true }
+        )
+      );
+      this.downloadArchive(response, 'filtered-documents.zip');
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+
   async updateTitle(uuid: string, title: string): Promise<boolean> {
     const input = SetDocumentTitleInputSchema.safeParse({ title });
     if (!input.success) {
@@ -203,5 +253,32 @@ export class DocumentsService {
       return error.error.message;
     }
     return 'The documents could not be loaded. Please try again.';
+  }
+
+  private downloadArchive(response: HttpResponse<Blob>, fallbackFilename: string): void {
+    if (!response.body) {
+      throw new Error('The export archive was empty');
+    }
+
+    const filename = this.archiveFilename(response.headers.get('Content-Disposition')) ?? fallbackFilename;
+    const url = URL.createObjectURL(response.body);
+    const link = this.document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    this.document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  private archiveFilename(contentDisposition: string | null): string | null {
+    if (!contentDisposition) return null;
+
+    const encoded = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+    if (encoded) return decodeURIComponent(encoded);
+
+    return contentDisposition.match(/filename="([^"]+)"/i)?.[1]
+      ?? contentDisposition.match(/filename=([^;]+)/i)?.[1]?.trim()
+      ?? null;
   }
 }

@@ -153,6 +153,24 @@ export class DocumentService {
     };
   }
 
+  async exportSelected(ownerUuid: string, documentUuids: string[]): Promise<{ stream: Readable; filename: string }> {
+    const documents = await this.documents.findOwnedByUuids(ownerUuid, documentUuids);
+    if (documents.length === 0) {
+      throw new NotFoundException('No documents found for export');
+    }
+
+    return this.createFlatArchive(documents, 'selected-documents.zip');
+  }
+
+  async exportFiltered(ownerUuid: string, query: DocumentListQuery): Promise<{ stream: Readable; filename: string }> {
+    const documents = await this.documents.findOwnedAll(ownerUuid, query);
+    if (documents.length === 0) {
+      throw new NotFoundException('No documents match the current filters');
+    }
+
+    return this.createFlatArchive(documents, 'filtered-documents.zip');
+  }
+
   async facets(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListFacetsResponse> {
     return DocumentListFacetsResponseSchema.parse(
       await this.documents.findOwnedFacets(ownerUuid, query)
@@ -288,7 +306,8 @@ export class DocumentService {
     const filename = safeTitle.toLowerCase().endsWith(extension)
       ? safeTitle
       : safeTitle + extension;
-    const pathKey = (folderPath + '/' + filename).toLocaleLowerCase();
+    const archivePath = folderPath ? folderPath + '/' : '';
+    const pathKey = (archivePath + filename).toLocaleLowerCase();
 
     if (!usedNames.has(pathKey)) {
       usedNames.add(pathKey);
@@ -299,7 +318,7 @@ export class DocumentService {
     const base = filename.slice(0, extensionStart);
     let suffix = 2;
     let candidate = base + ' (' + suffix + ')' + extension;
-    let candidateKey = (folderPath + '/' + candidate).toLocaleLowerCase();
+    let candidateKey = (archivePath + candidate).toLocaleLowerCase();
 
     while (usedNames.has(candidateKey)) {
       suffix += 1;
@@ -309,6 +328,31 @@ export class DocumentService {
 
     usedNames.add(candidateKey);
     return candidate;
+  }
+
+  private async createFlatArchive(
+    documents: Array<import('../models/document.entity').Document>,
+    filename: string
+  ): Promise<{ stream: Readable; filename: string }> {
+    const archive = new ZipArchive({ zlib: { level: 6 } });
+    const usedArchiveNames = new Set<string>();
+
+    archive.on('error', (error: Error) => archive.destroy(error));
+
+    for (const document of documents) {
+      if (!(await this.storage.exists(document.storageKey))) {
+        throw new BadRequestException('The source file for "' + document.originalFilename + '" is not available');
+      }
+
+      const archiveFilename = this.createArchiveFilename(document, '', usedArchiveNames);
+      archive.file(await this.storage.resolveStoragePath(document.storageKey), { name: archiveFilename });
+    }
+
+    void archive.finalize().catch((error: unknown) => {
+      archive.destroy(error instanceof Error ? error : new Error(String(error)));
+    });
+
+    return { stream: archive, filename };
   }
 
   private sanitizeArchiveSegment(value: string, fallback: string): string {

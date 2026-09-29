@@ -29,16 +29,24 @@
       <span>{{ 'documents.all' | t }}</span>
 
       <div class="list-header-actions">
-        @if (folders.selectedFolderUuid(); as folderUuid) {
+        @if (exportScope(); as scope) {
           <button
             type="button"
-            class="export-folder-button"
-            [disabled]="folders.exportingFolderUuid() !== null"
-            (click)="exportSelectedFolder(folderUuid)">
+            class="document-export-button"
+            [disabled]="exportInProgress()"
+            (click)="exportCurrentScope()">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 4v11M7.5 11.5 12 16l4.5-4.5M5 19h14" />
             </svg>
-            {{ folders.exportingFolderUuid() === folderUuid ? ('folders.exporting' | t) : ('folders.export' | t) }}
+            @if (exportInProgress()) {
+              {{ 'documents.exporting' | t }}
+            } @else if (scope === 'selected') {
+              {{ 'documents.exportSelected' | t }}
+            } @else if (scope === 'filtered') {
+              {{ 'documents.exportFiltered' | t }}
+            } @else {
+              {{ 'documents.exportFolder' | t }}
+            }
           </button>
         }
 

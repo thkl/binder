@@ -98,6 +98,14 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     return selectedFilters + (this.listSearch().trim() ? 1 : 0);
   });
   readonly hasActiveFilters = computed(() => this.activeFilterCount() > 0);
+  readonly exportScope = computed<'selected' | 'filtered' | 'folder' | null>(() => {
+    if (this.selectedCount() > 0) return 'selected';
+    if (this.hasActiveFilters()) return 'filtered';
+    return this.folders.selectedFolderUuid() ? 'folder' : null;
+  });
+  readonly exportInProgress = computed(() => (
+    this.documents.exporting() || this.folders.exportingFolderUuid() !== null
+  ));
   readonly allVisibleSelected = computed(() => {
     const visible = this.documents.page()?.items ?? [];
     return visible.length > 0 && visible.every((document) => this.selectedDocumentUuids().has(document.uuid));
@@ -138,8 +146,23 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     await this.loadFolderPage(folderUuid);
   }
 
-  async exportSelectedFolder(folderUuid: string): Promise<void> {
-    await this.folders.exportFolder(folderUuid);
+  async exportCurrentScope(): Promise<void> {
+    const scope = this.exportScope();
+
+    if (scope === 'selected') {
+      await this.documents.exportSelected([...this.selectedDocumentUuids()]);
+      return;
+    }
+
+    if (scope === 'filtered') {
+      await this.documents.exportFiltered(this.buildFilterQuery());
+      return;
+    }
+
+    const folderUuid = this.folders.selectedFolderUuid();
+    if (folderUuid) {
+      await this.folders.exportFolder(folderUuid);
+    }
   }
 
   onListSearch(event: Event): void {

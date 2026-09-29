@@ -38,6 +38,19 @@ export class DocumentStore extends BaseCrudStore<Document> {
     return this.model.findAll({ where: { ownerUuid, uuid: { [Op.in]: uuids } } });
   }
 
+  async findOwnedAll(ownerUuid: string, query: DocumentListQuery): Promise<Document[]> {
+    const where = await this.createOwnedWhere(ownerUuid, query);
+    const sortDirection = query.direction.toUpperCase() as 'ASC' | 'DESC';
+
+    return this.model.findAll({
+      where,
+      order: [
+        [query.sort, sortDirection],
+        ['uuid', 'ASC']
+      ]
+    });
+  }
+
   async findOwnedPageText(ownerUuid: string, uuid: string) {
     const document = await this.findOwnedByUuid(ownerUuid, uuid);
     if (!document) return null;

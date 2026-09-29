@@ -16,6 +16,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   DocumentBulkActionInputSchema,
+  DocumentExportSelectionInputSchema,
   DocumentListQuerySchema,
   DocumentSearchQuerySchema,
   SetDocumentMetadataInputSchema,
@@ -54,6 +55,29 @@ export class DocumentController {
     this.logger.debug(`List files ${JSON.stringify(query)}`);
     const input = DocumentListQuerySchema.parse(query);
     return { data: await this.documents.list(user.userId, input) };
+  }
+
+  @Get('export')
+  async exportFiltered(
+    @Query() query: Record<string, unknown>,
+    @CurrentUser() user: ScopedUser,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const result = await this.documents.exportFiltered(user.userId, DocumentListQuerySchema.parse(query));
+    this.setArchiveHeaders(response, result.filename);
+    return new StreamableFile(result.stream, { type: 'application/zip' });
+  }
+
+  @Post('export')
+  async exportSelected(
+    @Body() body: unknown,
+    @CurrentUser() user: ScopedUser,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const input = DocumentExportSelectionInputSchema.parse(body);
+    const result = await this.documents.exportSelected(user.userId, input.documentUuids);
+    this.setArchiveHeaders(response, result.filename);
+    return new StreamableFile(result.stream, { type: 'application/zip' });
   }
 
   @Get('facets')
@@ -139,5 +163,10 @@ export class DocumentController {
 
   private safeFilename(filename: string): string {
     return filename.replace(/[\\"\r\n]/g, '_');
+  }
+
+  private setArchiveHeaders(response: Response, filename: string): void {
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.setHeader('Content-Disposition', `attachment; filename="${this.safeFilename(filename)}"`);
   }
 }

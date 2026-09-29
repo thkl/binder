@@ -125,7 +125,7 @@ h2 {
   min-width: min(15rem, 28vw);
 }
 
-.export-folder-button {
+.document-export-button {
   display: inline-flex;
   min-height: 2.25rem;
   align-items: center;
@@ -142,18 +142,18 @@ h2 {
   white-space: nowrap;
 }
 
-.export-folder-button:hover,
-.export-folder-button:focus-visible {
+.document-export-button:hover,
+.document-export-button:focus-visible {
   background: rgba(97, 215, 244, .16);
   outline: none;
 }
 
-.export-folder-button:disabled {
+.document-export-button:disabled {
   cursor: wait;
   opacity: .6;
 }
 
-.export-folder-button svg {
+.document-export-button svg {
   width: 1rem;
   height: 1rem;
   fill: none;

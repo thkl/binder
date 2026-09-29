@@ -243,6 +243,14 @@ export const DocumentBulkActionInputSchema = z.object({
 });
 export type DocumentBulkActionInput = z.infer<typeof DocumentBulkActionInputSchema>;
 
+export const DocumentExportSelectionInputSchema = z.object({
+  documentUuids: z.array(z.uuid()).min(1).max(1000).refine(
+    (uuids) => new Set(uuids).size === uuids.length,
+    'Document UUIDs must be unique'
+  )
+});
+export type DocumentExportSelectionInput = z.infer<typeof DocumentExportSelectionInputSchema>;
+
 export const DocumentBulkActionItemSchema = z.object({
   uuid: z.uuid(),
   success: z.boolean(),
