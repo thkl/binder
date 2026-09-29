@@ -21,7 +21,12 @@ export class MetadataStore {
     return model.findAll({
       where: { active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } },
       order: [['name', 'ASC']]
-    });
+    }).then((items) => items.sort((left, right) => {
+      const leftIsPersonal = left.ownerUuid === ownerUuid;
+      const rightIsPersonal = right.ownerUuid === ownerUuid;
+      if (leftIsPersonal !== rightIsPersonal) return leftIsPersonal ? -1 : 1;
+      return left.name.localeCompare(right.name, undefined, { sensitivity: 'base', numeric: true });
+    }));
   }
 
   async findAvailable(model: VocabularyModel, uuid: string, ownerUuid: string) {
@@ -92,15 +97,15 @@ export class MetadataStore {
     const categoryUuids = documents.flatMap((document) => document.categoryUuid ?? []);
     const issuerUuids = documents.flatMap((document) => document.issuerUuid ?? []);
     const [documentTypes, categories, issuers, assignments, definitions] = await Promise.all([
-      typeUuids.length > 0 ? DocumentType.findAll({ where: { uuid: { [Op.in]: typeUuids }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } }) : [],
-      categoryUuids.length > 0 ? DocumentCategory.findAll({ where: { uuid: { [Op.in]: categoryUuids }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } }) : [],
+      typeUuids.length > 0 ? DocumentType.findAll({ where: { uuid: { [Op.in]: typeUuids }, ownerUuid: { [Op.or]: [null, ownerUuid] } } }) : [],
+      categoryUuids.length > 0 ? DocumentCategory.findAll({ where: { uuid: { [Op.in]: categoryUuids }, ownerUuid: { [Op.or]: [null, ownerUuid] } } }) : [],
       issuerUuids.length > 0 ? Issuer.findAll({ where: { uuid: { [Op.in]: issuerUuids }, ownerUuid } }) : [],
       DocumentTagAssignment.findAll({ where: { documentUuid: { [Op.in]: documentUuids } } }),
       this.listDefinitions(ownerUuid)
     ]);
     const tagUuids = [...new Set(assignments.map((assignment) => assignment.tagUuid))];
     const tags = tagUuids.length > 0
-      ? await DocumentTag.findAll({ where: { uuid: { [Op.in]: tagUuids }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } })
+      ? await DocumentTag.findAll({ where: { uuid: { [Op.in]: tagUuids }, ownerUuid: { [Op.or]: [null, ownerUuid] } } })
       : [];
     const typesByUuid = new Map(documentTypes.map((item) => [item.uuid, item]));
     const categoriesByUuid = new Map(categories.map((item) => [item.uuid, item]));

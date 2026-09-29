@@ -44,8 +44,8 @@
           <label><span>{{ 'metadata.name' | t }}</span><input [value]="name()" (input)="name.set($any($event.target).value)" maxlength="150" required autocomplete="off"></label>
           <label><span>{{ 'metadata.description' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="description()" (input)="description.set($any($event.target).value)" maxlength="500"></label>
           <div class="translation-fields">
-            <label><span>English label <em>{{ 'metadata.optional' | t }}</em></span><input [value]="translationEn()" (input)="translationEn.set($any($event.target).value)" maxlength="150" placeholder="Invoice"></label>
-            <label><span>German label <em>{{ 'metadata.optional' | t }}</em></span><input [value]="translationDe()" (input)="translationDe.set($any($event.target).value)" maxlength="150" placeholder="Rechnung"></label>
+            <label><span>{{ 'metadata.englishLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="translationEn()" (input)="translationEn.set($any($event.target).value)" maxlength="150" placeholder="Invoice"></label>
+            <label><span>{{ 'metadata.germanLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="translationDe()" (input)="translationDe.set($any($event.target).value)" maxlength="150" placeholder="Rechnung"></label>
           </div>
           @if (auth.user()?.isAdmin) {
             <label class="scope-toggle"><input type="checkbox" [checked]="systemScope()" (change)="systemScope.set($any($event.target).checked)"><span><strong>{{ 'metadata.workspaceValue' | t }}</strong><small>{{ 'metadata.workspaceValueCopy' | t }}</small></span></label>
@@ -68,23 +68,38 @@
               <span class="value-mark" [class.system]="item.scope === 'system'" aria-hidden="true">{{ item.scope === 'system' ? '◆' : '●' }}</span>
               @if (editingUuid() === item.uuid) {
                 <div class="value-edit">
-                  <strong>{{ itemName(item) }}</strong>
-                  <select [value]="editingFolderUuid()" (change)="editingFolderUuid.set($any($event.target).value)">
-                    <option value="">{{ 'metadata.noFolderRouting' | t }}</option>
-                    @for (folder of folders.allFolders(); track folder.uuid) {
-                      <option [value]="folder.uuid">{{ folderPath(folder.uuid) }}</option>
-                    }
-                  </select>
+                  <label><span>{{ 'metadata.name' | t }}</span><input [value]="editingName()" (input)="editingName.set($any($event.target).value)" maxlength="150" required></label>
+                  <label><span>{{ 'metadata.description' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="editingDescription()" (input)="editingDescription.set($any($event.target).value)" maxlength="500"></label>
+                  <div class="translation-fields">
+                    <label><span>{{ 'metadata.englishLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="editingTranslationEn()" (input)="editingTranslationEn.set($any($event.target).value)" maxlength="150"></label>
+                    <label><span>{{ 'metadata.germanLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="editingTranslationDe()" (input)="editingTranslationDe.set($any($event.target).value)" maxlength="150"></label>
+                  </div>
+                  @if (item.scope === 'personal' && folders.allFolders().length > 0) {
+                    <label><span>{{ 'metadata.folderRouting' | t }}</span><select [value]="editingFolderUuid()" (change)="editingFolderUuid.set($any($event.target).value)">
+                      <option value="">{{ 'metadata.noFolderRouting' | t }}</option>
+                      @for (folder of folders.allFolders(); track folder.uuid) {
+                        <option [value]="folder.uuid">{{ folderPath(folder.uuid) }}</option>
+                      }
+                    </select></label>
+                  }
                   <div class="value-edit-actions">
                     <button type="button" class="secondary-button" (click)="cancelEdit()">{{ 'metadata.cancel' | t }}</button>
-                    <button type="button" class="primary-button" [disabled]="metadata.saving()" (click)="saveEdit(item)">{{ 'metadata.save' | t }}</button>
+                    <button type="button" class="primary-button" [disabled]="metadata.saving() || !editingName().trim()" (click)="saveEdit(item)">{{ 'metadata.save' | t }}</button>
                   </div>
                 </div>
               } @else {
                 <div class="value-copy"><strong>{{ itemName(item) }}</strong><small>{{ item.description || ('metadata.noDescription' | t) }}</small>@if (item.folderUuid) { <small class="routing-note">→ {{ folderPath(item.folderUuid) }}</small> }</div>
-                @if (activeKind() !== 'tags' && item.scope === 'personal') {
-                  <button type="button" class="row-action" (click)="startEdit(item)">{{ 'metadata.edit' | t }}</button>
-                }
+                <div class="value-actions">
+                  @if (canEdit(item)) {
+                    <button type="button" class="row-action" (click)="startEdit(item)">{{ 'metadata.edit' | t }}</button>
+                  }
+                  @if (canClone(item)) {
+                    <button type="button" class="row-action" [disabled]="metadata.saving()" (click)="cloneItem(item)">{{ metadata.saving() ? ('metadata.copying' | t) : ('metadata.copyPersonal' | t) }}</button>
+                  }
+                  @if (canDelete(item)) {
+                    <button type="button" class="row-action danger-action" [disabled]="metadata.saving()" (click)="deleteItem(item)">{{ 'metadata.delete' | t }}</button>
+                  }
+                </div>
               }
               <span class="scope-badge" [class.system]="item.scope === 'system'">{{ item.scope === 'system' ? ('metadata.workspace' | t) : ('metadata.personal' | t) }}</span>
             </article>

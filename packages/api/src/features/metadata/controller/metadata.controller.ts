@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { CreateMetadataDefinitionSchema, CreateVocabularyItemSchema, UpdateVocabularyItemSchema } from '@binder/common';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
@@ -43,6 +43,18 @@ export class MetadataController {
   async updateVocabulary(@Param('kind') kindParam: string, @Param('uuid') uuid: string, @Body() body: unknown, @CurrentUser() user: ScopedUser) {
     const kind = this.parseKind(kindParam);
     return { data: await this.metadata.update(kind, user.userId, uuid, UpdateVocabularyItemSchema.parse(body), user.isAdmin) };
+  }
+
+  @Post('vocabulary/:kind/:uuid/clone')
+  async cloneVocabulary(@Param('kind') kindParam: string, @Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    const kind = this.parseKind(kindParam);
+    return { data: await this.metadata.clone(kind, user.userId, uuid) };
+  }
+
+  @Delete('vocabulary/:kind/:uuid')
+  async deleteVocabulary(@Param('kind') kindParam: string, @Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    const kind = this.parseKind(kindParam);
+    return { data: await this.metadata.remove(kind, user.userId, uuid, user.isAdmin) };
   }
 
   private parseKind(kind: string): 'documentTypes' | 'categories' | 'tags' {

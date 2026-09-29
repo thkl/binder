@@ -209,10 +209,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   facetOptions(key: DocumentFilterKey): DocumentListFacetOption[] {
     const options = this.documents.facets()?.[key] ?? [];
-    return options.map((option) => ({
-      ...option,
-      label: this.facetLabel(key, option)
-    }));
+    return options
+      .map((option) => ({
+        ...option,
+        label: this.facetLabel(key, option)
+      }))
+      .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base', numeric: true }));
   }
 
   async changeFolderMembership(action: 'add' | 'remove'): Promise<void> {
@@ -584,6 +586,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   private facetLabel(key: DocumentFilterKey, option: DocumentListFacetOption): string {
     if (key === 'status') return this.i18n.t('documents.status.' + option.value);
     if (key === 'reviewState') return this.i18n.t(option.value === 'new' ? 'documents.new' : 'documents.reviewed');
+    if (key === 'documentType' || key === 'category' || key === 'tag') {
+      return this.i18n.name({ name: option.label, translations: option.translations });
+    }
     return option.label;
   }
 

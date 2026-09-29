@@ -404,7 +404,8 @@ export type DocumentListQuery = z.infer<typeof DocumentListQuerySchema>;
 export const DocumentListFacetOptionSchema = z.object({
   value: z.string().trim().min(1).max(200),
   label: z.string().trim().min(1).max(200),
-  count: z.number().int().nonnegative()
+  count: z.number().int().nonnegative(),
+  translations: z.record(z.string(), z.string()).default({})
 });
 export type DocumentListFacetOption = z.infer<typeof DocumentListFacetOptionSchema>;
 
@@ -670,6 +671,12 @@ export const VocabularyItemSchema = z.object({
   updatedAt: z.string().datetime()
 });
 export type VocabularyItem = z.infer<typeof VocabularyItemSchema>;
+
+export const VocabularyDeleteResponseSchema = z.object({
+  deleted: z.literal(true),
+  uuid: z.uuid()
+});
+export type VocabularyDeleteResponse = z.infer<typeof VocabularyDeleteResponseSchema>;
 
 export const VocabularyResponseSchema = z.object({
   documentTypes: z.array(VocabularyItemSchema),

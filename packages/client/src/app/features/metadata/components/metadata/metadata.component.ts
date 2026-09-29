@@ -28,6 +28,11 @@ export class MetadataComponent implements OnInit {
   readonly systemScope = signal(false);
   readonly folderUuid = signal('');
   readonly editingUuid = signal<string | null>(null);
+  readonly editingName = signal('');
+  readonly editingDescription = signal('');
+  readonly editingTranslationEn = signal('');
+  readonly editingTranslationDe = signal('');
+  readonly editingTranslations = signal<Record<string, string>>({});
   readonly editingFolderUuid = signal('');
   readonly showCreate = signal(false);
   readonly definitionKey = signal('');
@@ -73,19 +78,70 @@ export class MetadataComponent implements OnInit {
   }
 
   startEdit(item: VocabularyItem): void {
-    if (this.activeKind() === 'tags' || item.scope === 'system') return;
+    if (!this.canEdit(item)) return;
     this.editingUuid.set(item.uuid);
+    this.editingName.set(item.name);
+    this.editingDescription.set(item.description ?? '');
+    this.editingTranslationEn.set(item.translations['en'] ?? '');
+    this.editingTranslationDe.set(item.translations['de'] ?? '');
+    this.editingTranslations.set({ ...item.translations });
     this.editingFolderUuid.set(item.folderUuid ?? '');
   }
 
   cancelEdit(): void {
     this.editingUuid.set(null);
+    this.editingName.set('');
+    this.editingDescription.set('');
+    this.editingTranslationEn.set('');
+    this.editingTranslationDe.set('');
+    this.editingTranslations.set({});
     this.editingFolderUuid.set('');
   }
 
   async saveEdit(item: VocabularyItem): Promise<void> {
-    const input: UpdateVocabularyItem = { folderUuid: this.editingFolderUuid() || null };
+    const name = this.editingName().trim();
+    if (!name) return;
+
+    const translations = { ...this.editingTranslations() };
+    this.setTranslation(translations, 'en', this.editingTranslationEn());
+    this.setTranslation(translations, 'de', this.editingTranslationDe());
+
+    const input: UpdateVocabularyItem = {
+      name,
+      description: this.editingDescription().trim() || null,
+      translations,
+      ...(this.activeKind() === 'tags' || item.scope === 'system'
+        ? {}
+        : { folderUuid: this.editingFolderUuid() || null })
+    };
     if (await this.metadata.updateVocabulary(this.vocabularyPath(), item.uuid, input)) this.cancelEdit();
+  }
+
+  canEdit(item: VocabularyItem): boolean {
+    return this.activeKind() !== 'tags' && (item.scope === 'personal' || this.auth.user()?.isAdmin === true);
+  }
+
+  canClone(item: VocabularyItem): boolean {
+    return this.activeKind() !== 'tags' && item.scope === 'system';
+  }
+
+  canDelete(item: VocabularyItem): boolean {
+    return this.activeKind() !== 'tags' && (item.scope === 'personal' || this.auth.user()?.isAdmin === true);
+  }
+
+  async cloneItem(item: VocabularyItem): Promise<void> {
+    if (!this.canClone(item)) return;
+
+    const copy = await this.metadata.cloneVocabulary(this.vocabularyPath() as 'document-types' | 'categories', item.uuid);
+    if (copy) this.startEdit(copy);
+  }
+
+  async deleteItem(item: VocabularyItem): Promise<void> {
+    if (!this.canDelete(item)) return;
+    const confirmed = window.confirm(this.i18n.t('metadata.deleteConfirm'));
+    if (!confirmed) return;
+
+    await this.metadata.deleteVocabulary(this.vocabularyPath() as 'document-types' | 'categories', item.uuid);
   }
 
   vocabularyPath(): 'document-types' | 'categories' | 'tags' {
@@ -93,6 +149,15 @@ export class MetadataComponent implements OnInit {
     if (kind === 'documentTypes') return 'document-types';
     if (kind === 'categories') return 'categories';
     return 'tags';
+  }
+
+  private setTranslation(translations: Record<string, string>, language: 'en' | 'de', value: string): void {
+    const trimmed = value.trim();
+    if (trimmed) {
+      translations[language] = trimmed;
+    } else {
+      delete translations[language];
+    }
   }
 
   async create(): Promise<void> {

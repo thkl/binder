@@ -266,7 +266,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
         active: true,
         ownerUuid: { [Op.or]: [null, ownerUuid] }
       },
-      attributes: ['uuid', 'name']
+      attributes: ['uuid', 'name', 'translations']
     });
     const counts = this.countBy(documents, (document) => document[field]);
     return this.optionsFromValues(values, counts);
@@ -301,7 +301,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
         active: true,
         ownerUuid: { [Op.or]: [null, ownerUuid] }
       },
-      attributes: ['uuid', 'name']
+      attributes: ['uuid', 'name', 'translations']
     });
     const counts = new Map<string, number>();
     for (const assignment of assignments) {
@@ -311,11 +311,16 @@ export class DocumentStore extends BaseCrudStore<Document> {
   }
 
   private optionsFromValues(
-    values: Array<{ uuid: string; name: string }>,
+    values: Array<{ uuid: string; name: string; translations?: Record<string, string> }>,
     counts: Map<string, number>
   ): DocumentListFacetOption[] {
     return values
-      .map((value) => ({ value: value.uuid, label: value.name, count: counts.get(value.uuid) ?? 0 }))
+      .map((value) => ({
+        value: value.uuid,
+        label: value.name,
+        count: counts.get(value.uuid) ?? 0,
+        translations: value.translations ?? {}
+      }))
       .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base', numeric: true }));
   }
 
@@ -326,7 +331,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
     const counts = new Map<T, number>();
     for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
     return [...counts.entries()]
-      .map(([value, count]) => ({ value, label: label(value), count }))
+      .map(([value, count]) => ({ value, label: label(value), count, translations: {} }))
       .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base' }));
   }
 

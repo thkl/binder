@@ -47,7 +47,7 @@ export class TitleSuggestionService {
     );
     const pages = await DocumentPage.findAll({ where: { documentUuid }, order: [['pageNumber', 'ASC']], limit: 12 });
     const extractedText = pages.map((page) => page.text).join('\n\n').slice(0, 12_000);
-    const vocabulary = await this.metadata.list(ownerUuid);
+    const vocabulary = await this.metadata.listForAnalysis(ownerUuid);
     const definitions = await this.metadata.listDefinitions(ownerUuid);
     const issuerList = await this.issuers.list(ownerUuid);
     const allowedIssuers = issuerList.items.map((issuer) => ({

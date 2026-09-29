@@ -10,6 +10,8 @@ import {
   SetDocumentMetadataInput,
   UpdateVocabularyItem,
   VocabularyItem,
+  VocabularyDeleteResponseSchema,
+  VocabularyResponse,
   VocabularyResponseSchema
 } from '@binder/common';
 import { DocumentCategory, DocumentTag, DocumentType } from '../models/vocabulary.entity';
@@ -90,6 +92,57 @@ export class MetadataService {
     return this.toResponse(updated);
   }
 
+  async clone(kind: VocabularyKind, ownerUuid: string, uuid: string): Promise<VocabularyItem> {
+    if (kind === 'tags') {
+      throw new BadRequestException('Only document types and categories can be copied to personal vocabulary');
+    }
+
+    const model = this.modelFor(kind);
+    const source = await model.findOne({
+      where: {
+        uuid,
+        active: true,
+        ownerUuid: { [Op.or]: [null, ownerUuid] }
+      }
+    });
+    if (!source) throw new NotFoundException('Metadata value not found');
+    if (source.ownerUuid !== null) {
+      throw new BadRequestException('Only workspace values can be copied to personal vocabulary');
+    }
+
+    try {
+      const copy = await this.store.create(
+        model,
+        ownerUuid,
+        source.name,
+        source.description,
+        source.translations ?? {},
+        null
+      );
+      return this.toResponse(copy);
+    } catch (error) {
+      throw new BadRequestException(error instanceof Error ? error.message : 'Unable to copy metadata value');
+    }
+  }
+
+  async remove(kind: VocabularyKind, ownerUuid: string, uuid: string, isAdmin: boolean) {
+    if (kind === 'tags') {
+      throw new BadRequestException('Tags cannot be deleted from this screen');
+    }
+
+    const model = this.modelFor(kind);
+    const existing = await model.findByPk(uuid);
+    if (!existing || !existing.active || (existing.ownerUuid !== null && existing.ownerUuid !== ownerUuid)) {
+      throw new NotFoundException('Metadata value not found');
+    }
+    if (existing.ownerUuid === null && !isAdmin) {
+      throw new BadRequestException('Only administrators can delete workspace vocabulary entries');
+    }
+
+    await this.store.update(model, uuid, { active: false });
+    return VocabularyDeleteResponseSchema.parse({ deleted: true, uuid });
+  }
+
   async listDefinitions(ownerUuid: string) {
     const items = await this.store.listDefinitions(ownerUuid);
     return MetadataDefinitionsResponseSchema.parse({
@@ -107,6 +160,15 @@ export class MetadataService {
         createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString()
       }))
+    });
+  }
+
+  async listForAnalysis(ownerUuid: string): Promise<VocabularyResponse> {
+    const vocabulary = await this.list(ownerUuid);
+    return VocabularyResponseSchema.parse({
+      documentTypes: this.preferPersonal(vocabulary.documentTypes),
+      categories: this.preferPersonal(vocabulary.categories),
+      tags: this.preferPersonal(vocabulary.tags)
     });
   }
 
@@ -207,6 +269,16 @@ export class MetadataService {
     if (kind === 'documentTypes') return DocumentType;
     if (kind === 'categories') return DocumentCategory;
     return DocumentTag;
+  }
+
+  private preferPersonal(items: VocabularyItem[]): VocabularyItem[] {
+    const names = new Set<string>();
+    return items.filter((item) => {
+      const key = item.name.trim().toLocaleLowerCase();
+      if (names.has(key)) return false;
+      names.add(key);
+      return true;
+    });
   }
 
   private toResponse(item: { uuid: string; ownerUuid: string | null; name: string; translations: Record<string, string>; description: string | null; folderUuid?: string | null; active: boolean; createdAt: Date; updatedAt: Date }): VocabularyItem {

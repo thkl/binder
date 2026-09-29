@@ -2,6 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
+  HostListener,
+  inject,
   input,
   output,
   signal
@@ -19,6 +22,8 @@ import { TranslatePipe } from '../../../../common/i18n/i18n.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DocumentFilterMenuComponent {
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
+
   readonly label = input.required<string>();
   readonly options = input<DocumentListFacetOption[]>([]);
   readonly selectedValues = input<string[] | undefined>(undefined);
@@ -51,6 +56,21 @@ export class DocumentFilterMenuComponent {
 
   closeMenu(): void {
     this.closed.emit();
+  }
+
+  @HostListener('document:pointerdown', ['$event'])
+  closeWhenClickingOutside(event: PointerEvent): void {
+    if (!this.open()) return;
+
+    const target = event.target;
+    if (target instanceof Node && this.elementRef.nativeElement.contains(target)) return;
+
+    this.closeMenu();
+  }
+
+  @HostListener('document:keydown.escape')
+  closeWithEscape(): void {
+    if (this.open()) this.closeMenu();
   }
 
   selectAll(): void {

@@ -6,6 +6,8 @@ import {
   CreateVocabularyItemSchema,
   UpdateVocabularyItem,
   UpdateVocabularyItemSchema,
+  VocabularyItem,
+  VocabularyItemSchema,
   CreateMetadataDefinition,
   CreateMetadataDefinitionSchema,
   DocumentMetadata,
@@ -166,6 +168,41 @@ export class MetadataService {
     try {
       const payload = UpdateVocabularyItemSchema.parse(input);
       await firstValueFrom(this.http.patch<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}/${uuid}`, payload, {
+        withCredentials: true
+      }));
+      await this.loadVocabulary();
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async cloneVocabulary(kind: 'document-types' | 'categories', uuid: string): Promise<VocabularyItem | null> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}/${uuid}/clone`, {}, {
+        withCredentials: true
+      }));
+      const item = VocabularyItemSchema.parse(response.data);
+      await this.loadVocabulary();
+      return item;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async deleteVocabulary(kind: 'document-types' | 'categories', uuid: string): Promise<boolean> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      await firstValueFrom(this.http.delete<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}/${uuid}`, {
         withCredentials: true
       }));
       await this.loadVocabulary();
