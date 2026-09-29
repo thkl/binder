@@ -22,6 +22,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Document bulk actions](./architecture/bulk-actions.md) — page-scoped selection and batch document operations
 - [Virtual folders](./architecture/virtual-folders.md) — owner-scoped logical folder trees and document links
 - [Document exports](./architecture/document-exports.md) — selected-document and folder ZIP exports
+- [Saved searches](./architecture/saved-searches.md) — owner-scoped reusable list and semantic searches
 - [Backup and scheduled maintenance](./architecture/backup-and-scheduling.md) — PostgreSQL backup/restore, retention, and recurring jobs
 - [Extensions and plugins](./architecture/extensions.md) — versioned extension points, calendar automation, and email import
 - [AI assistance](./architecture/ai-assistance.md) — user-confirmed hosted title suggestions
@@ -40,4 +41,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-P0 and P1 are implemented. The inbox slice and bulk document actions are in place. Backup scheduling, retention cleanup, visible status, and manual backup requests are implemented; restore remains an operator workflow that still needs a real restore test. Virtual folders are now being implemented with owner-scoped nested trees, document links, and folder-aware document listing. ZIP exports, saved searches, and final hardening/security verification follow. Email and scanner ingestion have moved to P3, alongside multiple configurable AI providers.
+P0 and P1 are implemented. The inbox slice, bulk document actions, virtual folders, recursive ZIP exports, and saved searches are in place. Backup scheduling, retention cleanup, visible status, manual backup requests, and restore instructions are implemented; restore remains an operator workflow that still needs a real restore test. The remaining P2 work is recovery verification, storage consistency checks, and final hardening/security verification. Email and scanner ingestion have moved to P3, alongside multiple configurable AI providers.

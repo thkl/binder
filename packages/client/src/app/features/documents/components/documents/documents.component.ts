@@ -6,6 +6,8 @@ import { DocumentDrawerComponent, DocumentDrawerTab } from '../document-drawer/d
 import { DocumentActionsComponent } from '../document-actions/document-actions.component';
 import { DocumentFilterMenuComponent } from '../document-filter-menu/document-filter-menu.component';
 import { FolderTreeComponent } from '../folder-tree/folder-tree.component';
+import { SavedSearchMenuComponent } from '../saved-search-menu/saved-search-menu.component';
+import { SavedSearchService } from '../../services/saved-search.service';
 import type {
   Document,
   DocumentBulkAction,
@@ -16,6 +18,7 @@ import type {
   DocumentStatus,
   DocumentTitleSuggestion
 } from '@binder/common';
+import { DocumentListQuerySchema } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 type DocumentViewMode = 'list' | 'icons';
@@ -41,6 +44,7 @@ type DocumentFilterValues = {
     DocumentActionsComponent,
     DocumentFilterMenuComponent,
     FolderTreeComponent,
+    SavedSearchMenuComponent,
     TranslatePipe
   ],
   templateUrl: './documents.component.html',
@@ -50,6 +54,7 @@ type DocumentFilterValues = {
 export class DocumentsComponent implements OnInit, OnDestroy {
   readonly documents = inject(DocumentsService);
   readonly folders = inject(FoldersService);
+  readonly savedSearches = inject(SavedSearchService);
   private readonly i18n = inject(I18nService);
   private readonly document = inject(DOCUMENT);
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
@@ -72,6 +77,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly folderActionMessage = signal<string | null>(null);
   readonly listSearch = signal('');
   readonly activeFilterMenu = signal<DocumentFilterKey | null>(null);
+  readonly selectedSavedSearchUuid = signal<string | null>(null);
   readonly filterValues = signal<DocumentFilterValues>({
     documentType: undefined,
     category: undefined,
@@ -130,6 +136,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     void this.folders.loadChildren(null);
+    void this.savedSearches.load();
     void this.documents.load({ groupBy: this.groupMode() });
   }
 
@@ -141,6 +148,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     if (!this.canLeaveMetadata()) return;
 
     this.activeFilterMenu.set(null);
+    this.selectedSavedSearchUuid.set(null);
     this.rememberCurrentFolderPage();
     this.folders.select(folderUuid);
     await this.loadFolderPage(folderUuid);
@@ -170,6 +178,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
     const value = (event.target as HTMLInputElement).value;
     this.listSearch.set(value);
+    this.selectedSavedSearchUuid.set(null);
     if (this.searchTimer) clearTimeout(this.searchTimer);
 
     this.searchTimer = setTimeout(() => {
@@ -189,6 +198,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     if (!this.canLeaveMetadata()) return;
 
     this.filterValues.update((current) => ({ ...current, [key]: values }));
+    this.selectedSavedSearchUuid.set(null);
     this.applyListQuery(this.buildFilterQuery());
   }
 
@@ -196,6 +206,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     if (!this.canLeaveMetadata()) return;
 
     this.listSearch.set('');
+    this.selectedSavedSearchUuid.set(null);
     this.filterValues.set({
       documentType: undefined,
       category: undefined,
@@ -351,6 +362,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     }
     console.log("Set Group Mode ",mode)
     this.groupMode.set(mode);
+    this.selectedSavedSearchUuid.set(null);
     localStorage.setItem('binder.documents.group-mode', mode);
     this.folderPages.set({});
     this.clearSelection();
@@ -365,6 +377,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     }
     console.log("Set SortDirection",direction)
     this.sortDirection.set(direction);
+    this.selectedSavedSearchUuid.set(null);
     localStorage.setItem('binder.documents.sortDirection', direction);
     this.folderPages.set({});
     this.clearSelection();
@@ -374,6 +387,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   setGroupDirection(direction: DocumentSortDirection): void {
     if (!this.canLeaveMetadata()) return;
     this.groupDirection.set(direction);
+    this.selectedSavedSearchUuid.set(null);
     localStorage.setItem('binder.documents.groupDirection', direction);
     this.folderPages.set({});
     this.clearSelection();
@@ -562,6 +576,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   private applyListQuery(query: Partial<DocumentListQuery>): void {
     this.activeFilterMenu.set(null);
+    this.selectedSavedSearchUuid.set(null);
     this.folderPages.set({});
     this.clearSelection();
     void this.documents.load({ page: 1, ...query });
@@ -581,6 +596,69 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       statuses: filters.status,
       reviewStates: filters.reviewState
     };
+  }
+
+  async saveCurrentSearch(name: string): Promise<void> {
+    const current = this.documents.getCurrentQuery();
+    const parsed = DocumentListQuerySchema.parse({
+      ...this.buildFilterQuery(),
+      pageSize: current.pageSize,
+      sort: current.sort,
+      direction: this.sortDirection(),
+      groupBy: this.groupMode(),
+      groupDirection: this.groupDirection(),
+      folderUuid: current.folderUuid
+    });
+    const { page: _page, ...query } = parsed;
+    const saved = await this.savedSearches.create({
+      name,
+      definition: { kind: 'list', query }
+    });
+    if (saved) this.selectedSavedSearchUuid.set(saved.uuid);
+  }
+
+  async loadSavedSearch(uuid: string): Promise<void> {
+    if (!uuid) {
+      this.selectedSavedSearchUuid.set(null);
+      return;
+    }
+
+    const saved = this.savedSearches.items().find((item) => item.uuid === uuid);
+    if (!saved || saved.definition.kind !== 'list' || !this.canLeaveMetadata()) return;
+
+    const query = saved.definition.query;
+    this.selectedSavedSearchUuid.set(saved.uuid);
+    this.listSearch.set(query.q ?? '');
+    this.filterValues.set({
+      documentType: query.documentTypeUuids,
+      category: query.categoryUuids,
+      issuer: query.issuerUuids,
+      tag: query.tagUuids,
+      status: query.statuses,
+      reviewState: query.reviewStates
+    });
+    this.groupMode.set(query.groupBy ?? 'none');
+    this.groupDirection.set(query.groupDirection ?? 'asc');
+    this.sortDirection.set(query.direction ?? 'desc');
+    localStorage.setItem('binder.documents.group-mode', this.groupMode());
+    localStorage.setItem('binder.documents.groupDirection', this.groupDirection());
+    localStorage.setItem('binder.documents.sortDirection', this.sortDirection());
+    this.folders.select(query.folderUuid ?? null);
+    this.activeFilterMenu.set(null);
+    this.folderPages.set({});
+    this.clearSelection();
+    await this.documents.load({ ...query, page: 1 });
+  }
+
+  async removeSavedSearch(uuid: string): Promise<void> {
+    if (!window.confirm(this.i18n.t('documents.savedSearchDeleteConfirm'))) return;
+    if (await this.savedSearches.remove(uuid) && this.selectedSavedSearchUuid() === uuid) {
+      this.selectedSavedSearchUuid.set(null);
+    }
+  }
+
+  async renameSavedSearch(input: { uuid: string; name: string }): Promise<void> {
+    await this.savedSearches.update(input.uuid, { name: input.name });
   }
 
   private facetLabel(key: DocumentFilterKey, option: DocumentListFacetOption): string {

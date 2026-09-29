@@ -17,6 +17,7 @@ import { IssuerModule } from './features/issuer/issuer.module';
 import { LogsModule } from './features/logs/logs.module';
 import { MaintenanceModule } from './features/maintenance/maintenance.module';
 import { FolderModule } from './features/folder/folder.module';
+import { SavedSearchModule } from './features/saved-search/saved-search.module';
 
 @Module({
   controllers: [HealthController],
@@ -35,6 +36,7 @@ import { FolderModule } from './features/folder/folder.module';
     LogsModule,
     MaintenanceModule,
     FolderModule,
+    SavedSearchModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

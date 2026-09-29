@@ -3,19 +3,23 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { SearchService } from '../../services/search.service';
 import { DocumentDrawerComponent, DocumentDrawerTab } from '../../../documents/components/document-drawer/document-drawer.component';
+import { SavedSearchMenuComponent } from '../../../documents/components/saved-search-menu/saved-search-menu.component';
+import { SavedSearchService } from '../../../documents/services/saved-search.service';
 import type { Document } from '@binder/common';
+import { DocumentSearchQuerySchema } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 @Component({
   selector: 'binder-home',
   standalone: true,
-  imports: [CommonModule, DocumentDrawerComponent, TranslatePipe],
+  imports: [CommonModule, DocumentDrawerComponent, SavedSearchMenuComponent, TranslatePipe],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomeComponent {
   readonly search = inject(SearchService);
+  readonly savedSearches = inject(SavedSearchService);
   readonly i18n = inject(I18nService);
   readonly searchQuery = signal('');
   readonly drawerDocumentUuid = signal<string | null>(null);
@@ -28,6 +32,12 @@ export class HomeComponent {
   readonly selectedTag = signal('');
   readonly selectedIssuer = signal('');
   readonly onlySemantic = signal(true);
+  readonly semanticThreshold = signal(0.35);
+  readonly selectedSavedSearchUuid = signal<string | null>(null);
+
+  constructor() {
+    void this.savedSearches.load();
+  }
 
   readonly drawerDocument = computed(() => {
     const uuid = this.drawerDocumentUuid();
@@ -63,11 +73,77 @@ export class HomeComponent {
 
   async submitSearch(event: Event): Promise<void> {
     event.preventDefault();
-    await this.search.search(this.searchQuery(), {
+    this.selectedSavedSearchUuid.set(null);
+    await this.runSearch();
+  }
+
+  onSearchInput(event: Event): void {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+    this.selectedSavedSearchUuid.set(null);
+  }
+
+  async saveCurrentSearch(name: string): Promise<void> {
+    const parsed = DocumentSearchQuerySchema.safeParse({
+      q: this.searchQuery(),
+      limit: 20,
+      semanticThreshold: this.semanticThreshold(),
       documentTypeUuid: this.selectedType() || undefined,
       categoryUuid: this.selectedCategory() || undefined,
       issuerUuid: this.selectedIssuer() || undefined,
       tagUuids: this.selectedTag() ? [this.selectedTag()] : undefined
+    });
+    if (!parsed.success) return;
+
+    const saved = await this.savedSearches.create({
+      name,
+      definition: {
+        kind: 'semantic',
+        query: parsed.data,
+        onlySemantic: this.onlySemantic()
+      }
+    });
+    if (saved) this.selectedSavedSearchUuid.set(saved.uuid);
+  }
+
+  async loadSavedSearch(uuid: string): Promise<void> {
+    if (!uuid) {
+      this.selectedSavedSearchUuid.set(null);
+      return;
+    }
+
+    const saved = this.savedSearches.items().find((item) => item.uuid === uuid);
+    if (!saved || saved.definition.kind !== 'semantic') return;
+
+    const query = saved.definition.query;
+    this.selectedSavedSearchUuid.set(saved.uuid);
+    this.searchQuery.set(query.q);
+    this.selectedType.set(query.documentTypeUuid ?? '');
+    this.selectedCategory.set(query.categoryUuid ?? '');
+    this.selectedIssuer.set(query.issuerUuid ?? '');
+    this.selectedTag.set(query.tagUuids?.[0] ?? '');
+    this.semanticThreshold.set(query.semanticThreshold);
+    this.onlySemantic.set(saved.definition.onlySemantic);
+    await this.runSearch();
+  }
+
+  async removeSavedSearch(uuid: string): Promise<void> {
+    if (!window.confirm(this.i18n.t('documents.savedSearchDeleteConfirm'))) return;
+    if (await this.savedSearches.remove(uuid) && this.selectedSavedSearchUuid() === uuid) {
+      this.selectedSavedSearchUuid.set(null);
+    }
+  }
+
+  async renameSavedSearch(input: { uuid: string; name: string }): Promise<void> {
+    await this.savedSearches.update(input.uuid, { name: input.name });
+  }
+
+  private async runSearch(): Promise<void> {
+    await this.search.search(this.searchQuery(), {
+      documentTypeUuid: this.selectedType() || undefined,
+      categoryUuid: this.selectedCategory() || undefined,
+      issuerUuid: this.selectedIssuer() || undefined,
+      tagUuids: this.selectedTag() ? [this.selectedTag()] : undefined,
+      semanticThreshold: this.semanticThreshold()
     });
   }
 
@@ -135,12 +211,7 @@ export class HomeComponent {
   }
 
   async reloadSearch(): Promise<void> {
-    await this.search.search(this.searchQuery(), {
-      documentTypeUuid: this.selectedType() || undefined,
-      categoryUuid: this.selectedCategory() || undefined,
-      issuerUuid: this.selectedIssuer() || undefined,
-      tagUuids: this.selectedTag() ? [this.selectedTag()] : undefined
-    });
+    await this.runSearch();
   }
 
   private findDocument(uuid: string): Document | null {

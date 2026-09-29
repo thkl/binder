@@ -49,8 +49,14 @@ export class SearchService {
     }
   }
 
-  async search(query: string, filters: { documentTypeUuid?: string; categoryUuid?: string; issuerUuid?: string; tagUuids?: string[] } = {}): Promise<void> {
-    const parsed = DocumentSearchQuerySchema.safeParse({ q: query, limit: 20, ...filters });
+  async search(query: string, filters: {
+    documentTypeUuid?: string;
+    categoryUuid?: string;
+    issuerUuid?: string;
+    tagUuids?: string[];
+    semanticThreshold?: number;
+  } = {}): Promise<void> {
+    const parsed = DocumentSearchQuerySchema.safeParse({ q: query, limit: 20, semanticThreshold: 0.35, ...filters });
     if (!parsed.success) {
       this.result.set(null);
       this.error.set(null);
@@ -61,6 +67,7 @@ export class SearchService {
     this.error.set(null);
     try {
       const params = new URLSearchParams({ q: parsed.data.q, limit: String(parsed.data.limit) });
+      params.set('semanticThreshold', String(parsed.data.semanticThreshold));
       if (parsed.data.documentTypeUuid) params.set('documentTypeUuid', parsed.data.documentTypeUuid);
       if (parsed.data.categoryUuid) params.set('categoryUuid', parsed.data.categoryUuid);
       if (parsed.data.issuerUuid) params.set('issuerUuid', parsed.data.issuerUuid);

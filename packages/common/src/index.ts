@@ -435,6 +435,7 @@ export type DocumentListResponse = z.infer<typeof DocumentListResponseSchema>;
 export const DocumentSearchQuerySchema = z.object({
   q: z.string().trim().min(1).max(200),
   limit: z.coerce.number().int().min(1).max(50).default(20),
+  semanticThreshold: z.coerce.number().min(0).max(1).default(0.35),
   status: DocumentStatusSchema.optional(),
   documentTypeUuid: z.uuid().optional(),
   categoryUuid: z.uuid().optional(),
@@ -453,6 +454,59 @@ export const DocumentSearchQuerySchema = z.object({
   )
 });
 export type DocumentSearchQuery = z.infer<typeof DocumentSearchQuerySchema>;
+
+export const SavedSearchKindSchema = z.enum(['list', 'semantic']);
+export type SavedSearchKind = z.infer<typeof SavedSearchKindSchema>;
+
+export const SavedListSearchDefinitionSchema = z.object({
+  kind: z.literal('list'),
+  query: DocumentListQuerySchema.partial()
+});
+
+export const SavedSemanticSearchDefinitionSchema = z.object({
+  kind: z.literal('semantic'),
+  query: DocumentSearchQuerySchema,
+  onlySemantic: z.boolean().default(true)
+});
+
+export const SavedSearchDefinitionSchema = z.discriminatedUnion('kind', [
+  SavedListSearchDefinitionSchema,
+  SavedSemanticSearchDefinitionSchema
+]);
+export type SavedSearchDefinition = z.infer<typeof SavedSearchDefinitionSchema>;
+
+export const SavedSearchSchema = z.object({
+  uuid: z.uuid(),
+  ownerUuid: z.uuid(),
+  name: z.string().trim().min(1).max(100),
+  definition: SavedSearchDefinitionSchema,
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime()
+});
+export type SavedSearch = z.infer<typeof SavedSearchSchema>;
+
+export const CreateSavedSearchInputSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  definition: SavedSearchDefinitionSchema
+});
+export type CreateSavedSearchInput = z.infer<typeof CreateSavedSearchInputSchema>;
+
+export const UpdateSavedSearchInputSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  definition: SavedSearchDefinitionSchema.optional()
+}).refine((input) => Object.keys(input).length > 0, 'At least one saved search property is required');
+export type UpdateSavedSearchInput = z.infer<typeof UpdateSavedSearchInputSchema>;
+
+export const SavedSearchListResponseSchema = z.object({
+  items: z.array(SavedSearchSchema)
+});
+export type SavedSearchListResponse = z.infer<typeof SavedSearchListResponseSchema>;
+
+export const SavedSearchDeleteResponseSchema = z.object({
+  deleted: z.literal(true),
+  uuid: z.uuid()
+});
+export type SavedSearchDeleteResponse = z.infer<typeof SavedSearchDeleteResponseSchema>;
 
 export const DocumentSearchResultSchema = z.object({
   document: DocumentSchema,

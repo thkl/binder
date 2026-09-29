@@ -173,6 +173,20 @@
       </div>
     </header>
 
+    <binder-saved-search-menu
+      [searches]="savedSearches.items()"
+      [selectedUuid]="selectedSavedSearchUuid()"
+      [busy]="savedSearches.saving()"
+      [removing]="savedSearches.deleting()"
+      (searchSelected)="loadSavedSearch($event)"
+      (saveRequested)="saveCurrentSearch($event)"
+      (renameRequested)="renameSavedSearch($event)"
+      (removeRequested)="removeSavedSearch($event)" />
+
+    @if (savedSearches.error(); as savedSearchError) {
+      <div class="saved-search-error" role="alert">{{ savedSearchError }}</div>
+    }
+
     @if (hasActiveFilters()) {
       <div class="active-filter-bar">
         <span>{{ activeFilterCount() }} {{ 'documents.activeFilters' | t }}</span>

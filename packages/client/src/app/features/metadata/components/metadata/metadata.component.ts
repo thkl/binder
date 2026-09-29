@@ -6,6 +6,7 @@ import { FoldersService } from '../../../documents/services/folders.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 type VocabularyKind = 'documentTypes' | 'categories' | 'tags';
+type Scopes = 'system' | 'personal'
 
 @Component({
   selector: 'binder-metadata',
@@ -40,22 +41,37 @@ export class MetadataComponent implements OnInit {
   readonly definitionType = signal<MetadataFieldType>('text');
   readonly definitionOptions = signal('');
   readonly definitionMandatory = signal(false);
+  readonly currentScope = signal<Scopes>('system');
 
   readonly activeItems = computed(() => {
+    const scope = this.currentScope();
     const vocabulary = this.metadata.vocabulary();
-    if (!vocabulary) return [];
-    return vocabulary[this.activeKind()];
+    if (this.activeKind() !== 'tags') {
+      return vocabulary ? vocabulary[this.activeKind()].filter(item => item.scope === scope) : [];
+    } else {
+      if (!vocabulary) return [];
+      return vocabulary[this.activeKind()];
+    }
   });
 
   ngOnInit(): void {
     void this.metadata.loadVocabulary();
     void this.folders.listAll();
+
+    if (!this.auth.user()?.isAdmin) {
+      this.currentScope.set('personal');
+    }
   }
 
   selectKind(kind: VocabularyKind): void {
     this.activeKind.set(kind);
     this.showCreate.set(false);
     this.cancelEdit();
+  }
+
+  switchScope(scope: Scopes): void {
+    this.currentScope.set(scope);
+    this.systemScope.set((scope === 'system'))
   }
 
   kindLabel(kind: VocabularyKind): string {

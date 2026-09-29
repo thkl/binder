@@ -35,6 +35,10 @@ export class DocumentsService {
 
   constructor(private readonly http: HttpClient) {}
 
+  getCurrentQuery(): DocumentListQuery {
+    return this.currentQuery;
+  }
+
   async load(query: Partial<DocumentListQuery> = {}): Promise<void> {
     this.loading.set(true);
     this.error.set(null);

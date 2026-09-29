@@ -36,22 +36,42 @@
       <header class="content-heading">
         <div><p class="section-kicker">{{ 'metadata.available' | t }}</p><h3>{{ kindLabel(activeKind()) }}</h3></div>
         <span class="count-badge">{{ activeItems().length }} {{ 'metadata.entries' | t }}</span>
+        @if (auth.user()?.isAdmin && this.activeKind()!=='tags') {
+        <div>
+          <div aria-label="scope" class="scope-switcher">
+              <button type="button" [class.active]="currentScope()==='system'" (click)="switchScope('system')">{{ 'metadata.workspace' | t }}</button>
+              <button type="button" [class.active]="currentScope()==='personal'" (click)="switchScope('personal')">{{('metadata.personal' | t) }}</button></div>
+        </div>
+        }
       </header>
 
       @if (showCreate()) {
         <form class="create-form" (submit)="$event.preventDefault(); create()">
           <div class="form-title"><strong>{{ 'metadata.create' | t }}</strong><small>{{ 'metadata.createCopy' | t }}</small></div>
           <label><span>{{ 'metadata.name' | t }}</span><input [value]="name()" (input)="name.set($any($event.target).value)" maxlength="150" required autocomplete="off"></label>
-          <label><span>{{ 'metadata.description' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="description()" (input)="description.set($any($event.target).value)" maxlength="500"></label>
+          <label><span>{{ 'metadata.description' | t }} <em>{{ 'metadata.optional' | t }}</em></span>
+            <input [value]="description()" (input)="description.set($any($event.target).value)" maxlength="500">
+          </label>
           <div class="translation-fields">
             <label><span>{{ 'metadata.englishLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="translationEn()" (input)="translationEn.set($any($event.target).value)" maxlength="150" placeholder="Invoice"></label>
             <label><span>{{ 'metadata.germanLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="translationDe()" (input)="translationDe.set($any($event.target).value)" maxlength="150" placeholder="Rechnung"></label>
           </div>
           @if (auth.user()?.isAdmin) {
-            <label class="scope-toggle"><input type="checkbox" [checked]="systemScope()" (change)="systemScope.set($any($event.target).checked)"><span><strong>{{ 'metadata.workspaceValue' | t }}</strong><small>{{ 'metadata.workspaceValueCopy' | t }}</small></span></label>
+            <label class="scope-toggle">
+              <input type="checkbox" [checked]="systemScope() || currentScope()==='system' " (change)="systemScope.set($any($event.target).checked)"><span>
+                <strong>{{ 'metadata.workspaceValue' | t }}</strong><small>{{ 'metadata.workspaceValueCopy' | t }}</small>
+              </span></label>
           }
           @if (activeKind() !== 'tags' && !systemScope() && folders.allFolders().length > 0) {
-            <label><span>{{ 'metadata.folderRouting' | t }}</span><select [value]="folderUuid()" (change)="folderUuid.set($any($event.target).value)"><option value="">{{ 'metadata.noFolderRouting' | t }}</option>@for (folder of folders.allFolders(); track folder.uuid) { <option [value]="folder.uuid">{{ folder.name }}</option> }</select><small class="field-help">{{ 'metadata.folderRoutingHint' | t }}</small></label>
+              <div class="value-edit">
+            <label><span>{{ 'metadata.folderRouting' | t }}</span>
+              <select [value]="folderUuid()" (change)="folderUuid.set($any($event.target).value)">
+                <option value="">{{ 'metadata.noFolderRouting' | t }}</option
+                  >@for (folder of folders.allFolders(); track folder.uuid) { 
+                    <option [value]="folder.uuid">{{ folder.name }}</option> 
+                  }</select>
+                  <small class="field-help">{{ 'metadata.folderRoutingHint' | t }}</small></label>
+            </div>
           }
           <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreate.set(false)">{{ 'metadata.cancel' | t }}</button><button type="submit" class="primary-button" [disabled]="metadata.saving() || !name().trim()">{{ metadata.saving() ? ('metadata.creating' | t) : ('metadata.createValue' | t) }}</button></div>
         </form>

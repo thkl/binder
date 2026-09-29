@@ -235,6 +235,14 @@
                     "document_types",
                     "document_categories"
                ]
+          },
+          "37": {
+               "created": [
+                    "saved_searches"
+               ],
+               "required": [
+                    "users"
+               ]
           }
      }
 }

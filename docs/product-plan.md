@@ -84,7 +84,7 @@ The remaining P2 work is intentionally ordered by user value as follows:
 1. Protect the archive with backup, restore, and visible recovery status.
 2. Organize documents in nested personal folders without changing the stored originals.
 3. Manage and export groups of documents, including complete folders.
-4. Save searches with reusable filters and semantic-search thresholds.
+4. Save searches with reusable filters and semantic-search thresholds. ✅
 5. Make ownership, imports, exports, automation, and recovery dependable.
 
 ### P3 — connect Binder to the rest of life

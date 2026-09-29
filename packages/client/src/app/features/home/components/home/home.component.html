@@ -8,7 +8,7 @@
       <span class="search-icon" aria-hidden="true">⌕</span>
       <input
         [value]="searchQuery()"
-        (input)="searchQuery.set($any($event.target).value)"
+        (input)="onSearchInput($event)"
         type="search"
         [placeholder]="'home.placeholder' | t"
         [attr.aria-label]="'home.title' | t"
@@ -43,14 +43,40 @@
             @for (issuer of search.issuers(); track issuer.uuid) { <option [value]="issuer.uuid">{{ issuer.name }}</option> }
           </select>
         </label>
-         <label>{{ 'home.results' | t }}
+        <label>{{ 'home.results' | t }}
           <select (change)="onlySemantic.set($any($event.target).value==='true')">
             <option value="true" [selected]="onlySemantic()?'selected':undefined">{{ 'home.resultSemantic' | t }}</option>
             <option value="false" [selected]="onlySemantic()?undefined:'selected'">{{ 'home.resultAll' | t }}</option>
 
           </select>
         </label>
+        <label class="threshold-control">
+          {{ 'home.semanticThreshold' | t }}
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            [value]="semanticThreshold()"
+            (input)="semanticThreshold.set(+$any($event.target).value)">
+          <output>{{ semanticThreshold() | percent:'1.0-0' }}</output>
+        </label>
       </div>
+    }
+    <div class="home-saved-searches">
+      <binder-saved-search-menu
+        kind="semantic"
+        [searches]="savedSearches.items()"
+        [selectedUuid]="selectedSavedSearchUuid()"
+        [busy]="savedSearches.saving()"
+        [removing]="savedSearches.deleting()"
+        (searchSelected)="loadSavedSearch($event)"
+        (saveRequested)="saveCurrentSearch($event)"
+        (renameRequested)="renameSavedSearch($event)"
+        (removeRequested)="removeSavedSearch($event)" />
+    </div>
+    @if (savedSearches.error(); as savedSearchError) {
+      <div class="notice error" role="alert">{{ savedSearchError }}</div>
     }
     <p class="search-hint">{{ 'home.hint' | t }}</p>
   </div>

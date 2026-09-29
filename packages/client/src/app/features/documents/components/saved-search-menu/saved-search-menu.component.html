@@ -1,0 +1,50 @@
+<div class="saved-search-menu">
+  <label class="saved-search-select">
+    <span>{{ 'documents.savedSearches' | t }}</span>
+    <select
+      [value]="selectedUuid() ?? ''"
+      [disabled]="busy() || removing()"
+      (change)="searchSelected.emit($any($event.target).value)">
+      <option value="">{{ 'documents.savedSearchChoose' | t }}</option>
+      @for (search of availableSearches(); track search.uuid) {
+        <option [value]="search.uuid">{{ search.name }}</option>
+      }
+    </select>
+  </label>
+
+  <div class="saved-search-actions">
+    @if (isNaming()) {
+      <input
+        type="text"
+        maxlength="100"
+        [value]="name()"
+        [placeholder]="'documents.savedSearchNamePlaceholder' | t"
+        [attr.aria-label]="'documents.savedSearchName' | t"
+        (input)="name.set($any($event.target).value)"
+        (keydown)="handleNameKeydown($event)">
+      <button type="button" class="saved-search-primary" [disabled]="busy() || !name().trim()" (click)="save()">
+        {{ busy() ? ('documents.savedSearchSaving' | t) : (namingMode() === 'rename' ? ('documents.savedSearchRenameConfirm' | t) : ('documents.savedSearchConfirm' | t)) }}
+      </button>
+      <button type="button" class="saved-search-secondary" [disabled]="busy()" (click)="cancelSave()">
+        {{ 'documents.savedSearchCancel' | t }}
+      </button>
+    } @else {
+      <button type="button" class="saved-search-primary" [disabled]="busy()" (click)="beginSave()">
+        {{ 'documents.savedSearchSave' | t }}
+      </button>
+      @if (selectedUuid()) {
+        <button type="button" class="saved-search-secondary" [disabled]="busy()" (click)="beginRename()">
+          {{ 'documents.savedSearchRename' | t }}
+        </button>
+        <button
+          type="button"
+          class="saved-search-danger"
+          [disabled]="removing()"
+          [attr.aria-label]="'documents.savedSearchDelete' | t"
+          (click)="remove()">
+          {{ removing() ? ('documents.savedSearchDeleting' | t) : ('documents.savedSearchDelete' | t) }}
+        </button>
+      }
+    }
+  </div>
+</div>

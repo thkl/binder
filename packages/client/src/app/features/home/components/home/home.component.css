@@ -104,6 +104,12 @@ h2 {
     font-size: .68rem;
 }
 
+.home-saved-searches {
+    max-width: 54rem;
+    margin: 1rem auto 0;
+    text-align: left;
+}
+
 .search-filters {
     display: flex;
     justify-content: center;
@@ -118,6 +124,20 @@ h2 {
     gap: .4rem;
     color: #9db2ca;
     font-size: .68rem;
+}
+
+.threshold-control {
+    flex-wrap: wrap;
+}
+
+.threshold-control input[type='range'] {
+    accent-color: var(--cyan);
+}
+
+.threshold-control output {
+    min-width: 2.3rem;
+    color: #dceaff;
+    font-variant-numeric: tabular-nums;
 }
 
 .search-filters select {

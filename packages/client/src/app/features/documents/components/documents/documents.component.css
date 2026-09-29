@@ -186,6 +186,16 @@ h2 {
   outline-offset: 1px;
 }
 
+.saved-search-error {
+  margin: .6rem 1.5rem 0;
+  padding: .55rem .7rem;
+  border: 1px solid rgba(255, 120, 120, .2);
+  border-radius: .55rem;
+  color: #ffb0b0;
+  background: rgba(255, 120, 120, .08);
+  font-size: .72rem;
+}
+
 .filter-picker-row {
   display: flex;
   align-items: center;

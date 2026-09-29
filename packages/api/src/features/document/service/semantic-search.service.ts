@@ -19,7 +19,13 @@ export class SemanticSearchService {
 
   constructor(private readonly settings: ApplicationSettingsService) {}
 
-  async search(ownerUuid: string, query: string, limit: number, filters: Pick<DocumentSearchQuery, 'issuerUuid' | 'status'> = {}): Promise<SemanticHit[]> {
+  async search(
+    ownerUuid: string,
+    query: string,
+    limit: number,
+    filters: Partial<Pick<DocumentSearchQuery, 'issuerUuid' | 'status' | 'semanticThreshold'>> = {}
+  ): Promise<SemanticHit[]> {
+    const semanticThreshold = filters.semanticThreshold ?? 0.35;
     const enabled = (await this.settings.get('embeddings.enabled', 'false'))?.toLowerCase() === 'true';
     const apiKey = await this.settings.get('embeddings.apiKey', '');
     const provider = await this.settings.get('ai.provider', 'openai-compatible');
@@ -28,7 +34,8 @@ export class SemanticSearchService {
       provider,
       hasApiKey: Boolean(apiKey),
       queryLength: query.length,
-      limit
+      limit,
+      semanticThreshold
     });
     if (!enabled || !apiKey || provider !== 'openai-compatible') {
       this.logger.debug('Semantic search skipped', {
@@ -78,7 +85,7 @@ export class SemanticSearchService {
         text: embedding.content,
         score: normalizeSimilarity(Number((embedding as DocumentEmbedding & { cosineDistance?: number }).get('cosineDistance')))
       }))
-      .filter((hit) => hit.document && Number.isFinite(hit.score) && hit.score >= 0.35)
+      .filter((hit) => hit.document && Number.isFinite(hit.score) && hit.score >= semanticThreshold)
       .sort((left, right) => right.score - left.score)
       .filter((hit, index, hits) => index === hits.findIndex((candidate) => candidate.document.uuid === hit.document.uuid))
       .slice(0, limit);
