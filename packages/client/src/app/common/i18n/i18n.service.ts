@@ -256,6 +256,8 @@ const CALMER_COPY: Record<string, TranslationMap> = {
 
 const EXTENDED_COPY: Record<string, TranslationMap> = {
   en: {
+    'maintenance.storageConsistency.enabled': 'Enable document storage checks',
+    'maintenance.storageConsistency.schedule': 'Storage check schedule (cron)',
     'setting.maintenance.storageConsistency.enabled': 'Enable document storage checks',
     'setting.maintenance.storageConsistency.schedule': 'Storage check schedule (cron)',
     'maintenance.job.storage-consistency': 'Document storage check',
@@ -325,6 +327,14 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'documents.activeFilters': 'active filters',
     'documents.clearFilters': 'Clear filters',
     'documents.savedSearches': 'Saved searches',
+    'documents.savedSearchDialogTitle': 'Save this search',
+    'documents.savedSearchDialogHint': 'Review the search name and parameters before saving.',
+    'documents.savedSearchDialogCopy': 'This saved search will keep the current filters, grouping, sorting, folder, and page size.',
+    'documents.savedSearchParameters': 'Search parameters',
+    'documents.savedSearchAnyValue': 'Any',
+    'documents.savedSearchSelected': 'selected',
+    'documents.savedSearchPageSize': 'Page size',
+    'documents.savedSearchCreated': 'Created date',
     'documents.savedSearchChoose': 'Choose a saved search…',
     'documents.savedSearchSave': 'Save current search',
     'documents.savedSearchName': 'Saved search name',
@@ -365,6 +375,8 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'inbox.remove': 'Remove'
   },
   de: {
+    'maintenance.storageConsistency.enabled': 'Dokumenten-Speicherprüfungen aktivieren',
+    'maintenance.storageConsistency.schedule': 'Zeitplan für Speicherprüfung (Cron)',
     'setting.maintenance.storageConsistency.enabled': 'Dokumenten-Speicherprüfungen aktivieren',
     'setting.maintenance.storageConsistency.schedule': 'Zeitplan für Speicherprüfung (Cron)',
     'maintenance.job.storage-consistency': 'Dokumenten-Speicherprüfung',
@@ -434,6 +446,14 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'documents.activeFilters': 'aktive Filter',
     'documents.clearFilters': 'Filter löschen',
     'documents.savedSearches': 'Gespeicherte Suchen',
+    'documents.savedSearchDialogTitle': 'Diese Suche speichern',
+    'documents.savedSearchDialogHint': 'Prüfen Sie Name und Parameter vor dem Speichern.',
+    'documents.savedSearchDialogCopy': 'Gespeichert werden die aktuellen Filter, Gruppierung, Sortierung, der Ordner und die Seitengröße.',
+    'documents.savedSearchParameters': 'Suchparameter',
+    'documents.savedSearchAnyValue': 'Beliebig',
+    'documents.savedSearchSelected': 'ausgewählt',
+    'documents.savedSearchPageSize': 'Seitengröße',
+    'documents.savedSearchCreated': 'Erstellungsdatum',
     'documents.savedSearchChoose': 'Gespeicherte Suche auswählen…',
     'documents.savedSearchSave': 'Aktuelle Suche speichern',
     'documents.savedSearchName': 'Name der gespeicherten Suche',

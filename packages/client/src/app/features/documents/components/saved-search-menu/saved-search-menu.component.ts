@@ -2,6 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 import type { SavedSearch, SavedSearchKind } from '@binder/common';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 
+export interface SavedSearchParameter {
+  label: string;
+  value: string;
+}
+
 @Component({
   selector: 'binder-saved-search-menu',
   standalone: true,
@@ -16,6 +21,7 @@ export class SavedSearchMenuComponent {
   readonly selectedUuid = input<string | null>(null);
   readonly busy = input(false);
   readonly removing = input(false);
+  readonly parameters = input<SavedSearchParameter[]>([]);
   readonly searchSelected = output<string>();
   readonly saveRequested = output<string>();
   readonly renameRequested = output<{ uuid: string; name: string }>();
@@ -25,6 +31,7 @@ export class SavedSearchMenuComponent {
   readonly namingMode = signal<'create' | 'rename'>('create');
   readonly name = signal('');
   readonly availableSearches = computed(() => this.searches().filter((item) => item.definition.kind === this.kind()));
+  readonly selectedSearch = computed(() => this.availableSearches().find((item) => item.uuid === this.selectedUuid()) ?? null);
 
   beginSave(): void {
     this.name.set('');
@@ -33,7 +40,7 @@ export class SavedSearchMenuComponent {
   }
 
   beginRename(): void {
-    const selected = this.searches().find((item) => item.uuid === this.selectedUuid());
+    const selected = this.selectedSearch();
     if (!selected) return;
     this.name.set(selected.name);
     this.namingMode.set('rename');
@@ -58,7 +65,7 @@ export class SavedSearchMenuComponent {
   }
 
   remove(): void {
-    const uuid = this.selectedUuid();
+    const uuid = this.selectedSearch()?.uuid;
     if (uuid) this.removeRequested.emit(uuid);
   }
 

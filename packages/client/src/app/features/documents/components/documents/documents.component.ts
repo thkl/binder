@@ -7,6 +7,7 @@ import { DocumentActionsComponent } from '../document-actions/document-actions.c
 import { DocumentFilterMenuComponent } from '../document-filter-menu/document-filter-menu.component';
 import { FolderTreeComponent } from '../folder-tree/folder-tree.component';
 import { SavedSearchMenuComponent } from '../saved-search-menu/saved-search-menu.component';
+import type { SavedSearchParameter } from '../saved-search-menu/saved-search-menu.component';
 import { SavedSearchService } from '../../services/saved-search.service';
 import type {
   Document,
@@ -104,6 +105,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     return selectedFilters + (this.listSearch().trim() ? 1 : 0);
   });
   readonly hasActiveFilters = computed(() => this.activeFilterCount() > 0);
+  readonly savedSearchParameters = computed<SavedSearchParameter[]>(() => this.createSavedSearchParameters());
   readonly exportScope = computed<'selected' | 'filtered' | 'folder' | null>(() => {
     if (this.selectedCount() > 0) return 'selected';
     if (this.hasActiveFilters()) return 'filtered';
@@ -599,16 +601,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   async saveCurrentSearch(name: string): Promise<void> {
-    const current = this.documents.getCurrentQuery();
-    const parsed = DocumentListQuerySchema.parse({
-      ...this.buildFilterQuery(),
-      pageSize: current.pageSize,
-      sort: current.sort,
-      direction: this.sortDirection(),
-      groupBy: this.groupMode(),
-      groupDirection: this.groupDirection(),
-      folderUuid: current.folderUuid
-    });
+    const parsed = this.currentSavedSearchQuery();
     const { page: _page, ...query } = parsed;
     const saved = await this.savedSearches.create({
       name,
@@ -658,7 +651,94 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   async renameSavedSearch(input: { uuid: string; name: string }): Promise<void> {
-    await this.savedSearches.update(input.uuid, { name: input.name });
+    const updated = await this.savedSearches.update(input.uuid, { name: input.name });
+    if (updated) this.selectedSavedSearchUuid.set(updated.uuid);
+  }
+
+  private currentSavedSearchQuery(): DocumentListQuery {
+    const current = this.documents.getCurrentQuery();
+    return DocumentListQuerySchema.parse({
+      ...this.buildFilterQuery(),
+      pageSize: current.pageSize,
+      sort: current.sort,
+      direction: this.sortDirection(),
+      groupBy: this.groupMode(),
+      groupDirection: this.groupDirection(),
+      folderUuid: current.folderUuid
+    });
+  }
+
+  private createSavedSearchParameters(): SavedSearchParameter[] {
+    const query = this.currentSavedSearchQuery();
+    return [
+      { label: this.i18n.t('documents.searchList'), value: query.q || this.i18n.t('documents.savedSearchAnyValue') },
+      { label: this.i18n.t('documents.filterType'), value: this.facetSelectionLabel('documentType', query.documentTypeUuids) },
+      { label: this.i18n.t('documents.filterCategory'), value: this.facetSelectionLabel('category', query.categoryUuids) },
+      { label: this.i18n.t('documents.filterIssuer'), value: this.facetSelectionLabel('issuer', query.issuerUuids) },
+      { label: this.i18n.t('documents.filterTag'), value: this.facetSelectionLabel('tag', query.tagUuids) },
+      { label: this.i18n.t('documents.filterStatus'), value: this.scalarSelectionLabel(query.statuses, 'documents.status.') },
+      { label: this.i18n.t('documents.filterReviewState'), value: this.scalarSelectionLabel(query.reviewStates, 'documents.') },
+      { label: this.i18n.t('folders.allDocuments'), value: this.folderSelectionLabel(query.folderUuid) },
+      { label: this.i18n.t('documents.sortDirection'), value: this.sortSelectionLabel(query) },
+      { label: this.i18n.t('documents.groupBy'), value: this.groupSelectionLabel(query.groupBy) },
+      { label: this.i18n.t('documents.groupDirection'), value: this.groupDirectionLabel(query) },
+      { label: this.i18n.t('documents.savedSearchPageSize'), value: String(query.pageSize) }
+    ];
+  }
+
+  private facetSelectionLabel(key: DocumentFilterKey, values: string[] | undefined): string {
+    if (!values || values.length === 0) return this.i18n.t('documents.savedSearchAnyValue');
+    const selected = new Set(values);
+    const labels = this.facetOptions(key)
+      .filter((option) => selected.has(option.value))
+      .map((option) => option.label);
+    return labels.length > 0 ? labels.join(', ') : `${values.length} ${this.i18n.t('documents.savedSearchSelected')}`;
+  }
+
+  private scalarSelectionLabel<T extends string>(values: T[] | undefined, prefix: string): string {
+    if (!values || values.length === 0) return this.i18n.t('documents.savedSearchAnyValue');
+    return values.map((value) => this.i18n.t(prefix + value)).join(', ');
+  }
+
+  private folderSelectionLabel(folderUuid: string | undefined): string {
+    if (!folderUuid) return this.i18n.t('folders.allDocuments');
+    return this.folders.loadedFolders().find((folder) => folder.uuid === folderUuid)?.name
+      ?? `${this.i18n.t('documents.savedSearchSelected')}: ${folderUuid}`;
+  }
+
+  private sortSelectionLabel(query: DocumentListQuery): string {
+    const field = query.sort === 'createdAt'
+      ? this.i18n.t('documents.savedSearchCreated')
+      : query.sort;
+    const direction = query.direction === 'asc'
+      ? this.i18n.t('documents.sortAsc')
+      : this.i18n.t('documents.sortDesc');
+    return `${field} · ${direction}`;
+  }
+
+  private groupSelectionLabel(groupBy: DocumentGroupBy): string {
+    const labels: Record<DocumentGroupBy, string> = {
+      none: this.i18n.t('documents.noGrouping'),
+      documentType: this.i18n.t('documents.groupType'),
+      category: this.i18n.t('documents.groupCategory'),
+      issuer: this.i18n.t('documents.groupIssuer'),
+      tag: this.i18n.t('documents.groupTag'),
+      status: this.i18n.t('documents.groupStatus'),
+      isNew: this.i18n.t('documents.groupReviewState')
+    };
+    return labels[groupBy];
+  }
+
+  private groupDirectionLabel(query: DocumentListQuery): string {
+    if (query.groupBy === 'none') return this.i18n.t('documents.savedSearchAnyValue');
+    if (query.groupBy === 'isNew') {
+      return query.groupDirection === 'asc'
+        ? this.i18n.t('documents.reviewedFirst')
+        : this.i18n.t('documents.newFirst');
+    }
+    return query.groupDirection === 'asc'
+      ? this.i18n.t('documents.groupAsc')
+      : this.i18n.t('documents.groupDesc');
   }
 
   private facetLabel(key: DocumentFilterKey, option: DocumentListFacetOption): string {

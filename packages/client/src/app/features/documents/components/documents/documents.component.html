@@ -199,6 +199,7 @@
     <binder-saved-search-menu
       [searches]="savedSearches.items()"
       [selectedUuid]="selectedSavedSearchUuid()"
+      [parameters]="savedSearchParameters()"
       [busy]="savedSearches.saving()"
       [removing]="savedSearches.deleting()"
       (searchSelected)="loadSavedSearch($event)"

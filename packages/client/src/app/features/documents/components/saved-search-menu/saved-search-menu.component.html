@@ -14,25 +14,12 @@
 
   <div class="saved-search-actions">
     @if (isNaming()) {
-      <input
-        type="text"
-        maxlength="100"
-        [value]="name()"
-        [placeholder]="'documents.savedSearchNamePlaceholder' | t"
-        [attr.aria-label]="'documents.savedSearchName' | t"
-        (input)="name.set($any($event.target).value)"
-        (keydown)="handleNameKeydown($event)">
-      <button type="button" class="saved-search-primary" [disabled]="busy() || !name().trim()" (click)="save()">
-        {{ busy() ? ('documents.savedSearchSaving' | t) : (namingMode() === 'rename' ? ('documents.savedSearchRenameConfirm' | t) : ('documents.savedSearchConfirm' | t)) }}
-      </button>
-      <button type="button" class="saved-search-secondary" [disabled]="busy()" (click)="cancelSave()">
-        {{ 'documents.savedSearchCancel' | t }}
-      </button>
+      <span class="saved-search-dialog-hint">{{ 'documents.savedSearchDialogHint' | t }}</span>
     } @else {
       <button type="button" class="saved-search-primary" [disabled]="busy()" (click)="beginSave()">
         {{ 'documents.savedSearchSave' | t }}
       </button>
-      @if (selectedUuid()) {
+      @if (selectedSearch()) {
         <button type="button" class="saved-search-secondary" [disabled]="busy()" (click)="beginRename()">
           {{ 'documents.savedSearchRename' | t }}
         </button>
@@ -47,4 +34,65 @@
       }
     }
   </div>
+
+  @if (isNaming()) {
+    <div class="saved-search-dialog-backdrop" role="presentation" (click)="cancelSave()">
+      <section
+        class="saved-search-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="saved-search-dialog-title"
+        (click)="$event.stopPropagation()">
+        <header class="saved-search-dialog-header">
+          <div>
+            <p class="saved-search-dialog-kicker">{{ namingMode() === 'rename' ? ('documents.savedSearchRename' | t) : ('documents.savedSearches' | t) }}</p>
+            <h2 id="saved-search-dialog-title">
+              {{ namingMode() === 'rename' ? ('documents.savedSearchRenameConfirm' | t) : ('documents.savedSearchDialogTitle' | t) }}
+            </h2>
+          </div>
+          <button type="button" class="saved-search-dialog-close" [attr.aria-label]="'documents.savedSearchCancel' | t" (click)="cancelSave()">×</button>
+        </header>
+
+        @if (namingMode() === 'create') {
+          <p class="saved-search-dialog-copy">{{ 'documents.savedSearchDialogCopy' | t }}</p>
+        }
+
+        <div class="saved-search-parameters">
+          <div class="saved-search-parameters-heading">
+            <strong>{{ 'documents.savedSearchParameters' | t }}</strong>
+            <span>{{ parameters().length }}</span>
+          </div>
+          <dl>
+            @for (parameter of parameters(); track parameter.label) {
+              <div class="saved-search-parameter">
+                <dt>{{ parameter.label }}</dt>
+                <dd>{{ parameter.value }}</dd>
+              </div>
+            }
+          </dl>
+        </div>
+
+        <label class="saved-search-name-field">
+          <span>{{ 'documents.savedSearchName' | t }}</span>
+          <input
+            type="text"
+            maxlength="100"
+            [value]="name()"
+            [placeholder]="'documents.savedSearchNamePlaceholder' | t"
+            [attr.aria-label]="'documents.savedSearchName' | t"
+            (input)="name.set($any($event.target).value)"
+            (keydown)="handleNameKeydown($event)">
+        </label>
+
+        <footer class="saved-search-dialog-actions">
+          <button type="button" class="saved-search-secondary" [disabled]="busy()" (click)="cancelSave()">
+            {{ 'documents.savedSearchCancel' | t }}
+          </button>
+          <button type="button" class="saved-search-primary" [disabled]="busy() || !name().trim()" (click)="save()">
+            {{ busy() ? ('documents.savedSearchSaving' | t) : (namingMode() === 'rename' ? ('documents.savedSearchRenameConfirm' | t) : ('documents.savedSearchConfirm' | t)) }}
+          </button>
+        </footer>
+      </section>
+    </div>
+  }
 </div>
