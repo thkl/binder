@@ -29,6 +29,19 @@
       <span>{{ 'documents.all' | t }}</span>
 
       <div class="list-header-actions">
+        @if (folders.selectedFolderUuid(); as folderUuid) {
+          <button
+            type="button"
+            class="export-folder-button"
+            [disabled]="folders.exportingFolderUuid() !== null"
+            (click)="exportSelectedFolder(folderUuid)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 4v11M7.5 11.5 12 16l4.5-4.5M5 19h14" />
+            </svg>
+            {{ folders.exportingFolderUuid() === folderUuid ? ('folders.exporting' | t) : ('folders.export' | t) }}
+          </button>
+        }
+
         <label class="document-list-search">
           <span class="sr-only">{{ 'documents.searchList' | t }}</span>
           <input

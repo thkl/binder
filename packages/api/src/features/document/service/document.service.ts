@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ZipArchive } from 'archiver';
 import {
   CreateDocumentInputSchema,
   Document as DocumentResponse,
@@ -15,6 +16,8 @@ import {
 } from '@binder/common';
 import { ClearDocumentSuggestionResponseSchema, DocumentExtractedTextResponseSchema, DocumentMetadataSummary, DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
 import { randomUUID } from 'node:crypto';
+import { extname } from 'node:path';
+import type { Readable } from 'node:stream';
 import type { Express } from 'express';
 import { DocumentStore } from '../store/document.store';
 import { DocumentStorageService } from './document-storage.service';
@@ -26,6 +29,7 @@ import { th } from 'zod/locales';
 import { SemanticSearchService } from './semantic-search.service';
 import { TitleSuggestionService } from './title-suggestion.service';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
+import { FolderStore } from '../../folder/store/folder.store';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -44,7 +48,8 @@ export class DocumentService {
     private readonly metadata: MetadataService,
     private readonly semanticSearch: SemanticSearchService,
     private readonly titleSuggestions: TitleSuggestionService,
-    private readonly config: ConfigService<BinderConfig>
+    private readonly config: ConfigService<BinderConfig>,
+    private readonly folders: FolderStore
   ) { }
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -101,6 +106,51 @@ export class DocumentService {
       groupBy: query.groupBy,
       items: result.items.map((document) => this.toDocumentResponse(document, summaries.get(document.uuid)))
     });
+  }
+
+  async exportFolder(ownerUuid: string, folderUuid: string): Promise<{ stream: Readable; filename: string }> {
+    const rootFolder = await this.folders.findOwned(ownerUuid, folderUuid);
+    if (!rootFolder) throw new NotFoundException('Folder not found');
+
+    const subtree = await this.folders.listSubtree(ownerUuid, folderUuid);
+    const folderUuids = subtree.map((folder) => folder.uuid);
+    const links = await this.folders.listDocumentLinksForFolders(folderUuids);
+    const documentUuids = [...new Set(links.map((link) => link.documentUuid))];
+    const documents = await this.documents.findOwnedByUuids(ownerUuid, documentUuids);
+    const documentsByUuid = new Map(documents.map((document) => [document.uuid, document]));
+    const folderPaths = this.createArchiveFolderPaths(subtree, rootFolder.uuid);
+    const archive = new ZipArchive({ zlib: { level: 6 } });
+    const usedArchiveNames = new Set<string>();
+
+    archive.on('error', (error: Error) => archive.destroy(error));
+
+    for (const folder of subtree) {
+      const folderPath = folderPaths.get(folder.uuid);
+      if (!folderPath) continue;
+
+      archive.append(Buffer.alloc(0), { name: folderPath + '/' });
+
+      for (const link of links.filter((item) => item.folderUuid === folder.uuid)) {
+        const document = documentsByUuid.get(link.documentUuid);
+        if (!document) continue;
+
+        if (!(await this.storage.exists(document.storageKey))) {
+          throw new BadRequestException('The source file for "' + document.originalFilename + '" is not available');
+        }
+
+        const archiveFilename = this.createArchiveFilename(document, folderPath, usedArchiveNames);
+        archive.file(await this.storage.resolveStoragePath(document.storageKey), {
+          name: folderPath + '/' + archiveFilename
+        });
+      }
+    }
+
+    void archive.finalize().catch((error: unknown) => archive.destroy(error instanceof Error ? error : new Error(String(error))));
+
+    return {
+      stream: archive,
+      filename: this.sanitizeArchiveSegment(rootFolder.name, 'documents') + '.zip'
+    };
   }
 
   async facets(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListFacetsResponse> {
@@ -204,6 +254,71 @@ export class DocumentService {
       }
     }
     return [...merged.values()].sort((left, right) => right.score - left.score).slice(0, limit);
+  }
+
+  private createArchiveFolderPaths(
+    folders: Array<import('../../folder/models/folder.entity').Folder>,
+    rootUuid: string
+  ): Map<string, string> {
+    const paths = new Map<string, string>();
+
+    for (const folder of folders) {
+      if (folder.uuid === rootUuid) {
+        paths.set(folder.uuid, this.sanitizeArchiveSegment(folder.name, 'documents'));
+        continue;
+      }
+
+      const parentPath = folder.parentUuid ? paths.get(folder.parentUuid) : undefined;
+      if (parentPath) {
+        paths.set(folder.uuid, parentPath + '/' + this.sanitizeArchiveSegment(folder.name, 'folder'));
+      }
+    }
+
+    return paths;
+  }
+
+  private createArchiveFilename(
+    document: import('../models/document.entity').Document,
+    folderPath: string,
+    usedNames: Set<string>
+  ): string {
+    const extension = extname(document.originalFilename).toLowerCase() || '.pdf';
+    const title = document.title?.trim() || document.originalFilename.replace(/\.[^.]+$/, '');
+    const safeTitle = this.sanitizeArchiveSegment(title, 'document');
+    const filename = safeTitle.toLowerCase().endsWith(extension)
+      ? safeTitle
+      : safeTitle + extension;
+    const pathKey = (folderPath + '/' + filename).toLocaleLowerCase();
+
+    if (!usedNames.has(pathKey)) {
+      usedNames.add(pathKey);
+      return filename;
+    }
+
+    const extensionStart = filename.length - extension.length;
+    const base = filename.slice(0, extensionStart);
+    let suffix = 2;
+    let candidate = base + ' (' + suffix + ')' + extension;
+    let candidateKey = (folderPath + '/' + candidate).toLocaleLowerCase();
+
+    while (usedNames.has(candidateKey)) {
+      suffix += 1;
+      candidate = base + ' (' + suffix + ')' + extension;
+      candidateKey = (folderPath + '/' + candidate).toLocaleLowerCase();
+    }
+
+    usedNames.add(candidateKey);
+    return candidate;
+  }
+
+  private sanitizeArchiveSegment(value: string, fallback: string): string {
+    const sanitized = value
+      .normalize('NFKC')
+      .replace(/[<>:"/\\\\|?*\u0000-\u001F]/g, '_')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/[. ]+$/g, '');
+    return sanitized || fallback;
   }
 
   async get(ownerUuid: string, uuid: string) {

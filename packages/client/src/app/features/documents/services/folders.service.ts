@@ -1,4 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { DOCUMENT } from '@angular/common';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import {
   ApiResponse,
@@ -30,6 +31,7 @@ export class FoldersService {
   readonly allFolders = signal<FolderNode[]>([]);
   readonly error = signal<string | null>(null);
   readonly selectedFolderUuid = signal<string | null>(null);
+  readonly exportingFolderUuid = signal<string | null>(null);
   readonly rows = computed<FolderTreeRow[]>(() => {
     const result: FolderTreeRow[] = [];
     const walk = (parentUuid: string | null, depth: number): void => {
@@ -51,6 +53,7 @@ export class FoldersService {
   });
 
   private readonly application = inject(ApplicationService);
+  private readonly document = inject(DOCUMENT);
 
   constructor(private readonly http: HttpClient) {}
 
@@ -209,6 +212,36 @@ export class FoldersService {
     return this.changeDocumentLinks(folderUuid, documentUuids, true);
   }
 
+  async exportFolder(folderUuid: string): Promise<boolean> {
+    this.exportingFolderUuid.set(folderUuid);
+    this.error.set(null);
+
+    try {
+      const response = await firstValueFrom(
+        this.http.get(
+          this.application.getApiUrl('v1', 'folders/' + folderUuid + '/export'),
+          { observe: 'response', responseType: 'blob', withCredentials: true }
+        )
+      );
+      if (!response.body) throw new Error('The export archive was empty');
+      const filename = this.archiveFilename(response.headers.get('Content-Disposition')) ?? 'documents.zip';
+      const url = URL.createObjectURL(response.body);
+      const link = this.document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      this.document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return true;
+    } catch (error) {
+      this.error.set(this.errorMessage(error));
+      return false;
+    } finally {
+      this.exportingFolderUuid.set(null);
+    }
+  }
+
   clearError(): void {
     this.error.set(null);
   }
@@ -275,5 +308,16 @@ export class FoldersService {
     if (error instanceof HttpErrorResponse && error.status === 409) return 'A folder with this name already exists here.';
     if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') return error.error.message;
     return 'The folder operation could not be completed. Please try again.';
+  }
+
+  private archiveFilename(contentDisposition: string | null): string | null {
+    if (!contentDisposition) return null;
+
+    const encoded = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+    if (encoded) return decodeURIComponent(encoded);
+
+    return contentDisposition.match(/filename="([^"]+)"/i)?.[1]
+      ?? contentDisposition.match(/filename=([^;]+)/i)?.[1]?.trim()
+      ?? null;
   }
 }

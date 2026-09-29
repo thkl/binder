@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Res, StreamableFile, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   CreateFolderInputSchema,
   FolderDocumentInputSchema,
@@ -8,11 +9,15 @@ import {
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
 import { FolderService } from '../service/folder.service';
+import { DocumentService } from '../../document/service/document.service';
 
 @Controller('folders')
 @UseGuards(AuthenticationGuard)
 export class FolderController {
-  constructor(private readonly folders: FolderService) {}
+  constructor(
+    private readonly folders: FolderService,
+    private readonly documents: DocumentService
+  ) {}
 
   @Get()
   async list(@CurrentUser() user: ScopedUser, @Query('parentUuid') parentUuid?: string) {
@@ -57,5 +62,21 @@ export class FolderController {
   @Delete(':uuid/documents')
   async unlinkDocuments(@CurrentUser() user: ScopedUser, @Param('uuid') uuid: string, @Body() body: unknown) {
     return { data: await this.folders.unlinkDocuments(user.userId, uuid, FolderDocumentInputSchema.parse(body)) };
+  }
+
+  @Get(':uuid/export')
+  async export(
+    @CurrentUser() user: ScopedUser,
+    @Param('uuid') uuid: string,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const result = await this.documents.exportFolder(user.userId, uuid);
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.setHeader('Content-Disposition', 'attachment; filename="' + this.safeFilename(result.filename) + '"');
+    return new StreamableFile(result.stream, { type: 'application/zip' });
+  }
+
+  private safeFilename(filename: string): string {
+    return filename.replace(/[\\"\r\n]/g, '_');
   }
 }

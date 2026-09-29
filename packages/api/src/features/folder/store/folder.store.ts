@@ -32,6 +32,30 @@ export class FolderStore extends BaseCrudStore<Folder> {
     });
   }
 
+  async listSubtree(ownerUuid: string, rootUuid: string): Promise<Folder[]> {
+    const folders = await this.listAll(ownerUuid);
+    const foldersByParent = new Map<string | null, Folder[]>();
+
+    for (const folder of folders) {
+      const children = foldersByParent.get(folder.parentUuid) ?? [];
+      children.push(folder);
+      foldersByParent.set(folder.parentUuid, children);
+    }
+
+    const root = folders.find((folder) => folder.uuid === rootUuid);
+    if (!root) return [];
+
+    const result: Folder[] = [];
+    const visit = (folder: Folder): void => {
+      result.push(folder);
+      for (const child of foldersByParent.get(folder.uuid) ?? []) {
+        visit(child);
+      }
+    };
+    visit(root);
+    return result;
+  }
+
   async listForDocument(ownerUuid: string, documentUuid: string): Promise<Folder[]> {
     const links = await DocumentFolder.findAll({
       where: { documentUuid },
@@ -55,6 +79,14 @@ export class FolderStore extends BaseCrudStore<Folder> {
 
   listDocumentLinks(folderUuid: string, documentUuids: string[]): Promise<DocumentFolder[]> {
     return DocumentFolder.findAll({ where: { folderUuid, documentUuid: { [Op.in]: documentUuids } } });
+  }
+
+  listDocumentLinksForFolders(folderUuids: string[]): Promise<DocumentFolder[]> {
+    if (folderUuids.length === 0) return Promise.resolve([]);
+    return DocumentFolder.findAll({
+      where: { folderUuid: { [Op.in]: folderUuids } },
+      order: [['folderUuid', 'ASC'], ['documentUuid', 'ASC']]
+    });
   }
 
   createLinks(folderUuid: string, documentUuids: string[]): Promise<[number, number]> {

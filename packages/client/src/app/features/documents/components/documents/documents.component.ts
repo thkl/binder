@@ -138,6 +138,10 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     await this.loadFolderPage(folderUuid);
   }
 
+  async exportSelectedFolder(folderUuid: string): Promise<void> {
+    await this.folders.exportFolder(folderUuid);
+  }
+
   onListSearch(event: Event): void {
     if (!this.canLeaveMetadata()) return;
 

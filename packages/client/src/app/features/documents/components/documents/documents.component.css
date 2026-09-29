@@ -125,6 +125,44 @@ h2 {
   min-width: min(15rem, 28vw);
 }
 
+.export-folder-button {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: .4rem;
+  border: 1px solid rgba(97, 215, 244, .35);
+  border-radius: .45rem;
+  padding: .3rem .6rem;
+  color: var(--cyan);
+  background: rgba(97, 215, 244, .08);
+  cursor: pointer;
+  font: inherit;
+  font-size: .68rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.export-folder-button:hover,
+.export-folder-button:focus-visible {
+  background: rgba(97, 215, 244, .16);
+  outline: none;
+}
+
+.export-folder-button:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
+.export-folder-button svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
 .document-list-search input {
   width: 100%;
   min-height: 2.25rem;
