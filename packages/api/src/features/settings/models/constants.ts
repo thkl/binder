@@ -53,6 +53,14 @@ export const settingsMap: SettingsMapItem[] = [
     label: 'Maintenance timezone', type: 'text', required: true, section: 'maintenance',
   },
   {
+    key: 'maintenance.storageConsistency.enabled', valueFrom: 'maintenance.storageConsistency.enabled', encrypted: false, default: true,
+    label: 'Enable document storage consistency checks', type: 'checkbox', section: 'maintenance',
+  },
+  {
+    key: 'maintenance.storageConsistency.schedule', valueFrom: 'maintenance.storageConsistency.schedule', encrypted: false, default: '0 3 * * *',
+    label: 'Storage consistency schedule (cron)', type: 'text', required: true, section: 'maintenance',
+  },
+  {
     key: 'documents.storageRoot',
     valueFrom: 'documents.storageRoot',
     encrypted: false,

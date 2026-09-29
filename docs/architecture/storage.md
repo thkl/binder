@@ -136,7 +136,7 @@ A usable backup must include:
 1. PostgreSQL data.
 2. The configured `documents/` directory.
 
-The `derived/` directory is rebuildable, although retaining it reduces recovery time. The project should later provide a consistency check that compares database file references, hashes, scan status, and filesystem contents.
+The `derived/` directory is rebuildable, although retaining it reduces recovery time. The worker now provides a scheduled consistency check for the immutable originals. It compares every database document with the configured filesystem, including existence, regular-file status, size, and SHA-256 checksum. Open issues are assigned to the document owner in `document_storage_issues` and are automatically resolved when a later check finds the original healthy.
 
 ## Future storage abstraction
 

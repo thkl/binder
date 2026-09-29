@@ -10,7 +10,7 @@ export const DocumentStatusSchema = z.enum([
 
 export type DocumentStatus = z.infer<typeof DocumentStatusSchema>;
 
-export const MaintenanceJobSchema = z.enum(['backup', 'backup-retention']);
+export const MaintenanceJobSchema = z.enum(['backup', 'backup-retention', 'storage-consistency']);
 export type MaintenanceJob = z.infer<typeof MaintenanceJobSchema>;
 
 export const MaintenanceRunStatusSchema = z.enum(['running', 'succeeded', 'failed']);
@@ -27,6 +27,8 @@ export const MaintenanceRunSchema = z.object({
   artifactName: z.string().nullable(),
   sizeBytes: z.number().int().nonnegative().nullable(),
   deletedFiles: z.number().int().nonnegative().nullable(),
+  checkedFiles: z.number().int().nonnegative().nullable(),
+  issueCount: z.number().int().nonnegative().nullable(),
   error: z.string().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime()
@@ -43,6 +45,38 @@ export const MaintenanceRequestResponseSchema = z.object({
   uuid: z.uuid()
 });
 export type MaintenanceRequestResponse = z.infer<typeof MaintenanceRequestResponseSchema>;
+
+export const DocumentStorageIssueTypeSchema = z.enum([
+  'missing',
+  'size-mismatch',
+  'checksum-mismatch',
+  'unreadable'
+]);
+export type DocumentStorageIssueType = z.infer<typeof DocumentStorageIssueTypeSchema>;
+
+export const DocumentStorageIssueSchema = z.object({
+  uuid: z.uuid(),
+  documentUuid: z.uuid(),
+  title: z.string().max(255).nullable(),
+  originalFilename: z.string().min(1),
+  storageKey: z.string().min(1),
+  issueType: DocumentStorageIssueTypeSchema,
+  status: z.enum(['open', 'resolved']),
+  expectedSizeBytes: z.number().int().nonnegative(),
+  actualSizeBytes: z.number().int().nonnegative().nullable(),
+  expectedChecksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
+  actualChecksumSha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+  details: z.string().min(1).max(1000),
+  firstDetectedAt: z.iso.datetime(),
+  lastDetectedAt: z.iso.datetime(),
+  resolvedAt: z.iso.datetime().nullable()
+});
+export type DocumentStorageIssue = z.infer<typeof DocumentStorageIssueSchema>;
+
+export const DocumentStorageIssueListResponseSchema = z.object({
+  items: z.array(DocumentStorageIssueSchema)
+});
+export type DocumentStorageIssueListResponse = z.infer<typeof DocumentStorageIssueListResponseSchema>;
 
 export const DocumentGroupVocabularyValueSchema = z.object({
   uuid: z.uuid(),

@@ -12,7 +12,8 @@ import {
   DocumentListFacetsResponse,
   DocumentListFacetsResponseSchema,
   DocumentListResponse,
-  DocumentListResponseSchema
+  DocumentListResponseSchema,
+  DocumentStorageIssueListResponseSchema
 } from '@binder/common';
 import { ClearDocumentSuggestionResponseSchema, DocumentExtractedTextResponseSchema, DocumentMetadataSummary, DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
 import { randomUUID } from 'node:crypto';
@@ -30,6 +31,7 @@ import { SemanticSearchService } from './semantic-search.service';
 import { TitleSuggestionService } from './title-suggestion.service';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { FolderStore } from '../../folder/store/folder.store';
+import { DocumentStorageIssueStore } from '../store/document-storage-issue.store';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -49,7 +51,8 @@ export class DocumentService {
     private readonly semanticSearch: SemanticSearchService,
     private readonly titleSuggestions: TitleSuggestionService,
     private readonly config: ConfigService<BinderConfig>,
-    private readonly folders: FolderStore
+    private readonly folders: FolderStore,
+    private readonly storageIssues: DocumentStorageIssueStore
   ) { }
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -105,6 +108,40 @@ export class DocumentService {
       ...result,
       groupBy: query.groupBy,
       items: result.items.map((document) => this.toDocumentResponse(document, summaries.get(document.uuid)))
+    });
+  }
+
+  async listStorageIssues(ownerUuid: string) {
+    const issues = await this.storageIssues.findOpenOwned(ownerUuid);
+    const documents = await this.documents.findOwnedByUuids(
+      ownerUuid,
+      issues.map((issue) => issue.documentUuid)
+    );
+    const documentsByUuid = new Map(documents.map((document) => [document.uuid, document]));
+
+    return DocumentStorageIssueListResponseSchema.parse({
+      items: issues.flatMap((issue) => {
+        const document = documentsByUuid.get(issue.documentUuid);
+        if (!document) return [];
+
+        return [{
+          uuid: issue.uuid,
+          documentUuid: issue.documentUuid,
+          title: document.title,
+          originalFilename: document.originalFilename,
+          storageKey: document.storageKey,
+          issueType: issue.issueType,
+          status: issue.status,
+          expectedSizeBytes: Number(issue.expectedSizeBytes),
+          actualSizeBytes: issue.actualSizeBytes === null ? null : Number(issue.actualSizeBytes),
+          expectedChecksumSha256: issue.expectedChecksumSha256,
+          actualChecksumSha256: issue.actualChecksumSha256,
+          details: issue.details,
+          firstDetectedAt: issue.firstDetectedAt.toISOString(),
+          lastDetectedAt: issue.lastDetectedAt.toISOString(),
+          resolvedAt: issue.resolvedAt?.toISOString() ?? null
+        }];
+      })
     });
   }
 

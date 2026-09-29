@@ -23,6 +23,7 @@ import { MaintenanceRequest } from '../../features/maintenance/models/maintenanc
 import { Folder } from '../../features/folder/models/folder.entity';
 import { DocumentFolder } from '../../features/folder/models/document-folder.entity';
 import { SavedSearch } from '../../features/saved-search/models/saved-search.entity';
+import { DocumentStorageIssue } from '../../features/document/models/document-storage-issue.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -54,7 +55,7 @@ export class DatabaseConnectionService {
             User, ApplicationSetting, Document, DocumentPage, DocumentEmbedding, PipelineJob, PipelineJobEvent,
             DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment,
             MetadataDefinition, DocumentMetadataValue, InboxItem, Issuer, MaintenanceRun, MaintenanceRequest,
-            Folder, DocumentFolder, SavedSearch
+            Folder, DocumentFolder, SavedSearch, DocumentStorageIssue
         ]);
         await this.initialize();
     }

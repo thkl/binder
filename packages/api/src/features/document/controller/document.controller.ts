@@ -86,6 +86,11 @@ export class DocumentController {
     return { data: await this.documents.facets(user.userId, input) };
   }
 
+  @Get('storage-issues')
+  async storageIssues(@CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.listStorageIssues(user.userId) };
+  }
+
   @Get('search')
   async search(@Query() query: Record<string, unknown>, @CurrentUser() user: ScopedUser) {
     return { data: await this.documents.search(user.userId, DocumentSearchQuerySchema.parse(query)) };

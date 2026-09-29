@@ -67,6 +67,8 @@
                 @if (run.artifactName) { <strong>{{ run.artifactName }}</strong> }
                 @if (run.sizeBytes !== null) { <span>{{ fileSize(run.sizeBytes) }}</span> }
                 @if (run.deletedFiles !== null) { <span>{{ run.deletedFiles }} {{ 'maintenance.deleted' | t }}</span> }
+                @if (run.checkedFiles !== null) { <span>{{ run.checkedFiles }} {{ 'maintenance.checked' | t }}</span> }
+                @if (run.issueCount !== null && run.issueCount > 0) { <span class="run-issues">{{ run.issueCount }} {{ 'maintenance.issues' | t }}</span> }
                 @if (run.nextRunAt) { <small>{{ 'maintenance.next' | t }} {{ run.nextRunAt | date:'medium' }}</small> }
               </div>
             </article>

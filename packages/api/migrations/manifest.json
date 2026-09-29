@@ -243,6 +243,17 @@
                "required": [
                     "users"
                ]
+          },
+          "38": {
+               "created": [
+                    "document_storage_issues"
+               ],
+               "required": [
+                    "users",
+                    "documents",
+                    "maintenance_runs",
+                    "settings"
+               ]
           }
      }
 }

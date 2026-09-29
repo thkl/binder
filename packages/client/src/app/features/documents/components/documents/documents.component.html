@@ -21,6 +21,29 @@
     <div class="notice error" role="alert">{{ error }}</div>
   }
 
+  @if (documents.storageIssues(); as storageIssues) {
+    @if (storageIssues.length > 0) {
+      <aside class="storage-issue-notice" aria-labelledby="storage-issues-title">
+        <div class="storage-issue-heading">
+          <span class="storage-issue-icon" aria-hidden="true">!</span>
+          <div>
+            <h3 id="storage-issues-title">{{ 'documents.storageIssues.title' | t }}</h3>
+            <p>{{ 'documents.storageIssues.copy' | t }}</p>
+          </div>
+        </div>
+        <div class="storage-issue-list" role="list">
+          @for (issue of storageIssues; track issue.uuid) {
+            <div class="storage-issue-row" role="listitem">
+              <strong>{{ issue.title || issue.originalFilename }}</strong>
+              <span>{{ ('documents.storageIssues.' + issue.issueType) | t }}</span>
+              <small>{{ issue.details }}</small>
+            </div>
+          }
+        </div>
+      </aside>
+    }
+  }
+
   <div class="documents-layout">
     <binder-folder-tree (folderSelected)="selectFolder($event)" />
 

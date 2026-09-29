@@ -69,15 +69,15 @@ The worker maintenance loop will:
 - emit structured Winston logs and expose an admin-only status view;
 - shut down cleanly and mark interrupted runs as failed for operator review.
 
-The first implemented scheduled jobs are:
+The implemented scheduled jobs are:
 
 - PostgreSQL backup
 - backup retention cleanup
+- document-storage consistency audit
 
 The next maintenance jobs are planned as:
 
 - temporary/derived-file cleanup after a configurable age
-- document-storage consistency audit
 
 The backup destination is the database setting `backup.root` and should be an
 absolute path such as `/app/backup`. This allows Docker to mount a dedicated
@@ -86,3 +86,25 @@ Database connection and encryption-related bootstrap values remain deployment
 configuration. Schedule, retention, and enabled state belong in runtime
 settings once the database is available. A failed backup must be visible and
 must not be treated as a successful maintenance run.
+
+## Document-storage consistency audit
+
+The worker can run a daily consistency audit using the setting keys
+`maintenance.storageConsistency.enabled` and
+`maintenance.storageConsistency.schedule`. It reads document records through
+Sequelize, resolves each `storageKey` through the configured storage adapter,
+and checks that the original is a regular file with the expected size and
+SHA-256 checksum.
+
+The audit stores one current issue per document in
+`document_storage_issues`. Missing, unreadable, size-mismatched, and
+checksum-mismatched files are kept as open issues and assigned to the document
+owner. A later successful check resolves the issue without deleting its
+history. Owners see their open issues above the document list; administrators
+also see the checked-file and open-issue counts in the maintenance run list.
+
+The audit intentionally does not scan arbitrary files in the storage tree.
+The database is the source of truth for the expected document set, while
+unreferenced files remain an operator or future cleanup concern. Checksums are
+calculated only after the file exists and its size matches, which avoids a
+second full read for the common size-mismatch case.

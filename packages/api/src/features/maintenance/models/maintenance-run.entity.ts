@@ -33,6 +33,12 @@ export class MaintenanceRun extends Model {
   @AllowNull @Column({ field: 'deleted_files', type: DataType.INTEGER })
   declare deletedFiles: number | null;
 
+  @AllowNull @Column({ field: 'checked_files', type: DataType.INTEGER })
+  declare checkedFiles: number | null;
+
+  @AllowNull @Column({ field: 'issue_count', type: DataType.INTEGER })
+  declare issueCount: number | null;
+
   @AllowNull @Column({ type: DataType.TEXT })
   declare error: string | null;
 

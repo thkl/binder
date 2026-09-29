@@ -1,13 +1,15 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
+import { createReadStream } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
 import { Op } from 'sequelize';
-import { ApplicationSetting, MaintenanceRequest, MaintenanceRun } from './models.js';
+import { ApplicationSetting, Document, DocumentStorageIssue, MaintenanceRequest, MaintenanceRun } from './models.js';
 import { sequelize } from './database.js';
 import { logger } from './logger.js';
 import { CronSchedule } from './maintenance-cron.js';
+import { resolveStoragePath } from './storage.js';
 
 const execFileAsync = promisify(execFile);
 const BACKUP_NAME = /^binder-\d{8}-\d{6}\.dump$/;
@@ -18,6 +20,15 @@ interface MaintenanceSettings {
   schedule: string;
   retentionDays: number;
   timezone: string;
+  storageConsistencyEnabled: boolean;
+  storageConsistencySchedule: string;
+}
+
+interface StorageProblem {
+  issueType: 'missing' | 'size-mismatch' | 'checksum-mismatch' | 'unreadable';
+  actualSizeBytes: number | null;
+  actualChecksumSha256: string | null;
+  details: string;
 }
 
 const DEFAULT_SETTINGS: MaintenanceSettings = {
@@ -25,12 +36,14 @@ const DEFAULT_SETTINGS: MaintenanceSettings = {
   enabled: false,
   schedule: '0 2 * * *',
   retentionDays: 30,
-  timezone: 'UTC'
+  timezone: 'UTC',
+  storageConsistencyEnabled: true,
+  storageConsistencySchedule: '0 3 * * *'
 };
 
 export class MaintenanceScheduler {
   private timer?: NodeJS.Timeout;
-  private lastTriggeredMinute: number | null = null;
+  private readonly lastTriggeredMinutes = new Map<string, number>();
   private running = false;
   private stopping = false;
   private activeTick?: Promise<void>;
@@ -75,17 +88,20 @@ export class MaintenanceScheduler {
         return;
       }
 
-      if (!settings.enabled) return;
-
-      const schedule = new CronSchedule(settings.schedule);
       const now = new Date();
-      const minute = Math.floor(now.getTime() / 60_000);
-      if (!schedule.matches(now, settings.timezone) || this.lastTriggeredMinute === minute) return;
+      if (settings.enabled && this.shouldTrigger('backup', settings.schedule, now, settings.timezone)) {
+        this.markTriggered('backup', now);
+        const schedule = new CronSchedule(settings.schedule);
+        const nextRunAt = schedule.nextOccurrence(now, settings.timezone);
+        await this.runBackup(settings.root, nextRunAt);
+        await this.runRetention(settings.root, settings.retentionDays, nextRunAt);
+      }
 
-      this.lastTriggeredMinute = minute;
-      const nextRunAt = schedule.nextOccurrence(now, settings.timezone);
-      await this.runBackup(settings.root, nextRunAt);
-      await this.runRetention(settings.root, settings.retentionDays, nextRunAt);
+      if (settings.storageConsistencyEnabled && this.shouldTrigger('storage-consistency', settings.storageConsistencySchedule, now, settings.timezone)) {
+        this.markTriggered('storage-consistency', now);
+        const schedule = new CronSchedule(settings.storageConsistencySchedule);
+        await this.runStorageConsistency(schedule.nextOccurrence(now, settings.timezone));
+      }
     } catch (error) {
       logger.error('Maintenance tick failed; will retry', { error: this.errorMessage(error) });
     } finally {
@@ -132,6 +148,179 @@ export class MaintenanceScheduler {
       await run.update({ status: 'failed', finishedAt: new Date(), durationMs: Date.now() - started, error: this.errorMessage(error) });
       logger.error('Backup retention cleanup failed', { error: this.errorMessage(error) });
     }
+  }
+
+  private async runStorageConsistency(nextRunAt: Date | null): Promise<void> {
+    if (await this.hasRunning('storage-consistency')) return;
+
+    const run = await this.startRun('storage-consistency', nextRunAt);
+    const started = Date.now();
+
+    try {
+      const result = await this.checkStorageConsistency();
+      await run.update({
+        status: 'succeeded',
+        finishedAt: new Date(),
+        durationMs: Date.now() - started,
+        checkedFiles: result.checkedFiles,
+        issueCount: result.issueCount,
+        error: null
+      });
+      logger.info('Document storage consistency check completed', result);
+    } catch (error) {
+      await run.update({
+        status: 'failed',
+        finishedAt: new Date(),
+        durationMs: Date.now() - started,
+        error: this.errorMessage(error)
+      });
+      logger.error('Document storage consistency check failed', { error: this.errorMessage(error) });
+    }
+  }
+
+  private async checkStorageConsistency(): Promise<{ checkedFiles: number; issueCount: number }> {
+    const documents = await Document.findAll({
+      attributes: ['uuid', 'ownerUuid', 'storageKey', 'sizeBytes', 'checksumSha256'],
+      order: [['uuid', 'ASC']]
+    });
+    let issueCount = 0;
+
+    for (const document of documents) {
+      const problem = await this.inspectDocument(document);
+      if (problem) {
+        issueCount += 1;
+        await this.openStorageIssue(document, problem);
+        continue;
+      }
+
+      await this.resolveStorageIssue(document.uuid);
+    }
+
+    return { checkedFiles: documents.length, issueCount };
+  }
+
+  private async inspectDocument(document: Document): Promise<StorageProblem | null> {
+    let filePath: string;
+    try {
+      filePath = resolveStoragePath(document.storageKey);
+    } catch (error) {
+      return {
+        issueType: 'unreadable',
+        actualSizeBytes: null,
+        actualChecksumSha256: null,
+        details: `The configured storage key is invalid: ${this.errorMessage(error)}`
+      };
+    }
+
+    let stats;
+    try {
+      stats = await fs.stat(filePath);
+    } catch (error) {
+      const code = this.errorCode(error);
+      return {
+        issueType: code === 'ENOENT' ? 'missing' : 'unreadable',
+        actualSizeBytes: null,
+        actualChecksumSha256: null,
+        details: code === 'ENOENT'
+          ? 'The original document file is missing from storage.'
+          : `The original document file could not be read: ${this.errorMessage(error)}`
+      };
+    }
+
+    if (!stats.isFile()) {
+      return {
+        issueType: 'unreadable',
+        actualSizeBytes: stats.size,
+        actualChecksumSha256: null,
+        details: 'The document storage key does not point to a regular file.'
+      };
+    }
+
+    const expectedSizeBytes = Number(document.sizeBytes);
+    if (stats.size !== expectedSizeBytes) {
+      return {
+        issueType: 'size-mismatch',
+        actualSizeBytes: stats.size,
+        actualChecksumSha256: null,
+        details: `The file size is ${stats.size} bytes, but the database expects ${expectedSizeBytes} bytes.`
+      };
+    }
+
+    try {
+      const actualChecksumSha256 = await this.calculateChecksum(filePath);
+      if (actualChecksumSha256 !== document.checksumSha256) {
+        return {
+          issueType: 'checksum-mismatch',
+          actualSizeBytes: stats.size,
+          actualChecksumSha256,
+          details: 'The file checksum differs from the checksum stored in the database.'
+        };
+      }
+    } catch (error) {
+      return {
+        issueType: 'unreadable',
+        actualSizeBytes: stats.size,
+        actualChecksumSha256: null,
+        details: `The document file could not be checksummed: ${this.errorMessage(error)}`
+      };
+    }
+
+    return null;
+  }
+
+  private async calculateChecksum(filePath: string): Promise<string> {
+    const hash = createHash('sha256');
+    const stream = createReadStream(filePath);
+
+    for await (const chunk of stream) {
+      hash.update(chunk as Buffer);
+    }
+
+    return hash.digest('hex');
+  }
+
+  private async openStorageIssue(document: Document, problem: StorageProblem): Promise<void> {
+    const now = new Date();
+    const issue = await DocumentStorageIssue.findOne({ where: { documentUuid: document.uuid } });
+    const values = {
+      ownerUuid: document.ownerUuid,
+      documentUuid: document.uuid,
+      issueType: problem.issueType,
+      status: 'open' as const,
+      expectedSizeBytes: Number(document.sizeBytes),
+      actualSizeBytes: problem.actualSizeBytes,
+      expectedChecksumSha256: document.checksumSha256,
+      actualChecksumSha256: problem.actualChecksumSha256,
+      details: problem.details.slice(0, 1000),
+      lastDetectedAt: now,
+      resolvedAt: null
+    };
+
+    if (issue) {
+      await issue.update(values);
+      return;
+    }
+
+    await DocumentStorageIssue.create({
+      uuid: randomUUID(),
+      firstDetectedAt: now,
+      ...values
+    });
+    logger.warn('Document storage issue detected', {
+      documentUuid: document.uuid,
+      ownerUuid: document.ownerUuid,
+      issueType: problem.issueType,
+      storageKey: document.storageKey
+    });
+  }
+
+  private async resolveStorageIssue(documentUuid: string): Promise<void> {
+    const issue = await DocumentStorageIssue.findOne({ where: { documentUuid, status: 'open' } });
+    if (!issue) return;
+
+    const now = new Date();
+    await issue.update({ status: 'resolved', resolvedAt: now, lastDetectedAt: now });
+    logger.info('Document storage issue resolved', { documentUuid });
   }
 
   private async createBackup(backupRoot: string): Promise<{ artifactName: string; sizeBytes: number }> {
@@ -195,7 +384,19 @@ export class MaintenanceScheduler {
 
   private async loadSettings(): Promise<MaintenanceSettings> {
     const settings = await ApplicationSetting.findAll({
-      where: { key: { [Op.in]: ['backup.root', 'backup.enabled', 'backup.schedule', 'backup.retentionDays', 'maintenance.timezone'] } }
+      where: {
+        key: {
+          [Op.in]: [
+            'backup.root',
+            'backup.enabled',
+            'backup.schedule',
+            'backup.retentionDays',
+            'maintenance.timezone',
+            'maintenance.storageConsistency.enabled',
+            'maintenance.storageConsistency.schedule'
+          ]
+        }
+      }
     });
     const values = new Map(settings.map((setting) => [setting.key, setting.value]));
     const retentionDays = Number(values.get('backup.retentionDays'));
@@ -205,7 +406,11 @@ export class MaintenanceScheduler {
       enabled: values.get('backup.enabled') === undefined ? DEFAULT_SETTINGS.enabled : values.get('backup.enabled')?.toLowerCase() === 'true',
       schedule: values.get('backup.schedule')?.trim() || DEFAULT_SETTINGS.schedule,
       retentionDays: Number.isInteger(retentionDays) && retentionDays > 0 ? retentionDays : DEFAULT_SETTINGS.retentionDays,
-      timezone: values.get('maintenance.timezone')?.trim() || DEFAULT_SETTINGS.timezone
+      timezone: values.get('maintenance.timezone')?.trim() || DEFAULT_SETTINGS.timezone,
+      storageConsistencyEnabled: values.get('maintenance.storageConsistency.enabled') === undefined
+        ? DEFAULT_SETTINGS.storageConsistencyEnabled
+        : values.get('maintenance.storageConsistency.enabled')?.toLowerCase() === 'true',
+      storageConsistencySchedule: values.get('maintenance.storageConsistency.schedule')?.trim() || DEFAULT_SETTINGS.storageConsistencySchedule
     };
   }
 
@@ -218,7 +423,7 @@ export class MaintenanceScheduler {
     if (updated > 0) logger.warn('Marked interrupted maintenance runs as failed', { count: updated });
   }
 
-  private async hasRunning(jobKey: 'backup' | 'backup-retention'): Promise<boolean> {
+  private async hasRunning(jobKey: 'backup' | 'backup-retention' | 'storage-consistency'): Promise<boolean> {
     return Boolean(await MaintenanceRun.findOne({ where: { jobKey, status: 'running' } }));
   }
 
@@ -235,7 +440,8 @@ export class MaintenanceScheduler {
 
       const run = await MaintenanceRun.create({
         uuid: randomUUID(), jobKey: 'backup', status: 'running', startedAt: new Date(), finishedAt: null,
-        nextRunAt: null, durationMs: null, artifactName: null, sizeBytes: null, deletedFiles: null, error: null
+        nextRunAt: null, durationMs: null, artifactName: null, sizeBytes: null, deletedFiles: null,
+        checkedFiles: null, issueCount: null, error: null
       }, { transaction });
       await request.destroy({ transaction });
       logger.info('Claimed manual PostgreSQL backup request', { requestUuid: request.uuid, runUuid: run.uuid });
@@ -243,10 +449,11 @@ export class MaintenanceScheduler {
     });
   }
 
-  private startRun(jobKey: 'backup' | 'backup-retention', nextRunAt: Date | null): Promise<MaintenanceRun> {
+  private startRun(jobKey: 'backup' | 'backup-retention' | 'storage-consistency', nextRunAt: Date | null): Promise<MaintenanceRun> {
     return MaintenanceRun.create({
       uuid: randomUUID(), jobKey, status: 'running', startedAt: new Date(), finishedAt: null,
-      nextRunAt, durationMs: null, artifactName: null, sizeBytes: null, deletedFiles: null, error: null
+      nextRunAt, durationMs: null, artifactName: null, sizeBytes: null, deletedFiles: null,
+      checkedFiles: null, issueCount: null, error: null
     } as never);
   }
 
@@ -256,6 +463,16 @@ export class MaintenanceScheduler {
       : path.resolve(process.env.APP_ROOT_PATH ?? process.cwd(), configuredPath);
   }
 
+  private shouldTrigger(jobKey: string, expression: string, now: Date, timezone: string): boolean {
+    const schedule = new CronSchedule(expression);
+    const minute = Math.floor(now.getTime() / 60_000);
+    return schedule.matches(now, timezone) && this.lastTriggeredMinutes.get(jobKey) !== minute;
+  }
+
+  private markTriggered(jobKey: string, now: Date): void {
+    this.lastTriggeredMinutes.set(jobKey, Math.floor(now.getTime() / 60_000));
+  }
+
   private timestamp(date: Date): string {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z').replace('T', '-').replace('Z', '');
   }
@@ -263,6 +480,13 @@ export class MaintenanceScheduler {
   private errorMessage(error: unknown): string {
     if (error && typeof error === 'object' && 'stderr' in error && typeof error.stderr === 'string' && error.stderr.trim()) return error.stderr.trim().slice(0, 2000);
     return error instanceof Error ? error.message : String(error);
+  }
+
+  private errorCode(error: unknown): string | null {
+    if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') {
+      return error.code;
+    }
+    return null;
   }
 }
 

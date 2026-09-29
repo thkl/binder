@@ -28,6 +28,8 @@ export class MaintenanceService {
         artifactName: item.artifactName,
         sizeBytes: item.sizeBytes === null ? null : Number(item.sizeBytes),
         deletedFiles: item.deletedFiles,
+        checkedFiles: item.checkedFiles,
+        issueCount: item.issueCount,
         error: item.error,
         createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString()

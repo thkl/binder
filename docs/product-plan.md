@@ -75,6 +75,7 @@ P1 is complete. The system supports the first usable document workflow: upload, 
 - Export selected documents or a folder as a ZIP file
 - Save useful searches for later
 - Back up and restore the archive
+- Detect missing or changed originals and notify the document owner
 - Keep document access, imports, exports, and recovery reliable
 
 The first P2 slice is the inbox folder. Files copied into the configured `inbox/` directory are treated as external input: the worker claims them safely, validates them, assigns the configured import owner, creates normal document and pipeline records, and moves or marks the source after successful handoff. The inbox must be restart-safe and must not create duplicate documents when the same file is observed more than once. The admin inbox queue persists import state and offers a batch AI analysis action. Optional automatic classification applies only high-confidence suggestions to empty fields; existing metadata and manually changed titles are preserved.
@@ -85,7 +86,7 @@ The remaining P2 work is intentionally ordered by user value as follows:
 2. Organize documents in nested personal folders without changing the stored originals.
 3. Manage and export groups of documents, including complete folders.
 4. Save searches with reusable filters and semantic-search thresholds. ✅
-5. Make ownership, imports, exports, automation, and recovery dependable.
+5. Make ownership, imports, exports, automation, and recovery dependable. Scheduled storage consistency checks now compare every original against its database size and SHA-256 checksum and surface owner-scoped issues.
 
 ### P3 — connect Binder to the rest of life
 

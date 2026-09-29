@@ -22,6 +22,8 @@ The following settings are seeded into the `settings` table and managed through 
 
 - `documents.storageRoot`
 - `backup.root`
+- `maintenance.storageConsistency.enabled`
+- `maintenance.storageConsistency.schedule`
 - `documents.maxUploadBytes`
 - `pipeline.pollIntervalMs`
 - `pipeline.lockTimeoutMs`
@@ -36,3 +38,6 @@ It should normally be an absolute path such as `/app/backup`; relative values
 remain supported and are resolved against `APP_ROOT_PATH` for compatibility.
 `PG_DUMP_PATH` only overrides the `pg_dump` executable when needed. Backup
 scheduling, retention, and destination are runtime settings in PostgreSQL.
+Storage consistency checks are enabled by default and run daily at `03:00`
+in the configured `maintenance.timezone`; both the enabled flag and the
+five-field cron schedule can be changed in the maintenance settings.

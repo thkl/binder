@@ -2,6 +2,87 @@
   padding-bottom: 2rem;
 }
 
+.storage-issue-notice {
+  display: grid;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid rgba(255, 176, 120, .32);
+  border-radius: 1rem;
+  background: rgba(91, 45, 28, .22);
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .12);
+}
+
+.storage-issue-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: .8rem;
+}
+
+.storage-issue-icon {
+  display: grid;
+  flex: 0 0 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 1px solid rgba(255, 176, 120, .4);
+  border-radius: 50%;
+  color: #ffd0b0;
+  background: rgba(255, 150, 90, .14);
+  font-weight: 900;
+}
+
+.storage-issue-heading h3 {
+  margin: 0 0 .25rem;
+  color: #ffe0c8;
+  font-size: .9rem;
+}
+
+.storage-issue-heading p {
+  margin: 0;
+  color: #c9a994;
+  font-size: .76rem;
+  line-height: 1.5;
+}
+
+.storage-issue-list {
+  display: grid;
+  gap: .45rem;
+}
+
+.storage-issue-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .15rem .8rem;
+  padding: .65rem .75rem;
+  border: 1px solid rgba(255, 176, 120, .14);
+  border-radius: .65rem;
+  background: rgba(10, 20, 34, .25);
+}
+
+.storage-issue-row strong {
+  overflow: hidden;
+  color: #f4dccb;
+  font-size: .78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storage-issue-row span {
+  color: #ffc397;
+  font-size: .7rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.storage-issue-row small {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+  color: #b9937b;
+  font-size: .7rem;
+  line-height: 1.4;
+}
+
 .documents-heading {
   display: flex;
   align-items: flex-end;

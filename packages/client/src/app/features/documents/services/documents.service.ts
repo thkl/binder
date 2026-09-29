@@ -13,6 +13,8 @@ import {
   DocumentListResponse,
   DocumentListResponseSchema,
   DocumentExportSelectionInput,
+  DocumentStorageIssue,
+  DocumentStorageIssueListResponseSchema,
   SetDocumentTitleInputSchema,
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
@@ -25,6 +27,7 @@ import { ApplicationService } from '../../../common/application.service';
 export class DocumentsService {
   readonly page = signal<DocumentListResponse | null>(null);
   readonly facets = signal<DocumentListFacetsResponse | null>(null);
+  readonly storageIssues = signal<DocumentStorageIssue[]>([]);
   readonly loading = signal(false);
   readonly uploading = signal(false);
   readonly exporting = signal(false);
@@ -55,7 +58,7 @@ export class DocumentsService {
       );
       const page = DocumentListResponseSchema.parse(response.data);
       this.page.set(page);
-      await this.loadFacets(parsed);
+      await Promise.all([this.loadFacets(parsed), this.loadStorageIssues()]);
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
     } finally {
@@ -72,6 +75,20 @@ export class DocumentsService {
         )
       );
       this.facets.set(DocumentListFacetsResponseSchema.parse(response.data));
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+    }
+  }
+
+  private async loadStorageIssues(): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', 'documents/storage-issues'),
+          { withCredentials: true }
+        )
+      );
+      this.storageIssues.set(DocumentStorageIssueListResponseSchema.parse(response.data).items);
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
     }

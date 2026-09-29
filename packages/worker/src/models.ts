@@ -38,7 +38,7 @@ export class MaintenanceRun extends Model {
   declare uuid: string;
 
   @Column({ field: 'job_key', type: DataType.STRING(64) })
-  declare jobKey: 'backup' | 'backup-retention';
+  declare jobKey: 'backup' | 'backup-retention' | 'storage-consistency';
 
   @Column({ type: DataType.STRING(32) })
   declare status: 'running' | 'succeeded' | 'failed';
@@ -64,8 +64,62 @@ export class MaintenanceRun extends Model {
   @Column({ field: 'deleted_files', type: DataType.INTEGER, allowNull: true })
   declare deletedFiles: number | null;
 
+  @Column({ field: 'checked_files', type: DataType.INTEGER, allowNull: true })
+  declare checkedFiles: number | null;
+
+  @Column({ field: 'issue_count', type: DataType.INTEGER, allowNull: true })
+  declare issueCount: number | null;
+
   @Column({ type: DataType.TEXT, allowNull: true })
   declare error: string | null;
+
+  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
+  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
+}
+
+export type DocumentStorageIssueType = 'missing' | 'size-mismatch' | 'checksum-mismatch' | 'unreadable';
+
+@Table({ tableName: 'document_storage_issues', underscored: true, timestamps: true })
+export class DocumentStorageIssue extends Model {
+  @PrimaryKey @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ field: 'owner_id', type: DataType.UUID })
+  declare ownerUuid: string;
+
+  @Column({ field: 'document_id', type: DataType.UUID })
+  declare documentUuid: string;
+
+  @Column({ field: 'issue_type', type: DataType.STRING(32) })
+  declare issueType: DocumentStorageIssueType;
+
+  @Column({ type: DataType.STRING(16) })
+  declare status: 'open' | 'resolved';
+
+  @Column({ field: 'expected_size_bytes', type: DataType.BIGINT })
+  declare expectedSizeBytes: number;
+
+  @Column({ field: 'actual_size_bytes', type: DataType.BIGINT, allowNull: true })
+  declare actualSizeBytes: number | null;
+
+  @Column({ field: 'expected_checksum_sha256', type: DataType.STRING(64) })
+  declare expectedChecksumSha256: string;
+
+  @Column({ field: 'actual_checksum_sha256', type: DataType.STRING(64), allowNull: true })
+  declare actualChecksumSha256: string | null;
+
+  @Column({ type: DataType.STRING(1000) })
+  declare details: string;
+
+  @Column({ field: 'first_detected_at', type: DataType.DATE })
+  declare firstDetectedAt: Date;
+
+  @Column({ field: 'last_detected_at', type: DataType.DATE })
+  declare lastDetectedAt: Date;
+
+  @Column({ field: 'resolved_at', type: DataType.DATE, allowNull: true })
+  declare resolvedAt: Date | null;
 
   @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
   @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
