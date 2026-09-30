@@ -29,7 +29,7 @@ export class SemanticSearchService {
     const semanticThreshold = filters.semanticThreshold ?? 0.35;
     const enabled =
       (await this.settings.get('embeddings.enabled', 'false'))?.toLowerCase() === 'true';
-    const apiKey = await this.settings.get('embeddings.apiKey', '');
+    const apiKey = await this.settings.get('ai.apiKey', '');
     const provider = await this.settings.get('ai.provider', 'openai-compatible');
     this.logger.debug('Semantic search configuration checked', {
       enabled,

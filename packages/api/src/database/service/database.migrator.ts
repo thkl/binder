@@ -141,18 +141,28 @@ export class DatabaseMigrator {
 
     for (const stmt of statements) {
       const lowered = stmt.toLocaleLowerCase();
+      const safeConstraintDrop =
+        /^alter\s+table\s+(?:"?[a-z_][a-z0-9_$]*"?\.)?"?[a-z_][a-z0-9_$]*"?\s+drop\s+constraint\s+(?:if\s+exists\s+)?"?[a-z_][a-z0-9_$]*"?$/i.test(
+          stmt,
+        );
       const destructiveStatement =
         /^(drop|truncate|delete|merge|exec|execute|backup|restore|grant|revoke|deny)\b/i.test(stmt);
       if (
-        destructiveStatement ||
+        (destructiveStatement && !safeConstraintDrop) ||
         /\bsp_executesql\b/i.test(stmt) ||
         /\bcreate\s+or\s+replace\b/i.test(stmt)
       ) {
         return false;
       }
 
-      // Only Alter with add
+      // Replacing a named CHECK constraint requires dropping the old constraint
+      // before adding the new one. This is safe DDL when restricted to a named
+      // constraint; data-destructive DROP statements remain blocked above.
       if (lowered.includes('alter')) {
+        if (safeConstraintDrop) {
+          continue;
+        }
+
         if (!/alter+\stable\s+\S+\s+(check|add)\s/i.test(stmt)) {
           return false;
         }

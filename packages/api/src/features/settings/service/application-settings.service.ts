@@ -109,20 +109,14 @@ export class ApplicationSettingsService {
       const result: ApplicationSettingsData[] = [];
 
       for (const setting of settingData) {
-        let value = '';
-        try {
-          value =
-            setting.isEncrypted && setting.valueIv
-              ? this.encryptionService.decrypt(setting.value, setting.valueIv)
-              : setting.value;
-        } catch (e) {
-          this.logger.error('Unable to decrypt', e);
-        }
         const st: ApplicationSettingsData = {
           key: setting.key,
           isEncrypted: setting.isEncrypted,
           description: setting.description,
-          value: setting.isEncrypted ? SECRET_STRIPPED_VALUE : value,
+          // Encrypted values are intentionally never decrypted for the settings
+          // overview. The client only needs the masked value and this also
+          // keeps stale legacy ciphertext from breaking settings reads.
+          value: setting.isEncrypted ? SECRET_STRIPPED_VALUE : setting.value,
         };
         result.push(st);
       }
