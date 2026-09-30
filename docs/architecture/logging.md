@@ -53,14 +53,12 @@ Use route templates such as `/api/v1/documents/:id`, not raw URLs containing que
 Never log:
 
 - Passwords or password hashes
-- Temporary bootstrap passwords except through the dedicated one-time bootstrap event
+- Setup secrets or bootstrap passwords
 - Session IDs, cookies, access tokens, refresh tokens, or authorization headers
 - OIDC client secrets
 - Full document contents, OCR text, embeddings, or uploaded binary data
 - Unredacted LLM prompts or responses containing document data
 - Unnecessary personal data
-
-The bootstrap administrator password is a special one-time secret: emit it only when the account is created, at warning level, with a clear first-run marker. Do not log it during subsequent startups, requests, authentication attempts, or password changes.
 
 ## Error handling
 
@@ -75,4 +73,4 @@ The bootstrap administrator password is a special one-time secret: emit it only 
 - Prevent unbounded log growth through rotation and retention.
 - Document how logs are backed up, shipped, and deleted.
 - Add tests that verify sensitive fields are redacted.
-- Add tests that verify the bootstrap password is emitted only during account creation.
+- Add tests that verify setup secrets and password material are never emitted.

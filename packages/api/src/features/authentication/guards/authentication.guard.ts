@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException
 } from '@nestjs/common';
@@ -35,6 +36,10 @@ export class AuthenticationGuard implements CanActivate {
       throw new UnauthorizedException('Session is no longer valid');
     }
 
+    if (user.mustChangePassword) {
+      throw new ForbiddenException('Password change required');
+    }
+
     request.user = {
       userId: user.uuid,
       username: user.username,
@@ -57,4 +62,3 @@ export class AuthenticationGuard implements CanActivate {
     });
   }
 }
-

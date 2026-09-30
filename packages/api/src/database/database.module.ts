@@ -21,6 +21,7 @@ import { Folder } from '../features/folder/models/folder.entity';
 import { DocumentFolder } from '../features/folder/models/document-folder.entity';
 import { SavedSearch } from '../features/saved-search/models/saved-search.entity';
 import { DocumentStorageIssue } from '../features/document/models/document-storage-issue.entity';
+import { SetupState } from '../features/setup/models/setup-state.entity';
 
 @Global()
 @Module({
@@ -73,7 +74,7 @@ import { DocumentStorageIssue } from '../features/document/models/document-stora
       User, ApplicationSetting, Document, DocumentPage, DocumentEmbedding, PipelineJob, PipelineJobEvent,
       DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment,
       MetadataDefinition, DocumentMetadataValue, InboxItem, Issuer, MaintenanceRun, MaintenanceRequest,
-      Folder, DocumentFolder, SavedSearch, DocumentStorageIssue
+      Folder, DocumentFolder, SavedSearch, DocumentStorageIssue, SetupState
     ]),
   ],
   providers: [DatabaseConnectionService,DatabaseMigrationService],

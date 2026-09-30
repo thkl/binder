@@ -10,6 +10,7 @@ import { sequelize } from './database.js';
 import { logger } from './logger.js';
 import { CronSchedule } from './maintenance-cron.js';
 import { resolveStoragePath } from './storage.js';
+import { readRequiredEnvironment } from './config.js';
 
 const execFileAsync = promisify(execFile);
 const BACKUP_NAME = /^binder-\d{8}-\d{6}\.dump$/;
@@ -334,12 +335,12 @@ export class MaintenanceScheduler {
     try {
       const { stderr } = await execFileAsync(process.env.PG_DUMP_PATH ?? 'pg_dump', [
         '--format=custom', '--file', temporaryPath,
-        '--host', process.env.DATABASE_HOST ?? 'localhost',
+        '--host', readRequiredEnvironment('DATABASE_HOST'),
         '--port', String(process.env.DATABASE_PORT ?? 5432),
-        '--username', process.env.DATABASE_USER ?? 'binder',
-        process.env.DATABASE_NAME ?? 'binder'
+        '--username', readRequiredEnvironment('DATABASE_USER'),
+        readRequiredEnvironment('DATABASE_NAME')
       ], {
-        env: { ...process.env, PGPASSWORD: process.env.DATABASE_PASSWORD ?? '' },
+        env: { ...process.env, PGPASSWORD: readRequiredEnvironment('DATABASE_PASSWORD') },
         maxBuffer: 1024 * 1024
       });
 
@@ -350,8 +351,8 @@ export class MaintenanceScheduler {
       await fs.writeFile(manifestPath, `${JSON.stringify({
         format: 'pg_dump-custom',
         createdAt: new Date().toISOString(),
-        database: process.env.DATABASE_NAME ?? 'binder',
-        host: process.env.DATABASE_HOST ?? 'localhost',
+        database: readRequiredEnvironment('DATABASE_NAME'),
+        host: readRequiredEnvironment('DATABASE_HOST'),
         port: Number(process.env.DATABASE_PORT ?? 5432),
         applicationVersion: process.env.APP_VERSION ?? 'unknown',
         artifactName,

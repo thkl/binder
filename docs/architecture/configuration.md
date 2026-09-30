@@ -2,6 +2,9 @@
 
 Binder has a small bootstrap environment and a database-backed runtime configuration.
 
+See the [setup guide](../setup.md) for a complete first-install procedure,
+including PostgreSQL role and schema permissions.
+
 ## Environment/bootstrap values
 
 These values are required before the database settings can be read:
@@ -10,6 +13,7 @@ These values are required before the database settings can be read:
 - `APP_ROOT_PATH`
 - `ENCRYPTION_KEY`
 - `SESSION_SECRET`
+- `SETUP_SECRET` for first-run administrator onboarding
 - `NODE_ENV`
 - `API_PORT`
 - `ROOT_URI` for the initial CORS policy

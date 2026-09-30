@@ -10,6 +10,11 @@ does not weaken the existing server-side authentication and ownership rules.
 The assistant should be deterministic and form-driven. It is not an LLM chat
 agent and must not make security or infrastructure decisions autonomously.
 
+The first implementation slice creates the administrator account and starts a
+normal Express session. It is exposed through `/api/v1/setup/status` and
+`/api/v1/setup/admin`; the remaining storage, processing, AI, OIDC, backup,
+and review steps are subsequent onboarding increments.
+
 ## Setup access
 
 When no internal user exists, the API exposes a minimal setup status that tells
@@ -26,6 +31,10 @@ The setup proof must be:
 - compared without returning the secret to the client;
 - invalidated immediately after administrator creation or setup cancellation;
 - excluded from logs, telemetry, error responses, and browser storage.
+
+Binder currently uses the deployment-provided `SETUP_SECRET` as this setup
+proof. The onboarding page never persists it and the API compares a digest of
+the supplied value rather than logging or returning it.
 
 The setup endpoint must be disabled permanently after the first administrator
 transaction succeeds. A database lock or equivalent transaction boundary must

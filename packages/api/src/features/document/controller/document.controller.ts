@@ -27,7 +27,6 @@ import { AuthenticationGuard } from '../../authentication/guards/authentication.
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
 import { DocumentService, UploadedDocumentFile } from '../service/document.service';
 import { BinderLogger } from '../../../shared/service/logger.helper';
-import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('documents')
 @UseGuards(AuthenticationGuard)
@@ -152,7 +151,6 @@ export class DocumentController {
   }
 
   @Get(':uuid/thumbnail')
-  @SkipThrottle()
   async thumbnail(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser, @Res({ passthrough: true }) response: Response) {
     this.logger.debug(`Get thumbnail ${uuid}`);
     const result = await this.documents.getThumbnail(user.userId, uuid);

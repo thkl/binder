@@ -5,7 +5,9 @@ import {
   AuthenticatedUser,
   AuthenticatedUserSchema,
   ChangePasswordInputSchema,
-  LoginInputSchema
+  LoginInputSchema,
+  SetupAdminInputSchema,
+  SetupStatusSchema
 } from '@binder/common';
 import { ApplicationService } from '../../../common/application.service';
 
@@ -16,6 +18,8 @@ type SSOActiveResponse = {isActive:boolean};
 export class AuthService {
   readonly user = signal<AuthenticatedUser | null>(null);
   readonly loading = signal(true);
+  readonly setupRequired = signal(false);
+  readonly setupAvailable = signal(false);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
   readonly appService = inject(ApplicationService);
@@ -26,6 +30,22 @@ export class AuthService {
     this.loading.set(true);
     this.error.set(null);
     try {
+      try {
+        const setupResponse = await firstValueFrom(
+          this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1', 'setup/status'))
+        );
+        const setup = SetupStatusSchema.parse(setupResponse.data);
+        this.setupRequired.set(setup.required);
+        this.setupAvailable.set(setup.available);
+        if (setup.required) {
+          this.user.set(null);
+          return;
+        }
+      } catch {
+        this.setupRequired.set(false);
+        this.setupAvailable.set(false);
+      }
+
       const response = await firstValueFrom(
         this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1','auth/session'), { withCredentials: true })
       );
@@ -35,6 +55,35 @@ export class AuthService {
       this.error.set(this.getErrorMessage(error));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async createAdministrator(setupSecret: string, username: string, password: string): Promise<boolean> {
+    const input = SetupAdminInputSchema.safeParse({ setupSecret, username, password });
+    if (!input.success) {
+      this.error.set('Enter the setup secret, a username, and a password with at least 12 characters.');
+      return false;
+    }
+
+    this.submitting.set(true);
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', 'setup/admin'),
+          input.data,
+          { withCredentials: true }
+        )
+      );
+      this.user.set(AuthenticatedUserSchema.parse(response.data));
+      this.setupRequired.set(false);
+      this.setupAvailable.set(false);
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error, 'The setup secret is invalid or setup is already complete.'));
+      return false;
+    } finally {
+      this.submitting.set(false);
     }
   }
 
@@ -96,9 +145,9 @@ export class AuthService {
     this.user.set(null);
   }
 
-  private getErrorMessage(error: unknown): string {
+  private getErrorMessage(error: unknown, unauthorizedMessage = 'Invalid username or password.'): string {
     if (error instanceof HttpErrorResponse && error.status === 401) {
-      return 'Invalid username or password.';
+      return unauthorizedMessage;
     }
     if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
       return error.error.message;

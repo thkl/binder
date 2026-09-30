@@ -647,6 +647,21 @@ export const LoginInputSchema = z.object({
 
 export type LoginInput = z.infer<typeof LoginInputSchema>;
 
+export const SetupStatusSchema = z.object({
+  required: z.boolean(),
+  available: z.boolean()
+});
+
+export type SetupStatus = z.infer<typeof SetupStatusSchema>;
+
+export const SetupAdminInputSchema = z.object({
+  setupSecret: z.string().min(1).max(512),
+  username: z.string().trim().min(1).max(100),
+  password: z.string().min(12).max(512)
+});
+
+export type SetupAdminInput = z.infer<typeof SetupAdminInputSchema>;
+
 export const ChangePasswordInputSchema = z.object({
   currentPassword: z.string().min(1).max(512),
   newPassword: z.string().min(12).max(512)

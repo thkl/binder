@@ -6,6 +6,7 @@ import { SessionRequest } from '../models/request.model';
 import { AuthenticationGuard } from '../guards/authentication.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
+import { Throttle } from '@nestjs/throttler';
  
 
 @Controller('auth')
@@ -20,6 +21,7 @@ export class AuthenticationController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async login(@Body() body: unknown, @Req() request: SessionRequest) {
     const result = await this.authentication.login(LoginInputSchema.parse(body));
     await new Promise<void>((resolve, reject) => {
@@ -46,6 +48,7 @@ export class AuthenticationController {
   }
 
   @Post('password')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async changePassword(@Body() body: unknown, @Req() request: SessionRequest) {
     if (!request.session.userId) {
       throw new UnauthorizedException();

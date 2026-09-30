@@ -6,24 +6,21 @@ The application has internal local users as its source of authorization. OIDC is
 
 ## First-run administrator bootstrap
 
-On startup, the API checks whether any internal user exists. If none exists, it creates one local administrator account:
+On startup, the API checks whether any internal user exists. If none exists, it
+does not generate or log a password. Instead, the client exposes first-run
+onboarding when the deployment has configured `SETUP_SECRET`.
 
-- Username is configurable, with `admin` as the development default.
-- A cryptographically random temporary password is generated.
-- Only the password hash is stored in PostgreSQL.
-- The temporary password is emitted once through the bootstrap logger so the administrator can complete the first login.
-- The account is marked `mustChangePassword = true`.
+The initial onboarding slice provides:
 
-The bootstrap operation must be idempotent and safe when multiple API instances start at the same time. Use a database transaction and an appropriate lock or uniqueness constraint so that only one administrator is created.
+- `GET /api/v1/setup/status` to report whether setup is required and enabled.
+- `POST /api/v1/setup/admin` to create the first administrator with a chosen username and password.
+- A database-backed singleton setup row locked in a transaction, preventing competing administrators across API instances.
+- Immediate creation of the normal Express session after successful setup.
 
-The temporary password must not be regenerated or logged again on every restart. If the bootstrap credential is lost, an explicit administrator-reset procedure is required rather than silently creating another account.
-
-The current bootstrap behavior is a safe fallback for development and headless
-deployments. A planned P3 onboarding flow will provide the preferred user
-experience: the administrator chooses the initial password in a protected setup
-screen instead of receiving a generated password through logs. The setup flow
-must still require a one-time setup proof and must never allow an unauthenticated
-remote request to create the first administrator.
+The setup secret is deployment configuration, is rate limited, compared using
+digests, and is never returned or logged. The route is disabled after the first
+administrator transaction succeeds. Storage, processing, backup, and optional
+provider walkthrough steps remain part of the subsequent onboarding increments.
 
 The initial implementation lives in the authentication feature and uses the SQL migrations:
 

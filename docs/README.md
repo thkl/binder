@@ -33,6 +33,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Localization](./architecture/localization.md) — extensible UI and vocabulary translations
 - [Container deployment](./architecture/containers.md) — API, client, worker, PostgreSQL, and shared storage
 - [Configuration ownership](./architecture/configuration.md) — bootstrap environment versus database runtime settings
+- [Setup guide](./setup.md) — PostgreSQL provisioning, pgvector, environment configuration, migrations, and first-run setup
 - [Logging](./architecture/logging.md) — Winston logging, file rotation, and sensitive-data rules
 - [Security baseline](./security.md) — continuous security checks and secure-by-default rules
 
@@ -45,4 +46,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-P0, P1, and P2 are implemented. The inbox slice, bulk document actions, virtual folders, recursive ZIP exports, saved searches, backup scheduling, retention cleanup, visible status, manual backup requests, restore instructions, and scheduled document-storage consistency checks are in place. A real restore drill remains recommended as operational verification. Email, scanner ingestion, multiple configurable AI providers, the Swift iOS companion, and first-run onboarding have moved to P3.
+P0, P1, and P2 are implemented. The inbox slice, bulk document actions, virtual folders, recursive ZIP exports, saved searches, backup scheduling, retention cleanup, visible status, manual backup requests, restore instructions, scheduled document-storage consistency checks, and the first administrator onboarding slice are in place. A real restore drill remains recommended as operational verification. Guided onboarding for storage, processing, providers, and backups, email, scanner ingestion, multiple configurable AI providers, and the Swift iOS companion remain in P3.

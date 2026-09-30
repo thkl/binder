@@ -3,15 +3,14 @@ services:
     image: pgvector/pgvector:pg17
     restart: unless-stopped
     environment:
-      POSTGRES_USER: binder
-      POSTGRES_PASSWORD: binder
-      POSTGRES_DB: binder
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${DATABASE_USER:?DATABASE_USER is required}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
+      POSTGRES_DB: ${DATABASE_NAME:?DATABASE_NAME is required}
     volumes:
       - binder-postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init/10-binder-database.sh:/docker-entrypoint-initdb.d/10-binder-database.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U binder -d binder"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -22,16 +21,17 @@ services:
       target: api
     restart: unless-stopped
     env_file:
-      - .env
+      - ${BINDER_ENV_FILE:-.env}
     environment:
       NODE_ENV: production
       API_PORT: 3000
       APP_ROOT_PATH: /app
+      SETUP_SECRET: ${SETUP_SECRET:?SETUP_SECRET is required}
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
-      DATABASE_NAME: binder
-      DATABASE_USER: binder
-      DATABASE_PASSWORD: binder
+      DATABASE_NAME: ${DATABASE_NAME:?DATABASE_NAME is required}
+      DATABASE_USER: ${DATABASE_USER:?DATABASE_USER is required}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,14 +52,14 @@ services:
       target: worker
     restart: unless-stopped
     env_file:
-      - .env
+      - ${BINDER_ENV_FILE:-.env}
     environment:
       NODE_ENV: production
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
-      DATABASE_NAME: binder
-      DATABASE_USER: binder
-      DATABASE_PASSWORD: binder
+      DATABASE_NAME: ${DATABASE_NAME:?DATABASE_NAME is required}
+      DATABASE_USER: ${DATABASE_USER:?DATABASE_USER is required}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
       APP_ROOT_PATH: /app
     depends_on:
       api:

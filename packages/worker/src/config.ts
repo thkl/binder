@@ -75,3 +75,9 @@ export function readPositiveInteger(name: string, fallback: number): number {
   if (!Number.isSafeInteger(value) || value <= 0) throw new Error(`${name} must be a positive integer`);
   return value;
 }
+
+export function readRequiredEnvironment(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is required`);
+  return value;
+}

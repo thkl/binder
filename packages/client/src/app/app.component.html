@@ -1,5 +1,7 @@
 @if (auth.loading()) {
   <main class="loading"><div class="loading-mark">B</div><p>{{ 'app.loading' | t }}</p></main>
+} @else if (auth.setupRequired()) {
+  <binder-onboarding />
 } @else if (!auth.user()) {
   <binder-login />
 } @else if (auth.user()?.mustChangePassword) {

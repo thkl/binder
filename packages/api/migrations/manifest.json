@@ -254,6 +254,14 @@
                     "maintenance_runs",
                     "settings"
                ]
+          },
+          "39": {
+               "created": [
+                    "setup_state"
+               ],
+               "required": [
+                    "users"
+               ]
           }
      }
 }

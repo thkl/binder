@@ -44,6 +44,7 @@ export interface UploadedDocumentFile {
 @Injectable()
 export class DocumentService {
   private readonly logger = new BinderLogger(DocumentService.name);
+  private readonly thumbnailGeneration = new Map<string, Promise<string>>();
 
   constructor(
     private readonly documents: DocumentStore,
@@ -494,16 +495,31 @@ export class DocumentService {
 
   private async ensureThumbnail(document: import('../models/document.entity').Document): Promise<string> {
     let thumbnailKey = document.thumbnailKey;
-    if (!thumbnailKey || !(await this.storage.exists(thumbnailKey))) {
-      try {
-        thumbnailKey = await this.storage.createThumbnail(document.storageKey, document.uuid);
-        await this.documents.update(document.uuid, { thumbnailKey });
-        document.thumbnailKey = thumbnailKey;
-      } catch {
-        throw new NotFoundException('Document thumbnail could not be generated');
+    if (thumbnailKey && await this.storage.exists(thumbnailKey)) return thumbnailKey;
+
+    const activeGeneration = this.thumbnailGeneration.get(document.uuid);
+    if (activeGeneration) return activeGeneration;
+
+    const generation = this.generateThumbnail(document)
+      .finally(() => this.thumbnailGeneration.delete(document.uuid));
+    this.thumbnailGeneration.set(document.uuid, generation);
+    return generation;
+  }
+
+  private async generateThumbnail(document: import('../models/document.entity').Document): Promise<string> {
+    try {
+      // Re-check after joining the in-flight map in case another request finished first.
+      if (document.thumbnailKey && await this.storage.exists(document.thumbnailKey)) {
+        return document.thumbnailKey;
       }
+
+      const thumbnailKey = await this.storage.createThumbnail(document.storageKey, document.uuid);
+      await this.documents.update(document.uuid, { thumbnailKey });
+      document.thumbnailKey = thumbnailKey;
+      return thumbnailKey;
+    } catch {
+      throw new NotFoundException('Document thumbnail could not be generated');
     }
-    return thumbnailKey;
   }
 
   async getPipeline(ownerUuid: string, uuid: string) {
