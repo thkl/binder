@@ -15,6 +15,17 @@ services:
       timeout: 5s
       retries: 10
 
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    volumes:
+      - binder-clamav-data:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdscan", "--ping", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
   api:
     build:
       context: .
@@ -61,8 +72,11 @@ services:
       DATABASE_USER: ${DATABASE_USER:?DATABASE_USER is required}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
       APP_ROOT_PATH: /app
+      MALWARE_SCAN_CONFIG_FILE: /app/clamdscan.conf
     depends_on:
       api:
+        condition: service_healthy
+      clamav:
         condition: service_healthy
     volumes:
       - binder-document-storage:/app/storage
@@ -74,3 +88,4 @@ volumes:
   binder-document-storage:
   binder-logs:
   binder-backup-data:
+  binder-clamav-data:

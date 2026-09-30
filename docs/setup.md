@@ -173,8 +173,8 @@ has been encrypted; changing it makes encrypted settings unreadable.
 
 ## 4. Start Binder with Docker Compose
 
-The standard container deployment includes PostgreSQL, API, worker, shared
-document storage, logs, and backup storage:
+The standard container deployment includes PostgreSQL with pgvector, ClamAV,
+API, worker, shared document storage, logs, and backup storage:
 
 ```bash
 docker compose build
@@ -188,6 +188,12 @@ removes the initial superuser privileges from that role. The API and worker
 then use the same role as a normal database owner/runtime role. PostgreSQL
 init scripts run only when the data directory is initialized for the first
 time.
+
+The worker uses the ClamAV service through the internal Compose network. New
+uploads and inbox imports remain in `scanning` until ClamAV returns a clean
+result. A detected threat or unavailable required scanner moves the document
+to `quarantined`; the original is not downloadable, previewable, searchable,
+exportable, or available to AI processing in that state.
 
 The API is served on `http://localhost:3000` unless the Compose port mapping
 is changed. PostgreSQL is intentionally not published to the host by the
@@ -268,6 +274,11 @@ Ensure the local environment points to the same database and storage paths
 for both processes. `DATABASE_AUTOMIGRATE=true` lets the API apply pending
 versioned SQL migrations. The worker does not own migrations; it waits for the
 database and consumes the shared pipeline state.
+
+Local worker development requires a reachable ClamAV/`clamdscan` command when
+`security.malwareScan.required` is enabled. Disabling that setting is only an
+explicit local-development exception and is visible in the worker log; it
+should remain enabled for production.
 
 ## 6. Check migrations
 

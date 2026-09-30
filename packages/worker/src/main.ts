@@ -17,7 +17,12 @@ async function main(): Promise<void> {
     reconcileIntervalMs: config.reconcileIntervalMs,
     maxUploadBytes: config.maxUploadBytes,
     inbox: config.inbox,
-    embeddingsEnabled: config.embeddings.enabled
+    embeddingsEnabled: config.embeddings.enabled,
+    malwareScan: {
+      required: config.malwareScan.required,
+      command: config.malwareScan.command,
+      timeoutMs: config.malwareScan.timeoutMs
+    }
   });
   await startPipelineWorker();
 }

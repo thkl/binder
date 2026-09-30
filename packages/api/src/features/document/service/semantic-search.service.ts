@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { literal } from 'sequelize';
+import { Op } from 'sequelize';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { DocumentEmbedding } from '../models/document-embedding.entity';
 import { Document } from '../models/document.entity';
@@ -44,6 +45,11 @@ export class SemanticSearchService {
       return [];
     }
 
+    const blockedStatuses = ['uploaded', 'scanning', 'quarantined'] as const;
+    if (filters.status && blockedStatuses.includes(filters.status as typeof blockedStatuses[number])) {
+      return [];
+    }
+
     const endpoint = await this.settings.get('embeddings.endpoint', 'https://api.openai.com/v1/embeddings');
     const model = await this.settings.get('embeddings.model', 'text-embedding-3-small');
     this.logger.info('Requesting semantic query embedding', { provider, model, endpoint, queryLength: query.length });
@@ -67,8 +73,8 @@ export class SemanticSearchService {
         required: true,
         where: {
           ownerUuid,
-          ...(filters.issuerUuid ? { issuerUuid: filters.issuerUuid } : {}),
-          ...(filters.status ? { status: filters.status } : {})
+          status: filters.status ?? { [Op.notIn]: blockedStatuses },
+          ...(filters.issuerUuid ? { issuerUuid: filters.issuerUuid } : {})
         }
       }],
       where: { dimensions: vector.length },

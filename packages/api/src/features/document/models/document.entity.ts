@@ -10,7 +10,7 @@ import {
   UpdatedAt
 } from 'sequelize-typescript';
 
-export type DocumentStatus = 'uploaded' | 'scanning' | 'processing' | 'ready' | 'failed';
+export type DocumentStatus = 'uploaded' | 'scanning' | 'processing' | 'ready' | 'failed' | 'quarantined';
 
 export interface DocumentAttributes {
   uuid: string;
@@ -98,7 +98,7 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   declare searchVector: unknown;
 
   @Column({
-    type: DataType.ENUM('uploaded', 'scanning', 'processing', 'ready', 'failed'),
+    type: DataType.ENUM('uploaded', 'scanning', 'processing', 'ready', 'failed', 'quarantined'),
     allowNull: false,
     defaultValue: 'uploaded'
   })

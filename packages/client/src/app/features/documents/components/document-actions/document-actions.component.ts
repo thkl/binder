@@ -24,8 +24,9 @@ export class DocumentActionsComponent {
   private readonly application = inject(ApplicationService);
 
   readonly fileUrl = computed(() => this.application.getApiUrl('v1', 'documents/' + this.document().uuid + '/file'));
+  readonly contentAvailable = computed(() => !['uploaded', 'scanning', 'quarantined'].includes(this.document().status));
   readonly canRequeue = computed(() => {
     const status = this.document().status;
-    return status === 'failed' || status === 'ready';
+    return status === 'failed' || status === 'ready' || status === 'quarantined';
   });
 }

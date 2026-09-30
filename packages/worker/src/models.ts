@@ -11,9 +11,9 @@ import {
   UpdatedAt
 } from 'sequelize-typescript';
 
-export type JobKind = 'thumbnail' | 'text-extraction' | 'ocr' | 'embedding';
+export type JobKind = 'malware-scan' | 'thumbnail' | 'text-extraction' | 'ocr' | 'embedding';
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
-export type DocumentStatus = 'uploaded' | 'scanning' | 'processing' | 'ready' | 'failed';
+export type DocumentStatus = 'uploaded' | 'scanning' | 'processing' | 'ready' | 'failed' | 'quarantined';
 
 @Table({ tableName: 'settings', timestamps: false })
 export class ApplicationSetting extends Model {

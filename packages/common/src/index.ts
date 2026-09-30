@@ -5,7 +5,8 @@ export const DocumentStatusSchema = z.enum([
   'scanning',
   'processing',
   'ready',
-  'failed'
+  'failed',
+  'quarantined'
 ]);
 
 export type DocumentStatus = z.infer<typeof DocumentStatusSchema>;
@@ -566,6 +567,7 @@ export const DocumentSearchResponseSchema = z.object({
 export type DocumentSearchResponse = z.infer<typeof DocumentSearchResponseSchema>;
 
 export const PipelineJobKindSchema = z.enum([
+  'malware-scan',
   'thumbnail',
   'text-extraction',
   'ocr',
@@ -677,6 +679,10 @@ export const AuthenticatedUserSchema = z.object({
 });
 
 export type AuthenticatedUser = z.infer<typeof AuthenticatedUserSchema>;
+
+export const CsrfTokenSchema = z.string().min(32).max(128);
+export const CsrfTokenResponseSchema = z.object({ csrfToken: CsrfTokenSchema });
+export type CsrfTokenResponse = z.infer<typeof CsrfTokenResponseSchema>;
 
 export const UserDirectoryItemSchema = z.object({
   uuid: z.uuid(),

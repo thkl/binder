@@ -27,6 +27,9 @@ import { AuthenticationGuard } from '../../authentication/guards/authentication.
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
 import { DocumentService, UploadedDocumentFile } from '../service/document.service';
 import { BinderLogger } from '../../../shared/service/logger.helper';
+import { Throttle } from '@nestjs/throttler';
+
+const HARD_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024;
 
 @Controller('documents')
 @UseGuards(AuthenticationGuard)
@@ -36,7 +39,15 @@ export class DocumentController {
   constructor(private readonly documents: DocumentService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 100 * 1024 * 1024 } }))
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @UseInterceptors(FileInterceptor('file', {
+    limits: {
+      fileSize: HARD_UPLOAD_LIMIT_BYTES,
+      files: 1,
+      fields: 4,
+      parts: 5
+    }
+  }))
   async upload(
     @UploadedFile() file: UploadedDocumentFile | undefined,
     @CurrentUser() user: ScopedUser
@@ -57,6 +68,7 @@ export class DocumentController {
   }
 
   @Get('export')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async exportFiltered(
     @Query() query: Record<string, unknown>,
     @CurrentUser() user: ScopedUser,
@@ -68,6 +80,7 @@ export class DocumentController {
   }
 
   @Post('export')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async exportSelected(
     @Body() body: unknown,
     @CurrentUser() user: ScopedUser,
@@ -96,6 +109,7 @@ export class DocumentController {
   }
 
   @Post('bulk')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async bulkAction(@Body() body: unknown, @CurrentUser() user: ScopedUser) {
     return { data: await this.documents.bulkAction(user.userId, DocumentBulkActionInputSchema.parse(body)) };
   }
@@ -120,6 +134,7 @@ export class DocumentController {
   }
 
   @Post(':uuid/title/suggest')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async suggestTitle(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
     return { data: await this.documents.suggestTitle(user.userId, uuid) };
   }
@@ -151,6 +166,7 @@ export class DocumentController {
   }
 
   @Get(':uuid/thumbnail')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   async thumbnail(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser, @Res({ passthrough: true }) response: Response) {
     this.logger.debug(`Get thumbnail ${uuid}`);
     const result = await this.documents.getThumbnail(user.userId, uuid);

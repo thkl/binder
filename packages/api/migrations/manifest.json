@@ -262,6 +262,13 @@
                "required": [
                     "users"
                ]
+          },
+          "40": {
+               "required": [
+                    "documents",
+                    "pipeline_jobs",
+                    "settings"
+               ]
           }
      }
 }

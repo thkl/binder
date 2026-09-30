@@ -7,6 +7,7 @@ import { sequelize } from './database.js';
 import { ApplicationSetting, Document, InboxItem, PipelineJob, PipelineJobEvent, User } from './models.js';
 import { logger } from './logger.js';
 import { resolveStoragePath } from './storage.js';
+import { validatePdfBuffer } from './extraction.js';
 
 let lastScanAt = 0;
 
@@ -107,6 +108,7 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
 
   try {
     const buffer = await fs.readFile(claimedPath);
+    await validatePdfBuffer(buffer);
     const checksumSha256 = createHash('sha256').update(buffer).digest('hex');
     const duplicate = await Document.findOne({ where: { checksumSha256 } });
     if (duplicate) {
@@ -138,13 +140,13 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
           pageCount: 1,
           issuerUuid: null,
           isNew: true,
-          status: 'uploaded'
+          status: 'scanning'
         }, { transaction });
         const job = await PipelineJob.create({
           uuid: randomUUID(),
           documentUuid: document.uuid,
           ownerUuid,
-          kind: 'text-extraction',
+          kind: 'malware-scan',
           status: 'queued',
           attempts: 0,
           maxAttempts: 3,
@@ -159,7 +161,7 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
           uuid: randomUUID(),
           jobUuid: job.uuid,
           type: 'queued',
-          message: 'Queued from inbox import'
+          message: 'Queued malware scan from inbox import'
         }, { transaction });
         if (completionStage === 'import') {
           await inboxItem.destroy({ transaction });

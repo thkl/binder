@@ -10,7 +10,7 @@ import {
   UpdatedAt
 } from 'sequelize-typescript';
 
-export type PipelineJobKind = 'thumbnail' | 'text-extraction' | 'ocr' | 'embedding';
+export type PipelineJobKind = 'malware-scan' | 'thumbnail' | 'text-extraction' | 'ocr' | 'embedding';
 export type PipelineJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 
 export interface PipelineJobAttributes {
@@ -104,4 +104,3 @@ export class PipelineJob extends Model<PipelineJobAttributes, PipelineJobCreatio
   @Column({ field: 'updated_at', type: DataType.DATE })
   declare readonly updatedAt: Date;
 }
-

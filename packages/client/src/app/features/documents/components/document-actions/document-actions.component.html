@@ -3,6 +3,7 @@
     type="button"
     class="document-action"
     (click)="open.emit()"
+    [disabled]="!contentAvailable()"
     [attr.aria-label]="'documents.open' | t"
     [title]="'documents.open' | t">
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -12,19 +13,21 @@
     @if (!compact()) { <span>{{ 'documents.open' | t }}</span> }
   </button>
 
-  <a
-    class="document-action"
-    [href]="fileUrl()"
-    [attr.download]="document().originalFilename"
-    [attr.aria-label]="'documents.download' | t"
-    [title]="'documents.download' | t">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 3v11" />
-      <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
-      <path d="M5 20h14" />
-    </svg>
-    @if (!compact()) { <span>{{ 'documents.download' | t }}</span> }
-  </a>
+  @if (contentAvailable()) {
+    <a
+      class="document-action"
+      [href]="fileUrl()"
+      [attr.download]="document().originalFilename"
+      [attr.aria-label]="'documents.download' | t"
+      [title]="'documents.download' | t">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3v11" />
+        <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+        <path d="M5 20h14" />
+      </svg>
+      @if (!compact()) { <span>{{ 'documents.download' | t }}</span> }
+    </a>
+  }
 
   <button
     type="button"
@@ -43,7 +46,7 @@
     type="button"
     class="document-action"
     (click)="suggest.emit()"
-    [disabled]="suggestionLoading()"
+    [disabled]="suggestionLoading() || !contentAvailable()"
     [attr.aria-label]="'documents.suggest' | t"
     [title]="'documents.suggest' | t">
     <svg viewBox="0 0 24 24" aria-hidden="true">

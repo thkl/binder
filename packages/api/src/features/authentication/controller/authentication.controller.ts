@@ -7,6 +7,7 @@ import { AuthenticationGuard } from '../guards/authentication.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { Throttle } from '@nestjs/throttler';
+import { ensureCsrfToken } from '../../../shared/security/csrf-token';
  
 
 @Controller('auth')
@@ -29,22 +30,23 @@ export class AuthenticationController {
     });
     request.session.userId = result.uuid;
     request.session.mustChangePassword = result.mustChangePassword;
+    const csrfToken = ensureCsrfToken(request);
     await new Promise<void>((resolve, reject) => {
       request.session.save((error) => error ? reject(error) : resolve());
     });
-    return { data: result };
+    return { data: result, csrfToken };
   }
 
   @Get('session')
   async session(@Req() request: SessionRequest) {
     if (!request.session.userId) {
-      return { data: null };
+      return { data: null, csrfToken: ensureCsrfToken(request) };
     }
     const user = await this.authentication.getAuthenticatedUser(request.session.userId);
     if (!user) {
-      return { data: null };
+      return { data: null, csrfToken: ensureCsrfToken(request) };
     }
-    return { data: user };
+    return { data: user, csrfToken: ensureCsrfToken(request) };
   }
 
   @Post('password')
@@ -58,7 +60,8 @@ export class AuthenticationController {
       ChangePasswordInputSchema.parse(body)
     );
     request.session.mustChangePassword = false;
-    return { data: result };
+    const csrfToken = ensureCsrfToken(request);
+    return { data: result, csrfToken };
   }
 
   @Post('logout')

@@ -462,11 +462,13 @@ export class DocumentStore extends BaseCrudStore<Document> {
   }
 
   async searchOwned(ownerUuid: string, query: DocumentSearchQuery) {
+    const blockedStatuses: Document['status'][] = ['uploaded', 'scanning', 'quarantined'];
+    if (query.status && blockedStatuses.includes(query.status)) return [];
     const allowedUuids = await this.findMetadataMatches(ownerUuid, query);
     if (allowedUuids && allowedUuids.length === 0) return [];
     const documentWhere: WhereOptions<Document> = {
       ownerUuid,
-      ...(query.status ? { status: query.status } : {}),
+      status: query.status ? query.status : { [Op.notIn]: blockedStatuses },
       ...(allowedUuids ? { uuid: { [Op.in]: allowedUuids } } : {})
     };
     const tokens = this.searchTokens(query.q);
@@ -505,10 +507,12 @@ export class DocumentStore extends BaseCrudStore<Document> {
   }
 
   private async findMetadataMatches(ownerUuid: string, query: DocumentSearchQuery): Promise<string[] | null> {
+    const blockedStatuses: Document['status'][] = ['uploaded', 'scanning', 'quarantined'];
+    if (query.status && blockedStatuses.includes(query.status)) return [];
     const hasFilters = Boolean(query.status || query.issuerUuid || query.documentTypeUuid || query.categoryUuid || query.folderUuid || query.tagUuids?.length || query.metadata);
     if (!hasFilters) return null;
     const documents = await this.model.findAll({
-      where: { ownerUuid, ...(query.status ? { status: query.status } : {}) },
+      where: { ownerUuid, status: query.status ? query.status : { [Op.notIn]: blockedStatuses } },
       attributes: ['uuid', 'issuerUuid', 'documentTypeUuid', 'categoryUuid']
     });
     let allowed = new Set(documents.map((document) => document.uuid));

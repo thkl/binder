@@ -8,7 +8,7 @@ Automated audits reduce risk but cannot prove that the application is secure. Au
 
 ## Continuous checks
 
-The repository should eventually run these checks locally and in CI:
+The repository runs the baseline checks in `.github/workflows/security.yml`; the broader checks below remain the target as the test suite grows.
 
 ### Dependencies
 
@@ -60,6 +60,7 @@ The repository should eventually run these checks locally and in CI:
 - Use server-side Express sessions with secure cookie settings; do not use browser local storage for session credentials.
 - Any localhost-only JWT mode must be explicitly development-only and loopback-restricted.
 - Use an explicit CORS origin allowlist; never use `*` with credentialed session requests.
+- Protect every cookie-authenticated state-changing request with the session CSRF token. Login and first-run setup must additionally validate the configured browser origin.
 - Server-side authorization is required even when the first deployment has one user.
 - Owner scope must be applied before returning database rows, search results, snippets, embeddings, or files.
 - SQL must remain parameterized through Sequelize or a reviewed abstraction.
@@ -67,6 +68,7 @@ The repository should eventually run these checks locally and in CI:
 - File paths are generated from internal document IDs, never from user filenames.
 - Uploaded files are treated as untrusted input and stored outside the application source tree.
 - Raw files must pass the configured malware-scanning policy before document processing begins.
+- New and requeued files remain unavailable for download, preview, extraction, export, and AI analysis until the mandatory malware scan succeeds; scanner errors end in quarantine after retry exhaustion.
 - LLM prompts must not include unrelated documents or secrets.
 - External LLM use must be explicit, configurable, and documented for privacy impact.
 - Logs must not contain document contents, access tokens, secrets, or unnecessary personal data.
@@ -106,7 +108,7 @@ The repository should eventually run these checks locally and in CI:
 ## Audit cadence
 
 - Every pull request: type checks, lint, unit tests, contract tests, secret scan, and dependency audit.
-- Main branch: full test suite, SAST, container scan, and integration/security tests.
+- Main branch: the committed security workflow runs builds, type checks, API security tests, and a production dependency audit. Full SAST, container scanning, and integration/security tests remain to be added.
 - Scheduled: dependency refresh, vulnerability rescan, and review of accepted exceptions.
 - Before releases: manual threat-model review for changed flows and a restore test.
 
@@ -121,6 +123,6 @@ These must be decided before implementation reaches production:
 - Initial administrator username and secure bootstrap-secret delivery.
 - Reverse proxy/TLS termination model.
 - Rate limiting and abuse protection.
-- Malware scanning expectations for uploads.
+- ClamAV deployment, definition-update monitoring, and scanning of restored legacy files.
 - Data retention and deletion guarantees.
 - Whether documents may be sent to external LLM providers.

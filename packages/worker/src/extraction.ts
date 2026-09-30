@@ -8,6 +8,23 @@ export interface ExtractedPdfPages {
   requiresOcr: boolean;
 }
 
+export async function validatePdfBuffer(pdfData: Buffer): Promise<void> {
+  const header = pdfData.subarray(0, Math.min(pdfData.length, 1024));
+  if (!header.includes(Buffer.from('%PDF-'))) {
+    throw new Error('The file does not contain a valid PDF signature');
+  }
+
+  const mupdf = await import('mupdf');
+  const document = mupdf.Document.openDocument(pdfData, 'application/pdf');
+  try {
+    if (document.countPages() < 1) {
+      throw new Error('The PDF contains no pages');
+    }
+  } finally {
+    document.destroy();
+  }
+}
+
 /**
  * Extracts searchable text from every page of a PDF.
  *

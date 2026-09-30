@@ -5,6 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "pnpm build && node --test dist/shared/guards/csrf.guard.spec.js dist/features/authentication/guards/authentication.guard.spec.js dist/features/document/service/document-storage.service.spec.js",
     "dev": "dotenv run -f ../../.env -- node --watch dist/main.js",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",

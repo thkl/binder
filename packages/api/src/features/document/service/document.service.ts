@@ -61,9 +61,11 @@ export class DocumentService {
   ) { }
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
-    if (!file || file.mimetype !== 'application/pdf') {
+    if (!file) {
       throw new BadRequestException('Only PDF documents are supported');
     }
+
+    await this.storage.validatePdf(file.buffer);
 
     const uuid = randomUUID();
     const stored = await this.storage.storePdf(file.buffer, uuid, file.originalname);
@@ -71,32 +73,25 @@ export class DocumentService {
     try {
       const input = CreateDocumentInputSchema.parse({
         originalFilename: file.originalname,
-        mimeType: file.mimetype,
+        mimeType: 'application/pdf',
         sizeBytes: stored.sizeBytes,
         checksumSha256: stored.checksumSha256
       });
-      let thumbnailKey: string | null = null;
-      try {
-        thumbnailKey = await this.storage.createThumbnail(stored.storageKey, uuid);
-      } catch {
-        // Thumbnail generation is derived work. Keep the original available
-        // when a PDF cannot be rendered and let the pipeline retry later.
-      }
       const document = await this.documents.create({
         uuid,
         ownerUuid,
         title: file.originalname,
         ...input,
         storageKey: stored.storageKey,
-        thumbnailKey,
+        thumbnailKey: null,
         pageCount: 1,
         issuerUuid: null,
         isNew: true,
-        status: 'uploaded'
+        status: 'scanning'
       });
       await this.addManualUploadToInbox(document.uuid, ownerUuid, file, stored.checksumSha256, stored.sizeBytes);
       try {
-        await this.pipeline.enqueue(document.uuid, ownerUuid);
+        await this.pipeline.enqueue(document.uuid, ownerUuid, 'malware-scan');
       } catch (error) {
         this.logger.error(`Unable to enqueue document pipeline for ${document.uuid}`, error);
       }
@@ -203,6 +198,7 @@ export class DocumentService {
       for (const link of links.filter((item) => item.folderUuid === folder.uuid)) {
         const document = documentsByUuid.get(link.documentUuid);
         if (!document) continue;
+        this.assertDocumentContentAvailable(document);
 
         if (!(await this.storage.exists(document.storageKey))) {
           throw new BadRequestException('The source file for "' + document.originalFilename + '" is not available');
@@ -229,6 +225,8 @@ export class DocumentService {
       throw new NotFoundException('No documents found for export');
     }
 
+    documents.forEach((document) => this.assertDocumentContentAvailable(document));
+
     return this.createFlatArchive(documents, 'selected-documents.zip');
   }
 
@@ -237,6 +235,8 @@ export class DocumentService {
     if (documents.length === 0) {
       throw new NotFoundException('No documents match the current filters');
     }
+
+    documents.forEach((document) => this.assertDocumentContentAvailable(document));
 
     return this.createFlatArchive(documents, 'filtered-documents.zip');
   }
@@ -414,6 +414,8 @@ export class DocumentService {
         throw new BadRequestException('The source file for "' + document.originalFilename + '" is not available');
       }
 
+      this.assertDocumentContentAvailable(document);
+
       const archiveFilename = this.createArchiveFilename(document, '', usedArchiveNames);
       archive.file(await this.storage.resolveStoragePath(document.storageKey), { name: archiveFilename });
     }
@@ -451,6 +453,9 @@ export class DocumentService {
   }
 
   async suggestTitle(ownerUuid: string, uuid: string) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) throw new NotFoundException('Document not found');
+    this.assertDocumentContentAvailable(document);
     return this.titleSuggestions.suggest(ownerUuid, uuid);
   }
 
@@ -467,12 +472,14 @@ export class DocumentService {
     if (!document) {
       throw new NotFoundException('Document not found');
     }
+    this.assertDocumentContentAvailable(document);
     return { document: this.toDocumentResponse(document), stream: await this.storage.openReadStream(document.storageKey) };
   }
 
   async getExtractedText(ownerUuid: string, uuid: string) {
     const result = await this.documents.findOwnedPageText(ownerUuid, uuid);
     if (!result) throw new NotFoundException('Document not found');
+    this.assertDocumentContentAvailable(result.document);
     return DocumentExtractedTextResponseSchema.parse({
       text: result.pages.map((page) => page.text).join('\n\n'),
       pages: result.pages.map((page) => ({ pageNumber: page.pageNumber, text: page.text }))
@@ -484,6 +491,8 @@ export class DocumentService {
     if (!document) {
       throw new NotFoundException('Document thumbnail not found');
     }
+
+    this.assertDocumentContentAvailable(document);
 
     const thumbnailKey = await this.ensureThumbnail(document);
 
@@ -541,7 +550,7 @@ export class DocumentService {
     }
 
     const updated = await this.documents.update(document.uuid, {
-      status: 'uploaded',
+      status: 'scanning',
       isNew: true,
       aiSuggestion: null
     });
@@ -549,11 +558,20 @@ export class DocumentService {
       throw new NotFoundException('Document not found');
     }
 
-    const job = await this.pipeline.enqueue(updated.uuid, ownerUuid, 'text-extraction');
+    const job = await this.pipeline.enqueue(updated.uuid, ownerUuid, 'malware-scan');
     return {
       document: this.toDocumentResponse(updated),
       job
     };
+  }
+
+  private assertDocumentContentAvailable(document: import('../models/document.entity').Document): void {
+    if (document.status === 'uploaded' || document.status === 'scanning') {
+      throw new BadRequestException('The document is waiting for malware scanning');
+    }
+    if (document.status === 'quarantined') {
+      throw new BadRequestException('The document is quarantined and cannot be accessed');
+    }
   }
 
   async getMetadata(ownerUuid: string, uuid: string) {
@@ -569,6 +587,7 @@ export class DocumentService {
   async applySuggestionToEmptyFields(ownerUuid: string, uuid: string, suggestion: DocumentTitleSuggestion): Promise<{ appliedFields: string[] }> {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
+    this.assertDocumentContentAvailable(document);
 
     const metadata = await this.metadata.getDocumentMetadata(ownerUuid, uuid);
     const appliedFields: string[] = [];

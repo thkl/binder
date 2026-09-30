@@ -54,6 +54,28 @@ export class DocumentStorageService {
     return { storageKey, absolutePath, checksumSha256, sizeBytes: buffer.length };
   }
 
+  async validatePdf(buffer: Buffer): Promise<void> {
+    const header = buffer.subarray(0, Math.min(buffer.length, 1024));
+    if (!header.includes(Buffer.from('%PDF-'))) {
+      throw new BadRequestException('The uploaded file does not contain a valid PDF signature');
+    }
+
+    try {
+      const mupdf = await import('mupdf');
+      const document = mupdf.Document.openDocument(buffer, 'application/pdf');
+      try {
+        if (document.countPages() < 1) {
+          throw new BadRequestException('The uploaded PDF contains no pages');
+        }
+      } finally {
+        document.destroy();
+      }
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException('The uploaded file is not a valid PDF');
+    }
+  }
+
   async createThumbnail(storageKey: string, uuid: string): Promise<string> {
     const pdfBuffer = await fs.readFile(await this.resolveStoragePath(storageKey));
     const thumbnailKey = `derived/${uuid}/thumbnail.png`;

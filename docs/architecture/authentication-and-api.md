@@ -123,6 +123,13 @@ The Angular client communicates with the API using credentialed requests so the 
 
 `ROOT_URI` is deployment configuration, not a user-controlled request value. The current bootstrap checks that `ROOT_URI` exists and exits when it is missing, preventing the API from starting with an undefined credentialed-origin policy.
 
+Session-authenticated mutations also require an anti-CSRF token. The API
+creates a per-session token and returns it with the session, login, setup, and
+password responses. The Angular client sends it as `X-CSRF-Token` through a
+global HTTP interceptor. Login and first-run setup additionally require the
+configured `ROOT_URI` as the browser `Origin` or `Referer`; the OIDC callback
+continues to rely on its short-lived provider state and code verifier.
+
 ## Serving the client
 
 The NestJS API serves the compiled Angular application through `@nestjs/serve-static`. `CLIENT_PATH` is required at startup and points to the built client directory. The value is read through the typed `ConfigService` using the centralized `ConfigKeys.CLIENT_PATH` key. Static handling excludes the versioned API prefix so API routes remain owned by Nest controllers.

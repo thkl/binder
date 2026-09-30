@@ -7,11 +7,13 @@ import {
   ChangePasswordInputSchema,
   LoginInputSchema,
   SetupAdminInputSchema,
-  SetupStatusSchema
+  SetupStatusSchema,
+  CsrfTokenSchema
 } from '@binder/common';
 import { ApplicationService } from '../../../common/application.service';
+import { CsrfService } from '../../../common/security/csrf.service';
 
-type ApiResponse<T> = { data: T };
+type ApiResponse<T> = { data: T; csrfToken?: unknown };
 type SSOActiveResponse = {isActive:boolean};
 
 @Injectable({ providedIn: 'root' })
@@ -24,7 +26,10 @@ export class AuthService {
   readonly error = signal<string | null>(null);
   readonly appService = inject(ApplicationService);
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly csrf: CsrfService
+  ) {}
 
   async restoreSession(): Promise<void> {
     this.loading.set(true);
@@ -49,6 +54,7 @@ export class AuthService {
       const response = await firstValueFrom(
         this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1','auth/session'), { withCredentials: true })
       );
+      this.setCsrfToken(response);
       this.user.set(response.data === null ? null : AuthenticatedUserSchema.parse(response.data));
     } catch (error) {
       this.user.set(null);
@@ -75,6 +81,7 @@ export class AuthService {
           { withCredentials: true }
         )
       );
+      this.setCsrfToken(response);
       this.user.set(AuthenticatedUserSchema.parse(response.data));
       this.setupRequired.set(false);
       this.setupAvailable.set(false);
@@ -106,6 +113,7 @@ export class AuthService {
       const response = await firstValueFrom(
         this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1','auth/login'), input.data, { withCredentials: true })
       );
+      this.setCsrfToken(response);
       this.user.set(AuthenticatedUserSchema.parse(response.data));
       return true;
     } catch (error) {
@@ -128,6 +136,7 @@ export class AuthService {
       const response = await firstValueFrom(
         this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1','auth/password'), input.data, { withCredentials: true })
       );
+      this.setCsrfToken(response);
       this.user.set(AuthenticatedUserSchema.parse(response.data));
       return true;
     } catch (error) {
@@ -143,6 +152,12 @@ export class AuthService {
       this.http.post<ApiResponse<null>>(this.appService.getApiUrl('v1','auth/logout'), {}, { withCredentials: true })
     );
     this.user.set(null);
+    this.csrf.clear();
+  }
+
+  private setCsrfToken(response: { csrfToken?: unknown }): void {
+    const parsed = CsrfTokenSchema.safeParse(response.csrfToken);
+    this.csrf.setToken(parsed.success ? parsed.data : null);
   }
 
   private getErrorMessage(error: unknown, unauthorizedMessage = 'Invalid username or password.'): string {

@@ -29,6 +29,10 @@ export const settingsSections: SettingsSection[] = [
     key: 'maintenance',
     label: 'Backup and maintenance',
   },
+  {
+    key: 'security',
+    label: 'Security',
+  },
 ];
 
 export const settingsMap: SettingsMapItem[] = [
@@ -59,6 +63,18 @@ export const settingsMap: SettingsMapItem[] = [
   {
     key: 'maintenance.storageConsistency.schedule', valueFrom: 'maintenance.storageConsistency.schedule', encrypted: false, default: '0 3 * * *',
     label: 'Storage consistency schedule (cron)', type: 'text', required: true, section: 'maintenance',
+  },
+  {
+    key: 'security.malwareScan.required', valueFrom: 'security.malwareScan.required', encrypted: false, default: true,
+    label: 'Require malware scanning before processing', type: 'checkbox', section: 'security',
+  },
+  {
+    key: 'security.malwareScan.command', valueFrom: 'security.malwareScan.command', encrypted: false, default: 'clamdscan',
+    label: 'Malware scanner executable', type: 'text', required: true, section: 'security',
+  },
+  {
+    key: 'security.malwareScan.timeoutMs', valueFrom: 'security.malwareScan.timeoutMs', encrypted: false, default: '120000',
+    label: 'Malware scan timeout (ms)', type: 'text', required: true, section: 'security',
   },
   {
     key: 'documents.storageRoot',

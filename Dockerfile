@@ -46,6 +46,7 @@ FROM node:24-bookworm-slim AS worker
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     ca-certificates \
+    clamav \
     curl \
     ghostscript \
     gnupg \
@@ -69,6 +70,7 @@ ENV APP_ROOT_PATH=/app
 WORKDIR /app
 
 COPY --from=builder /out/worker ./
+COPY docker/clamav/clamdscan.conf ./clamdscan.conf
 
 RUN mkdir -p /app/storage /app/logs
 

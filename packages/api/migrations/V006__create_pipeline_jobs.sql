@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS pipeline_jobs (
     last_error VARCHAR(2000),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT pipeline_jobs_kind_check CHECK (kind IN ('thumbnail', 'text-extraction', 'ocr', 'embedding')),
+    CONSTRAINT pipeline_jobs_kind_check CHECK (kind IN ('malware-scan', 'thumbnail', 'text-extraction', 'ocr', 'embedding')),
     CONSTRAINT pipeline_jobs_status_check CHECK (status IN ('queued', 'running', 'succeeded', 'failed', 'cancelled'))
 );
 
