@@ -10,12 +10,13 @@ import { BinderConfig, ConfigKeys } from '../config/config.keys';
 /**
  * Encryption Service
  *
- * Provides AES-256-CBC encryption/decryption for sensitive data storage.
+ * Provides AES-256-GCM encryption/decryption for sensitive data storage.
  * Uses a master encryption key from environment variables (ENCRYPTION_KEY).
  *
  * Security Features:
- * - AES-256-CBC encryption algorithm
- * - Random Initialization Vector (IV) per encryption operation
+ * - AES-256-GCM authenticated encryption
+ * - Random 96-bit nonce per encryption operation
+ * - 128-bit authentication tag stored with the ciphertext
  * - Master key validation at module initialization
  * - Constant-time operations to prevent timing attacks
  * - No logging of sensitive data (keys, decrypted values)
@@ -29,9 +30,11 @@ import { BinderConfig, ConfigKeys } from '../config/config.keys';
 @Injectable()
 export class EncryptionService implements OnModuleInit {
   private readonly logger = new BinderLogger(EncryptionService.name);
-  private readonly ALGORITHM = 'aes-256-cbc';
-  private readonly IV_LENGTH = 16; // 128 bits for AES
+  private readonly ALGORITHM = 'aes-256-gcm';
+  private readonly IV_LENGTH = 12; // 96 bits is the recommended GCM nonce size
+  private readonly AUTH_TAG_LENGTH = 16; // 128-bit authentication tag
   private readonly KEY_LENGTH = 32; // 256 bits for AES-256
+  private readonly ENCRYPTED_PREFIX = 'gcm:';
   private masterKey: Buffer = Buffer.from([]);
 
   constructor(private configService: ConfigService<BinderConfig>) {}
@@ -88,13 +91,13 @@ export class EncryptionService implements OnModuleInit {
   }
 
   /**
-   * Encrypt plaintext using AES-256-CBC
+   * Encrypt plaintext using AES-256-GCM
    *
    * Generates a random Initialization Vector (IV) for each encryption operation
    * to ensure different ciphertext even for identical plaintext.
    *
    * @param plaintext - The text to encrypt
-   * @returns Object containing encrypted data (base64) and IV (hex)
+   * @returns Object containing the versioned ciphertext envelope and nonce (hex)
    *
    * @example
    * const { encrypted, iv } = service.encrypt('my-secret-token');
@@ -108,13 +111,12 @@ export class EncryptionService implements OnModuleInit {
       // Create cipher
       const cipher = createCipheriv(this.ALGORITHM, this.masterKey, iv);
 
-      // Encrypt data
       let encrypted = cipher.update(plaintext, 'utf8', 'base64');
       encrypted += cipher.final('base64');
+      const authenticationTag = cipher.getAuthTag().toString('base64');
 
-      // Return encrypted data and IV
       return {
-        encrypted,
+        encrypted: `${this.ENCRYPTED_PREFIX}${authenticationTag}:${encrypted}`,
         iv: iv.toString('hex'),
       };
     } catch (error) {
@@ -124,10 +126,10 @@ export class EncryptionService implements OnModuleInit {
   }
 
   /**
-   * Decrypt ciphertext using AES-256-CBC
+   * Decrypt ciphertext using AES-256-GCM
    *
-   * @param encrypted - Base64-encoded encrypted data
-   * @param iv - Hex-encoded initialization vector used during encryption
+   * @param encrypted - Versioned GCM envelope containing tag and ciphertext
+   * @param iv - Hex-encoded nonce used during encryption
    * @returns Decrypted plaintext
    * @throws {Error} If decryption fails (wrong key, corrupted data, invalid IV)
    *
@@ -139,14 +141,21 @@ export class EncryptionService implements OnModuleInit {
       // Validate IV format and length
       this.validateIV(iv);
 
-      // Convert IV from hex to Buffer
       const ivBuffer = Buffer.from(iv, 'hex');
+      const [prefix, authenticationTagBase64, ciphertext] = encrypted.split(':');
+      if (prefix !== this.ENCRYPTED_PREFIX.slice(0, -1) || !authenticationTagBase64) {
+        throw new Error('Encrypted value is not an AES-256-GCM envelope');
+      }
 
-      // Create decipher
+      const authenticationTag = Buffer.from(authenticationTagBase64, 'base64');
+      if (authenticationTag.length !== this.AUTH_TAG_LENGTH) {
+        throw new Error('Invalid AES-GCM authentication tag');
+      }
+
       const decipher = createDecipheriv(this.ALGORITHM, this.masterKey, ivBuffer);
+      decipher.setAuthTag(authenticationTag);
 
-      // Decrypt data
-      let decrypted = decipher.update(encrypted, 'base64', 'utf8');
+      let decrypted = decipher.update(ciphertext ?? '', 'base64', 'utf8');
       decrypted += decipher.final('utf8');
 
       return decrypted;
@@ -157,7 +166,7 @@ export class EncryptionService implements OnModuleInit {
   }
 
   /**
-   * Validate Initialization Vector format and length
+   * Validate GCM nonce format and length
    *
    * @param iv - Hex-encoded IV string
    * @throws {Error} If IV is invalid
@@ -173,7 +182,7 @@ export class EncryptionService implements OnModuleInit {
       throw new Error('IV must be a valid hexadecimal string');
     }
 
-    // Check IV length (32 hex chars = 16 bytes)
+    // Check nonce length (24 hex chars = 12 bytes)
     const expectedHexLength = this.IV_LENGTH * 2;
     if (iv.length !== expectedHexLength) {
       throw new Error(

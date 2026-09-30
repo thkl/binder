@@ -48,6 +48,7 @@ RUN apt-get update \
     ca-certificates \
     clamav \
     clamav-daemon \
+    clamdscan \
     curl \
     ghostscript \
     gnupg \

@@ -172,10 +172,25 @@ function decryptSecret(value: string, ivHex: string): string {
   if (!encoded) throw new Error('ENCRYPTION_KEY is required to decrypt embedding settings');
   const key = Buffer.from(encoded, 'base64');
   if (key.length !== 32) throw new Error('ENCRYPTION_KEY must decode to 32 bytes');
-  const decipher = createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'));
-  return Buffer.concat([decipher.update(Buffer.from(value, 'base64')), decipher.final()]).toString(
-    'utf8',
-  );
+  const iv = Buffer.from(ivHex, 'hex');
+  if (iv.length !== 12) throw new Error('Encrypted setting nonce must be 12 bytes');
+
+  const [prefix, tagBase64, ciphertext] = value.split(':');
+  if (prefix !== 'gcm' || !tagBase64) {
+    throw new Error('Encrypted setting is not an AES-256-GCM value');
+  }
+
+  const authenticationTag = Buffer.from(tagBase64, 'base64');
+  if (authenticationTag.length !== 16) {
+    throw new Error('Encrypted setting authentication tag must be 16 bytes');
+  }
+
+  const decipher = createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(authenticationTag);
+  return Buffer.concat([
+    decipher.update(Buffer.from(ciphertext ?? '', 'base64')),
+    decipher.final(),
+  ]).toString('utf8');
 }
 
 function readSettingInteger(

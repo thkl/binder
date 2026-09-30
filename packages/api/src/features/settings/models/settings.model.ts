@@ -44,7 +44,7 @@ export class ApplicationSetting extends Model {
   declare valueIv?: string;
 
   /**
-   * Whether the value is encrypted using AES-256-CBC
+   * Whether the value is encrypted using AES-256-GCM
    * - true: value is encrypted, requires valueIv for decryption
    * - false: value is plain text
    */
