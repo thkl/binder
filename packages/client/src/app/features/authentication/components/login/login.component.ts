@@ -8,7 +8,7 @@ import { TranslatePipe } from '../../../../common/i18n/i18n.service';
   imports: [TranslatePipe],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
   readonly username = signal('');
@@ -16,11 +16,10 @@ export class LoginComponent {
   ssoActive = signal(false);
 
   constructor(readonly auth: AuthService) {
-
-    void this.auth.isSSOActive()
+    void this.auth
+      .isSSOActive()
       .then((result) => this.ssoActive.set(result))
       .catch(() => this.ssoActive.set(false));
-
   }
 
   async submit(event: SubmitEvent): Promise<void> {

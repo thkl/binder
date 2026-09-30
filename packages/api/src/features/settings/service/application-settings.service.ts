@@ -1,11 +1,11 @@
-import { Injectable } from "@nestjs/common";
-import { BinderLogger } from "../../../shared/service/logger.helper";
-import { ApplicationSettingStore } from "../store/application-setting.store";
-import { EncryptionService } from "../../../shared/util/encryption.service";
-import { ApplicationSettingExported, ApplicationSettingsData } from "../models/settings";
-import { settingsMap, settingsSections } from "../models/constants";
+import { Injectable } from '@nestjs/common';
+import { BinderLogger } from '../../../shared/service/logger.helper';
+import { ApplicationSettingStore } from '../store/application-setting.store';
+import { EncryptionService } from '../../../shared/util/encryption.service';
+import { ApplicationSettingExported, ApplicationSettingsData } from '../models/settings';
+import { settingsMap, settingsSections } from '../models/constants';
 
-const SECRET_STRIPPED_VALUE = "****";
+const SECRET_STRIPPED_VALUE = '****';
 
 @Injectable()
 export class ApplicationSettingsService {
@@ -13,19 +13,19 @@ export class ApplicationSettingsService {
 
   constructor(
     private readonly appSettingsStore: ApplicationSettingStore,
-    private readonly encryptionService: EncryptionService
+    private readonly encryptionService: EncryptionService,
   ) {
-    this.logger.debug("ApplicationSettingsService initialized")
+    this.logger.debug('ApplicationSettingsService initialized');
   }
 
   /**
-    * Get a setting value
+   * Get a setting value
    * Returns the database value, or the supplied default when not configured.
-    *
-    * @param key - Setting key (e.g., 'mail.host')
-    * @param defaultValue - Default value if not found in DB or env
-    * @returns Setting value (decrypted if encrypted)
-    */
+   *
+   * @param key - Setting key (e.g., 'mail.host')
+   * @param defaultValue - Default value if not found in DB or env
+   * @returns Setting value (decrypted if encrypted)
+   */
   async get(key: string, defaultValue?: string): Promise<string | undefined> {
     try {
       const setting = await this.appSettingsStore.findById(key);
@@ -40,22 +40,20 @@ export class ApplicationSettingsService {
 
       return defaultValue;
     } catch (error) {
-      this.logger.error(
-        `Failed to get setting '${key}': ${(error as Error).message}`,
-      );
+      this.logger.error(`Failed to get setting '${key}': ${(error as Error).message}`);
       throw error;
     }
   }
 
   /**
-  * Set a setting value
-  * Automatically encrypts if isEncrypted is true
-  *
-  * @param key - Setting key
-  * @param value - Setting value (will be encrypted if isEncrypted is true)
-  * @param isEncrypted - Whether to encrypt the value
-  * @param description - Human-readable description
-  */
+   * Set a setting value
+   * Automatically encrypts if isEncrypted is true
+   *
+   * @param key - Setting key
+   * @param value - Setting value (will be encrypted if isEncrypted is true)
+   * @param isEncrypted - Whether to encrypt the value
+   * @param description - Human-readable description
+   */
   async set(
     key: string,
     value: string,
@@ -64,33 +62,20 @@ export class ApplicationSettingsService {
   ): Promise<void> {
     try {
       if (isEncrypted) {
-        if (value !== SECRET_STRIPPED_VALUE) { // Do not change Values that are ****
+        if (value !== SECRET_STRIPPED_VALUE) {
+          // Do not change Values that are ****
           // Encrypt the value
           const { encrypted, iv } = this.encryptionService.encrypt(value);
-          await this.appSettingsStore.createOrUpdate(
-            key,
-            encrypted,
-            true,
-            iv,
-            description,
-          );
+          await this.appSettingsStore.createOrUpdate(key, encrypted, true, iv, description);
         }
       } else {
         // Store as plain text
-        await this.appSettingsStore.createOrUpdate(
-          key,
-          value,
-          false,
-          undefined,
-          description,
-        );
+        await this.appSettingsStore.createOrUpdate(key, value, false, undefined, description);
       }
 
       this.logger.log(`Setting '${key}' updated successfully`);
     } catch (error) {
-      this.logger.error(
-        `Failed to set setting '${key}': ${(error as Error).message}`,
-      );
+      this.logger.error(`Failed to set setting '${key}': ${(error as Error).message}`);
       throw error;
     }
   }
@@ -107,9 +92,7 @@ export class ApplicationSettingsService {
       this.logger.log(`Setting '${key}' deleted`);
       return deleted;
     } catch (error) {
-      this.logger.error(
-        `Failed to delete setting '${key}': ${(error as Error).message}`,
-      );
+      this.logger.error(`Failed to delete setting '${key}': ${(error as Error).message}`);
       throw error;
     }
   }
@@ -139,7 +122,7 @@ export class ApplicationSettingsService {
           key: setting.key,
           isEncrypted: setting.isEncrypted,
           description: setting.description,
-          value: (setting.isEncrypted) ? SECRET_STRIPPED_VALUE : value,
+          value: setting.isEncrypted ? SECRET_STRIPPED_VALUE : value,
         };
         result.push(st);
       }
@@ -154,11 +137,8 @@ export class ApplicationSettingsService {
 
       return settings;
     } catch (error) {
-      this.logger.error(
-        `Failed to get all settings: ${(error as Error).message}`,
-      );
+      this.logger.error(`Failed to get all settings: ${(error as Error).message}`);
       throw error;
     }
   }
-
 }

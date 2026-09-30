@@ -6,7 +6,8 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="document-drawer-title"
-    (click)="$event.stopPropagation()">
+    (click)="$event.stopPropagation()"
+  >
     <div
       class="resize-handle"
       role="separator"
@@ -17,14 +18,24 @@
       tabindex="0"
       (pointerdown)="startResize($event)"
       (keydown)="resizeWithKeyboard($event)"
-      [attr.aria-label]="'viewer.resize' | t"></div>
+      [attr.aria-label]="'viewer.resize' | t"
+    ></div>
 
     <header class="drawer-header">
       <div class="drawer-heading">
         <p class="section-kicker">{{ 'viewer.kicker' | t }}</p>
-        <h3 id="document-drawer-title">{{ documentData().title || documentData().originalFilename }}</h3>
+        <h3 id="document-drawer-title">
+          {{ documentData().title || documentData().originalFilename }}
+        </h3>
       </div>
-      <button type="button" class="drawer-close" (click)="requestClose()" [attr.aria-label]="'viewer.close' | t">×</button>
+      <button
+        type="button"
+        class="drawer-close"
+        (click)="requestClose()"
+        [attr.aria-label]="'viewer.close' | t"
+      >
+        ×
+      </button>
     </header>
 
     <nav class="drawer-tabs" role="tablist" [attr.aria-label]="'viewer.preview' | t">
@@ -34,7 +45,8 @@
         [attr.aria-selected]="activeTab() === 'preview'"
         [class.active]="activeTab() === 'preview'"
         aria-controls="document-drawer-preview"
-        (click)="selectTab('preview')">
+        (click)="selectTab('preview')"
+      >
         {{ 'viewer.preview' | t }}
       </button>
       <button
@@ -43,7 +55,8 @@
         [attr.aria-selected]="activeTab() === 'metadata'"
         [class.active]="activeTab() === 'metadata'"
         aria-controls="document-drawer-metadata"
-        (click)="selectTab('metadata')">
+        (click)="selectTab('metadata')"
+      >
         {{ 'documents.metadata' | t }}
       </button>
     </nav>
@@ -64,7 +77,8 @@
             (closeRequest)="requestClose()"
             (suggestionTitleAccepted)="suggestionTitleAccepted.emit($event)"
             (suggestionDismissed)="suggestionDismissed.emit()"
-            (suggestionAccepted)="suggestionAccepted.emit($event)" />
+            (suggestionAccepted)="suggestionAccepted.emit($event)"
+          />
         </section>
       }
     </main>
@@ -74,8 +88,12 @@
         <strong id="drawer-unsaved-title">{{ 'documents.unsavedTitle' | t }}</strong>
         <p>{{ 'documents.unsavedCopy' | t }}</p>
         <div class="unsaved-actions">
-          <button type="button" class="secondary-button" (click)="keepEditing()">{{ 'documents.keepEditing' | t }}</button>
-          <button type="button" class="danger-button" (click)="discardChanges()">{{ 'documents.discardChanges' | t }}</button>
+          <button type="button" class="secondary-button" (click)="keepEditing()">
+            {{ 'documents.keepEditing' | t }}
+          </button>
+          <button type="button" class="danger-button" (click)="discardChanges()">
+            {{ 'documents.discardChanges' | t }}
+          </button>
         </div>
       </div>
     }

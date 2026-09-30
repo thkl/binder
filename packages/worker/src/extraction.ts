@@ -63,7 +63,7 @@ export async function extractPdfPages(storageKey: string): Promise<ExtractedPdfP
   return {
     pages,
     text,
-    requiresOcr: requiresOcr(text)
+    requiresOcr: requiresOcr(text),
   };
 }
 
@@ -80,5 +80,7 @@ export function requiresOcr(text: string): boolean {
   if (replacementCharacters === 0) return false;
 
   const visibleCharacters = [...text].filter((character) => !/\s/u.test(character)).length;
-  return replacementCharacters >= 3 || replacementCharacters / Math.max(visibleCharacters, 1) >= 0.01;
+  return (
+    replacementCharacters >= 3 || replacementCharacters / Math.max(visibleCharacters, 1) >= 0.01
+  );
 }

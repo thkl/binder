@@ -5,6 +5,6 @@ import { InboxServiceModule } from './inbox.service.module';
 
 @Module({
   imports: [InboxServiceModule, AuthenticationServiceModule],
-  controllers: [InboxController]
+  controllers: [InboxController],
 })
 export class InboxModule {}

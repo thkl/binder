@@ -18,7 +18,7 @@ import {
   SetDocumentTitleInputSchema,
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
-  ClearDocumentSuggestionResponseSchema
+  ClearDocumentSuggestionResponseSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -53,8 +53,8 @@ export class DocumentsService {
       const response = await firstValueFrom(
         this.http.get<ApiResponse<unknown>>(
           this.appService.getApiUrl('v1', 'documents', `?${this.buildParams(parsed).toString()}`),
-          { withCredentials: true }
-        )
+          { withCredentials: true },
+        ),
       );
       const page = DocumentListResponseSchema.parse(response.data);
       this.page.set(page);
@@ -70,9 +70,13 @@ export class DocumentsService {
     try {
       const response = await firstValueFrom(
         this.http.get<ApiResponse<unknown>>(
-          this.appService.getApiUrl('v1', 'documents/facets', `?${this.buildParams(query, false).toString()}`),
-          { withCredentials: true }
-        )
+          this.appService.getApiUrl(
+            'v1',
+            'documents/facets',
+            `?${this.buildParams(query, false).toString()}`,
+          ),
+          { withCredentials: true },
+        ),
       );
       this.facets.set(DocumentListFacetsResponseSchema.parse(response.data));
     } catch (error) {
@@ -85,8 +89,8 @@ export class DocumentsService {
       const response = await firstValueFrom(
         this.http.get<ApiResponse<unknown>>(
           this.appService.getApiUrl('v1', 'documents/storage-issues'),
-          { withCredentials: true }
-        )
+          { withCredentials: true },
+        ),
       );
       this.storageIssues.set(DocumentStorageIssueListResponseSchema.parse(response.data).items);
     } catch (error) {
@@ -123,10 +127,14 @@ export class DocumentsService {
     if (values !== undefined) params.set(key, values.join(','));
   }
 
-  async requeueDocument(uuid:string): Promise<boolean> {
+  async requeueDocument(uuid: string): Promise<boolean> {
     try {
       await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1',`documents/${uuid}/pipeline/requeue`) , {}, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/${uuid}/pipeline/requeue`),
+          {},
+          { withCredentials: true },
+        ),
       );
       await this.load();
     } catch (error) {
@@ -144,8 +152,8 @@ export class DocumentsService {
         this.http.post<ApiResponse<unknown>>(
           this.appService.getApiUrl('v1', 'documents/bulk'),
           input,
-          { withCredentials: true }
-        )
+          { withCredentials: true },
+        ),
       );
       const result = DocumentBulkActionResponseSchema.parse(response.data);
       await this.load();
@@ -164,11 +172,11 @@ export class DocumentsService {
 
     try {
       const response = await firstValueFrom(
-        this.http.post(
-          this.appService.getApiUrl('v1', 'documents/export'),
-          input,
-          { observe: 'response', responseType: 'blob', withCredentials: true }
-        )
+        this.http.post(this.appService.getApiUrl('v1', 'documents/export'), input, {
+          observe: 'response',
+          responseType: 'blob',
+          withCredentials: true,
+        }),
       );
       this.downloadArchive(response, 'selected-documents.zip');
       return true;
@@ -188,9 +196,13 @@ export class DocumentsService {
       const parsed = DocumentListQuerySchema.parse({ ...this.currentQuery, ...query });
       const response = await firstValueFrom(
         this.http.get(
-          this.appService.getApiUrl('v1', 'documents/export', `?${this.buildParams(parsed, false).toString()}`),
-          { observe: 'response', responseType: 'blob', withCredentials: true }
-        )
+          this.appService.getApiUrl(
+            'v1',
+            'documents/export',
+            `?${this.buildParams(parsed, false).toString()}`,
+          ),
+          { observe: 'response', responseType: 'blob', withCredentials: true },
+        ),
       );
       this.downloadArchive(response, 'filtered-documents.zip');
       return true;
@@ -211,7 +223,11 @@ export class DocumentsService {
     this.error.set(null);
     try {
       await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1', `documents/${uuid}/title`), input.data, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/${uuid}/title`),
+          input.data,
+          { withCredentials: true },
+        ),
       );
       await this.load();
       return true;
@@ -225,7 +241,11 @@ export class DocumentsService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1', `documents/${uuid}/title/suggest`), {}, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/${uuid}/title/suggest`),
+          {},
+          { withCredentials: true },
+        ),
       );
       return DocumentTitleSuggestionSchema.parse(response.data);
     } catch (error) {
@@ -238,7 +258,10 @@ export class DocumentsService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.delete<ApiResponse<unknown>>(this.appService.getApiUrl('v1', `documents/${uuid}/ai-suggestion`), { withCredentials: true })
+        this.http.delete<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/${uuid}/ai-suggestion`),
+          { withCredentials: true },
+        ),
       );
       return ClearDocumentSuggestionResponseSchema.parse(response.data).cleared;
     } catch (error) {
@@ -255,7 +278,9 @@ export class DocumentsService {
 
     try {
       await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1','documents'), body, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(this.appService.getApiUrl('v1', 'documents'), body, {
+          withCredentials: true,
+        }),
       );
       await this.load();
       return true;
@@ -282,7 +307,8 @@ export class DocumentsService {
       throw new Error('The export archive was empty');
     }
 
-    const filename = this.archiveFilename(response.headers.get('Content-Disposition')) ?? fallbackFilename;
+    const filename =
+      this.archiveFilename(response.headers.get('Content-Disposition')) ?? fallbackFilename;
     const url = URL.createObjectURL(response.body);
     const link = this.document.createElement('a');
     link.href = url;
@@ -299,8 +325,10 @@ export class DocumentsService {
     const encoded = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
     if (encoded) return decodeURIComponent(encoded);
 
-    return contentDisposition.match(/filename="([^"]+)"/i)?.[1]
-      ?? contentDisposition.match(/filename=([^;]+)/i)?.[1]?.trim()
-      ?? null;
+    return (
+      contentDisposition.match(/filename="([^"]+)"/i)?.[1] ??
+      contentDisposition.match(/filename=([^;]+)/i)?.[1]?.trim() ??
+      null
+    );
   }
 }

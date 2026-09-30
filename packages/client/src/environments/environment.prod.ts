@@ -8,5 +8,4 @@ export const environment = {
   protocol: window.location.protocol.replace(':', ''),
   apiPort: window.location.port || (window.location.protocol === 'https:' ? '443' : '80'),
   httpOptions: {},
-   
 };

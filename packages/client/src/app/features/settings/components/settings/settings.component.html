@@ -8,7 +8,9 @@
   </div>
 
   @if (settingsService.loading()) {
-    <div class="settings-status glass-card"><span class="spinner"></span> Loading configuration…</div>
+    <div class="settings-status glass-card">
+      <span class="spinner"></span> Loading configuration…
+    </div>
   } @else if (settingsService.error(); as error) {
     <div class="settings-status glass-card error" role="alert">{{ error }}</div>
   } @else if (settingsService.settings(); as settings) {
@@ -21,7 +23,8 @@
               type="button"
               class="section-link"
               [class.active]="activeSection() === section.key"
-              (click)="selectSection(section.key)">
+              (click)="selectSection(section.key)"
+            >
               <span class="section-symbol">◌</span>
               <span>{{ sectionLabel(section.key) }}</span>
               <span class="section-chevron">›</span>
@@ -40,7 +43,10 @@
         </header>
 
         @if (activeItems().length === 0) {
-          <div class="empty-settings"><span>◌</span><p>{{ 'settings.none' | t }}</p></div>
+          <div class="empty-settings">
+            <span>◌</span>
+            <p>{{ 'settings.none' | t }}</p>
+          </div>
         } @else {
           <div class="fields">
             @for (item of activeItems(); track item.key) {
@@ -49,44 +55,60 @@
                   <input
                     type="checkbox"
                     [checked]="booleanValue(item)"
-                    (change)="updateCheckbox(item, $event)">
-                  <span class="checkbox-copy"><strong>{{ itemLabel(item) }}</strong><small>{{ item.key }}</small></span>
+                    (change)="updateCheckbox(item, $event)"
+                  />
+                  <span class="checkbox-copy"
+                    ><strong>{{ itemLabel(item) }}</strong
+                    ><small>{{ item.key }}</small></span
+                  >
                   <span class="toggle"><span></span></span>
                 </label>
               } @else {
                 <label class="text-field">
-                  <span class="field-label"><strong>{{ itemLabel(item) }}</strong>@if (item.required) { <em>Required</em> }</span>
+                  <span class="field-label"
+                    ><strong>{{ itemLabel(item) }}</strong>
+                    @if (item.required) {
+                      <em>Required</em>
+                    }
+                  </span>
                   <small>{{ description(item) }}</small>
                   @if (item.key === 'inbox.importOwnerUuid') {
-                  <select
-                    [value]="stringValue(item)"
-                    (change)="updateText(item, $event)">
-                    <option value="">{{ 'settings.noOwner' | t }}</option>
-                    @for (user of settingsService.users(); track user.uuid) {
-                      <option [value]="user.uuid">{{ user.username }}{{ user.email ? ' · ' + user.email : '' }}{{ user.isAdmin ? ' · ' + ('settings.admin' | t) : '' }}</option>
-                    }
-                  </select>
+                    <select [value]="stringValue(item)" (change)="updateText(item, $event)">
+                      <option value="">{{ 'settings.noOwner' | t }}</option>
+                      @for (user of settingsService.users(); track user.uuid) {
+                        <option [value]="user.uuid">
+                          {{ user.username }}{{ user.email ? ' · ' + user.email : ''
+                          }}{{ user.isAdmin ? ' · ' + ('settings.admin' | t) : '' }}
+                        </option>
+                      }
+                    </select>
                   } @else if (item.type === 'select') {
-                  <select
-                    [value]="stringValue(item)"
-                    (change)="updateText(item, $event)">
-                    @for (option of item.options ?? []; track option) {
-                      <option [value]="option">{{ settingOptionLabel(item.key, option) }}</option>
-                    }
-                  </select>
+                    <select [value]="stringValue(item)" (change)="updateText(item, $event)">
+                      @for (option of item.options ?? []; track option) {
+                        <option [value]="option">{{ settingOptionLabel(item.key, option) }}</option>
+                      }
+                    </select>
                   } @else if (item.type === 'textarea') {
-                  <textarea
-                    [value]="stringValue(item)"
-                    [required]="item.required ?? false"
-                    (input)="updateText(item, $event)"></textarea>
-                  } @else { <input
-                    [type]="item.type"
-                    [value]="stringValue(item)"
-                    [required]="item.required ?? false"
-                    [attr.pattern]="item.pattern || null"
-                    (input)="updateText(item, $event)"> }
-                  @if (item.encrypted) { <span class="field-hint">{{ 'settings.encrypted' | t }}</span> }
-                  @if (item.patternMessage) { <span class="field-hint">{{ patternHint(item) }}</span> }
+                    <textarea
+                      [value]="stringValue(item)"
+                      [required]="item.required ?? false"
+                      (input)="updateText(item, $event)"
+                    ></textarea>
+                  } @else {
+                    <input
+                      [type]="item.type"
+                      [value]="stringValue(item)"
+                      [required]="item.required ?? false"
+                      [attr.pattern]="item.pattern || null"
+                      (input)="updateText(item, $event)"
+                    />
+                  }
+                  @if (item.encrypted) {
+                    <span class="field-hint">{{ 'settings.encrypted' | t }}</span>
+                  }
+                  @if (item.patternMessage) {
+                    <span class="field-hint">{{ patternHint(item) }}</span>
+                  }
                 </label>
               }
             }
@@ -94,7 +116,9 @@
         }
 
         <footer class="form-footer">
-          @if (saved()) { <span class="saved-message">✓ Settings saved</span> }
+          @if (saved()) {
+            <span class="saved-message">✓ Settings saved</span>
+          }
           <button class="save-button" type="submit" [disabled]="settingsService.saving()">
             {{ settingsService.saving() ? ('settings.saving' | t) : ('settings.save' | t) }}
           </button>

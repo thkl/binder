@@ -1,8 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
 import { FoldersService } from '../../services/folders.service';
-import { DocumentDrawerComponent, DocumentDrawerTab } from '../document-drawer/document-drawer.component';
+import {
+  DocumentDrawerComponent,
+  DocumentDrawerTab,
+} from '../document-drawer/document-drawer.component';
 import { DocumentActionsComponent } from '../document-actions/document-actions.component';
 import { DocumentFilterMenuComponent } from '../document-filter-menu/document-filter-menu.component';
 import { FolderTreeComponent } from '../folder-tree/folder-tree.component';
@@ -17,7 +28,7 @@ import type {
   DocumentListQuery,
   DocumentGroupBy,
   DocumentStatus,
-  DocumentTitleSuggestion
+  DocumentTitleSuggestion,
 } from '@binder/common';
 import { DocumentListQuerySchema } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
@@ -46,11 +57,11 @@ type DocumentFilterValues = {
     DocumentFilterMenuComponent,
     FolderTreeComponent,
     SavedSearchMenuComponent,
-    TranslatePipe
+    TranslatePipe,
   ],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocumentsComponent implements OnInit, OnDestroy {
   readonly documents = inject(DocumentsService);
@@ -61,7 +72,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
   readonly viewMode = signal<DocumentViewMode>(this.readViewMode());
   readonly groupMode = signal<DocumentGroupMode>(this.readGroupMode());
-  readonly sortDirection  = signal<DocumentSortDirection>(this.readSortDirection());
+  readonly sortDirection = signal<DocumentSortDirection>(this.readSortDirection());
   readonly groupDirection = signal<DocumentSortDirection>(this.readGroupDirection());
   readonly drawerDocumentUuid = signal<string | null>(null);
   readonly drawerTab = signal<DocumentDrawerTab>('preview');
@@ -86,14 +97,14 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     issuer: undefined,
     tag: undefined,
     status: undefined,
-    reviewState: undefined
+    reviewState: undefined,
   });
 
   private readonly folderPages = signal<Record<string, number>>({});
   private readonly allDocumentsFolderKey = '__all-documents__';
   private readonly unassignedFolderKey = '__unassigned-documents__';
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
-  
+
   readonly drawerDocument = computed(() => {
     const uuid = this.drawerDocumentUuid();
     const current = this.documents.page()?.items.find((document) => document.uuid === uuid);
@@ -103,23 +114,30 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly selectedCount = computed(() => this.selectedDocumentUuids().size);
   readonly activeFilterCount = computed(() => {
     const values = this.filterValues();
-    const selectedFilters = Object.values(values).filter((selection) => selection !== undefined).length;
+    const selectedFilters = Object.values(values).filter(
+      (selection) => selection !== undefined,
+    ).length;
     return selectedFilters + (this.listSearch().trim() ? 1 : 0);
   });
   readonly hasActiveFilters = computed(() => this.activeFilterCount() > 0);
-  readonly savedSearchParameters = computed<SavedSearchParameter[]>(() => this.createSavedSearchParameters());
+  readonly savedSearchParameters = computed<SavedSearchParameter[]>(() =>
+    this.createSavedSearchParameters(),
+  );
   readonly exportScope = computed<'selected' | 'filtered' | 'folder' | null>(() => {
     if (this.selectedCount() > 0) return 'selected';
     if (this.unassignedFolderSelected()) return 'filtered';
     if (this.hasActiveFilters()) return 'filtered';
     return this.folders.selectedFolderUuid() ? 'folder' : null;
   });
-  readonly exportInProgress = computed(() => (
-    this.documents.exporting() || this.folders.exportingFolderUuid() !== null
-  ));
+  readonly exportInProgress = computed(
+    () => this.documents.exporting() || this.folders.exportingFolderUuid() !== null,
+  );
   readonly allVisibleSelected = computed(() => {
     const visible = this.documents.page()?.items ?? [];
-    return visible.length > 0 && visible.every((document) => this.selectedDocumentUuids().has(document.uuid));
+    return (
+      visible.length > 0 &&
+      visible.every((document) => this.selectedDocumentUuids().has(document.uuid))
+    );
   });
 
   readonly documentGroups = computed<DocumentGroup[]>(() => {
@@ -131,7 +149,11 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       const values = this.groupValues(document, mode);
       const groupValues = values.length > 0 ? values : [{ key: '__none', label: null }];
       for (const value of groupValues) {
-        const group = groups.get(value.key) ?? { key: value.key, label: value.label, documents: [] };
+        const group = groups.get(value.key) ?? {
+          key: value.key,
+          label: value.label,
+          documents: [],
+        };
         group.documents.push(document);
         groups.set(value.key, group);
       }
@@ -147,7 +169,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     void this.documents.load({
       groupBy: this.groupMode(),
       folderUuid: undefined,
-      unassigned: false
+      unassigned: false,
     });
   }
 
@@ -210,7 +232,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   toggleFilterMenu(key: DocumentFilterKey): void {
-    this.activeFilterMenu.update((current) => current === key ? null : key);
+    this.activeFilterMenu.update((current) => (current === key ? null : key));
   }
 
   closeFilterMenu(): void {
@@ -236,7 +258,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       issuer: undefined,
       tag: undefined,
       status: undefined,
-      reviewState: undefined
+      reviewState: undefined,
     });
     this.applyListQuery(this.buildFilterQuery());
   }
@@ -246,9 +268,11 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     return options
       .map((option) => ({
         ...option,
-        label: this.facetLabel(key, option)
+        label: this.facetLabel(key, option),
       }))
-      .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base', numeric: true }));
+      .sort((left, right) =>
+        left.label.localeCompare(right.label, undefined, { sensitivity: 'base', numeric: true }),
+      );
   }
 
   async changeFolderMembership(action: 'add' | 'remove'): Promise<void> {
@@ -256,12 +280,15 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     if (!folderUuid || this.selectedCount() === 0 || this.folderActionInProgress()) return;
     this.folderActionInProgress.set(action);
     this.folderActionMessage.set(null);
-    const result = action === 'add'
-      ? await this.folders.linkDocuments(folderUuid, [...this.selectedDocumentUuids()])
-      : await this.folders.unlinkDocuments(folderUuid, [...this.selectedDocumentUuids()]);
+    const result =
+      action === 'add'
+        ? await this.folders.linkDocuments(folderUuid, [...this.selectedDocumentUuids()])
+        : await this.folders.unlinkDocuments(folderUuid, [...this.selectedDocumentUuids()]);
     this.folderActionInProgress.set(null);
     if (result) {
-      this.folderActionMessage.set(`${result.affected} ${action === 'add' ? 'document(s) added to' : 'document(s) removed from'} folder.`);
+      this.folderActionMessage.set(
+        `${result.affected} ${action === 'add' ? 'document(s) added to' : 'document(s) removed from'} folder.`,
+      );
       this.clearSelection();
       await this.documents.load();
     }
@@ -346,7 +373,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.bulkActionResult.set(null);
     const result = await this.documents.bulkAction({
       documentUuids: [...this.selectedDocumentUuids()],
-      action
+      action,
     });
     this.bulkActionInProgress.set(null);
     if (result) {
@@ -356,7 +383,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   thumbnailUrl(uuid: string): string | null {
-    return this.documents.page()?.items.find((document) => document.uuid === uuid)?.thumbnailUrl ?? null;
+    return (
+      this.documents.page()?.items.find((document) => document.uuid === uuid)?.thumbnailUrl ?? null
+    );
   }
 
   documentFormat(document: Document): string {
@@ -380,10 +409,10 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   setGroupMode(mode: DocumentGroupMode): void {
     if (!this.canLeaveMetadata()) {
-      console.log("canLeaveMetadata is false")
+      console.log('canLeaveMetadata is false');
       return;
     }
-    console.log("Set Group Mode ",mode)
+    console.log('Set Group Mode ', mode);
     this.groupMode.set(mode);
     this.selectedSavedSearchUuid.set(null);
     localStorage.setItem('binder.documents.group-mode', mode);
@@ -392,13 +421,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     void this.documents.load({ page: 1, groupBy: mode });
   }
 
-
   setSortDirection(direction: DocumentSortDirection): void {
     if (!this.canLeaveMetadata()) {
-      console.log("canLeaveMetadata is false")
+      console.log('canLeaveMetadata is false');
       return;
     }
-    console.log("Set SortDirection",direction)
+    console.log('Set SortDirection', direction);
     this.sortDirection.set(direction);
     this.selectedSavedSearchUuid.set(null);
     localStorage.setItem('binder.documents.sortDirection', direction);
@@ -418,10 +446,16 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   markDocumentReviewed(uuid: string): void {
-    this.documents.page.update((page) => page ? {
-      ...page,
-      items: page.items.map((document) => document.uuid === uuid ? { ...document, isNew: false } : document)
-    } : page);
+    this.documents.page.update((page) =>
+      page
+        ? {
+            ...page,
+            items: page.items.map((document) =>
+              document.uuid === uuid ? { ...document, isNew: false } : document,
+            ),
+          }
+        : page,
+    );
   }
 
   async metadataSaved(uuid: string): Promise<void> {
@@ -429,8 +463,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     await this.documents.load();
   }
 
-
-  async requeueDocument(uuid:string) {
+  async requeueDocument(uuid: string) {
     await this.documents.requeueDocument(uuid);
   }
 
@@ -541,16 +574,28 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   async acceptTitleSuggestion(uuid: string): Promise<void> {
     const suggestion = this.titleSuggestions()[uuid];
     if (!suggestion || !(await this.documents.updateTitle(uuid, suggestion.suggestedTitle))) return;
-    this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
+    this.titleSuggestions.update((current) => {
+      const next = { ...current };
+      delete next[uuid];
+      return next;
+    });
   }
 
   async dismissTitleSuggestion(uuid: string): Promise<void> {
-    if (await this.documents.clearSuggestion(uuid) === null) return;
-    this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
+    if ((await this.documents.clearSuggestion(uuid)) === null) return;
+    this.titleSuggestions.update((current) => {
+      const next = { ...current };
+      delete next[uuid];
+      return next;
+    });
   }
 
   acceptSuggestedMetadata(uuid: string, _title: string): void {
-    this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
+    this.titleSuggestions.update((current) => {
+      const next = { ...current };
+      delete next[uuid];
+      return next;
+    });
   }
 
   async acceptSuggestedTitleValue(uuid: string, title: string): Promise<void> {
@@ -558,14 +603,16 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   dismissLocalTitleSuggestion(uuid: string): void {
-    this.titleSuggestions.update((current) => { const next = { ...current }; delete next[uuid]; return next; });
+    this.titleSuggestions.update((current) => {
+      const next = { ...current };
+      delete next[uuid];
+      return next;
+    });
   }
 
   private readSortDirection(): DocumentSortDirection {
     const stored = localStorage.getItem('binder.documents.sortDirection');
-    return stored === 'asc' || stored === 'desc'
-      ? stored
-      : 'desc';
+    return stored === 'asc' || stored === 'desc' ? stored : 'desc';
   }
 
   private findDocument(uuid: string): Document | null {
@@ -578,7 +625,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     await this.documents.load({
       page: rememberedPage,
       folderUuid: folderUuid ?? undefined,
-      unassigned
+      unassigned,
     });
 
     if (this.documents.error()) return;
@@ -592,7 +639,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       await this.documents.load({
         page: fallbackPage,
         folderUuid: folderUuid ?? undefined,
-        unassigned
+        unassigned,
       });
       return;
     }
@@ -612,7 +659,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     const filters = this.filterValues();
     const q = this.listSearch().trim();
     return {
-      folderUuid: this.unassignedFolderSelected() ? undefined : this.folders.selectedFolderUuid() ?? undefined,
+      folderUuid: this.unassignedFolderSelected()
+        ? undefined
+        : (this.folders.selectedFolderUuid() ?? undefined),
       unassigned: this.unassignedFolderSelected() ? true : undefined,
       q: q || undefined,
       status: undefined,
@@ -622,7 +671,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       issuerUuids: filters.issuer,
       tagUuids: filters.tag,
       statuses: filters.status,
-      reviewStates: filters.reviewState
+      reviewStates: filters.reviewState,
     };
   }
 
@@ -631,7 +680,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     const { page: _page, ...query } = parsed;
     const saved = await this.savedSearches.create({
       name,
-      definition: { kind: 'list', query }
+      definition: { kind: 'list', query },
     });
     if (saved) this.selectedSavedSearchUuid.set(saved.uuid);
   }
@@ -654,7 +703,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       issuer: query.issuerUuids,
       tag: query.tagUuids,
       status: query.statuses,
-      reviewState: query.reviewStates
+      reviewState: query.reviewStates,
     });
     this.groupMode.set(query.groupBy ?? 'none');
     this.groupDirection.set(query.groupDirection ?? 'asc');
@@ -663,7 +712,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     localStorage.setItem('binder.documents.groupDirection', this.groupDirection());
     localStorage.setItem('binder.documents.sortDirection', this.sortDirection());
     this.unassignedFolderSelected.set(query.unassigned === true);
-    this.folders.select(this.unassignedFolderSelected() ? null : query.folderUuid ?? null);
+    this.folders.select(this.unassignedFolderSelected() ? null : (query.folderUuid ?? null));
     this.activeFilterMenu.set(null);
     this.folderPages.set({});
     this.clearSelection();
@@ -672,7 +721,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   async removeSavedSearch(uuid: string): Promise<void> {
     if (!window.confirm(this.i18n.t('documents.savedSearchDeleteConfirm'))) return;
-    if (await this.savedSearches.remove(uuid) && this.selectedSavedSearchUuid() === uuid) {
+    if ((await this.savedSearches.remove(uuid)) && this.selectedSavedSearchUuid() === uuid) {
       this.selectedSavedSearchUuid.set(null);
     }
   }
@@ -692,25 +741,46 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       groupBy: this.groupMode(),
       groupDirection: this.groupDirection(),
       folderUuid: current.folderUuid,
-      unassigned: this.unassignedFolderSelected()
+      unassigned: this.unassignedFolderSelected(),
     });
   }
 
   private createSavedSearchParameters(): SavedSearchParameter[] {
     const query = this.currentSavedSearchQuery();
     return [
-      { label: this.i18n.t('documents.searchList'), value: query.q || this.i18n.t('documents.savedSearchAnyValue') },
-      { label: this.i18n.t('documents.filterType'), value: this.facetSelectionLabel('documentType', query.documentTypeUuids) },
-      { label: this.i18n.t('documents.filterCategory'), value: this.facetSelectionLabel('category', query.categoryUuids) },
-      { label: this.i18n.t('documents.filterIssuer'), value: this.facetSelectionLabel('issuer', query.issuerUuids) },
-      { label: this.i18n.t('documents.filterTag'), value: this.facetSelectionLabel('tag', query.tagUuids) },
-      { label: this.i18n.t('documents.filterStatus'), value: this.scalarSelectionLabel(query.statuses, 'documents.status.') },
-      { label: this.i18n.t('documents.filterReviewState'), value: this.scalarSelectionLabel(query.reviewStates, 'documents.') },
+      {
+        label: this.i18n.t('documents.searchList'),
+        value: query.q || this.i18n.t('documents.savedSearchAnyValue'),
+      },
+      {
+        label: this.i18n.t('documents.filterType'),
+        value: this.facetSelectionLabel('documentType', query.documentTypeUuids),
+      },
+      {
+        label: this.i18n.t('documents.filterCategory'),
+        value: this.facetSelectionLabel('category', query.categoryUuids),
+      },
+      {
+        label: this.i18n.t('documents.filterIssuer'),
+        value: this.facetSelectionLabel('issuer', query.issuerUuids),
+      },
+      {
+        label: this.i18n.t('documents.filterTag'),
+        value: this.facetSelectionLabel('tag', query.tagUuids),
+      },
+      {
+        label: this.i18n.t('documents.filterStatus'),
+        value: this.scalarSelectionLabel(query.statuses, 'documents.status.'),
+      },
+      {
+        label: this.i18n.t('documents.filterReviewState'),
+        value: this.scalarSelectionLabel(query.reviewStates, 'documents.'),
+      },
       { label: this.i18n.t('folders.allDocuments'), value: this.folderSelectionLabel(query) },
       { label: this.i18n.t('documents.sortDirection'), value: this.sortSelectionLabel(query) },
       { label: this.i18n.t('documents.groupBy'), value: this.groupSelectionLabel(query.groupBy) },
       { label: this.i18n.t('documents.groupDirection'), value: this.groupDirectionLabel(query) },
-      { label: this.i18n.t('documents.savedSearchPageSize'), value: String(query.pageSize) }
+      { label: this.i18n.t('documents.savedSearchPageSize'), value: String(query.pageSize) },
     ];
   }
 
@@ -720,7 +790,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     const labels = this.facetOptions(key)
       .filter((option) => selected.has(option.value))
       .map((option) => option.label);
-    return labels.length > 0 ? labels.join(', ') : `${values.length} ${this.i18n.t('documents.savedSearchSelected')}`;
+    return labels.length > 0
+      ? labels.join(', ')
+      : `${values.length} ${this.i18n.t('documents.savedSearchSelected')}`;
   }
 
   private scalarSelectionLabel<T extends string>(values: T[] | undefined, prefix: string): string {
@@ -732,17 +804,19 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     if (query.unassigned) return this.i18n.t('folders.unassigned');
     const folderUuid = query.folderUuid;
     if (!folderUuid) return this.i18n.t('folders.allDocuments');
-    return this.folders.loadedFolders().find((folder) => folder.uuid === folderUuid)?.name
-      ?? `${this.i18n.t('documents.savedSearchSelected')}: ${folderUuid}`;
+    return (
+      this.folders.loadedFolders().find((folder) => folder.uuid === folderUuid)?.name ??
+      `${this.i18n.t('documents.savedSearchSelected')}: ${folderUuid}`
+    );
   }
 
   private sortSelectionLabel(query: DocumentListQuery): string {
-    const field = query.sort === 'createdAt'
-      ? this.i18n.t('documents.savedSearchCreated')
-      : query.sort;
-    const direction = query.direction === 'asc'
-      ? this.i18n.t('documents.sortAsc')
-      : this.i18n.t('documents.sortDesc');
+    const field =
+      query.sort === 'createdAt' ? this.i18n.t('documents.savedSearchCreated') : query.sort;
+    const direction =
+      query.direction === 'asc'
+        ? this.i18n.t('documents.sortAsc')
+        : this.i18n.t('documents.sortDesc');
     return `${field} · ${direction}`;
   }
 
@@ -754,7 +828,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       issuer: this.i18n.t('documents.groupIssuer'),
       tag: this.i18n.t('documents.groupTag'),
       status: this.i18n.t('documents.groupStatus'),
-      isNew: this.i18n.t('documents.groupReviewState')
+      isNew: this.i18n.t('documents.groupReviewState'),
     };
     return labels[groupBy];
   }
@@ -773,7 +847,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   private facetLabel(key: DocumentFilterKey, option: DocumentListFacetOption): string {
     if (key === 'status') return this.i18n.t('documents.status.' + option.value);
-    if (key === 'reviewState') return this.i18n.t(option.value === 'new' ? 'documents.new' : 'documents.reviewed');
+    if (key === 'reviewState')
+      return this.i18n.t(option.value === 'new' ? 'documents.new' : 'documents.reviewed');
     if (key === 'documentType' || key === 'category' || key === 'tag') {
       return this.i18n.name({ name: option.label, translations: option.translations });
     }
@@ -784,13 +859,17 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     const page = this.documents.page();
     if (!page) return;
 
-    this.rememberFolderPage(this.folders.selectedFolderUuid(), page.page, this.unassignedFolderSelected());
+    this.rememberFolderPage(
+      this.folders.selectedFolderUuid(),
+      page.page,
+      this.unassignedFolderSelected(),
+    );
   }
 
   private rememberFolderPage(folderUuid: string | null, page: number, unassigned = false): void {
     this.folderPages.update((pages) => ({
       ...pages,
-      [this.folderPageKey(folderUuid, unassigned)]: page
+      [this.folderPageKey(folderUuid, unassigned)]: page,
     }));
   }
 
@@ -809,7 +888,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     const direction = this.groupDirection() === 'asc' ? 1 : -1;
     const collator = new Intl.Collator(undefined, {
       numeric: true,
-      sensitivity: 'base'
+      sensitivity: 'base',
     });
 
     return groups.sort((left, right) => {
@@ -827,12 +906,16 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   private readGroupMode(): DocumentGroupMode {
     const stored = localStorage.getItem('binder.documents.group-mode');
-    return stored === 'documentType' || stored === 'category' || stored === 'issuer' || stored === 'tag' || stored === 'status' || stored === 'isNew'
+    return stored === 'documentType' ||
+      stored === 'category' ||
+      stored === 'issuer' ||
+      stored === 'tag' ||
+      stored === 'status' ||
+      stored === 'isNew'
       ? stored
       : 'none';
   }
-  
-  
+
   private readViewMode(): DocumentViewMode {
     const stored = localStorage.getItem('binder.documents.view-mode');
     return stored === 'small-icons' || stored === 'large-icons' || stored === 'icons'
@@ -840,29 +923,51 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       : 'list';
   }
 
-  private groupValues(document: Document, mode: DocumentGroupMode): Array<{ key: string; label: string | null }> {
+  private groupValues(
+    document: Document,
+    mode: DocumentGroupMode,
+  ): Array<{ key: string; label: string | null }> {
     switch (mode) {
       case 'documentType':
         return document.metadataSummary.documentType
-          ? [{ key: document.metadataSummary.documentType.uuid, label: document.metadataSummary.documentType.name }]
+          ? [
+              {
+                key: document.metadataSummary.documentType.uuid,
+                label: document.metadataSummary.documentType.name,
+              },
+            ]
           : [];
       case 'category':
         return document.metadataSummary.category
-          ? [{ key: document.metadataSummary.category.uuid, label: document.metadataSummary.category.name }]
+          ? [
+              {
+                key: document.metadataSummary.category.uuid,
+                label: document.metadataSummary.category.name,
+              },
+            ]
           : [];
       case 'issuer':
         return document.metadataSummary.issuer
-          ? [{ key: document.metadataSummary.issuer.uuid, label: document.metadataSummary.issuer.name }]
+          ? [
+              {
+                key: document.metadataSummary.issuer.uuid,
+                label: document.metadataSummary.issuer.name,
+              },
+            ]
           : [];
       case 'tag':
         return document.metadataSummary.tags.map((tag) => ({ key: tag.uuid, label: tag.name }));
       case 'status':
-        return [{ key: document.status, label: this.i18n.t('documents.status.' + document.status) }];
+        return [
+          { key: document.status, label: this.i18n.t('documents.status.' + document.status) },
+        ];
       case 'isNew':
-        return [{
-          key: document.isNew ? 'new' : 'reviewed',
-          label: this.i18n.t(document.isNew ? 'documents.new' : 'documents.reviewed')
-        }];
+        return [
+          {
+            key: document.isNew ? 'new' : 'reviewed',
+            label: this.i18n.t(document.isNew ? 'documents.new' : 'documents.reviewed'),
+          },
+        ];
       case 'none':
         return [];
     }

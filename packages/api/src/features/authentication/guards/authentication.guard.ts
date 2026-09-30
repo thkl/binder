@@ -3,7 +3,7 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
-  UnauthorizedException
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthenticationService } from '../service/authentication.service';
@@ -46,7 +46,7 @@ export class AuthenticationGuard implements CanActivate {
       isAdmin: user.isAdmin,
       role: user.isAdmin ? 'admin' : 'user',
       scope: 'web',
-      jti: ''
+      jti: '',
     };
 
     return true;

@@ -21,7 +21,7 @@ function normalizeLine(line: string): string {
   const tokens: TextToken[] = [...line.matchAll(/\S+/gu)].map((match) => ({
     start: match.index ?? 0,
     end: (match.index ?? 0) + match[0].length,
-    value: match[0]
+    value: match[0],
   }));
 
   if (tokens.length < 3) return line;
@@ -46,7 +46,7 @@ function normalizeLine(line: string): string {
       replacements.push({
         start: run[0].start,
         end: run[run.length - 1].end,
-        value: joined
+        value: joined,
       });
     }
 

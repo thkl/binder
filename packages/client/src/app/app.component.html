@@ -1,5 +1,8 @@
 @if (auth.loading()) {
-  <main class="loading"><div class="loading-mark">B</div><p>{{ 'app.loading' | t }}</p></main>
+  <main class="loading">
+    <div class="loading-mark">B</div>
+    <p>{{ 'app.loading' | t }}</p>
+  </main>
 } @else if (auth.setupRequired()) {
   <binder-onboarding />
 } @else if (!auth.user()) {
@@ -7,14 +10,15 @@
 } @else if (auth.user()?.mustChangePassword) {
   <binder-change-password
     [title]="'password.firstTitle' | t"
-    [message]="'password.firstMessage' | t" />
+    [message]="'password.firstMessage' | t"
+  />
 } @else {
   <main class="workspace">
     <header class="topbar">
       <div class="brand-lockup click" routerLink="/">
         <span class="brand-mark">B</span>
         <div>
-        <div class="eyebrow">{{ 'app.privateCloud' | t }}</div>
+          <div class="eyebrow">{{ 'app.privateCloud' | t }}</div>
           <h1>{{ 'app.vault' | t }}</h1>
         </div>
       </div>
@@ -26,17 +30,30 @@
             aria-haspopup="true"
             aria-controls="documents-menu"
             [attr.aria-expanded]="openMenu() === 'documents'"
-            (click)="toggleMenu('documents', $event)">
+            (click)="toggleMenu('documents', $event)"
+          >
             {{ 'nav.documents' | t }}
             <span class="menu-caret" aria-hidden="true">⌄</span>
           </button>
           @if (openMenu() === 'documents') {
             <nav class="nav-panel" id="documents-menu" [attr.aria-label]="'nav.documents' | t">
-              <a class="nav-menu-link" routerLink="/documents" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
-              {{ 'nav.documentList' | t }}
+              <a
+                class="nav-menu-link"
+                routerLink="/documents"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                (click)="closeMenu()"
+              >
+                {{ 'nav.documentList' | t }}
               </a>
               @if (auth.user()?.isAdmin) {
-                <a class="nav-menu-link" routerLink="/inbox" routerLinkActive="active" (click)="closeMenu()">{{ 'nav.inbox' | t }}</a>
+                <a
+                  class="nav-menu-link"
+                  routerLink="/inbox"
+                  routerLinkActive="active"
+                  (click)="closeMenu()"
+                  >{{ 'nav.inbox' | t }}</a
+                >
               }
             </nav>
           }
@@ -48,26 +65,64 @@
             aria-haspopup="true"
             aria-controls="settings-menu"
             [attr.aria-expanded]="openMenu() === 'settings'"
-            (click)="toggleMenu('settings', $event)">
+            (click)="toggleMenu('settings', $event)"
+          >
             {{ 'nav.settings' | t }}
             <span class="menu-caret" aria-hidden="true">⌄</span>
           </button>
           @if (openMenu() === 'settings') {
             <nav class="nav-panel" id="settings-menu" [attr.aria-label]="'nav.settings' | t">
               @if (auth.user()?.isAdmin) {
-                <a class="nav-menu-link" routerLink="/settings/common" routerLinkActive="active" (click)="closeMenu()">{{ 'nav.applicationSettings' | t }}</a>
+                <a
+                  class="nav-menu-link"
+                  routerLink="/settings/common"
+                  routerLinkActive="active"
+                  (click)="closeMenu()"
+                  >{{ 'nav.applicationSettings' | t }}</a
+                >
               }
-              <a class="nav-menu-link" routerLink="/metadata" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">{{ 'nav.metadata' | t }}</a>
+              <a
+                class="nav-menu-link"
+                routerLink="/metadata"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                (click)="closeMenu()"
+                >{{ 'nav.metadata' | t }}</a
+              >
               @if (auth.user()?.isAdmin) {
-                <a class="nav-menu-link" routerLink="/logs" routerLinkActive="active" (click)="closeMenu()">{{ 'nav.logs' | t }}</a>
-                <a class="nav-menu-link" routerLink="/maintenance" routerLinkActive="active" (click)="closeMenu()">{{ 'nav.maintenance' | t }}</a>
+                <a
+                  class="nav-menu-link"
+                  routerLink="/logs"
+                  routerLinkActive="active"
+                  (click)="closeMenu()"
+                  >{{ 'nav.logs' | t }}</a
+                >
+                <a
+                  class="nav-menu-link"
+                  routerLink="/maintenance"
+                  routerLinkActive="active"
+                  (click)="closeMenu()"
+                  >{{ 'nav.maintenance' | t }}</a
+                >
               }
             </nav>
           }
         </div>
         <div class="language-switcher" aria-label="Language">
-          <button type="button" [class.active]="i18n.language() === 'en'" (click)="setLanguage('en')">EN</button>
-          <button type="button" [class.active]="i18n.language() === 'de'" (click)="setLanguage('de')">DE</button>
+          <button
+            type="button"
+            [class.active]="i18n.language() === 'en'"
+            (click)="setLanguage('en')"
+          >
+            EN
+          </button>
+          <button
+            type="button"
+            [class.active]="i18n.language() === 'de'"
+            (click)="setLanguage('de')"
+          >
+            DE
+          </button>
         </div>
         <button class="secondary" type="button" (click)="logout()">{{ 'nav.signOut' | t }}</button>
       </div>

@@ -8,7 +8,7 @@ import {
   Model,
   PrimaryKey,
   Table,
-  UpdatedAt
+  UpdatedAt,
 } from 'sequelize-typescript';
 
 export interface UserAttributes {
@@ -38,7 +38,7 @@ export type UserCreationAttributes = {
 export class User extends Model<UserAttributes, UserCreationAttributes> {
   @PrimaryKey
   @Default(DataType.UUIDV4)
-  @Column({ field: 'id', type:  DataType.UUID })
+  @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
 
   @Column({ type: DataType.STRING(100), unique: true })

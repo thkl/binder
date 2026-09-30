@@ -1,0 +1,9 @@
+node_modules
+dist
+storage
+logs
+backup
+coverage
+packages/api/migrations
+*.min.js
+*.map

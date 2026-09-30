@@ -6,6 +6,6 @@ import { FolderStoreModule } from '../folder/folder.store.module';
 @Module({
   imports: [IssuerStoreModule, FolderStoreModule],
   providers: [IssuerService],
-  exports: [IssuerService, IssuerStoreModule]
+  exports: [IssuerService, IssuerStoreModule],
 })
 export class IssuerServiceModule {}

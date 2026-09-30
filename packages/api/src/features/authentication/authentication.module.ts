@@ -5,7 +5,7 @@ import { AuthenticationServiceModule } from './authentication.service.module';
 import { SharedModule } from '../../shared/shared.service.module';
 
 @Module({
-  imports: [AuthenticationServiceModule,SharedModule],
-  controllers: [AuthenticationController, SSOAuthenticationController]
+  imports: [AuthenticationServiceModule, SharedModule],
+  controllers: [AuthenticationController, SSOAuthenticationController],
 })
 export class AuthenticationModule {}

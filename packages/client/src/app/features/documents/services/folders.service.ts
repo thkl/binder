@@ -11,7 +11,7 @@ import {
   FolderListResponseSchema,
   FolderNode,
   MoveFolderInputSchema,
-  UpdateFolderInputSchema
+  UpdateFolderInputSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -67,7 +67,9 @@ export class FoldersService {
     try {
       const query = parentUuid ? `?parentUuid=${encodeURIComponent(parentUuid)}` : '';
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(this.application.getApiUrl('v1', `folders${query}`), { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(this.application.getApiUrl('v1', `folders${query}`), {
+          withCredentials: true,
+        }),
       );
       const result = FolderListResponseSchema.parse(response.data);
       this.children.update((current) => ({ ...current, [key]: result.items }));
@@ -91,7 +93,9 @@ export class FoldersService {
   async listAll(): Promise<FolderNode[]> {
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(this.application.getApiUrl('v1', 'folders/all'), { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(this.application.getApiUrl('v1', 'folders/all'), {
+          withCredentials: true,
+        }),
       );
       const folders = FolderDocumentListResponseSchema.parse(response.data).items;
       this.allFolders.set(folders);
@@ -105,7 +109,10 @@ export class FoldersService {
   async listForDocument(documentUuid: string): Promise<FolderNode[]> {
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(this.application.getApiUrl('v1', `folders/for-document/${documentUuid}`), { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(
+          this.application.getApiUrl('v1', `folders/for-document/${documentUuid}`),
+          { withCredentials: true },
+        ),
       );
       return FolderDocumentListResponseSchema.parse(response.data).items;
     } catch (error) {
@@ -114,14 +121,18 @@ export class FoldersService {
     }
   }
 
-  async setDocumentFolders(documentUuid: string, selectedUuids: string[], originalUuids: string[]): Promise<boolean> {
+  async setDocumentFolders(
+    documentUuid: string,
+    selectedUuids: string[],
+    originalUuids: string[],
+  ): Promise<boolean> {
     const selected = new Set(selectedUuids);
     const original = new Set(originalUuids);
     const additions = [...selected].filter((uuid) => !original.has(uuid));
     const removals = [...original].filter((uuid) => !selected.has(uuid));
     const results = await Promise.all([
       ...additions.map((folderUuid) => this.linkDocuments(folderUuid, [documentUuid])),
-      ...removals.map((folderUuid) => this.unlinkDocuments(folderUuid, [documentUuid]))
+      ...removals.map((folderUuid) => this.unlinkDocuments(folderUuid, [documentUuid])),
     ]);
     return results.every((result) => result !== null);
   }
@@ -134,7 +145,11 @@ export class FoldersService {
     }
     try {
       const response = await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(this.application.getApiUrl('v1', 'folders'), input.data, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(
+          this.application.getApiUrl('v1', 'folders'),
+          input.data,
+          { withCredentials: true },
+        ),
       );
       const folder = FolderListResponseSchema.shape.items.element.parse(response.data);
       await this.loadChildren(parentUuid, true);
@@ -153,7 +168,11 @@ export class FoldersService {
     }
     try {
       const response = await firstValueFrom(
-        this.http.patch<ApiResponse<unknown>>(this.application.getApiUrl('v1', `folders/${uuid}`), input.data, { withCredentials: true })
+        this.http.patch<ApiResponse<unknown>>(
+          this.application.getApiUrl('v1', `folders/${uuid}`),
+          input.data,
+          { withCredentials: true },
+        ),
       );
       const updated = FolderListResponseSchema.shape.items.element.parse(response.data);
       this.replaceFolder(updated);
@@ -170,7 +189,11 @@ export class FoldersService {
     const previousParentUuid = this.findFolder(uuid)?.parentUuid ?? null;
     try {
       const response = await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(this.application.getApiUrl('v1', `folders/${uuid}/move`), input.data, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(
+          this.application.getApiUrl('v1', `folders/${uuid}/move`),
+          input.data,
+          { withCredentials: true },
+        ),
       );
       const updated = FolderListResponseSchema.shape.items.element.parse(response.data);
       this.removeFolderFromState(uuid);
@@ -187,7 +210,10 @@ export class FoldersService {
     const parentUuid = this.findFolder(uuid)?.parentUuid ?? null;
     try {
       await firstValueFrom(
-        this.http.delete<ApiResponse<unknown>>(this.application.getApiUrl('v1', `folders/${uuid}`), { withCredentials: true })
+        this.http.delete<ApiResponse<unknown>>(
+          this.application.getApiUrl('v1', `folders/${uuid}`),
+          { withCredentials: true },
+        ),
       );
       this.removeFolderFromState(uuid);
       await this.loadChildren(parentUuid, true);
@@ -204,11 +230,17 @@ export class FoldersService {
     this.selectedFolderUuid.set(folderUuid);
   }
 
-  async linkDocuments(folderUuid: string, documentUuids: string[]): Promise<FolderDocumentActionResponse | null> {
+  async linkDocuments(
+    folderUuid: string,
+    documentUuids: string[],
+  ): Promise<FolderDocumentActionResponse | null> {
     return this.changeDocumentLinks(folderUuid, documentUuids, false);
   }
 
-  async unlinkDocuments(folderUuid: string, documentUuids: string[]): Promise<FolderDocumentActionResponse | null> {
+  async unlinkDocuments(
+    folderUuid: string,
+    documentUuids: string[],
+  ): Promise<FolderDocumentActionResponse | null> {
     return this.changeDocumentLinks(folderUuid, documentUuids, true);
   }
 
@@ -218,13 +250,15 @@ export class FoldersService {
 
     try {
       const response = await firstValueFrom(
-        this.http.get(
-          this.application.getApiUrl('v1', 'folders/' + folderUuid + '/export'),
-          { observe: 'response', responseType: 'blob', withCredentials: true }
-        )
+        this.http.get(this.application.getApiUrl('v1', 'folders/' + folderUuid + '/export'), {
+          observe: 'response',
+          responseType: 'blob',
+          withCredentials: true,
+        }),
       );
       if (!response.body) throw new Error('The export archive was empty');
-      const filename = this.archiveFilename(response.headers.get('Content-Disposition')) ?? 'documents.zip';
+      const filename =
+        this.archiveFilename(response.headers.get('Content-Disposition')) ?? 'documents.zip';
       const url = URL.createObjectURL(response.body);
       const link = this.document.createElement('a');
       link.href = url;
@@ -246,13 +280,28 @@ export class FoldersService {
     this.error.set(null);
   }
 
-  private async changeDocumentLinks(folderUuid: string, documentUuids: string[], remove: boolean): Promise<FolderDocumentActionResponse | null> {
+  private async changeDocumentLinks(
+    folderUuid: string,
+    documentUuids: string[],
+    remove: boolean,
+  ): Promise<FolderDocumentActionResponse | null> {
     const input = FolderDocumentInputSchema.safeParse({ documentUuids });
     if (!input.success) return null;
     try {
       const response = remove
-        ? await firstValueFrom(this.http.delete<ApiResponse<unknown>>(this.application.getApiUrl('v1', `folders/${folderUuid}/documents`), { body: input.data, withCredentials: true }))
-        : await firstValueFrom(this.http.post<ApiResponse<unknown>>(this.application.getApiUrl('v1', `folders/${folderUuid}/documents`), input.data, { withCredentials: true }));
+        ? await firstValueFrom(
+            this.http.delete<ApiResponse<unknown>>(
+              this.application.getApiUrl('v1', `folders/${folderUuid}/documents`),
+              { body: input.data, withCredentials: true },
+            ),
+          )
+        : await firstValueFrom(
+            this.http.post<ApiResponse<unknown>>(
+              this.application.getApiUrl('v1', `folders/${folderUuid}/documents`),
+              input.data,
+              { withCredentials: true },
+            ),
+          );
       const result = FolderDocumentActionResponseSchema.parse(response.data);
       await this.loadChildren(this.findFolder(folderUuid)?.parentUuid ?? null, true);
       return result;
@@ -266,7 +315,9 @@ export class FoldersService {
     const key = this.parentKey(updated.parentUuid);
     this.children.update((current) => ({
       ...current,
-      [key]: (current[key] ?? []).map((folder) => folder.uuid === updated.uuid ? updated : folder)
+      [key]: (current[key] ?? []).map((folder) =>
+        folder.uuid === updated.uuid ? updated : folder,
+      ),
     }));
   }
 
@@ -293,7 +344,8 @@ export class FoldersService {
   private setLoading(key: string, value: boolean): void {
     this.loadingParents.update((current) => {
       const next = new Set(current);
-      if (value) next.add(key); else next.delete(key);
+      if (value) next.add(key);
+      else next.delete(key);
       return next;
     });
   }
@@ -305,8 +357,10 @@ export class FoldersService {
   }
 
   private errorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse && error.status === 409) return 'A folder with this name already exists here.';
-    if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') return error.error.message;
+    if (error instanceof HttpErrorResponse && error.status === 409)
+      return 'A folder with this name already exists here.';
+    if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string')
+      return error.error.message;
     return 'The folder operation could not be completed. Please try again.';
   }
 
@@ -316,8 +370,10 @@ export class FoldersService {
     const encoded = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
     if (encoded) return decodeURIComponent(encoded);
 
-    return contentDisposition.match(/filename="([^"]+)"/i)?.[1]
-      ?? contentDisposition.match(/filename=([^;]+)/i)?.[1]?.trim()
-      ?? null;
+    return (
+      contentDisposition.match(/filename="([^"]+)"/i)?.[1] ??
+      contentDisposition.match(/filename=([^;]+)/i)?.[1]?.trim() ??
+      null
+    );
   }
 }

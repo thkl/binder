@@ -5,11 +5,17 @@ const RANGES = [
   { min: 0, max: 23 },
   { min: 1, max: 31 },
   { min: 1, max: 12 },
-  { min: 0, max: 6 }
+  { min: 0, max: 6 },
 ] as const;
 
 const WEEKDAYS = new Map([
-  ['SUN', 0], ['MON', 1], ['TUE', 2], ['WED', 3], ['THU', 4], ['FRI', 5], ['SAT', 6]
+  ['SUN', 0],
+  ['MON', 1],
+  ['TUE', 2],
+  ['WED', 3],
+  ['THU', 4],
+  ['FRI', 5],
+  ['SAT', 6],
 ]);
 
 export class CronSchedule {
@@ -30,7 +36,7 @@ export class CronSchedule {
       hour: '2-digit',
       minute: '2-digit',
       weekday: 'short',
-      hourCycle: 'h23'
+      hourCycle: 'h23',
     }).formatToParts(date);
     const values = new Map(parts.map((part) => [part.type, part.value]));
     const minute = Number(values.get('minute'));
@@ -44,14 +50,17 @@ export class CronSchedule {
     const weekdayMatches = this.fields[4].has(weekday);
     const dayFieldIsRestricted = this.fields[2].size < 31;
     const weekdayFieldIsRestricted = this.fields[4].size < 7;
-    const calendarMatches = dayFieldIsRestricted && weekdayFieldIsRestricted
-      ? dayMatches || weekdayMatches
-      : dayMatches && weekdayMatches;
+    const calendarMatches =
+      dayFieldIsRestricted && weekdayFieldIsRestricted
+        ? dayMatches || weekdayMatches
+        : dayMatches && weekdayMatches;
 
-    return this.fields[0].has(minute)
-      && this.fields[1].has(hour)
-      && this.fields[3].has(month)
-      && calendarMatches;
+    return (
+      this.fields[0].has(minute) &&
+      this.fields[1].has(hour) &&
+      this.fields[3].has(month) &&
+      calendarMatches
+    );
   }
 
   nextOccurrence(after: Date, timezone: string): Date | null {
@@ -63,19 +72,23 @@ export class CronSchedule {
     return null;
   }
 
-  private parseField(value: string, range: { min: number; max: number }, weekday: boolean): CronField {
+  private parseField(
+    value: string,
+    range: { min: number; max: number },
+    weekday: boolean,
+  ): CronField {
     const result = new Set<number>();
     for (const part of value.toUpperCase().split(',')) {
       const [rangePart, stepPart] = part.split('/');
       const step = stepPart ? Number(stepPart) : 1;
       if (!Number.isInteger(step) || step < 1) throw new Error(`Invalid cron step '${part}'`);
 
-      const [startText, endText] = rangePart === '*'
-        ? [String(range.min), String(range.max)]
-        : rangePart.split('-');
+      const [startText, endText] =
+        rangePart === '*' ? [String(range.min), String(range.max)] : rangePart.split('-');
       const start = this.parseValue(startText, weekday);
       const end = this.parseValue(endText ?? startText, weekday);
-      if (start < range.min || end > range.max || start > end) throw new Error(`Invalid cron range '${part}'`);
+      if (start < range.min || end > range.max || start > end)
+        throw new Error(`Invalid cron range '${part}'`);
 
       for (let item = start; item <= end; item += step) result.add(item);
     }

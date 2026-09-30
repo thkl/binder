@@ -22,10 +22,8 @@ export const ConfigKeys = {
   SESSION_TTL_MS: 'SESSION_TTL_MS',
   ROOT_URI: 'ROOT_URI',
   NODE_ENV: 'NODE_ENV',
-  DOCUMENT_STORAGE_ROOT:'DOCUMENT_STORAGE_ROOT', // this only exists in dev
+  DOCUMENT_STORAGE_ROOT: 'DOCUMENT_STORAGE_ROOT', // this only exists in dev
   PG_DUMP_PATH: 'PG_DUMP_PATH',
-  
-  
 } as const;
 
 export interface BinderConfig {
@@ -52,6 +50,6 @@ export interface BinderConfig {
   SETUP_SECRET?: string;
   SESSION_SECRET: string;
   SESSION_TTL_MS?: string;
-  DOCUMENT_STORAGE_ROOT?:string;
+  DOCUMENT_STORAGE_ROOT?: string;
   PG_DUMP_PATH?: string;
 }

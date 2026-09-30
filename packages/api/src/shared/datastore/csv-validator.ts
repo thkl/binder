@@ -19,7 +19,7 @@ export class CsvValidator {
   static validateBatch(
     records: Record<string, unknown>[],
     schema: CsvValidationSchema,
-    options: { logWarnings?: boolean } = {}
+    options: { logWarnings?: boolean } = {},
   ): CsvValidationResult {
     const allWarnings: string[] = [];
     const sanitizedRecords = records.map((record, index) => {
@@ -27,7 +27,8 @@ export class CsvValidator {
 
       for (const field of schema.fields) {
         const rawValue = sanitized[field.name];
-        const value = typeof rawValue === 'string' && field.trim !== false ? rawValue.trim() : rawValue;
+        const value =
+          typeof rawValue === 'string' && field.trim !== false ? rawValue.trim() : rawValue;
 
         if (field.required && (value === undefined || value === null || value === '')) {
           throw new Error(`Row ${index + 1}: Missing required field '${field.name}'`);

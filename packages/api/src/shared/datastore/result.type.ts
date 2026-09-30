@@ -5,12 +5,12 @@
  * @template T - The type of data returned from the update operation
  */
 export type UpdateResult<T> = {
-    /** Human-readable message describing the update result */
-    message: string;
-    /** The updated data, if successful */
-    data?: T;
-    /** Error information, if the update failed */
-    error?: Error;
+  /** Human-readable message describing the update result */
+  message: string;
+  /** The updated data, if successful */
+  data?: T;
+  /** Error information, if the update failed */
+  error?: Error;
 };
 
 /**
@@ -20,8 +20,8 @@ export type UpdateResult<T> = {
  * @template T - The type of records being imported
  */
 export type CSVImportResult<T> = {
-    /** Array of identifiers for records that were deleted before import */
-    deletionList: string[];
-    /** Array of newly imported records */
-    updates: T[];
+  /** Array of identifiers for records that were deleted before import */
+  deletionList: string[];
+  /** Array of newly imported records */
+  updates: T[];
 };

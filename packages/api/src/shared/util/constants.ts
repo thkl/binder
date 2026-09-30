@@ -1,2 +1,1 @@
-
-export declare const APP_GUARD = "APP_GUARD";
+export declare const APP_GUARD = 'APP_GUARD';

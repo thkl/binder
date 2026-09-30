@@ -5,6 +5,6 @@ import { UserStore } from './stores/user.store';
 @Module({
   imports: [DatabaseModule],
   providers: [UserStore],
-  exports: [UserStore]
+  exports: [UserStore],
 })
 export class AuthenticationStoreModule {}

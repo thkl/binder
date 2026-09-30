@@ -14,7 +14,11 @@ interface ValueMatch {
 }
 
 /** Assigns an existing issuer only when the extracted text contains a unique, strong match. */
-export async function matchDocumentIssuer(documentUuid: string, ownerUuid: string, text: string): Promise<void> {
+export async function matchDocumentIssuer(
+  documentUuid: string,
+  ownerUuid: string,
+  text: string,
+): Promise<void> {
   const document = await Document.findOne({ where: { uuid: documentUuid, ownerUuid } });
   if (!document || document.issuerUuid || !text.trim()) return;
 
@@ -32,14 +36,14 @@ export async function matchDocumentIssuer(documentUuid: string, ownerUuid: strin
       documentUuid,
       ownerUuid,
       candidateCount: candidates.length,
-      bestScore: best?.score ?? 0
+      bestScore: best?.score ?? 0,
     });
     return;
   }
 
   const [updated] = await Document.update(
     { issuerUuid: best.issuer.uuid },
-    { where: { uuid: documentUuid, ownerUuid, issuerUuid: { [Op.is]: null } } }
+    { where: { uuid: documentUuid, ownerUuid, issuerUuid: { [Op.is]: null } } },
   );
   if (updated > 0) {
     if (best.issuer.folderUuid) {
@@ -47,19 +51,19 @@ export async function matchDocumentIssuer(documentUuid: string, ownerUuid: strin
         await DocumentFolder.findOrCreate({
           where: {
             documentUuid,
-            folderUuid: best.issuer.folderUuid
+            folderUuid: best.issuer.folderUuid,
           },
           defaults: {
             documentUuid,
-            folderUuid: best.issuer.folderUuid
-          }
+            folderUuid: best.issuer.folderUuid,
+          },
         });
       } catch (error) {
         logger.warn('Unable to apply issuer folder routing', {
           documentUuid,
           issuerUuid: best.issuer.uuid,
           folderUuid: best.issuer.folderUuid,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -68,7 +72,7 @@ export async function matchDocumentIssuer(documentUuid: string, ownerUuid: strin
       issuerUuid: best.issuer.uuid,
       issuerName: best.issuer.name,
       score: best.score,
-      matchedFields: best.matchedFields
+      matchedFields: best.matchedFields,
     });
   }
 }
@@ -84,7 +88,7 @@ function scoreIssuer(issuer: Issuer, text: string): Candidate | null {
     ['address', 0.1],
     ['zipCode', 0.08],
     ['city', 0.05],
-    ['country', 0.02]
+    ['country', 0.02],
   ];
   for (const [field, weight] of fields) {
     const value = issuer[field];
@@ -107,7 +111,8 @@ function scoreIssuer(issuer: Issuer, text: string): Candidate | null {
 }
 
 function normalize(value: string): string {
-  return value.normalize('NFKD')
+  return value
+    .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/ß/g, 'ss')
     .toLocaleLowerCase()
@@ -123,7 +128,7 @@ function matchValue(text: string, value: unknown): ValueMatch {
 
   const normalizedValue = normalize(String(value));
   if (!normalizedValue) return { matched: false, ocrSpaced: false };
-  if ((` ${text} `).includes(` ${normalizedValue} `)) {
+  if (` ${text} `.includes(` ${normalizedValue} `)) {
     return { matched: true, ocrSpaced: false };
   }
 
@@ -131,7 +136,10 @@ function matchValue(text: string, value: unknown): ValueMatch {
   // `M ü l l e r`). Compare a compact representation as a safe fallback.
   const compactValue = compact(normalizedValue);
   if (compactValue.length < 5) return { matched: false, ocrSpaced: false };
-  return { matched: compact(text).includes(compactValue), ocrSpaced: compact(text).includes(compactValue) };
+  return {
+    matched: compact(text).includes(compactValue),
+    ocrSpaced: compact(text).includes(compactValue),
+  };
 }
 
 function compact(value: string): string {

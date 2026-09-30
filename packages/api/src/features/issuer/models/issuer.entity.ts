@@ -1,4 +1,14 @@
-import { AllowNull, Column, CreatedAt, DataType, Default, Model, PrimaryKey, Table, UpdatedAt } from 'sequelize-typescript';
+import {
+  AllowNull,
+  Column,
+  CreatedAt,
+  DataType,
+  Default,
+  Model,
+  PrimaryKey,
+  Table,
+  UpdatedAt,
+} from 'sequelize-typescript';
 
 export interface IssuerAttributes {
   uuid: string;
@@ -14,11 +24,15 @@ export interface IssuerAttributes {
   updatedAt: Date;
 }
 
-export type IssuerCreationAttributes = Omit<IssuerAttributes, 'createdAt' | 'updatedAt' | 'uuid'> & { uuid?: string };
+export type IssuerCreationAttributes = Omit<
+  IssuerAttributes,
+  'createdAt' | 'updatedAt' | 'uuid'
+> & { uuid?: string };
 
 @Table({ tableName: 'issuers', underscored: true, timestamps: true })
 export class Issuer extends Model<IssuerAttributes, IssuerCreationAttributes> {
-  @PrimaryKey @Default(DataType.UUIDV4)
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
   @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
 
@@ -28,22 +42,27 @@ export class Issuer extends Model<IssuerAttributes, IssuerCreationAttributes> {
   @Column({ type: DataType.STRING(200), allowNull: false })
   declare name: string;
 
-  @AllowNull @Column({ type: DataType.STRING(255), allowNull: true })
+  @AllowNull
+  @Column({ type: DataType.STRING(255), allowNull: true })
   declare address: string | null;
 
-  @AllowNull @Column({ field: 'zip_code', type: DataType.STRING(32), allowNull: true })
+  @AllowNull
+  @Column({ field: 'zip_code', type: DataType.STRING(32), allowNull: true })
   declare zipCode: string | null;
 
-  @AllowNull @Column({ type: DataType.STRING(150), allowNull: true })
+  @AllowNull
+  @Column({ type: DataType.STRING(150), allowNull: true })
   declare city: string | null;
 
-  @AllowNull @Column({ type: DataType.STRING(100), allowNull: true })
+  @AllowNull
+  @Column({ type: DataType.STRING(100), allowNull: true })
   declare country: string | null;
 
   @Column({ type: DataType.JSONB, allowNull: false, defaultValue: {} })
   declare custom: Record<string, unknown>;
 
-  @AllowNull @Column({ field: 'folder_id', type: DataType.UUID, allowNull: true })
+  @AllowNull
+  @Column({ field: 'folder_id', type: DataType.UUID, allowNull: true })
   declare folderUuid: string | null;
 
   @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare readonly createdAt: Date;

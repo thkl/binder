@@ -9,7 +9,7 @@ import { TranslatePipe } from '../../../../common/i18n/i18n.service';
   imports: [TranslatePipe],
   templateUrl: './document-actions.component.html',
   styleUrl: './document-actions.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocumentActionsComponent {
   readonly document = input.required<Document>();
@@ -23,8 +23,12 @@ export class DocumentActionsComponent {
 
   private readonly application = inject(ApplicationService);
 
-  readonly fileUrl = computed(() => this.application.getApiUrl('v1', 'documents/' + this.document().uuid + '/file'));
-  readonly contentAvailable = computed(() => !['uploaded', 'scanning', 'quarantined'].includes(this.document().status));
+  readonly fileUrl = computed(() =>
+    this.application.getApiUrl('v1', 'documents/' + this.document().uuid + '/file'),
+  );
+  readonly contentAvailable = computed(
+    () => !['uploaded', 'scanning', 'quarantined'].includes(this.document().status),
+  );
   readonly canRequeue = computed(() => {
     const status = this.document().status;
     return status === 'failed' || status === 'ready' || status === 'quarantined';

@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: .4rem;
+  gap: 0.4rem;
 }
 
 .document-action {
@@ -11,31 +11,34 @@
   min-height: 2.35rem;
   align-items: center;
   justify-content: center;
-  gap: .35rem;
-  border: 1px solid rgba(157, 190, 232, .2);
-  border-radius: .5rem;
-  padding: .4rem .55rem;
+  gap: 0.35rem;
+  border: 1px solid rgba(157, 190, 232, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.55rem;
   color: #a9dfee;
-  background: rgba(97, 215, 244, .05);
+  background: rgba(97, 215, 244, 0.05);
   cursor: pointer;
   font: inherit;
-  font-size: .68rem;
+  font-size: 0.68rem;
   font-weight: 750;
   text-decoration: none;
-  transition: border-color .16s ease, background-color .16s ease, color .16s ease;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease;
 }
 
 .document-action:hover,
 .document-action:focus-visible {
   border-color: var(--cyan);
   color: var(--cyan);
-  background: rgba(97, 215, 244, .12);
+  background: rgba(97, 215, 244, 0.12);
   outline: none;
 }
 
 .document-action:disabled {
   cursor: wait;
-  opacity: .55;
+  opacity: 0.55;
 }
 
 .document-action svg {
@@ -50,13 +53,13 @@
 
 .document-actions.compact {
   justify-content: center;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .document-actions.compact .document-action {
   width: 2.6rem;
   min-height: 2.6rem;
-  padding: .45rem;
+  padding: 0.45rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

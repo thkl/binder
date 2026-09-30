@@ -6,7 +6,7 @@ import {
   ApplicationSettingsResponseSchema,
   SetApplicationSettingInput,
   UserDirectoryItem,
-  UserDirectoryResponseSchema
+  UserDirectoryResponseSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 
@@ -28,7 +28,7 @@ export class SettingsService {
 
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(this.apiUrl, { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(this.apiUrl, { withCredentials: true }),
       );
       const settings = ApplicationSettingsResponseSchema.parse(response.data);
       this.settings.set(settings);
@@ -47,7 +47,9 @@ export class SettingsService {
 
     try {
       const response = await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/all`, input, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/all`, input, {
+          withCredentials: true,
+        }),
       );
       this.settings.set(ApplicationSettingsResponseSchema.parse(response.data));
       return true;
@@ -62,7 +64,7 @@ export class SettingsService {
   async loadUsers(): Promise<UserDirectoryItem[]> {
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>('/api/v1/auth/users', { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>('/api/v1/auth/users', { withCredentials: true }),
       );
       const users = UserDirectoryResponseSchema.parse(response.data).items;
       this.users.set(users);

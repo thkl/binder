@@ -2,7 +2,7 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export interface ScopedUser {
   userId: string;
-  email?: string|null;
+  email?: string | null;
   username: string;
   jti: string;
   scope: string;
@@ -22,11 +22,9 @@ export interface ScopedUser {
  *
  * Can only be used on endpoints protected by JwtAuthGuard
  */
-export const CurrentUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const request = ctx.switchToHttp().getRequest();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
-    return request.user;
-  },
-);
+export const CurrentUser = createParamDecorator((data: unknown, ctx: ExecutionContext) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const request = ctx.switchToHttp().getRequest();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+  return request.user;
+});

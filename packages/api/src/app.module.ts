@@ -48,12 +48,14 @@ import { SetupModule } from './features/setup/setup.module';
 
         const escapedApiPrefix = apiPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-        return [{
-          rootPath: resolve(appRootPath, 'client'),
-          exclude: new RegExp(`^/${escapedApiPrefix}(?:/.*)?$`)
-        }];
-      }
-    })
-  ]
+        return [
+          {
+            rootPath: resolve(appRootPath, 'client'),
+            exclude: new RegExp(`^/${escapedApiPrefix}(?:/.*)?$`),
+          },
+        ];
+      },
+    }),
+  ],
 })
-export class AppModule { }
+export class AppModule {}

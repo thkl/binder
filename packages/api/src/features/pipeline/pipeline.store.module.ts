@@ -6,7 +6,6 @@ import { PipelineJobStore } from './store/pipeline-job.store';
 @Module({
   imports: [DatabaseModule],
   providers: [PipelineJobStore, PipelineJobEventStore],
-  exports: [PipelineJobStore, PipelineJobEventStore]
+  exports: [PipelineJobStore, PipelineJobEventStore],
 })
 export class PipelineStoreModule {}
-

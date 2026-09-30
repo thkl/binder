@@ -6,7 +6,7 @@ import {
   InjectThrottlerStorage,
   ThrottlerGuard,
   ThrottlerModuleOptions,
-  ThrottlerStorage
+  ThrottlerStorage,
 } from '@nestjs/throttler';
 import { Request } from 'express';
 import { BinderConfig, ConfigKeys } from '../config/config.keys';
@@ -24,7 +24,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     @InjectThrottlerOptions() options: ThrottlerModuleOptions,
     @InjectThrottlerStorage() storageService: ThrottlerStorage,
     reflector: Reflector,
-    private readonly config: ConfigService<BinderConfig>
+    private readonly config: ConfigService<BinderConfig>,
   ) {
     super(options, storageService, reflector);
   }

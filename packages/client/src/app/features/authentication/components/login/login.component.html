@@ -7,38 +7,56 @@
         <h1>{{ 'login.headline' | t }}</h1>
         <p class="panel-copy">{{ 'login.copy' | t }}</p>
       </div>
-      <div class="trust-row"><span class="shield">⌁</span><span><strong>{{ 'login.privacy' | t }}</strong><small>{{ 'login.privacyCopy' | t }}</small></span></div>
+      <div class="trust-row">
+        <span class="shield">⌁</span
+        ><span
+          ><strong>{{ 'login.privacy' | t }}</strong
+          ><small>{{ 'login.privacyCopy' | t }}</small></span
+        >
+      </div>
     </div>
     <div class="card auth-card">
       <div class="eyebrow">{{ 'login.secureAccess' | t }}</div>
       <h2>{{ 'login.welcome' | t }}</h2>
       <p class="muted">{{ 'login.copyShort' | t }}</p>
 
-    <form (submit)="submit($event)">
-      <label>
-        {{ 'login.username' | t }}
-        <input type="text" autocomplete="username" [value]="username()" (input)="username.set(inputValue($event))"
-          required>
-      </label>
+      <form (submit)="submit($event)">
+        <label>
+          {{ 'login.username' | t }}
+          <input
+            type="text"
+            autocomplete="username"
+            [value]="username()"
+            (input)="username.set(inputValue($event))"
+            required
+          />
+        </label>
 
-      <label>
-        {{ 'login.password' | t }}
-        <input type="password" autocomplete="current-password" [value]="password()"
-          (input)="password.set(inputValue($event))" required>
-      </label>
+        <label>
+          {{ 'login.password' | t }}
+          <input
+            type="password"
+            autocomplete="current-password"
+            [value]="password()"
+            (input)="password.set(inputValue($event))"
+            required
+          />
+        </label>
 
-      @if (auth.error(); as error) {
-      <p class="error" role="alert">{{ error }}</p>
-      }
+        @if (auth.error(); as error) {
+          <p class="error" role="alert">{{ error }}</p>
+        }
 
-      <button class="submit-button" type="submit" [disabled]="auth.submitting()">
-        {{ auth.submitting() ? ('login.signingIn' | t) : ('login.signIn' | t) }}
-      </button>
-      @if(ssoActive()) {
-      <div class="separator"><span>{{ 'login.or' | t }}</span></div>
-      <a class="oidc-button" href="/api/v1/ssoauth/login">{{ 'login.sso' | t }}</a>
-      }
-    </form>
+        <button class="submit-button" type="submit" [disabled]="auth.submitting()">
+          {{ auth.submitting() ? ('login.signingIn' | t) : ('login.signIn' | t) }}
+        </button>
+        @if (ssoActive()) {
+          <div class="separator">
+            <span>{{ 'login.or' | t }}</span>
+          </div>
+          <a class="oidc-button" href="/api/v1/ssoauth/login">{{ 'login.sso' | t }}</a>
+        }
+      </form>
     </div>
   </section>
 </main>

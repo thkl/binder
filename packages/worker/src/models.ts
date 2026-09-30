@@ -8,12 +8,18 @@ import {
   Model,
   PrimaryKey,
   Table,
-  UpdatedAt
+  UpdatedAt,
 } from 'sequelize-typescript';
 
 export type JobKind = 'malware-scan' | 'thumbnail' | 'text-extraction' | 'ocr' | 'embedding';
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
-export type DocumentStatus = 'uploaded' | 'scanning' | 'processing' | 'ready' | 'failed' | 'quarantined';
+export type DocumentStatus =
+  | 'uploaded'
+  | 'scanning'
+  | 'processing'
+  | 'ready'
+  | 'failed'
+  | 'quarantined';
 
 @Table({ tableName: 'settings', timestamps: false })
 export class ApplicationSetting extends Model {
@@ -33,7 +39,8 @@ export class ApplicationSetting extends Model {
 
 @Table({ tableName: 'maintenance_runs', underscored: true, timestamps: true })
 export class MaintenanceRun extends Model {
-  @PrimaryKey @Default(DataType.UUIDV4)
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
   @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
 
@@ -77,11 +84,16 @@ export class MaintenanceRun extends Model {
   @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
 }
 
-export type DocumentStorageIssueType = 'missing' | 'size-mismatch' | 'checksum-mismatch' | 'unreadable';
+export type DocumentStorageIssueType =
+  | 'missing'
+  | 'size-mismatch'
+  | 'checksum-mismatch'
+  | 'unreadable';
 
 @Table({ tableName: 'document_storage_issues', underscored: true, timestamps: true })
 export class DocumentStorageIssue extends Model {
-  @PrimaryKey @Default(DataType.UUIDV4)
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
   @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
 
@@ -127,7 +139,8 @@ export class DocumentStorageIssue extends Model {
 
 @Table({ tableName: 'maintenance_requests', underscored: true, timestamps: true })
 export class MaintenanceRequest extends Model {
-  @PrimaryKey @Default(DataType.UUIDV4)
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
   @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
 
@@ -150,7 +163,8 @@ export class User extends Model {
 
 @Table({ tableName: 'issuers', underscored: true, timestamps: true })
 export class Issuer extends Model {
-  @PrimaryKey @Default(DataType.UUIDV4)
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
   @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
 
@@ -184,22 +198,32 @@ export class Issuer extends Model {
 
 @Table({ tableName: 'document_folders', underscored: true, timestamps: false })
 export class DocumentFolder extends Model {
-  @PrimaryKey @Column({ field: 'document_id', type: DataType.UUID })
+  @PrimaryKey
+  @Column({ field: 'document_id', type: DataType.UUID })
   declare documentUuid: string;
 
-  @PrimaryKey @Column({ field: 'folder_id', type: DataType.UUID })
+  @PrimaryKey
+  @Column({ field: 'folder_id', type: DataType.UUID })
   declare folderUuid: string;
 
-  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE })
+  @CreatedAt
+  @Column({ field: 'created_at', type: DataType.DATE })
   declare createdAt: Date;
 }
 
-export type InboxItemStatus = 'new' | 'processing' | 'imported' | 'duplicate' | 'rejected' | 'failed';
+export type InboxItemStatus =
+  | 'new'
+  | 'processing'
+  | 'imported'
+  | 'duplicate'
+  | 'rejected'
+  | 'failed';
 export type InboxAiStatus = 'pending' | 'processing' | 'ready' | 'failed';
 
 @Table({ tableName: 'inbox_items', underscored: true, timestamps: true })
 export class InboxItem extends Model {
-  @PrimaryKey @Default(DataType.UUIDV4)
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
   @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
 
@@ -288,7 +312,8 @@ export class Document extends Model {
 
 @Table({ tableName: 'document_embeddings', underscored: true, timestamps: true })
 export class DocumentEmbedding extends Model {
-  @PrimaryKey @Default(DataType.UUIDV4)
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
   @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
   @ForeignKey(() => Document)
@@ -362,7 +387,6 @@ export class PipelineJob extends Model {
   @UpdatedAt
   @Column({ field: 'updated_at', type: DataType.DATE })
   declare updatedAt: Date;
-
 }
 
 @Table({ tableName: 'pipeline_job_events', underscored: true, timestamps: false })

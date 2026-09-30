@@ -2,12 +2,8 @@ import type {
   ApplicationSettingsData,
   ApplicationSettingsResponse,
   SettingsMapItem,
-  SettingsSection
+  SettingsSection,
 } from '@binder/common';
 
 export type ApplicationSettingExported = ApplicationSettingsResponse;
-export type {
-  ApplicationSettingsData,
-  SettingsMapItem,
-  SettingsSection
-};
+export type { ApplicationSettingsData, SettingsMapItem, SettingsSection };

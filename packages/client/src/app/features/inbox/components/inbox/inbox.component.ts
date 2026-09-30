@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { InboxAiStatus, InboxItemStatus, InboxQueueItem } from '@binder/common';
@@ -11,16 +18,26 @@ import { InboxService } from '../../services/inbox.service';
   imports: [CommonModule, RouterLink, TranslatePipe],
   templateUrl: './inbox.component.html',
   styleUrl: './inbox.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InboxComponent implements OnDestroy, OnInit {
   readonly inbox = inject(InboxService);
   readonly i18n = inject(I18nService);
-  readonly newCount = computed(() => this.inbox.items().filter((item) => item.status === 'new').length);
-  readonly processingCount = computed(() => this.inbox.items().filter((item) => item.status === 'processing').length);
-  readonly importedCount = computed(() => this.inbox.items().filter((item) => item.status === 'imported').length);
-  readonly duplicateCount = computed(() => this.inbox.items().filter((item) => item.status === 'duplicate').length);
-  readonly rejectedCount = computed(() => this.inbox.items().filter((item) => item.status === 'rejected').length);
+  readonly newCount = computed(
+    () => this.inbox.items().filter((item) => item.status === 'new').length,
+  );
+  readonly processingCount = computed(
+    () => this.inbox.items().filter((item) => item.status === 'processing').length,
+  );
+  readonly importedCount = computed(
+    () => this.inbox.items().filter((item) => item.status === 'imported').length,
+  );
+  readonly duplicateCount = computed(
+    () => this.inbox.items().filter((item) => item.status === 'duplicate').length,
+  );
+  readonly rejectedCount = computed(
+    () => this.inbox.items().filter((item) => item.status === 'rejected').length,
+  );
 
   ngOnInit(): void {
     void this.inbox.load();
@@ -43,9 +60,10 @@ export class InboxComponent implements OnDestroy, OnInit {
     const count = status === 'duplicate' ? this.duplicateCount() : this.rejectedCount();
     if (count === 0) return;
 
-    const message = status === 'duplicate'
-      ? this.i18n.t('inbox.confirmRemoveDuplicates')
-      : this.i18n.t('inbox.confirmRemoveRejected');
+    const message =
+      status === 'duplicate'
+        ? this.i18n.t('inbox.confirmRemoveDuplicates')
+        : this.i18n.t('inbox.confirmRemoveRejected');
     if (!window.confirm(message)) return;
     await this.inbox.removeByStatus(status);
   }

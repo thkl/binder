@@ -7,7 +7,7 @@ import {
   SavedSearch,
   SavedSearchListResponseSchema,
   UpdateSavedSearchInput,
-  UpdateSavedSearchInputSchema
+  UpdateSavedSearchInputSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -22,7 +22,7 @@ export class SavedSearchService {
 
   constructor(
     private readonly http: HttpClient,
-    private readonly application: ApplicationService
+    private readonly application: ApplicationService,
   ) {}
 
   async load(): Promise<void> {
@@ -31,10 +31,9 @@ export class SavedSearchService {
 
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(
-          this.application.getApiUrl('v1', 'saved-searches'),
-          { withCredentials: true }
-        )
+        this.http.get<ApiResponse<unknown>>(this.application.getApiUrl('v1', 'saved-searches'), {
+          withCredentials: true,
+        }),
       );
       this.items.set(SavedSearchListResponseSchema.parse(response.data).items);
     } catch (error) {
@@ -59,11 +58,13 @@ export class SavedSearchService {
         this.http.post<ApiResponse<unknown>>(
           this.application.getApiUrl('v1', 'saved-searches'),
           parsed.data,
-          { withCredentials: true }
-        )
+          { withCredentials: true },
+        ),
       );
       const savedSearch = SavedSearchListResponseSchema.shape.items.element.parse(response.data);
-      this.items.update((items) => [...items, savedSearch].sort((left, right) => left.name.localeCompare(right.name)));
+      this.items.update((items) =>
+        [...items, savedSearch].sort((left, right) => left.name.localeCompare(right.name)),
+      );
       return savedSearch;
     } catch (error) {
       this.error.set(this.errorMessage(error));
@@ -88,13 +89,15 @@ export class SavedSearchService {
         this.http.patch<ApiResponse<unknown>>(
           this.application.getApiUrl('v1', `saved-searches/${uuid}`),
           parsed.data,
-          { withCredentials: true }
-        )
+          { withCredentials: true },
+        ),
       );
       const savedSearch = SavedSearchListResponseSchema.shape.items.element.parse(response.data);
-      this.items.update((items) => items
-        .map((item) => item.uuid === uuid ? savedSearch : item)
-        .sort((left, right) => left.name.localeCompare(right.name)));
+      this.items.update((items) =>
+        items
+          .map((item) => (item.uuid === uuid ? savedSearch : item))
+          .sort((left, right) => left.name.localeCompare(right.name)),
+      );
       return savedSearch;
     } catch (error) {
       this.error.set(this.errorMessage(error));
@@ -112,8 +115,8 @@ export class SavedSearchService {
       await firstValueFrom(
         this.http.delete<ApiResponse<unknown>>(
           this.application.getApiUrl('v1', `saved-searches/${uuid}`),
-          { withCredentials: true }
-        )
+          { withCredentials: true },
+        ),
       );
       this.items.update((items) => items.filter((item) => item.uuid !== uuid));
       return true;

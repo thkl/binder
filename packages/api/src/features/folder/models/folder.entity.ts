@@ -7,7 +7,7 @@ import {
   Model,
   PrimaryKey,
   Table,
-  UpdatedAt
+  UpdatedAt,
 } from 'sequelize-typescript';
 
 export interface FolderAttributes {
@@ -20,7 +20,10 @@ export interface FolderAttributes {
   updatedAt: Date;
 }
 
-export type FolderCreationAttributes = Omit<FolderAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'sortPosition' | 'parentUuid'> & {
+export type FolderCreationAttributes = Omit<
+  FolderAttributes,
+  'createdAt' | 'updatedAt' | 'uuid' | 'sortPosition' | 'parentUuid'
+> & {
   uuid?: string;
   parentUuid?: string | null;
   sortPosition?: number;

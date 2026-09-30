@@ -9,6 +9,6 @@ import { SharedModule } from '../../shared/shared.service.module';
 @Module({
   imports: [AuthenticationServiceModule, SharedModule],
   controllers: [MaintenanceController],
-  providers: [MaintenanceService, MaintenanceRunStore, MaintenanceRequestStore]
+  providers: [MaintenanceService, MaintenanceRunStore, MaintenanceRequestStore],
 })
 export class MaintenanceModule {}

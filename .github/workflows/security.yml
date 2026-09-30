@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check source formatting
+        run: pnpm run format:check
+
       - name: Build shared contracts
         run: pnpm --filter @binder/common build
 

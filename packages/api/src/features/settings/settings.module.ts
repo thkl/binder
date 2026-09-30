@@ -5,7 +5,6 @@ import { SettingsController } from './controller/settings.controller';
 
 @Module({
   imports: [AuthenticationServiceModule, SharedModule],
-  controllers: [SettingsController]
+  controllers: [SettingsController],
 })
 export class SettingsModule {}
-

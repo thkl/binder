@@ -39,7 +39,7 @@ export class LoggingService {
       winston.format.printf((info) => {
         const context = typeof info.context === 'string' ? info.context : 'Nest';
         return `${info.timestamp} | ${info.level} | [${context}]: ${info.message}`;
-      })
+      }),
     );
     const logFormat = useJson
       ? winston.format.combine(winston.format.timestamp(), winston.format.json())
@@ -52,7 +52,7 @@ export class LoggingService {
         zippedArchive: true,
         maxSize,
         maxFiles,
-        format: logFormat
+        format: logFormat,
       }),
       new winston.transports.DailyRotateFile({
         level: 'error',
@@ -61,22 +61,22 @@ export class LoggingService {
         zippedArchive: true,
         maxSize,
         maxFiles,
-        format: logFormat
-      })
+        format: logFormat,
+      }),
     ];
 
     if (useConsole) {
       transports.push(
         new winston.transports.Console({
           level: logLevel,
-          format: logFormat
-        })
+          format: logFormat,
+        }),
       );
     }
 
     return WinstonModule.createLogger({
       level: logLevel,
-      transports
+      transports,
     });
   }
 
@@ -88,7 +88,8 @@ export class LoggingService {
     const logDir = this.getLogDirectory();
     if (!fs.existsSync(logDir)) return [];
 
-    return fs.readdirSync(logDir, { withFileTypes: true })
+    return fs
+      .readdirSync(logDir, { withFileTypes: true })
       .filter((item) => item.isFile() && LOG_FILE_PATTERN.test(item.name))
       .flatMap((item) => {
         try {
@@ -96,15 +97,17 @@ export class LoggingService {
           const stats = fs.statSync(filePath);
           const match = LOG_FILE_PATTERN.exec(item.name);
           if (!match) return [];
-          return [{
-            name: item.name,
-            source: match[1] as 'application' | 'worker',
-            isError: Boolean(match[2]),
-            compressed: item.name.endsWith('.gz'),
-            sizeBytes: stats.size,
-            modifiedAt: stats.mtime,
-            path: filePath
-          }];
+          return [
+            {
+              name: item.name,
+              source: match[1] as 'application' | 'worker',
+              isError: Boolean(match[2]),
+              compressed: item.name.endsWith('.gz'),
+              sizeBytes: stats.size,
+              modifiedAt: stats.mtime,
+              path: filePath,
+            },
+          ];
         } catch {
           return [];
         }
@@ -123,9 +126,6 @@ export class LoggingService {
   }
 
   private getLogDirectory(): string {
-    return path.resolve(
-      process.cwd(),
-      this.config.get<string>(ConfigKeys.LOG_DIR) ?? 'logs'
-    );
+    return path.resolve(process.cwd(), this.config.get<string>(ConfigKeys.LOG_DIR) ?? 'logs');
   }
 }

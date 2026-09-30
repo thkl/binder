@@ -7,10 +7,15 @@ import {
   Model,
   PrimaryKey,
   Table,
-  UpdatedAt
+  UpdatedAt,
 } from 'sequelize-typescript';
 
-export type PipelineJobKind = 'malware-scan' | 'thumbnail' | 'text-extraction' | 'ocr' | 'embedding';
+export type PipelineJobKind =
+  | 'malware-scan'
+  | 'thumbnail'
+  | 'text-extraction'
+  | 'ocr'
+  | 'embedding';
 export type PipelineJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 
 export interface PipelineJobAttributes {
@@ -31,7 +36,21 @@ export interface PipelineJobAttributes {
   updatedAt: Date;
 }
 
-export type PipelineJobCreationAttributes = Omit<PipelineJobAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'attempts' | 'maxAttempts' | 'availableAt' | 'lockedAt' | 'lockedBy' | 'startedAt' | 'completedAt' | 'lastError'> & {
+export type PipelineJobCreationAttributes = Omit<
+  PipelineJobAttributes,
+  | 'createdAt'
+  | 'updatedAt'
+  | 'uuid'
+  | 'status'
+  | 'attempts'
+  | 'maxAttempts'
+  | 'availableAt'
+  | 'lockedAt'
+  | 'lockedBy'
+  | 'startedAt'
+  | 'completedAt'
+  | 'lastError'
+> & {
   uuid?: string;
   status?: PipelineJobStatus;
   attempts?: number;
@@ -63,7 +82,7 @@ export class PipelineJob extends Model<PipelineJobAttributes, PipelineJobCreatio
   @Column({
     type: DataType.ENUM('queued', 'running', 'succeeded', 'failed', 'cancelled'),
     allowNull: false,
-    defaultValue: 'queued'
+    defaultValue: 'queued',
   })
   declare status: PipelineJobStatus;
 
@@ -73,7 +92,12 @@ export class PipelineJob extends Model<PipelineJobAttributes, PipelineJobCreatio
   @Column({ field: 'max_attempts', type: DataType.INTEGER, allowNull: false, defaultValue: 3 })
   declare maxAttempts: number;
 
-  @Column({ field: 'available_at', type: DataType.DATE, allowNull: false, defaultValue: DataType.NOW })
+  @Column({
+    field: 'available_at',
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+  })
   declare availableAt: Date;
 
   @AllowNull

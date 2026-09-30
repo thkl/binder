@@ -14,9 +14,15 @@ import {
   DocumentListFacetsResponseSchema,
   DocumentListResponse,
   DocumentListResponseSchema,
-  DocumentStorageIssueListResponseSchema
+  DocumentStorageIssueListResponseSchema,
 } from '@binder/common';
-import { ClearDocumentSuggestionResponseSchema, DocumentExtractedTextResponseSchema, DocumentMetadataSummary, DocumentTitleSuggestion, SetDocumentMetadataInput } from '@binder/common';
+import {
+  ClearDocumentSuggestionResponseSchema,
+  DocumentExtractedTextResponseSchema,
+  DocumentMetadataSummary,
+  DocumentTitleSuggestion,
+  SetDocumentMetadataInput,
+} from '@binder/common';
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 import type { Readable } from 'node:stream';
@@ -57,8 +63,8 @@ export class DocumentService {
     private readonly folders: FolderStore,
     private readonly storageIssues: DocumentStorageIssueStore,
     private readonly inboxItems: InboxItemStore,
-    private readonly eventEmitter: EventEmitter2
-  ) { }
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
     if (!file) {
@@ -75,7 +81,7 @@ export class DocumentService {
         originalFilename: file.originalname,
         mimeType: 'application/pdf',
         sizeBytes: stored.sizeBytes,
-        checksumSha256: stored.checksumSha256
+        checksumSha256: stored.checksumSha256,
       });
       const document = await this.documents.create({
         uuid,
@@ -87,9 +93,15 @@ export class DocumentService {
         pageCount: 1,
         issuerUuid: null,
         isNew: true,
-        status: 'scanning'
+        status: 'scanning',
       });
-      await this.addManualUploadToInbox(document.uuid, ownerUuid, file, stored.checksumSha256, stored.sizeBytes);
+      await this.addManualUploadToInbox(
+        document.uuid,
+        ownerUuid,
+        file,
+        stored.checksumSha256,
+        stored.sizeBytes,
+      );
       try {
         await this.pipeline.enqueue(document.uuid, ownerUuid, 'malware-scan');
       } catch (error) {
@@ -107,7 +119,7 @@ export class DocumentService {
     ownerUuid: string,
     file: UploadedDocumentFile,
     checksumSha256: string,
-    sizeBytes: number
+    sizeBytes: number,
   ): Promise<void> {
     try {
       await this.inboxItems.create({
@@ -121,11 +133,14 @@ export class DocumentService {
         aiSuggestion: null,
         autoApplied: false,
         lastError: null,
-        aiError: null
+        aiError: null,
       });
       this.eventEmitter.emit('inbox.changed', { reason: 'manual-upload' });
     } catch (error) {
-      this.logger.error(`Unable to add manually uploaded document ${documentUuid} to the inbox`, error);
+      this.logger.error(
+        `Unable to add manually uploaded document ${documentUuid} to the inbox`,
+        error,
+      );
     }
   }
 
@@ -135,7 +150,9 @@ export class DocumentService {
     return DocumentListResponseSchema.parse({
       ...result,
       groupBy: query.groupBy,
-      items: result.items.map((document) => this.toDocumentResponse(document, summaries.get(document.uuid)))
+      items: result.items.map((document) =>
+        this.toDocumentResponse(document, summaries.get(document.uuid)),
+      ),
     });
   }
 
@@ -143,7 +160,7 @@ export class DocumentService {
     const issues = await this.storageIssues.findOpenOwned(ownerUuid);
     const documents = await this.documents.findOwnedByUuids(
       ownerUuid,
-      issues.map((issue) => issue.documentUuid)
+      issues.map((issue) => issue.documentUuid),
     );
     const documentsByUuid = new Map(documents.map((document) => [document.uuid, document]));
 
@@ -152,28 +169,33 @@ export class DocumentService {
         const document = documentsByUuid.get(issue.documentUuid);
         if (!document) return [];
 
-        return [{
-          uuid: issue.uuid,
-          documentUuid: issue.documentUuid,
-          title: document.title,
-          originalFilename: document.originalFilename,
-          storageKey: document.storageKey,
-          issueType: issue.issueType,
-          status: issue.status,
-          expectedSizeBytes: Number(issue.expectedSizeBytes),
-          actualSizeBytes: issue.actualSizeBytes === null ? null : Number(issue.actualSizeBytes),
-          expectedChecksumSha256: issue.expectedChecksumSha256,
-          actualChecksumSha256: issue.actualChecksumSha256,
-          details: issue.details,
-          firstDetectedAt: issue.firstDetectedAt.toISOString(),
-          lastDetectedAt: issue.lastDetectedAt.toISOString(),
-          resolvedAt: issue.resolvedAt?.toISOString() ?? null
-        }];
-      })
+        return [
+          {
+            uuid: issue.uuid,
+            documentUuid: issue.documentUuid,
+            title: document.title,
+            originalFilename: document.originalFilename,
+            storageKey: document.storageKey,
+            issueType: issue.issueType,
+            status: issue.status,
+            expectedSizeBytes: Number(issue.expectedSizeBytes),
+            actualSizeBytes: issue.actualSizeBytes === null ? null : Number(issue.actualSizeBytes),
+            expectedChecksumSha256: issue.expectedChecksumSha256,
+            actualChecksumSha256: issue.actualChecksumSha256,
+            details: issue.details,
+            firstDetectedAt: issue.firstDetectedAt.toISOString(),
+            lastDetectedAt: issue.lastDetectedAt.toISOString(),
+            resolvedAt: issue.resolvedAt?.toISOString() ?? null,
+          },
+        ];
+      }),
     });
   }
 
-  async exportFolder(ownerUuid: string, folderUuid: string): Promise<{ stream: Readable; filename: string }> {
+  async exportFolder(
+    ownerUuid: string,
+    folderUuid: string,
+  ): Promise<{ stream: Readable; filename: string }> {
     const rootFolder = await this.folders.findOwned(ownerUuid, folderUuid);
     if (!rootFolder) throw new NotFoundException('Folder not found');
 
@@ -201,25 +223,34 @@ export class DocumentService {
         this.assertDocumentContentAvailable(document);
 
         if (!(await this.storage.exists(document.storageKey))) {
-          throw new BadRequestException('The source file for "' + document.originalFilename + '" is not available');
+          throw new BadRequestException(
+            'The source file for "' + document.originalFilename + '" is not available',
+          );
         }
 
         const archiveFilename = this.createArchiveFilename(document, folderPath, usedArchiveNames);
         archive.file(await this.storage.resolveStoragePath(document.storageKey), {
-          name: folderPath + '/' + archiveFilename
+          name: folderPath + '/' + archiveFilename,
         });
       }
     }
 
-    void archive.finalize().catch((error: unknown) => archive.destroy(error instanceof Error ? error : new Error(String(error))));
+    void archive
+      .finalize()
+      .catch((error: unknown) =>
+        archive.destroy(error instanceof Error ? error : new Error(String(error))),
+      );
 
     return {
       stream: archive,
-      filename: this.sanitizeArchiveSegment(rootFolder.name, 'documents') + '.zip'
+      filename: this.sanitizeArchiveSegment(rootFolder.name, 'documents') + '.zip',
     };
   }
 
-  async exportSelected(ownerUuid: string, documentUuids: string[]): Promise<{ stream: Readable; filename: string }> {
+  async exportSelected(
+    ownerUuid: string,
+    documentUuids: string[],
+  ): Promise<{ stream: Readable; filename: string }> {
     const documents = await this.documents.findOwnedByUuids(ownerUuid, documentUuids);
     if (documents.length === 0) {
       throw new NotFoundException('No documents found for export');
@@ -230,7 +261,10 @@ export class DocumentService {
     return this.createFlatArchive(documents, 'selected-documents.zip');
   }
 
-  async exportFiltered(ownerUuid: string, query: DocumentListQuery): Promise<{ stream: Readable; filename: string }> {
+  async exportFiltered(
+    ownerUuid: string,
+    query: DocumentListQuery,
+  ): Promise<{ stream: Readable; filename: string }> {
     const documents = await this.documents.findOwnedAll(ownerUuid, query);
     if (documents.length === 0) {
       throw new NotFoundException('No documents match the current filters');
@@ -243,7 +277,7 @@ export class DocumentService {
 
   async facets(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListFacetsResponse> {
     return DocumentListFacetsResponseSchema.parse(
-      await this.documents.findOwnedFacets(ownerUuid, query)
+      await this.documents.findOwnedFacets(ownerUuid, query),
     );
   }
 
@@ -251,9 +285,11 @@ export class DocumentService {
     const [keywordResult, semanticResult] = await Promise.all([
       this.documents.searchOwned(ownerUuid, query),
       this.semanticSearch.search(ownerUuid, query.q, query.limit, query).catch((error: unknown) => {
-        this.logger.warn(`Semantic search unavailable: ${error instanceof Error ? error.message : String(error)}`);
+        this.logger.warn(
+          `Semantic search unavailable: ${error instanceof Error ? error.message : String(error)}`,
+        );
         return [];
-      })
+      }),
     ]);
     const result = this.mergeSearchResults(keywordResult, semanticResult, query.limit);
     const documents = [...new Map(result.map((hit) => [hit.document.uuid, hit.document])).values()];
@@ -266,8 +302,8 @@ export class DocumentService {
         pageNumber: hit.pageNumber,
         snippet: this.createSnippet(hit.text, query.q),
         matchType: hit.matchType,
-        semanticScore: hit.semanticScore
-      }))
+        semanticScore: hit.semanticScore,
+      })),
     });
   }
 
@@ -301,28 +337,41 @@ export class DocumentService {
       requested: items.length,
       succeeded: items.filter((item) => item.success).length,
       failed: items.filter((item) => !item.success).length,
-      items
+      items,
     });
   }
 
   private mergeSearchResults(
-    keywordResult: Array<{ document: import('../models/document.entity').Document; pageNumber: number | null; text: string; score: number }>,
-    semanticResult: Array<{ document: import('../models/document.entity').Document; pageNumber: number; text: string; score: number }>,
-    limit: number
-  ) {
-    const merged = new Map<string, {
+    keywordResult: Array<{
       document: import('../models/document.entity').Document;
       pageNumber: number | null;
       text: string;
       score: number;
-      semanticScore: number | null;
-      matchType: 'text' | 'title' | 'semantic';
-    }>();
+    }>,
+    semanticResult: Array<{
+      document: import('../models/document.entity').Document;
+      pageNumber: number;
+      text: string;
+      score: number;
+    }>,
+    limit: number,
+  ) {
+    const merged = new Map<
+      string,
+      {
+        document: import('../models/document.entity').Document;
+        pageNumber: number | null;
+        text: string;
+        score: number;
+        semanticScore: number | null;
+        matchType: 'text' | 'title' | 'semantic';
+      }
+    >();
     for (const hit of keywordResult) {
       merged.set(hit.document.uuid, {
         ...hit,
         semanticScore: null,
-        matchType: hit.pageNumber === null ? 'title' : 'text'
+        matchType: hit.pageNumber === null ? 'title' : 'text',
       });
     }
     for (const hit of semanticResult) {
@@ -331,13 +380,13 @@ export class DocumentService {
         merged.set(hit.document.uuid, {
           ...hit,
           semanticScore: hit.score,
-          matchType: 'semantic'
+          matchType: 'semantic',
         });
       } else {
         merged.set(hit.document.uuid, {
           ...existing,
           semanticScore: hit.score,
-          matchType: 'semantic'
+          matchType: 'semantic',
         });
       }
     }
@@ -346,7 +395,7 @@ export class DocumentService {
 
   private createArchiveFolderPaths(
     folders: Array<import('../../folder/models/folder.entity').Folder>,
-    rootUuid: string
+    rootUuid: string,
   ): Map<string, string> {
     const paths = new Map<string, string>();
 
@@ -358,7 +407,10 @@ export class DocumentService {
 
       const parentPath = folder.parentUuid ? paths.get(folder.parentUuid) : undefined;
       if (parentPath) {
-        paths.set(folder.uuid, parentPath + '/' + this.sanitizeArchiveSegment(folder.name, 'folder'));
+        paths.set(
+          folder.uuid,
+          parentPath + '/' + this.sanitizeArchiveSegment(folder.name, 'folder'),
+        );
       }
     }
 
@@ -368,7 +420,7 @@ export class DocumentService {
   private createArchiveFilename(
     document: import('../models/document.entity').Document,
     folderPath: string,
-    usedNames: Set<string>
+    usedNames: Set<string>,
   ): string {
     const extension = extname(document.originalFilename).toLowerCase() || '.pdf';
     const title = document.title?.trim() || document.originalFilename.replace(/\.[^.]+$/, '');
@@ -402,7 +454,7 @@ export class DocumentService {
 
   private async createFlatArchive(
     documents: Array<import('../models/document.entity').Document>,
-    filename: string
+    filename: string,
   ): Promise<{ stream: Readable; filename: string }> {
     const archive = new ZipArchive({ zlib: { level: 6 } });
     const usedArchiveNames = new Set<string>();
@@ -411,13 +463,17 @@ export class DocumentService {
 
     for (const document of documents) {
       if (!(await this.storage.exists(document.storageKey))) {
-        throw new BadRequestException('The source file for "' + document.originalFilename + '" is not available');
+        throw new BadRequestException(
+          'The source file for "' + document.originalFilename + '" is not available',
+        );
       }
 
       this.assertDocumentContentAvailable(document);
 
       const archiveFilename = this.createArchiveFilename(document, '', usedArchiveNames);
-      archive.file(await this.storage.resolveStoragePath(document.storageKey), { name: archiveFilename });
+      archive.file(await this.storage.resolveStoragePath(document.storageKey), {
+        name: archiveFilename,
+      });
     }
 
     void archive.finalize().catch((error: unknown) => {
@@ -473,7 +529,10 @@ export class DocumentService {
       throw new NotFoundException('Document not found');
     }
     this.assertDocumentContentAvailable(document);
-    return { document: this.toDocumentResponse(document), stream: await this.storage.openReadStream(document.storageKey) };
+    return {
+      document: this.toDocumentResponse(document),
+      stream: await this.storage.openReadStream(document.storageKey),
+    };
   }
 
   async getExtractedText(ownerUuid: string, uuid: string) {
@@ -482,7 +541,7 @@ export class DocumentService {
     this.assertDocumentContentAvailable(result.document);
     return DocumentExtractedTextResponseSchema.parse({
       text: result.pages.map((page) => page.text).join('\n\n'),
-      pages: result.pages.map((page) => ({ pageNumber: page.pageNumber, text: page.text }))
+      pages: result.pages.map((page) => ({ pageNumber: page.pageNumber, text: page.text })),
     });
   }
 
@@ -498,27 +557,32 @@ export class DocumentService {
 
     return {
       document: this.toDocumentResponse(document),
-      stream: await this.storage.openReadStream(thumbnailKey)
+      stream: await this.storage.openReadStream(thumbnailKey),
     };
   }
 
-  private async ensureThumbnail(document: import('../models/document.entity').Document): Promise<string> {
+  private async ensureThumbnail(
+    document: import('../models/document.entity').Document,
+  ): Promise<string> {
     let thumbnailKey = document.thumbnailKey;
-    if (thumbnailKey && await this.storage.exists(thumbnailKey)) return thumbnailKey;
+    if (thumbnailKey && (await this.storage.exists(thumbnailKey))) return thumbnailKey;
 
     const activeGeneration = this.thumbnailGeneration.get(document.uuid);
     if (activeGeneration) return activeGeneration;
 
-    const generation = this.generateThumbnail(document)
-      .finally(() => this.thumbnailGeneration.delete(document.uuid));
+    const generation = this.generateThumbnail(document).finally(() =>
+      this.thumbnailGeneration.delete(document.uuid),
+    );
     this.thumbnailGeneration.set(document.uuid, generation);
     return generation;
   }
 
-  private async generateThumbnail(document: import('../models/document.entity').Document): Promise<string> {
+  private async generateThumbnail(
+    document: import('../models/document.entity').Document,
+  ): Promise<string> {
     try {
       // Re-check after joining the in-flight map in case another request finished first.
-      if (document.thumbnailKey && await this.storage.exists(document.thumbnailKey)) {
+      if (document.thumbnailKey && (await this.storage.exists(document.thumbnailKey))) {
         return document.thumbnailKey;
       }
 
@@ -552,7 +616,7 @@ export class DocumentService {
     const updated = await this.documents.update(document.uuid, {
       status: 'scanning',
       isNew: true,
-      aiSuggestion: null
+      aiSuggestion: null,
     });
     if (!updated) {
       throw new NotFoundException('Document not found');
@@ -561,11 +625,13 @@ export class DocumentService {
     const job = await this.pipeline.enqueue(updated.uuid, ownerUuid, 'malware-scan');
     return {
       document: this.toDocumentResponse(updated),
-      job
+      job,
     };
   }
 
-  private assertDocumentContentAvailable(document: import('../models/document.entity').Document): void {
+  private assertDocumentContentAvailable(
+    document: import('../models/document.entity').Document,
+  ): void {
     if (document.status === 'uploaded' || document.status === 'scanning') {
       throw new BadRequestException('The document is waiting for malware scanning');
     }
@@ -584,14 +650,19 @@ export class DocumentService {
     return metadata;
   }
 
-  async applySuggestionToEmptyFields(ownerUuid: string, uuid: string, suggestion: DocumentTitleSuggestion): Promise<{ appliedFields: string[] }> {
+  async applySuggestionToEmptyFields(
+    ownerUuid: string,
+    uuid: string,
+    suggestion: DocumentTitleSuggestion,
+  ): Promise<{ appliedFields: string[] }> {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
     this.assertDocumentContentAvailable(document);
 
     const metadata = await this.metadata.getDocumentMetadata(ownerUuid, uuid);
     const appliedFields: string[] = [];
-    const titleIsEmpty = !document.title?.trim() || document.title.trim() === document.originalFilename.trim();
+    const titleIsEmpty =
+      !document.title?.trim() || document.title.trim() === document.originalFilename.trim();
     if (titleIsEmpty && suggestion.suggestedTitle.trim()) {
       await this.documents.update(uuid, { title: suggestion.suggestedTitle });
       appliedFields.push('title');
@@ -618,29 +689,38 @@ export class DocumentService {
         if (classification.categoryUuid) appliedFields.push('category');
         if (classification.tagUuids) appliedFields.push('tags');
       } catch (error) {
-        this.logger.warn(`Unable to auto-apply document classification for ${uuid}: ${error instanceof Error ? error.message : String(error)}`);
+        this.logger.warn(
+          `Unable to auto-apply document classification for ${uuid}: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     }
 
-    const newCustomValues = Object.fromEntries(Object.entries(suggestion.custom).filter(([key, value]) => {
-      const current = metadata.custom[key];
-      return this.isEmptyMetadataValue(current) && !this.isEmptyMetadataValue(value);
-    }));
+    const newCustomValues = Object.fromEntries(
+      Object.entries(suggestion.custom).filter(([key, value]) => {
+        const current = metadata.custom[key];
+        return this.isEmptyMetadataValue(current) && !this.isEmptyMetadataValue(value);
+      }),
+    );
     if (Object.keys(newCustomValues).length > 0) {
       try {
         await this.metadata.setDocumentMetadata(ownerUuid, uuid, {
-          custom: { ...metadata.custom, ...newCustomValues }
+          custom: { ...metadata.custom, ...newCustomValues },
         });
         appliedFields.push(...Object.keys(newCustomValues).map((key) => `custom.${key}`));
       } catch (error) {
-        this.logger.warn(`Unable to auto-apply custom metadata for ${uuid}: ${error instanceof Error ? error.message : String(error)}`);
+        this.logger.warn(
+          `Unable to auto-apply custom metadata for ${uuid}: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     }
 
     return { appliedFields };
   }
 
-  private toDocumentResponse(document: import('../models/document.entity').Document, metadataSummary?: DocumentMetadataSummary): DocumentResponse {
+  private toDocumentResponse(
+    document: import('../models/document.entity').Document,
+    metadataSummary?: DocumentMetadataSummary,
+  ): DocumentResponse {
     return {
       uuid: document.uuid,
       ownerUuid: document.ownerUuid,
@@ -655,10 +735,16 @@ export class DocumentService {
       pageCount: document.pageCount || 1,
       issuerUuid: document.issuerUuid,
       isNew: document.isNew,
-      metadataSummary: metadataSummary ?? { documentType: null, category: null, issuer: null, tags: [], custom: [] },
+      metadataSummary: metadataSummary ?? {
+        documentType: null,
+        category: null,
+        issuer: null,
+        tags: [],
+        custom: [],
+      },
       status: document.status,
       createdAt: document.createdAt.toISOString(),
-      updatedAt: document.updatedAt.toISOString()
+      updatedAt: document.updatedAt.toISOString(),
     };
   }
 
@@ -670,7 +756,11 @@ export class DocumentService {
   private createSnippet(text: string, query: string): string {
     const normalized = text.replace(/\s+/g, ' ').trim();
     if (normalized.length <= 320) return normalized;
-    const token = query.toLocaleLowerCase().split(/\s+/).find((item) => item.length > 2) ?? query.toLocaleLowerCase();
+    const token =
+      query
+        .toLocaleLowerCase()
+        .split(/\s+/)
+        .find((item) => item.length > 2) ?? query.toLocaleLowerCase();
     const index = normalized.toLocaleLowerCase().indexOf(token);
     const start = index > 0 ? Math.max(0, index - 100) : 0;
     const end = Math.min(normalized.length, start + 320);
@@ -678,6 +768,11 @@ export class DocumentService {
   }
 
   private isEmptyMetadataValue(value: unknown): boolean {
-    return value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
+    return (
+      value === null ||
+      value === undefined ||
+      value === '' ||
+      (Array.isArray(value) && value.length === 0)
+    );
   }
 }

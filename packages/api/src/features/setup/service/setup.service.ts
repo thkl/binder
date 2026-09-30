@@ -2,7 +2,13 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { AuthenticatedUser, AuthenticatedUserSchema, SetupAdminInput, SetupStatus, SetupStatusSchema } from '@binder/common';
+import {
+  AuthenticatedUser,
+  AuthenticatedUserSchema,
+  SetupAdminInput,
+  SetupStatus,
+  SetupStatusSchema,
+} from '@binder/common';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { SetupAlreadyCompletedError, SetupStateStore } from '../store/setup-state.store';
 
@@ -10,14 +16,14 @@ import { SetupAlreadyCompletedError, SetupStateStore } from '../store/setup-stat
 export class SetupService {
   constructor(
     private readonly setupState: SetupStateStore,
-    private readonly config: ConfigService<BinderConfig>
+    private readonly config: ConfigService<BinderConfig>,
   ) {}
 
   async status(): Promise<SetupStatus> {
     const required = await this.setupState.isRequired();
     return SetupStatusSchema.parse({
       required,
-      available: required && Boolean(this.config.get<string>(ConfigKeys.SETUP_SECRET))
+      available: required && Boolean(this.config.get<string>(ConfigKeys.SETUP_SECRET)),
     });
   }
 
@@ -35,14 +41,14 @@ export class SetupService {
     try {
       const user = await this.setupState.createInitialAdministrator({
         username: input.username.trim().toLowerCase(),
-        passwordHash: await argon2.hash(input.password)
+        passwordHash: await argon2.hash(input.password),
       });
 
       return AuthenticatedUserSchema.parse({
         uuid: user.uuid,
         username: user.username,
         isAdmin: user.isAdmin,
-        mustChangePassword: user.mustChangePassword
+        mustChangePassword: user.mustChangePassword,
       });
     } catch (error) {
       if (error instanceof SetupAlreadyCompletedError) {

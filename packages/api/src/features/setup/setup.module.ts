@@ -7,6 +7,6 @@ import { SetupStateStore } from './store/setup-state.store';
 @Module({
   imports: [DatabaseModule],
   controllers: [SetupController],
-  providers: [SetupService, SetupStateStore]
+  providers: [SetupService, SetupStateStore],
 })
 export class SetupModule {}

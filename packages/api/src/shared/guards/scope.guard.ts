@@ -26,16 +26,14 @@ export class ScopeGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     // Get required scopes from @Scopes() decorator
-    const requiredScopes = this.reflector.getAllAndOverride<string[]>(
-      'scopes',
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredScopes = this.reflector.getAllAndOverride<string[]>('scopes', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     // If no scopes specified, DENY access (require explicit @Scopes decorator)
     if (!requiredScopes || requiredScopes.length === 0) {
-      this.logger.warn(
-        'ScopeGuard: No @Scopes() decorator found on endpoint, denying access',
-      );
+      this.logger.warn('ScopeGuard: No @Scopes() decorator found on endpoint, denying access');
       return false;
     }
 

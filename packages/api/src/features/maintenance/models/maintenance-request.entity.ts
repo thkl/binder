@@ -1,16 +1,29 @@
-import { Column, CreatedAt, DataType, Default, Model, PrimaryKey, Table, UpdatedAt } from 'sequelize-typescript';
+import {
+  Column,
+  CreatedAt,
+  DataType,
+  Default,
+  Model,
+  PrimaryKey,
+  Table,
+  UpdatedAt,
+} from 'sequelize-typescript';
 
 @Table({ tableName: 'maintenance_requests', underscored: true, timestamps: true })
 export class MaintenanceRequest extends Model {
-  @PrimaryKey @Default(DataType.UUIDV4) @Column({ field: 'id', type: DataType.UUID })
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
 
   @Column({ field: 'job_key', type: DataType.STRING(64), allowNull: false })
   declare jobKey: 'backup';
 
-  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE })
+  @CreatedAt
+  @Column({ field: 'created_at', type: DataType.DATE })
   declare createdAt: Date;
 
-  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE })
+  @UpdatedAt
+  @Column({ field: 'updated_at', type: DataType.DATE })
   declare updatedAt: Date;
 }

@@ -12,7 +12,11 @@ export class SavedSearchStore extends BaseCrudStore<SavedSearch> {
   listOwned(ownerUuid: string): Promise<SavedSearch[]> {
     return this.model.findAll({
       where: { ownerUuid },
-      order: [['name', 'ASC'], ['createdAt', 'ASC'], ['uuid', 'ASC']]
+      order: [
+        ['name', 'ASC'],
+        ['createdAt', 'ASC'],
+        ['uuid', 'ASC'],
+      ],
     });
   }
 

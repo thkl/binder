@@ -5,7 +5,8 @@
     [class.active]="hasActiveFilter()"
     [attr.aria-expanded]="open()"
     aria-haspopup="dialog"
-    (click)="openMenu()">
+    (click)="openMenu()"
+  >
     <span>{{ label() }}</span>
     @if (hasActiveFilter()) {
       <span class="filter-count">{{ draftCount() }}</span>
@@ -17,7 +18,14 @@
     <section class="filter-popover" role="dialog" [attr.aria-label]="label()">
       <div class="filter-popover-heading">
         <strong>{{ label() }}</strong>
-        <button type="button" class="close-button" [attr.aria-label]="'documents.closeFilter' | t" (click)="closeMenu()">×</button>
+        <button
+          type="button"
+          class="close-button"
+          [attr.aria-label]="'documents.closeFilter' | t"
+          (click)="closeMenu()"
+        >
+          ×
+        </button>
       </div>
 
       @if (options().length > 5) {
@@ -27,7 +35,8 @@
             type="search"
             [value]="optionSearch()"
             [placeholder]="'documents.filterSearch' | t"
-            (input)="optionSearch.set($any($event.target).value)">
+            (input)="optionSearch.set($any($event.target).value)"
+          />
         </label>
       }
 
@@ -42,7 +51,8 @@
             <input
               type="checkbox"
               [checked]="isSelected(option.value)"
-              (change)="toggleOption(option.value)">
+              (change)="toggleOption(option.value)"
+            />
             <span class="option-label">{{ option.label }}</span>
             <span class="option-count">{{ option.count }}</span>
           </label>
@@ -53,7 +63,9 @@
 
       <div class="filter-footer">
         <span>{{ draftCount() }} {{ 'documents.filterSelected' | t }}</span>
-        <button type="button" class="apply-button" (click)="apply()">{{ 'documents.applyFilter' | t }}</button>
+        <button type="button" class="apply-button" (click)="apply()">
+          {{ 'documents.applyFilter' | t }}
+        </button>
       </div>
     </section>
   }

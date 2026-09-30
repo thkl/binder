@@ -3,7 +3,7 @@ import {
   ApplicationSettingsResponse,
   ApplicationSettingsResponseSchema,
   SaveAllApplicationSettingsInputSchema,
-  SetApplicationSettingInputSchema
+  SetApplicationSettingInputSchema,
 } from '@binder/common';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { ApplicationSettingsService } from '../service/application-settings.service';
@@ -26,7 +26,9 @@ export class SettingsController {
   @Get('')
   @Roles('admin') // Restrict to admins only
   @Scopes(['web'])
-  async getAllSettings(@CurrentUser() user: ScopedUser): Promise<{ data: ApplicationSettingsResponse }> {
+  async getAllSettings(
+    @CurrentUser() user: ScopedUser,
+  ): Promise<{ data: ApplicationSettingsResponse }> {
     this.logger.debug(`getAllSettings for ${user.email}`);
     const allSettings = await this.settingsService.getAll();
     return { data: ApplicationSettingsResponseSchema.parse(allSettings) };
@@ -44,14 +46,20 @@ export class SettingsController {
   @Post('all')
   @Roles('admin') // Restrict to admins only
   @Scopes(['web'])
-  async saveAllSettings(@Body() body: SetApplicationSettingDto[]): Promise<{ data: ApplicationSettingsResponse }> {
+  async saveAllSettings(
+    @Body() body: SetApplicationSettingDto[],
+  ): Promise<{ data: ApplicationSettingsResponse }> {
     const settings = SaveAllApplicationSettingsInputSchema.parse(body);
-    await Promise.all(settings.map((setting) => this.settingsService.set(
-      setting.key,
-      setting.value,
-      setting.isEncrypted,
-      setting.description
-    )));
+    await Promise.all(
+      settings.map((setting) =>
+        this.settingsService.set(
+          setting.key,
+          setting.value,
+          setting.isEncrypted,
+          setting.description,
+        ),
+      ),
+    );
 
     const allSettings = await this.settingsService.getAll();
     return { data: ApplicationSettingsResponseSchema.parse(allSettings) };

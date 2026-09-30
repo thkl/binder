@@ -15,16 +15,15 @@ export class PipelineJobStore extends BaseCrudStore<PipelineJob> {
       where: {
         documentUuid,
         kind,
-        status: { [Op.in]: ['queued', 'running'] }
-      }
+        status: { [Op.in]: ['queued', 'running'] },
+      },
     });
   }
 
   async findForDocument(ownerUuid: string, documentUuid: string): Promise<PipelineJob[]> {
     return this.model.findAll({
       where: { ownerUuid, documentUuid },
-      order: [['createdAt', 'ASC']]
+      order: [['createdAt', 'ASC']],
     });
   }
 }
-

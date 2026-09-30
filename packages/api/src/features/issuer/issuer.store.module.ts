@@ -5,6 +5,6 @@ import { IssuerStore } from './store/issuer.store';
 @Module({
   imports: [DatabaseModule],
   providers: [IssuerStore],
-  exports: [IssuerStore]
+  exports: [IssuerStore],
 })
 export class IssuerStoreModule {}

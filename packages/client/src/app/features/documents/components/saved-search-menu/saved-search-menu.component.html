@@ -4,7 +4,8 @@
     <select
       [value]="selectedUuid() ?? ''"
       [disabled]="busy() || removing()"
-      (change)="searchSelected.emit($any($event.target).value)">
+      (change)="searchSelected.emit($any($event.target).value)"
+    >
       <option value="">{{ 'documents.savedSearchChoose' | t }}</option>
       @for (search of availableSearches(); track search.uuid) {
         <option [value]="search.uuid">{{ search.name }}</option>
@@ -20,7 +21,12 @@
         {{ 'documents.savedSearchSave' | t }}
       </button>
       @if (selectedSearch()) {
-        <button type="button" class="saved-search-secondary" [disabled]="busy()" (click)="beginRename()">
+        <button
+          type="button"
+          class="saved-search-secondary"
+          [disabled]="busy()"
+          (click)="beginRename()"
+        >
           {{ 'documents.savedSearchRename' | t }}
         </button>
         <button
@@ -28,8 +34,11 @@
           class="saved-search-danger"
           [disabled]="removing()"
           [attr.aria-label]="'documents.savedSearchDelete' | t"
-          (click)="remove()">
-          {{ removing() ? ('documents.savedSearchDeleting' | t) : ('documents.savedSearchDelete' | t) }}
+          (click)="remove()"
+        >
+          {{
+            removing() ? ('documents.savedSearchDeleting' | t) : ('documents.savedSearchDelete' | t)
+          }}
         </button>
       }
     }
@@ -42,15 +51,33 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="saved-search-dialog-title"
-        (click)="$event.stopPropagation()">
+        (click)="$event.stopPropagation()"
+      >
         <header class="saved-search-dialog-header">
           <div>
-            <p class="saved-search-dialog-kicker">{{ namingMode() === 'rename' ? ('documents.savedSearchRename' | t) : ('documents.savedSearches' | t) }}</p>
+            <p class="saved-search-dialog-kicker">
+              {{
+                namingMode() === 'rename'
+                  ? ('documents.savedSearchRename' | t)
+                  : ('documents.savedSearches' | t)
+              }}
+            </p>
             <h2 id="saved-search-dialog-title">
-              {{ namingMode() === 'rename' ? ('documents.savedSearchRenameConfirm' | t) : ('documents.savedSearchDialogTitle' | t) }}
+              {{
+                namingMode() === 'rename'
+                  ? ('documents.savedSearchRenameConfirm' | t)
+                  : ('documents.savedSearchDialogTitle' | t)
+              }}
             </h2>
           </div>
-          <button type="button" class="saved-search-dialog-close" [attr.aria-label]="'documents.savedSearchCancel' | t" (click)="cancelSave()">×</button>
+          <button
+            type="button"
+            class="saved-search-dialog-close"
+            [attr.aria-label]="'documents.savedSearchCancel' | t"
+            (click)="cancelSave()"
+          >
+            ×
+          </button>
         </header>
 
         @if (namingMode() === 'create') {
@@ -81,15 +108,32 @@
             [placeholder]="'documents.savedSearchNamePlaceholder' | t"
             [attr.aria-label]="'documents.savedSearchName' | t"
             (input)="name.set($any($event.target).value)"
-            (keydown)="handleNameKeydown($event)">
+            (keydown)="handleNameKeydown($event)"
+          />
         </label>
 
         <footer class="saved-search-dialog-actions">
-          <button type="button" class="saved-search-secondary" [disabled]="busy()" (click)="cancelSave()">
+          <button
+            type="button"
+            class="saved-search-secondary"
+            [disabled]="busy()"
+            (click)="cancelSave()"
+          >
             {{ 'documents.savedSearchCancel' | t }}
           </button>
-          <button type="button" class="saved-search-primary" [disabled]="busy() || !name().trim()" (click)="save()">
-            {{ busy() ? ('documents.savedSearchSaving' | t) : (namingMode() === 'rename' ? ('documents.savedSearchRenameConfirm' | t) : ('documents.savedSearchConfirm' | t)) }}
+          <button
+            type="button"
+            class="saved-search-primary"
+            [disabled]="busy() || !name().trim()"
+            (click)="save()"
+          >
+            {{
+              busy()
+                ? ('documents.savedSearchSaving' | t)
+                : namingMode() === 'rename'
+                  ? ('documents.savedSearchRenameConfirm' | t)
+                  : ('documents.savedSearchConfirm' | t)
+            }}
           </button>
         </footer>
       </section>

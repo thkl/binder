@@ -24,4 +24,3 @@ export class SetApplicationSettingDto {
   @MaxLength(500)
   description?: string;
 }
-

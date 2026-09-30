@@ -8,7 +8,7 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
   imports: [TranslatePipe],
   templateUrl: './change-password.component.html',
   styleUrl: './change-password.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChangePasswordComponent {
   readonly title = input('Change your password');
@@ -20,7 +20,10 @@ export class ChangePasswordComponent {
   readonly confirmation = signal('');
   readonly validationError = signal<string | null>(null);
 
-  constructor(readonly auth: AuthService, private readonly i18n: I18nService) {}
+  constructor(
+    readonly auth: AuthService,
+    private readonly i18n: I18nService,
+  ) {}
 
   async submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();

@@ -1,4 +1,14 @@
-import { BadRequestException, Controller, Delete, Get, MessageEvent, Param, Post, Sse, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Delete,
+  Get,
+  MessageEvent,
+  Param,
+  Post,
+  Sse,
+  UseGuards,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
@@ -39,7 +49,9 @@ export class InboxController {
   @SkipThrottle()
   async removeByStatus(@Param('status') status: string) {
     if (status !== 'duplicate' && status !== 'rejected') {
-      throw new BadRequestException('Only duplicate or rejected inbox items can be removed in bulk');
+      throw new BadRequestException(
+        'Only duplicate or rejected inbox items can be removed in bulk',
+      );
     }
     return { data: await this.inbox.removeByStatus(status) };
   }

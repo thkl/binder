@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, HostListener, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import type { Document, DocumentTitleSuggestion } from '@binder/common';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
@@ -13,7 +23,7 @@ export type DocumentDrawerTab = 'preview' | 'metadata';
   imports: [DocumentMetadataEditorComponent, TranslatePipe],
   templateUrl: './document-drawer.component.html',
   styleUrl: './document-drawer.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocumentDrawerComponent {
   readonly documentUuid = input.required<string>();
@@ -98,7 +108,13 @@ export class DocumentDrawerComponent {
   }
 
   resizeWithKeyboard(event: KeyboardEvent): void {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Home' && event.key !== 'End') return;
+    if (
+      event.key !== 'ArrowLeft' &&
+      event.key !== 'ArrowRight' &&
+      event.key !== 'Home' &&
+      event.key !== 'End'
+    )
+      return;
     event.preventDefault();
     if (event.key === 'Home') {
       this.setDrawerWidth(this.maxDrawerWidth());
@@ -138,7 +154,9 @@ export class DocumentDrawerComponent {
   }
 
   private setDrawerWidth(width: number): void {
-    this.drawerWidth.set(Math.round(Math.min(this.maxDrawerWidth(), Math.max(this.minDrawerWidth(), width))));
+    this.drawerWidth.set(
+      Math.round(Math.min(this.maxDrawerWidth(), Math.max(this.minDrawerWidth(), width))),
+    );
   }
 
   private minDrawerWidth(): number {

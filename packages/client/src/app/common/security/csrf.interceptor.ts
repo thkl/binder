@@ -14,7 +14,5 @@ export const csrfInterceptor: HttpInterceptorFn = (request, next) => {
   }
 
   const token = inject(CsrfService).token();
-  return next(token
-    ? request.clone({ setHeaders: { 'X-CSRF-Token': token } })
-    : request);
+  return next(token ? request.clone({ setHeaders: { 'X-CSRF-Token': token } }) : request);
 };

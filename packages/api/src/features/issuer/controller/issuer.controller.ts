@@ -20,7 +20,13 @@ export class IssuerController {
   }
 
   @Patch(':uuid')
-  async update(@CurrentUser() user: ScopedUser, @Param('uuid') uuid: string, @Body() body: unknown) {
-    return { data: await this.issuers.update(user.userId, uuid, UpdateIssuerInputSchema.parse(body)) };
+  async update(
+    @CurrentUser() user: ScopedUser,
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+  ) {
+    return {
+      data: await this.issuers.update(user.userId, uuid, UpdateIssuerInputSchema.parse(body)),
+    };
   }
 }

@@ -12,8 +12,21 @@ import { FolderStoreModule } from '../folder/folder.store.module';
 import { InboxStoreModule } from '../inbox/inbox.store.module';
 
 @Module({
-  imports: [DocumentStoreModule, FolderStoreModule, InboxStoreModule, PipelineServiceModule, MetadataServiceModule, IssuerServiceModule, SharedModule],
-  providers: [DocumentService, DocumentStorageService, SemanticSearchService, TitleSuggestionService],
-  exports: [DocumentService, TitleSuggestionService]
+  imports: [
+    DocumentStoreModule,
+    FolderStoreModule,
+    InboxStoreModule,
+    PipelineServiceModule,
+    MetadataServiceModule,
+    IssuerServiceModule,
+    SharedModule,
+  ],
+  providers: [
+    DocumentService,
+    DocumentStorageService,
+    SemanticSearchService,
+    TitleSuggestionService,
+  ],
+  exports: [DocumentService, TitleSuggestionService],
 })
 export class DocumentServiceModule {}

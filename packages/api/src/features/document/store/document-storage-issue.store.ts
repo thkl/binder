@@ -13,14 +13,17 @@ export class DocumentStorageIssueStore extends BaseCrudStore<DocumentStorageIssu
   findOpenOwned(ownerUuid: string): Promise<DocumentStorageIssue[]> {
     return this.model.findAll({
       where: { ownerUuid, status: 'open' },
-      order: [['lastDetectedAt', 'DESC'], ['documentUuid', 'ASC']]
+      order: [
+        ['lastDetectedAt', 'DESC'],
+        ['documentUuid', 'ASC'],
+      ],
     });
   }
 
   findOpenByDocumentUuids(documentUuids: string[]): Promise<DocumentStorageIssue[]> {
     if (documentUuids.length === 0) return Promise.resolve([]);
     return this.model.findAll({
-      where: { documentUuid: { [Op.in]: documentUuids }, status: 'open' }
+      where: { documentUuid: { [Op.in]: documentUuids }, status: 'open' },
     });
   }
 }

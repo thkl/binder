@@ -15,8 +15,7 @@ export class PipelineJobEventStore extends BaseCrudStore<PipelineJobEvent> {
     }
     return this.model.findAll({
       where: { jobUuid: jobUuids },
-      order: [['createdAt', 'ASC']]
+      order: [['createdAt', 'ASC']],
     });
   }
 }
-

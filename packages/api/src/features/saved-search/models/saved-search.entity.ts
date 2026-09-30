@@ -6,7 +6,7 @@ import {
   Model,
   PrimaryKey,
   Table,
-  UpdatedAt
+  UpdatedAt,
 } from 'sequelize-typescript';
 import type { SavedSearchDefinition, SavedSearchKind } from '@binder/common';
 
@@ -20,7 +20,10 @@ export interface SavedSearchAttributes {
   updatedAt: Date;
 }
 
-export type SavedSearchCreationAttributes = Omit<SavedSearchAttributes, 'createdAt' | 'updatedAt' | 'uuid'> & {
+export type SavedSearchCreationAttributes = Omit<
+  SavedSearchAttributes,
+  'createdAt' | 'updatedAt' | 'uuid'
+> & {
   uuid?: string;
 };
 

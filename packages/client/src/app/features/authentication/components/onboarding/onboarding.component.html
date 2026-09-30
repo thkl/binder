@@ -48,7 +48,8 @@
             [value]="setupSecret()"
             [attr.aria-describedby]="'setup-secret-hint'"
             (input)="setupSecret.set(inputValue($event))"
-            required>
+            required
+          />
           <p class="field-hint" id="setup-secret-hint">{{ 'setup.secretHint' | t }}</p>
 
           <label for="setup-username">{{ 'setup.username' | t }}</label>
@@ -58,7 +59,8 @@
             autocomplete="username"
             [value]="username()"
             (input)="username.set(inputValue($event))"
-            required>
+            required
+          />
 
           <label for="setup-password">{{ 'setup.password' | t }}</label>
           <input
@@ -69,7 +71,8 @@
             [value]="password()"
             [attr.aria-describedby]="'setup-password-hint'"
             (input)="password.set(inputValue($event))"
-            required>
+            required
+          />
           <p class="field-hint" id="setup-password-hint">{{ 'setup.passwordHint' | t }}</p>
 
           <label for="setup-confirmation">{{ 'setup.confirm' | t }}</label>
@@ -80,10 +83,15 @@
             minlength="12"
             [value]="confirmation()"
             (input)="confirmation.set(inputValue($event))"
-            required>
+            required
+          />
 
-          @if (validationError(); as error) { <p class="error" role="alert">{{ error }}</p> }
-          @if (auth.error(); as error) { <p class="error" role="alert">{{ error }}</p> }
+          @if (validationError(); as error) {
+            <p class="error" role="alert">{{ error }}</p>
+          }
+          @if (auth.error(); as error) {
+            <p class="error" role="alert">{{ error }}</p>
+          }
 
           <button type="submit" [disabled]="auth.submitting()">
             {{ auth.submitting() ? ('setup.creating' | t) : ('setup.create' | t) }}

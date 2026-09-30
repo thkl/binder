@@ -11,8 +11,16 @@ import { DocumentPage } from '../features/document/models/document-page.entity';
 import { DocumentEmbedding } from '../features/document/models/document-embedding.entity';
 import { PipelineJob } from '../features/pipeline/models/pipeline-job.entity';
 import { PipelineJobEvent } from '../features/pipeline/models/pipeline-job-event.entity';
-import { DocumentCategory, DocumentTag, DocumentTagAssignment, DocumentType } from '../features/metadata/models/vocabulary.entity';
-import { DocumentMetadataValue, MetadataDefinition } from '../features/metadata/models/vocabulary.entity';
+import {
+  DocumentCategory,
+  DocumentTag,
+  DocumentTagAssignment,
+  DocumentType,
+} from '../features/metadata/models/vocabulary.entity';
+import {
+  DocumentMetadataValue,
+  MetadataDefinition,
+} from '../features/metadata/models/vocabulary.entity';
 import { InboxItem } from '../features/inbox/models/inbox-item.entity';
 import { Issuer } from '../features/issuer/models/issuer.entity';
 import { MaintenanceRun } from '../features/maintenance/models/maintenance-run.entity';
@@ -58,26 +66,44 @@ import { SetupState } from '../features/setup/models/setup-state.entity';
               /ECONNRESET/,
               /ECONNREFUSED/,
               /ConnectionError/,
-              /SequelizeConnectionError/
-            ]
+              /SequelizeConnectionError/,
+            ],
           },
           pool: {
             max: 10,
             min: 0,
             idle: 10_000,
-            acquire: 30_000
-          }
+            acquire: 30_000,
+          },
         };
-      }
+      },
     }),
     SequelizeModule.forFeature([
-      User, ApplicationSetting, Document, DocumentPage, DocumentEmbedding, PipelineJob, PipelineJobEvent,
-      DocumentType, DocumentCategory, DocumentTag, DocumentTagAssignment,
-      MetadataDefinition, DocumentMetadataValue, InboxItem, Issuer, MaintenanceRun, MaintenanceRequest,
-      Folder, DocumentFolder, SavedSearch, DocumentStorageIssue, SetupState
+      User,
+      ApplicationSetting,
+      Document,
+      DocumentPage,
+      DocumentEmbedding,
+      PipelineJob,
+      PipelineJobEvent,
+      DocumentType,
+      DocumentCategory,
+      DocumentTag,
+      DocumentTagAssignment,
+      MetadataDefinition,
+      DocumentMetadataValue,
+      InboxItem,
+      Issuer,
+      MaintenanceRun,
+      MaintenanceRequest,
+      Folder,
+      DocumentFolder,
+      SavedSearch,
+      DocumentStorageIssue,
+      SetupState,
     ]),
   ],
-  providers: [DatabaseConnectionService,DatabaseMigrationService],
-  exports: [DatabaseConnectionService]
+  providers: [DatabaseConnectionService, DatabaseMigrationService],
+  exports: [DatabaseConnectionService],
 })
-export class DatabaseModule { }
+export class DatabaseModule {}

@@ -7,10 +7,14 @@ import {
   Model,
   PrimaryKey,
   Table,
-  UpdatedAt
+  UpdatedAt,
 } from 'sequelize-typescript';
 
-export type DocumentStorageIssueType = 'missing' | 'size-mismatch' | 'checksum-mismatch' | 'unreadable';
+export type DocumentStorageIssueType =
+  | 'missing'
+  | 'size-mismatch'
+  | 'checksum-mismatch'
+  | 'unreadable';
 export type DocumentStorageIssueStatus = 'open' | 'resolved';
 
 @Table({ tableName: 'document_storage_issues', underscored: true, timestamps: true })

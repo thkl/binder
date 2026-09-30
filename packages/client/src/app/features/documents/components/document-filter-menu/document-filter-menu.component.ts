@@ -7,7 +7,7 @@ import {
   inject,
   input,
   output,
-  signal
+  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import type { DocumentListFacetOption } from '@binder/common';
@@ -19,7 +19,7 @@ import { TranslatePipe } from '../../../../common/i18n/i18n.service';
   imports: [CommonModule, TranslatePipe],
   templateUrl: './document-filter-menu.component.html',
   styleUrl: './document-filter-menu.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocumentFilterMenuComponent {
   private readonly elementRef = inject(ElementRef<HTMLElement>);

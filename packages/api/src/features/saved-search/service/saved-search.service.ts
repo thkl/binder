@@ -6,7 +6,7 @@ import {
   SavedSearchListResponseSchema,
   SavedSearchSchema,
   UpdateSavedSearchInput,
-  UpdateSavedSearchInputSchema
+  UpdateSavedSearchInputSchema,
 } from '@binder/common';
 import { SavedSearchStore } from '../store/saved-search.store';
 
@@ -17,7 +17,7 @@ export class SavedSearchService {
   async list(ownerUuid: string) {
     const items = await this.savedSearches.listOwned(ownerUuid);
     return SavedSearchListResponseSchema.parse({
-      items: items.map((item) => this.toResponse(item))
+      items: items.map((item) => this.toResponse(item)),
     });
   }
 
@@ -30,7 +30,7 @@ export class SavedSearchService {
         ownerUuid,
         name: parsed.name,
         kind: parsed.definition.kind,
-        definition: parsed.definition
+        definition: parsed.definition,
       });
       return this.toResponse(savedSearch);
     } catch (error) {
@@ -49,7 +49,7 @@ export class SavedSearchService {
       const updated = await this.savedSearches.update(uuid, {
         name: parsed.name ?? existing.name,
         kind: definition.kind,
-        definition
+        definition,
       });
       return this.toResponse(updated ?? existing);
     } catch (error) {
@@ -72,7 +72,7 @@ export class SavedSearchService {
       name: item.name,
       definition: item.definition,
       createdAt: item.createdAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString()
+      updatedAt: item.updatedAt.toISOString(),
     });
   }
 

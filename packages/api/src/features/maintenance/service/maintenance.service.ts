@@ -9,7 +9,7 @@ export class MaintenanceService {
   constructor(
     private readonly runs: MaintenanceRunStore,
     private readonly requests: MaintenanceRequestStore,
-    private readonly settings: ApplicationSettingsService
+    private readonly settings: ApplicationSettingsService,
   ) {}
 
   async getStatus() {
@@ -32,8 +32,8 @@ export class MaintenanceService {
         issueCount: item.issueCount,
         error: item.error,
         createdAt: item.createdAt.toISOString(),
-        updatedAt: item.updatedAt.toISOString()
-      }))
+        updatedAt: item.updatedAt.toISOString(),
+      })),
     });
   }
 

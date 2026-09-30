@@ -16,7 +16,7 @@ export async function runOcr(storageKey: string, documentUuid: string): Promise<
     documentUuid,
     languages: config.ocrLanguages,
     input: storageKey,
-    output: key
+    output: key,
   });
 
   try {
@@ -31,9 +31,9 @@ export async function runOcr(storageKey: string, documentUuid: string): Promise<
         '--output-type',
         'pdf',
         input,
-        temporary
+        temporary,
       ],
-      documentUuid
+      documentUuid,
     );
     await fs.rename(temporary, output);
     return key;
@@ -42,14 +42,10 @@ export async function runOcr(storageKey: string, documentUuid: string): Promise<
   }
 }
 
-function runExternalCommand(
-  command: string,
-  args: string[],
-  documentUuid: string
-): Promise<void> {
+function runExternalCommand(command: string, args: string[], documentUuid: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
     let stderr = '';
 
@@ -59,7 +55,7 @@ function runExternalCommand(
     child.stdout.on('data', (chunk) => {
       logger.debug('OCR tool output', {
         documentUuid,
-        output: chunk.toString('utf8').trim().slice(-1000)
+        output: chunk.toString('utf8').trim().slice(-1000),
       });
     });
     child.once('error', (error) => {
@@ -71,7 +67,8 @@ function runExternalCommand(
         return;
       }
 
-      const reason = stderr.trim() ||
+      const reason =
+        stderr.trim() ||
         `process exited with code ${code ?? 'unknown'}${signal ? ` (${signal})` : ''}`;
       reject(new Error(`${command} failed: ${reason}`));
     });

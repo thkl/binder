@@ -13,7 +13,7 @@ export interface SavedSearchParameter {
   imports: [TranslatePipe],
   templateUrl: './saved-search-menu.component.html',
   styleUrl: './saved-search-menu.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SavedSearchMenuComponent {
   readonly searches = input<SavedSearch[]>([]);
@@ -30,8 +30,12 @@ export class SavedSearchMenuComponent {
   readonly isNaming = signal(false);
   readonly namingMode = signal<'create' | 'rename'>('create');
   readonly name = signal('');
-  readonly availableSearches = computed(() => this.searches().filter((item) => item.definition.kind === this.kind()));
-  readonly selectedSearch = computed(() => this.availableSearches().find((item) => item.uuid === this.selectedUuid()) ?? null);
+  readonly availableSearches = computed(() =>
+    this.searches().filter((item) => item.definition.kind === this.kind()),
+  );
+  readonly selectedSearch = computed(
+    () => this.availableSearches().find((item) => item.uuid === this.selectedUuid()) ?? null,
+  );
 
   beginSave(): void {
     this.name.set('');

@@ -1,10 +1,22 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Res, StreamableFile, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  StreamableFile,
+  UseGuards,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import {
   CreateFolderInputSchema,
   FolderDocumentInputSchema,
   MoveFolderInputSchema,
-  UpdateFolderInputSchema
+  UpdateFolderInputSchema,
 } from '@binder/common';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
@@ -16,7 +28,7 @@ import { DocumentService } from '../../document/service/document.service';
 export class FolderController {
   constructor(
     private readonly folders: FolderService,
-    private readonly documents: DocumentService
+    private readonly documents: DocumentService,
   ) {}
 
   @Get()
@@ -30,7 +42,10 @@ export class FolderController {
   }
 
   @Get('for-document/:documentUuid')
-  async listForDocument(@CurrentUser() user: ScopedUser, @Param('documentUuid') documentUuid: string) {
+  async listForDocument(
+    @CurrentUser() user: ScopedUser,
+    @Param('documentUuid') documentUuid: string,
+  ) {
     return { data: await this.folders.listForDocument(user.userId, documentUuid) };
   }
 
@@ -40,8 +55,14 @@ export class FolderController {
   }
 
   @Patch(':uuid')
-  async update(@CurrentUser() user: ScopedUser, @Param('uuid') uuid: string, @Body() body: unknown) {
-    return { data: await this.folders.update(user.userId, uuid, UpdateFolderInputSchema.parse(body)) };
+  async update(
+    @CurrentUser() user: ScopedUser,
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+  ) {
+    return {
+      data: await this.folders.update(user.userId, uuid, UpdateFolderInputSchema.parse(body)),
+    };
   }
 
   @Post(':uuid/move')
@@ -55,24 +76,47 @@ export class FolderController {
   }
 
   @Post(':uuid/documents')
-  async linkDocuments(@CurrentUser() user: ScopedUser, @Param('uuid') uuid: string, @Body() body: unknown) {
-    return { data: await this.folders.linkDocuments(user.userId, uuid, FolderDocumentInputSchema.parse(body)) };
+  async linkDocuments(
+    @CurrentUser() user: ScopedUser,
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+  ) {
+    return {
+      data: await this.folders.linkDocuments(
+        user.userId,
+        uuid,
+        FolderDocumentInputSchema.parse(body),
+      ),
+    };
   }
 
   @Delete(':uuid/documents')
-  async unlinkDocuments(@CurrentUser() user: ScopedUser, @Param('uuid') uuid: string, @Body() body: unknown) {
-    return { data: await this.folders.unlinkDocuments(user.userId, uuid, FolderDocumentInputSchema.parse(body)) };
+  async unlinkDocuments(
+    @CurrentUser() user: ScopedUser,
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+  ) {
+    return {
+      data: await this.folders.unlinkDocuments(
+        user.userId,
+        uuid,
+        FolderDocumentInputSchema.parse(body),
+      ),
+    };
   }
 
   @Get(':uuid/export')
   async export(
     @CurrentUser() user: ScopedUser,
     @Param('uuid') uuid: string,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.documents.exportFolder(user.userId, uuid);
     response.setHeader('Cache-Control', 'private, no-store');
-    response.setHeader('Content-Disposition', 'attachment; filename="' + this.safeFilename(result.filename) + '"');
+    response.setHeader(
+      'Content-Disposition',
+      'attachment; filename="' + this.safeFilename(result.filename) + '"',
+    );
     return new StreamableFile(result.stream, { type: 'application/zip' });
   }
 

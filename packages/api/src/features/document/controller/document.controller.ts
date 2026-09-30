@@ -11,7 +11,7 @@ import {
   StreamableFile,
   UploadedFile,
   UseGuards,
-  UseInterceptors
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -20,7 +20,7 @@ import {
   DocumentListQuerySchema,
   DocumentSearchQuerySchema,
   SetDocumentMetadataInputSchema,
-  SetDocumentTitleInputSchema
+  SetDocumentTitleInputSchema,
 } from '@binder/common';
 import type { Response } from 'express';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
@@ -40,21 +40,23 @@ export class DocumentController {
 
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @UseInterceptors(FileInterceptor('file', {
-    limits: {
-      fileSize: HARD_UPLOAD_LIMIT_BYTES,
-      files: 1,
-      fields: 4,
-      parts: 5
-    }
-  }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: HARD_UPLOAD_LIMIT_BYTES,
+        files: 1,
+        fields: 4,
+        parts: 5,
+      },
+    }),
+  )
   async upload(
     @UploadedFile() file: UploadedDocumentFile | undefined,
-    @CurrentUser() user: ScopedUser
+    @CurrentUser() user: ScopedUser,
   ) {
-    this.logger.debug("Uploading File ....");
+    this.logger.debug('Uploading File ....');
     if (!file) {
-      this.logger.error("No file sumbitted");
+      this.logger.error('No file sumbitted');
       throw new BadRequestException('A PDF file is required');
     }
     return { data: await this.documents.upload(user.userId, file) };
@@ -72,9 +74,12 @@ export class DocumentController {
   async exportFiltered(
     @Query() query: Record<string, unknown>,
     @CurrentUser() user: ScopedUser,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.documents.exportFiltered(user.userId, DocumentListQuerySchema.parse(query));
+    const result = await this.documents.exportFiltered(
+      user.userId,
+      DocumentListQuerySchema.parse(query),
+    );
     this.setArchiveHeaders(response, result.filename);
     return new StreamableFile(result.stream, { type: 'application/zip' });
   }
@@ -84,7 +89,7 @@ export class DocumentController {
   async exportSelected(
     @Body() body: unknown,
     @CurrentUser() user: ScopedUser,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
     const input = DocumentExportSelectionInputSchema.parse(body);
     const result = await this.documents.exportSelected(user.userId, input.documentUuids);
@@ -105,21 +110,32 @@ export class DocumentController {
 
   @Get('search')
   async search(@Query() query: Record<string, unknown>, @CurrentUser() user: ScopedUser) {
-    return { data: await this.documents.search(user.userId, DocumentSearchQuerySchema.parse(query)) };
+    return {
+      data: await this.documents.search(user.userId, DocumentSearchQuerySchema.parse(query)),
+    };
   }
 
   @Post('bulk')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async bulkAction(@Body() body: unknown, @CurrentUser() user: ScopedUser) {
-    return { data: await this.documents.bulkAction(user.userId, DocumentBulkActionInputSchema.parse(body)) };
+    return {
+      data: await this.documents.bulkAction(user.userId, DocumentBulkActionInputSchema.parse(body)),
+    };
   }
 
   @Get(':uuid/file')
-  async file(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser, @Res({ passthrough: true }) response: Response) {
+  async file(
+    @Param('uuid') uuid: string,
+    @CurrentUser() user: ScopedUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     this.logger.debug(`Get File ${uuid}`);
     const result = await this.documents.getFile(user.userId, uuid);
     response.setHeader('Cache-Control', 'private, no-store');
-    response.setHeader('Content-Disposition', `inline; filename="${this.safeFilename(result.document.originalFilename)}"`);
+    response.setHeader(
+      'Content-Disposition',
+      `inline; filename="${this.safeFilename(result.document.originalFilename)}"`,
+    );
     return new StreamableFile(result.stream, { type: result.document.mimeType });
   }
 
@@ -129,8 +145,18 @@ export class DocumentController {
   }
 
   @Post(':uuid/title')
-  async updateTitle(@Param('uuid') uuid: string, @Body() body: unknown, @CurrentUser() user: ScopedUser) {
-    return { data: await this.documents.updateTitle(user.userId, uuid, SetDocumentTitleInputSchema.parse(body)) };
+  async updateTitle(
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    return {
+      data: await this.documents.updateTitle(
+        user.userId,
+        uuid,
+        SetDocumentTitleInputSchema.parse(body),
+      ),
+    };
   }
 
   @Post(':uuid/title/suggest')
@@ -155,8 +181,18 @@ export class DocumentController {
   }
 
   @Post(':uuid/metadata')
-  async setMetadata(@Param('uuid') uuid: string, @Body() body: unknown, @CurrentUser() user: ScopedUser) {
-    return { data: await this.documents.setMetadata(user.userId, uuid, SetDocumentMetadataInputSchema.parse(body)) };
+  async setMetadata(
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    return {
+      data: await this.documents.setMetadata(
+        user.userId,
+        uuid,
+        SetDocumentMetadataInputSchema.parse(body),
+      ),
+    };
   }
 
   @Post(':uuid/pipeline/requeue')
@@ -167,7 +203,11 @@ export class DocumentController {
 
   @Get(':uuid/thumbnail')
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
-  async thumbnail(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser, @Res({ passthrough: true }) response: Response) {
+  async thumbnail(
+    @Param('uuid') uuid: string,
+    @CurrentUser() user: ScopedUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     this.logger.debug(`Get thumbnail ${uuid}`);
     const result = await this.documents.getThumbnail(user.userId, uuid);
     response.setHeader('Cache-Control', 'private, max-age=86400, immutable');
@@ -186,6 +226,9 @@ export class DocumentController {
 
   private setArchiveHeaders(response: Response, filename: string): void {
     response.setHeader('Cache-Control', 'private, no-store');
-    response.setHeader('Content-Disposition', `attachment; filename="${this.safeFilename(filename)}"`);
+    response.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${this.safeFilename(filename)}"`,
+    );
   }
 }

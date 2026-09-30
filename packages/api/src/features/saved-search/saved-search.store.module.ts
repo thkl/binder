@@ -5,6 +5,6 @@ import { SavedSearchStore } from './store/saved-search.store';
 @Module({
   imports: [DatabaseModule],
   providers: [SavedSearchStore],
-  exports: [SavedSearchStore]
+  exports: [SavedSearchStore],
 })
 export class SavedSearchStoreModule {}

@@ -19,13 +19,13 @@ button {
   display: inline-flex;
   min-height: 2.25rem;
   align-items: center;
-  gap: .4rem;
-  border: 1px solid rgba(157, 190, 232, .18);
-  border-radius: .45rem;
-  padding: .3rem .55rem;
+  gap: 0.4rem;
+  border: 1px solid rgba(157, 190, 232, 0.18);
+  border-radius: 0.45rem;
+  padding: 0.3rem 0.55rem;
   color: #a9bfd8;
-  background: rgba(5, 18, 35, .5);
-  font-size: .68rem;
+  background: rgba(5, 18, 35, 0.5);
+  font-size: 0.68rem;
   font-weight: 750;
   white-space: nowrap;
 }
@@ -33,7 +33,7 @@ button {
 .filter-trigger:hover,
 .filter-trigger:focus-visible,
 .filter-trigger.active {
-  border-color: rgba(97, 215, 244, .65);
+  border-color: rgba(97, 215, 244, 0.65);
   color: var(--cyan);
   outline: none;
 }
@@ -46,28 +46,28 @@ button {
   border-radius: 999px;
   color: #061326;
   background: var(--cyan);
-  font-size: .62rem;
+  font-size: 0.62rem;
 }
 
 .filter-chevron {
   color: #7188a5;
-  font-size: .85rem;
+  font-size: 0.85rem;
 }
 
 .filter-popover {
   position: absolute;
   z-index: 30;
-  top: calc(100% + .5rem);
+  top: calc(100% + 0.5rem);
   right: 0;
   display: grid;
   width: min(19rem, calc(100vw - 2rem));
-  gap: .7rem;
-  border: 1px solid rgba(157, 190, 232, .22);
-  border-radius: .75rem;
-  padding: .8rem;
+  gap: 0.7rem;
+  border: 1px solid rgba(157, 190, 232, 0.22);
+  border-radius: 0.75rem;
+  padding: 0.8rem;
   color: #cfe0f5;
   background: #0a2039;
-  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .35);
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.35);
 }
 
 .filter-popover-heading,
@@ -80,19 +80,19 @@ button {
 .filter-popover-heading,
 .filter-footer {
   justify-content: space-between;
-  gap: .75rem;
+  gap: 0.75rem;
 }
 
 .filter-popover-heading {
   color: #e6f3ff;
-  font-size: .75rem;
+  font-size: 0.75rem;
 }
 
 .close-button {
   width: 1.7rem;
   height: 1.7rem;
   border: 0;
-  border-radius: .35rem;
+  border-radius: 0.35rem;
   color: #8ba5c2;
   background: transparent;
   font-size: 1rem;
@@ -101,7 +101,7 @@ button {
 .close-button:hover,
 .close-button:focus-visible {
   color: var(--cyan);
-  background: rgba(97, 215, 244, .1);
+  background: rgba(97, 215, 244, 0.1);
   outline: none;
 }
 
@@ -109,32 +109,32 @@ button {
   width: 100%;
   box-sizing: border-box;
   min-height: 2.2rem;
-  border: 1px solid rgba(157, 190, 232, .2);
-  border-radius: .4rem;
-  padding: .35rem .55rem;
+  border: 1px solid rgba(157, 190, 232, 0.2);
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.55rem;
   color: #e6f3ff;
-  background: rgba(5, 18, 35, .55);
+  background: rgba(5, 18, 35, 0.55);
 }
 
 .filter-search input:focus-visible {
   border-color: var(--cyan);
-  outline: 2px solid rgba(97, 215, 244, .2);
+  outline: 2px solid rgba(97, 215, 244, 0.2);
   outline-offset: 1px;
 }
 
 .filter-actions {
   display: flex;
-  gap: .35rem;
+  gap: 0.35rem;
 }
 
 .filter-actions button,
 .apply-button {
-  border: 1px solid rgba(157, 190, 232, .18);
-  border-radius: .35rem;
-  padding: .35rem .5rem;
+  border: 1px solid rgba(157, 190, 232, 0.18);
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.5rem;
   color: #a9bfd8;
-  background: rgba(5, 18, 35, .42);
-  font-size: .65rem;
+  background: rgba(5, 18, 35, 0.42);
+  font-size: 0.65rem;
   font-weight: 750;
 }
 
@@ -149,22 +149,22 @@ button {
   display: grid;
   max-height: 15rem;
   overflow-y: auto;
-  gap: .1rem;
-  padding-right: .15rem;
+  gap: 0.1rem;
+  padding-right: 0.15rem;
 }
 
 .filter-option {
   min-height: 2.1rem;
-  gap: .5rem;
-  border-radius: .35rem;
-  padding: .25rem .35rem;
+  gap: 0.5rem;
+  border-radius: 0.35rem;
+  padding: 0.25rem 0.35rem;
   color: #b9cde3;
   cursor: pointer;
-  font-size: .7rem;
+  font-size: 0.7rem;
 }
 
 .filter-option:hover {
-  background: rgba(97, 215, 244, .08);
+  background: rgba(97, 215, 244, 0.08);
 }
 
 .filter-option input {
@@ -184,22 +184,22 @@ button {
 .option-count,
 .filter-footer {
   color: #7188a5;
-  font-size: .65rem;
+  font-size: 0.65rem;
 }
 
 .filter-empty {
-  margin: .5rem 0;
+  margin: 0.5rem 0;
   color: #7188a5;
-  font-size: .7rem;
+  font-size: 0.7rem;
 }
 
 .filter-footer {
-  padding-top: .65rem;
-  border-top: 1px solid rgba(157, 190, 232, .12);
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(157, 190, 232, 0.12);
 }
 
 .apply-button {
-  border-color: rgba(97, 215, 244, .45);
+  border-color: rgba(97, 215, 244, 0.45);
   color: #061326;
   background: var(--cyan);
 }

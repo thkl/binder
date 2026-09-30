@@ -26,7 +26,7 @@ import {
   UpdateIssuerInput,
   UpdateIssuerInputSchema,
   DocumentExtractedTextResponse,
-  DocumentExtractedTextResponseSchema
+  DocumentExtractedTextResponseSchema,
 } from '@binder/common';
 import { ClearDocumentSuggestionResponseSchema } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
@@ -49,7 +49,7 @@ export class MetadataService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary`, { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary`, { withCredentials: true }),
       );
       const vocabulary = VocabularyResponseSchema.parse(response.data);
       this.vocabulary.set(vocabulary);
@@ -66,7 +66,9 @@ export class MetadataService {
   async loadDefinitions(): Promise<MetadataDefinition[] | null> {
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(`${this.apiUrl}/definitions`, { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(`${this.apiUrl}/definitions`, {
+          withCredentials: true,
+        }),
       );
       const definitions = MetadataDefinitionsResponseSchema.parse(response.data).items;
       this.definitions.set(definitions);
@@ -80,7 +82,7 @@ export class MetadataService {
   async loadIssuers(): Promise<Issuer[] | null> {
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>('/api/v1/issuers', { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>('/api/v1/issuers', { withCredentials: true }),
       );
       const issuers = IssuerListResponseSchema.parse(response.data).items;
       this.issuers.set(issuers);
@@ -95,9 +97,15 @@ export class MetadataService {
     this.saving.set(true);
     this.error.set(null);
     try {
-      const response = await firstValueFrom(this.http.post<ApiResponse<unknown>>('/api/v1/issuers', CreateIssuerInputSchema.parse(input), {
-        withCredentials: true
-      }));
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          '/api/v1/issuers',
+          CreateIssuerInputSchema.parse(input),
+          {
+            withCredentials: true,
+          },
+        ),
+      );
       const issuer = IssuerSchema.parse(response.data);
       await this.loadIssuers();
       return issuer;
@@ -113,9 +121,15 @@ export class MetadataService {
     this.saving.set(true);
     this.error.set(null);
     try {
-      const response = await firstValueFrom(this.http.patch<ApiResponse<unknown>>(`/api/v1/issuers/${uuid}`, UpdateIssuerInputSchema.parse(input), {
-        withCredentials: true
-      }));
+      const response = await firstValueFrom(
+        this.http.patch<ApiResponse<unknown>>(
+          `/api/v1/issuers/${uuid}`,
+          UpdateIssuerInputSchema.parse(input),
+          {
+            withCredentials: true,
+          },
+        ),
+      );
       const issuer = IssuerSchema.parse(response.data);
       await this.loadIssuers();
       return issuer;
@@ -131,9 +145,15 @@ export class MetadataService {
     this.saving.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/definitions`, CreateMetadataDefinitionSchema.parse(input), {
-        withCredentials: true
-      }));
+      await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          `${this.apiUrl}/definitions`,
+          CreateMetadataDefinitionSchema.parse(input),
+          {
+            withCredentials: true,
+          },
+        ),
+      );
       await this.loadDefinitions();
       return true;
     } catch (error) {
@@ -144,14 +164,19 @@ export class MetadataService {
     }
   }
 
-  async create(kind: 'document-types' | 'categories' | 'tags', input: CreateVocabularyItem): Promise<boolean> {
+  async create(
+    kind: 'document-types' | 'categories' | 'tags',
+    input: CreateVocabularyItem,
+  ): Promise<boolean> {
     this.saving.set(true);
     this.error.set(null);
     try {
       const payload = CreateVocabularyItemSchema.parse(input);
-      await firstValueFrom(this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}`, payload, {
-        withCredentials: true
-      }));
+      await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}`, payload, {
+          withCredentials: true,
+        }),
+      );
       await this.loadVocabulary();
       return true;
     } catch (error) {
@@ -162,14 +187,24 @@ export class MetadataService {
     }
   }
 
-  async updateVocabulary(kind: 'document-types' | 'categories' | 'tags', uuid: string, input: UpdateVocabularyItem): Promise<boolean> {
+  async updateVocabulary(
+    kind: 'document-types' | 'categories' | 'tags',
+    uuid: string,
+    input: UpdateVocabularyItem,
+  ): Promise<boolean> {
     this.saving.set(true);
     this.error.set(null);
     try {
       const payload = UpdateVocabularyItemSchema.parse(input);
-      await firstValueFrom(this.http.patch<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}/${uuid}`, payload, {
-        withCredentials: true
-      }));
+      await firstValueFrom(
+        this.http.patch<ApiResponse<unknown>>(
+          `${this.apiUrl}/vocabulary/${kind}/${uuid}`,
+          payload,
+          {
+            withCredentials: true,
+          },
+        ),
+      );
       await this.loadVocabulary();
       return true;
     } catch (error) {
@@ -180,13 +215,22 @@ export class MetadataService {
     }
   }
 
-  async cloneVocabulary(kind: 'document-types' | 'categories', uuid: string): Promise<VocabularyItem | null> {
+  async cloneVocabulary(
+    kind: 'document-types' | 'categories',
+    uuid: string,
+  ): Promise<VocabularyItem | null> {
     this.saving.set(true);
     this.error.set(null);
     try {
-      const response = await firstValueFrom(this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}/${uuid}/clone`, {}, {
-        withCredentials: true
-      }));
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          `${this.apiUrl}/vocabulary/${kind}/${uuid}/clone`,
+          {},
+          {
+            withCredentials: true,
+          },
+        ),
+      );
       const item = VocabularyItemSchema.parse(response.data);
       await this.loadVocabulary();
       return item;
@@ -202,9 +246,11 @@ export class MetadataService {
     this.saving.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(this.http.delete<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}/${uuid}`, {
-        withCredentials: true
-      }));
+      await firstValueFrom(
+        this.http.delete<ApiResponse<unknown>>(`${this.apiUrl}/vocabulary/${kind}/${uuid}`, {
+          withCredentials: true,
+        }),
+      );
       await this.loadVocabulary();
       return true;
     } catch (error) {
@@ -218,7 +264,9 @@ export class MetadataService {
   async getDocumentMetadata(uuid: string): Promise<DocumentMetadata | null> {
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(`/api/v1/documents/${uuid}/metadata`, { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(`/api/v1/documents/${uuid}/metadata`, {
+          withCredentials: true,
+        }),
       );
       return DocumentMetadataSchema.parse(response.data);
     } catch (error) {
@@ -230,7 +278,9 @@ export class MetadataService {
   async getExtractedText(uuid: string): Promise<DocumentExtractedTextResponse | null> {
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(`/api/v1/documents/${uuid}/extracted-text`, { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(`/api/v1/documents/${uuid}/extracted-text`, {
+          withCredentials: true,
+        }),
       );
       return DocumentExtractedTextResponseSchema.parse(response.data);
     } catch (error) {
@@ -238,14 +288,21 @@ export class MetadataService {
     }
   }
 
-  async setDocumentMetadata(uuid: string, input: SetDocumentMetadataInput): Promise<DocumentMetadata | null> {
+  async setDocumentMetadata(
+    uuid: string,
+    input: SetDocumentMetadataInput,
+  ): Promise<DocumentMetadata | null> {
     this.saving.set(true);
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(`/api/v1/documents/${uuid}/metadata`, SetDocumentMetadataInputSchema.parse(input), {
-          withCredentials: true
-        })
+        this.http.post<ApiResponse<unknown>>(
+          `/api/v1/documents/${uuid}/metadata`,
+          SetDocumentMetadataInputSchema.parse(input),
+          {
+            withCredentials: true,
+          },
+        ),
       );
       return DocumentMetadataSchema.parse(response.data);
     } catch (error) {
@@ -259,7 +316,9 @@ export class MetadataService {
   async clearDocumentSuggestion(uuid: string): Promise<boolean | null> {
     try {
       const response = await firstValueFrom(
-        this.http.delete<ApiResponse<unknown>>(`/api/v1/documents/${uuid}/ai-suggestion`, { withCredentials: true })
+        this.http.delete<ApiResponse<unknown>>(`/api/v1/documents/${uuid}/ai-suggestion`, {
+          withCredentials: true,
+        }),
       );
       return ClearDocumentSuggestionResponseSchema.parse(response.data).cleared;
     } catch (error) {
@@ -269,8 +328,10 @@ export class MetadataService {
   }
 
   private getErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse && error.status === 401) return 'Your session has expired. Please sign in again.';
-    if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') return error.error.message;
+    if (error instanceof HttpErrorResponse && error.status === 401)
+      return 'Your session has expired. Please sign in again.';
+    if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string')
+      return error.error.message;
     return 'The metadata could not be updated. Please try again.';
   }
 }

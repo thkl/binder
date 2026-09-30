@@ -1,4 +1,13 @@
-import { AllowNull, Column, CreatedAt, DataType, Default, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import {
+  AllowNull,
+  Column,
+  CreatedAt,
+  DataType,
+  Default,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
 
 export interface PipelineJobEventAttributes {
   uuid: string;
@@ -8,12 +17,18 @@ export interface PipelineJobEventAttributes {
   createdAt: Date;
 }
 
-export type PipelineJobEventCreationAttributes = Omit<PipelineJobEventAttributes, 'uuid' | 'createdAt'> & {
+export type PipelineJobEventCreationAttributes = Omit<
+  PipelineJobEventAttributes,
+  'uuid' | 'createdAt'
+> & {
   uuid?: string;
 };
 
 @Table({ tableName: 'pipeline_job_events', underscored: true, timestamps: false })
-export class PipelineJobEvent extends Model<PipelineJobEventAttributes, PipelineJobEventCreationAttributes> {
+export class PipelineJobEvent extends Model<
+  PipelineJobEventAttributes,
+  PipelineJobEventCreationAttributes
+> {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column({ field: 'id', type: DataType.UUID })
@@ -33,4 +48,3 @@ export class PipelineJobEvent extends Model<PipelineJobEventAttributes, Pipeline
   @Column({ field: 'created_at', type: DataType.DATE })
   declare readonly createdAt: Date;
 }
-

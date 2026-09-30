@@ -12,8 +12,7 @@ export class MaintenanceRequestStore extends BaseCrudStore<MaintenanceRequest> {
   findPendingBackup(): Promise<MaintenanceRequest | null> {
     return this.model.findOne({
       where: { jobKey: 'backup' },
-      order: [['createdAt', 'ASC']]
+      order: [['createdAt', 'ASC']],
     });
   }
-
 }

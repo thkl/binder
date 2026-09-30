@@ -5,6 +5,6 @@ import { SavedSearchService } from './service/saved-search.service';
 @Module({
   imports: [SavedSearchStoreModule],
   providers: [SavedSearchService],
-  exports: [SavedSearchService]
+  exports: [SavedSearchService],
 })
 export class SavedSearchServiceModule {}

@@ -6,6 +6,6 @@ import { MetadataStore } from './store/metadata.store';
 @Module({
   imports: [DatabaseModule, DocumentStoreModule],
   providers: [MetadataStore],
-  exports: [MetadataStore]
+  exports: [MetadataStore],
 })
 export class MetadataStoreModule {}

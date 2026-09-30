@@ -5,6 +5,6 @@ import { SavedSearchServiceModule } from './saved-search.service.module';
 
 @Module({
   imports: [SavedSearchServiceModule, AuthenticationServiceModule],
-  controllers: [SavedSearchController]
+  controllers: [SavedSearchController],
 })
 export class SavedSearchModule {}

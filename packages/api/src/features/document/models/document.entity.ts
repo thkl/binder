@@ -7,10 +7,16 @@ import {
   Model,
   PrimaryKey,
   Table,
-  UpdatedAt
+  UpdatedAt,
 } from 'sequelize-typescript';
 
-export type DocumentStatus = 'uploaded' | 'scanning' | 'processing' | 'ready' | 'failed' | 'quarantined';
+export type DocumentStatus =
+  | 'uploaded'
+  | 'scanning'
+  | 'processing'
+  | 'ready'
+  | 'failed'
+  | 'quarantined';
 
 export interface DocumentAttributes {
   uuid: string;
@@ -32,7 +38,18 @@ export interface DocumentAttributes {
   updatedAt: Date;
 }
 
-export type DocumentCreationAttributes = Omit<DocumentAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'thumbnailKey' | 'pageCount' | 'issuerUuid' | 'isNew' | 'aiSuggestion'> & {
+export type DocumentCreationAttributes = Omit<
+  DocumentAttributes,
+  | 'createdAt'
+  | 'updatedAt'
+  | 'uuid'
+  | 'status'
+  | 'thumbnailKey'
+  | 'pageCount'
+  | 'issuerUuid'
+  | 'isNew'
+  | 'aiSuggestion'
+> & {
   uuid?: string;
   thumbnailKey?: string | null;
   pageCount?: number;
@@ -78,13 +95,16 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   @Column({ field: 'page_count', type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
   declare pageCount: number;
 
-  @AllowNull @Column({ field: 'document_type_id', type: DataType.UUID })
+  @AllowNull
+  @Column({ field: 'document_type_id', type: DataType.UUID })
   declare documentTypeUuid: string | null;
 
-  @AllowNull @Column({ field: 'category_id', type: DataType.UUID })
+  @AllowNull
+  @Column({ field: 'category_id', type: DataType.UUID })
   declare categoryUuid: string | null;
 
-  @AllowNull @Column({ field: 'issuer_id', type: DataType.UUID })
+  @AllowNull
+  @Column({ field: 'issuer_id', type: DataType.UUID })
   declare issuerUuid: string | null;
 
   @Column({ field: 'is_new', type: DataType.BOOLEAN, allowNull: false, defaultValue: true })
@@ -100,7 +120,7 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   @Column({
     type: DataType.ENUM('uploaded', 'scanning', 'processing', 'ready', 'failed', 'quarantined'),
     allowNull: false,
-    defaultValue: 'uploaded'
+    defaultValue: 'uploaded',
   })
   declare status: DocumentStatus;
 

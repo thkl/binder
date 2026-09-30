@@ -6,7 +6,7 @@ export const DocumentStatusSchema = z.enum([
   'processing',
   'ready',
   'failed',
-  'quarantined'
+  'quarantined',
 ]);
 
 export type DocumentStatus = z.infer<typeof DocumentStatusSchema>;
@@ -32,18 +32,18 @@ export const MaintenanceRunSchema = z.object({
   issueCount: z.number().int().nonnegative().nullable(),
   error: z.string().nullable(),
   createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime()
+  updatedAt: z.iso.datetime(),
 });
 export type MaintenanceRun = z.infer<typeof MaintenanceRunSchema>;
 
 export const MaintenanceStatusResponseSchema = z.object({
   backupRootConfigured: z.boolean(),
-  items: z.array(MaintenanceRunSchema)
+  items: z.array(MaintenanceRunSchema),
 });
 export type MaintenanceStatusResponse = z.infer<typeof MaintenanceStatusResponseSchema>;
 
 export const MaintenanceRequestResponseSchema = z.object({
-  uuid: z.uuid()
+  uuid: z.uuid(),
 });
 export type MaintenanceRequestResponse = z.infer<typeof MaintenanceRequestResponseSchema>;
 
@@ -51,7 +51,7 @@ export const DocumentStorageIssueTypeSchema = z.enum([
   'missing',
   'size-mismatch',
   'checksum-mismatch',
-  'unreadable'
+  'unreadable',
 ]);
 export type DocumentStorageIssueType = z.infer<typeof DocumentStorageIssueTypeSchema>;
 
@@ -66,34 +66,39 @@ export const DocumentStorageIssueSchema = z.object({
   expectedSizeBytes: z.number().int().nonnegative(),
   actualSizeBytes: z.number().int().nonnegative().nullable(),
   expectedChecksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
-  actualChecksumSha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+  actualChecksumSha256: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/)
+    .nullable(),
   details: z.string().min(1).max(1000),
   firstDetectedAt: z.iso.datetime(),
   lastDetectedAt: z.iso.datetime(),
-  resolvedAt: z.iso.datetime().nullable()
+  resolvedAt: z.iso.datetime().nullable(),
 });
 export type DocumentStorageIssue = z.infer<typeof DocumentStorageIssueSchema>;
 
 export const DocumentStorageIssueListResponseSchema = z.object({
-  items: z.array(DocumentStorageIssueSchema)
+  items: z.array(DocumentStorageIssueSchema),
 });
-export type DocumentStorageIssueListResponse = z.infer<typeof DocumentStorageIssueListResponseSchema>;
+export type DocumentStorageIssueListResponse = z.infer<
+  typeof DocumentStorageIssueListResponseSchema
+>;
 
 export const DocumentGroupVocabularyValueSchema = z.object({
   uuid: z.uuid(),
   name: z.string().trim().min(1).max(150),
-  translations: z.record(z.string(), z.string()).default({})
+  translations: z.record(z.string(), z.string()).default({}),
 });
 
 export const DocumentGroupIssuerValueSchema = z.object({
   uuid: z.uuid(),
-  name: z.string().trim().min(1).max(200)
+  name: z.string().trim().min(1).max(200),
 });
 
 export const DocumentCustomMetadataSummarySchema = z.object({
   key: z.string().trim().min(1),
   label: z.string().trim().min(1),
-  value: z.unknown()
+  value: z.unknown(),
 });
 export type DocumentCustomMetadataSummary = z.infer<typeof DocumentCustomMetadataSummarySchema>;
 
@@ -102,7 +107,7 @@ export const DocumentMetadataSummarySchema = z.object({
   category: DocumentGroupVocabularyValueSchema.nullable(),
   issuer: DocumentGroupIssuerValueSchema.nullable(),
   tags: z.array(DocumentGroupVocabularyValueSchema),
-  custom: z.array(DocumentCustomMetadataSummarySchema).default([])
+  custom: z.array(DocumentCustomMetadataSummarySchema).default([]),
 });
 export type DocumentMetadataSummary = z.infer<typeof DocumentMetadataSummarySchema>;
 
@@ -123,7 +128,7 @@ export const DocumentSchema = z.object({
   metadataSummary: DocumentMetadataSummarySchema,
   status: DocumentStatusSchema,
   createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime()
+  updatedAt: z.iso.datetime(),
 });
 
 export type Document = z.infer<typeof DocumentSchema>;
@@ -138,56 +143,58 @@ export const FolderNodeSchema = z.object({
   documentCount: z.number().int().nonnegative(),
   hasChildren: z.boolean(),
   createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime()
+  updatedAt: z.iso.datetime(),
 });
 export type FolderNode = z.infer<typeof FolderNodeSchema>;
 
 export const FolderListResponseSchema = z.object({
   parentUuid: z.uuid().nullable(),
-  items: z.array(FolderNodeSchema)
+  items: z.array(FolderNodeSchema),
 });
 export type FolderListResponse = z.infer<typeof FolderListResponseSchema>;
 
 export const FolderDocumentListResponseSchema = z.object({
-  items: z.array(FolderNodeSchema)
+  items: z.array(FolderNodeSchema),
 });
 export type FolderDocumentListResponse = z.infer<typeof FolderDocumentListResponseSchema>;
 
 export const CreateFolderInputSchema = z.object({
   name: z.string().trim().min(1).max(255),
   parentUuid: z.uuid().nullable().optional(),
-  sortPosition: z.number().int().nonnegative().optional()
+  sortPosition: z.number().int().nonnegative().optional(),
 });
 export type CreateFolderInput = z.infer<typeof CreateFolderInputSchema>;
 
-export const UpdateFolderInputSchema = z.object({
-  name: z.string().trim().min(1).max(255).optional(),
-  sortPosition: z.number().int().nonnegative().optional()
-}).refine((input) => Object.keys(input).length > 0, 'At least one folder property is required');
+export const UpdateFolderInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(255).optional(),
+    sortPosition: z.number().int().nonnegative().optional(),
+  })
+  .refine((input) => Object.keys(input).length > 0, 'At least one folder property is required');
 export type UpdateFolderInput = z.infer<typeof UpdateFolderInputSchema>;
 
 export const MoveFolderInputSchema = z.object({
   parentUuid: z.uuid().nullable(),
-  sortPosition: z.number().int().nonnegative().optional()
+  sortPosition: z.number().int().nonnegative().optional(),
 });
 export type MoveFolderInput = z.infer<typeof MoveFolderInputSchema>;
 
 export const FolderDocumentInputSchema = z.object({
-  documentUuids: z.array(z.uuid()).min(1).max(1000)
+  documentUuids: z.array(z.uuid()).min(1).max(1000),
 });
 export type FolderDocumentInput = z.infer<typeof FolderDocumentInputSchema>;
 
 export const FolderDocumentActionResponseSchema = z.object({
   folderUuid: z.uuid(),
   affected: z.number().int().nonnegative(),
-  skipped: z.number().int().nonnegative()
+  skipped: z.number().int().nonnegative(),
 });
 export type FolderDocumentActionResponse = z.infer<typeof FolderDocumentActionResponseSchema>;
 
 export const FolderDeleteResponseSchema = z.object({
   deleted: z.boolean(),
   promotedChildren: z.number().int().nonnegative(),
-  removedLinks: z.number().int().nonnegative()
+  removedLinks: z.number().int().nonnegative(),
 });
 export type FolderDeleteResponse = z.infer<typeof FolderDeleteResponseSchema>;
 
@@ -198,19 +205,19 @@ export const DocumentGroupBySchema = z.enum([
   'issuer',
   'tag',
   'status',
-  'isNew'
+  'isNew',
 ]);
 export type DocumentGroupBy = z.infer<typeof DocumentGroupBySchema>;
 
 export const DocumentExtractedTextPageSchema = z.object({
   pageNumber: z.number().int().positive(),
-  text: z.string()
+  text: z.string(),
 });
 export type DocumentExtractedTextPage = z.infer<typeof DocumentExtractedTextPageSchema>;
 
 export const DocumentExtractedTextResponseSchema = z.object({
   text: z.string(),
-  pages: z.array(DocumentExtractedTextPageSchema)
+  pages: z.array(DocumentExtractedTextPageSchema),
 });
 export type DocumentExtractedTextResponse = z.infer<typeof DocumentExtractedTextResponseSchema>;
 
@@ -225,7 +232,7 @@ export const IssuerSchema = z.object({
   custom: z.record(z.string(), z.unknown()),
   folderUuid: z.uuid().nullable(),
   createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime()
+  updatedAt: z.iso.datetime(),
 });
 export type Issuer = z.infer<typeof IssuerSchema>;
 
@@ -239,7 +246,7 @@ export const CreateIssuerInputSchema = z.object({
   city: z.string().trim().max(150).nullable().optional(),
   country: z.string().trim().max(100).nullable().optional(),
   custom: z.record(z.string(), z.unknown()).optional().default({}),
-  folderUuid: z.uuid().nullable().optional()
+  folderUuid: z.uuid().nullable().optional(),
 });
 export type CreateIssuerInput = z.infer<typeof CreateIssuerInputSchema>;
 
@@ -247,7 +254,7 @@ export const UpdateIssuerInputSchema = CreateIssuerInputSchema.partial();
 export type UpdateIssuerInput = z.infer<typeof UpdateIssuerInputSchema>;
 
 export const SetDocumentTitleInputSchema = z.object({
-  title: z.string().trim().min(1).max(255)
+  title: z.string().trim().min(1).max(255),
 });
 export type SetDocumentTitleInput = z.infer<typeof SetDocumentTitleInputSchema>;
 
@@ -258,38 +265,36 @@ export const DocumentTitleSuggestionSchema = z.object({
   documentTypeUuid: z.uuid().nullable().default(null),
   categoryUuid: z.uuid().nullable().default(null),
   tagUuids: z.array(z.uuid()).max(50).default([]),
-  custom: z.record(z.string(), z.unknown()).default({})
+  custom: z.record(z.string(), z.unknown()).default({}),
 });
 export type DocumentTitleSuggestion = z.infer<typeof DocumentTitleSuggestionSchema>;
 
-export const DocumentBulkActionSchema = z.enum([
-  'analyze',
-  'requeue',
-  'mark-reviewed'
-]);
+export const DocumentBulkActionSchema = z.enum(['analyze', 'requeue', 'mark-reviewed']);
 export type DocumentBulkAction = z.infer<typeof DocumentBulkActionSchema>;
 
 export const DocumentBulkActionInputSchema = z.object({
-  documentUuids: z.array(z.uuid()).min(1).max(100).refine(
-    (uuids) => new Set(uuids).size === uuids.length,
-    'Document UUIDs must be unique'
-  ),
-  action: DocumentBulkActionSchema
+  documentUuids: z
+    .array(z.uuid())
+    .min(1)
+    .max(100)
+    .refine((uuids) => new Set(uuids).size === uuids.length, 'Document UUIDs must be unique'),
+  action: DocumentBulkActionSchema,
 });
 export type DocumentBulkActionInput = z.infer<typeof DocumentBulkActionInputSchema>;
 
 export const DocumentExportSelectionInputSchema = z.object({
-  documentUuids: z.array(z.uuid()).min(1).max(1000).refine(
-    (uuids) => new Set(uuids).size === uuids.length,
-    'Document UUIDs must be unique'
-  )
+  documentUuids: z
+    .array(z.uuid())
+    .min(1)
+    .max(1000)
+    .refine((uuids) => new Set(uuids).size === uuids.length, 'Document UUIDs must be unique'),
 });
 export type DocumentExportSelectionInput = z.infer<typeof DocumentExportSelectionInputSchema>;
 
 export const DocumentBulkActionItemSchema = z.object({
   uuid: z.uuid(),
   success: z.boolean(),
-  message: z.string().max(500).nullable()
+  message: z.string().max(500).nullable(),
 });
 export type DocumentBulkActionItem = z.infer<typeof DocumentBulkActionItemSchema>;
 
@@ -298,7 +303,7 @@ export const DocumentBulkActionResponseSchema = z.object({
   requested: z.number().int().nonnegative(),
   succeeded: z.number().int().nonnegative(),
   failed: z.number().int().nonnegative(),
-  items: z.array(DocumentBulkActionItemSchema)
+  items: z.array(DocumentBulkActionItemSchema),
 });
 export type DocumentBulkActionResponse = z.infer<typeof DocumentBulkActionResponseSchema>;
 
@@ -311,7 +316,7 @@ export const InboxItemStatusSchema = z.enum([
   'imported',
   'duplicate',
   'rejected',
-  'failed'
+  'failed',
 ]);
 export type InboxItemStatus = z.infer<typeof InboxItemStatusSchema>;
 
@@ -323,7 +328,10 @@ export const InboxQueueItemSchema = z.object({
   ownerUuid: z.uuid(),
   documentUuid: z.uuid().nullable(),
   originalFilename: z.string().min(1).max(255),
-  checksumSha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+  checksumSha256: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/)
+    .nullable(),
   sizeBytes: z.number().int().nonnegative(),
   status: InboxItemStatusSchema,
   aiStatus: InboxAiStatusSchema,
@@ -332,14 +340,14 @@ export const InboxQueueItemSchema = z.object({
   lastError: z.string().max(2000).nullable(),
   aiError: z.string().max(2000).nullable(),
   createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime()
+  updatedAt: z.iso.datetime(),
 });
 export type InboxQueueItem = z.infer<typeof InboxQueueItemSchema>;
 
 export const InboxQueueResponseSchema = z.object({
   items: z.array(InboxQueueItemSchema),
   total: z.number().int().nonnegative(),
-  aiCandidates: z.number().int().nonnegative()
+  aiCandidates: z.number().int().nonnegative(),
 });
 export type InboxQueueResponse = z.infer<typeof InboxQueueResponseSchema>;
 
@@ -347,7 +355,7 @@ export const InboxAiProcessResponseSchema = z.object({
   processed: z.number().int().nonnegative(),
   failed: z.number().int().nonnegative(),
   skipped: z.number().int().nonnegative(),
-  items: z.array(InboxQueueItemSchema)
+  items: z.array(InboxQueueItemSchema),
 });
 export type InboxAiProcessResponse = z.infer<typeof InboxAiProcessResponseSchema>;
 
@@ -360,7 +368,7 @@ export type InboxBulkRemoveResponse = z.infer<typeof InboxBulkRemoveResponseSche
 export const InboxChangeEventSchema = z.object({
   type: z.literal('inbox.changed'),
   occurredAt: z.iso.datetime(),
-  reason: z.string().max(100).optional()
+  reason: z.string().max(100).optional(),
 });
 export type InboxChangeEvent = z.infer<typeof InboxChangeEventSchema>;
 
@@ -373,12 +381,12 @@ export const LogFileSchema = z.object({
   isError: z.boolean(),
   compressed: z.boolean(),
   sizeBytes: z.number().int().nonnegative(),
-  modifiedAt: z.iso.datetime()
+  modifiedAt: z.iso.datetime(),
 });
 export type LogFile = z.infer<typeof LogFileSchema>;
 
 export const LogFileListResponseSchema = z.object({
-  items: z.array(LogFileSchema)
+  items: z.array(LogFileSchema),
 });
 export type LogFileListResponse = z.infer<typeof LogFileListResponseSchema>;
 
@@ -386,7 +394,7 @@ export const CreateDocumentInputSchema = z.object({
   originalFilename: z.string().trim().min(1).max(255),
   mimeType: z.literal('application/pdf'),
   sizeBytes: z.number().int().positive(),
-  checksumSha256: z.string().regex(/^[a-f0-9]{64}$/)
+  checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
 });
 
 export type CreateDocumentInput = z.infer<typeof CreateDocumentInputSchema>;
@@ -394,7 +402,10 @@ export type CreateDocumentInput = z.infer<typeof CreateDocumentInputSchema>;
 const parseQueryArray = (value: unknown): unknown => {
   if (typeof value !== 'string') return value;
   if (value.trim() === '') return [];
-  return value.split(',').map((item) => item.trim()).filter(Boolean);
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 };
 
 const parseQueryBoolean = (value: unknown): unknown => {
@@ -406,7 +417,9 @@ const parseQueryBoolean = (value: unknown): unknown => {
 export const DocumentListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
-  sort: z.enum(['createdAt', 'updatedAt', 'originalFilename', 'title', 'status']).default('createdAt'),
+  sort: z
+    .enum(['createdAt', 'updatedAt', 'originalFilename', 'title', 'status'])
+    .default('createdAt'),
   direction: z.enum(['asc', 'desc']).default('desc'),
   groupBy: DocumentGroupBySchema.default('none'),
   groupDirection: z.enum(['asc', 'desc']).default('asc'),
@@ -415,30 +428,18 @@ export const DocumentListQuerySchema = z.object({
   folderUuid: z.uuid().optional(),
   unassigned: z.preprocess(parseQueryBoolean, z.boolean().default(false)),
   q: z.string().trim().max(200).optional(),
-  documentTypeUuids: z.preprocess(
-    parseQueryArray,
-    z.array(z.uuid()).max(100).optional()
-  ),
-  categoryUuids: z.preprocess(
-    parseQueryArray,
-    z.array(z.uuid()).max(100).optional()
-  ),
-  issuerUuids: z.preprocess(
-    parseQueryArray,
-    z.array(z.uuid()).max(100).optional()
-  ),
-  tagUuids: z.preprocess(
-    parseQueryArray,
-    z.array(z.uuid()).max(100).optional()
-  ),
-  statuses: z.preprocess(
-    parseQueryArray,
-    z.array(DocumentStatusSchema).max(20).optional()
-  ),
+  documentTypeUuids: z.preprocess(parseQueryArray, z.array(z.uuid()).max(100).optional()),
+  categoryUuids: z.preprocess(parseQueryArray, z.array(z.uuid()).max(100).optional()),
+  issuerUuids: z.preprocess(parseQueryArray, z.array(z.uuid()).max(100).optional()),
+  tagUuids: z.preprocess(parseQueryArray, z.array(z.uuid()).max(100).optional()),
+  statuses: z.preprocess(parseQueryArray, z.array(DocumentStatusSchema).max(20).optional()),
   reviewStates: z.preprocess(
     parseQueryArray,
-    z.array(z.enum(['new', 'reviewed'])).max(2).optional()
-  )
+    z
+      .array(z.enum(['new', 'reviewed']))
+      .max(2)
+      .optional(),
+  ),
 });
 
 export type DocumentListQuery = z.infer<typeof DocumentListQuerySchema>;
@@ -447,7 +448,7 @@ export const DocumentListFacetOptionSchema = z.object({
   value: z.string().trim().min(1).max(200),
   label: z.string().trim().min(1).max(200),
   count: z.number().int().nonnegative(),
-  translations: z.record(z.string(), z.string()).default({})
+  translations: z.record(z.string(), z.string()).default({}),
 });
 export type DocumentListFacetOption = z.infer<typeof DocumentListFacetOptionSchema>;
 
@@ -457,7 +458,7 @@ export const DocumentListFacetsResponseSchema = z.object({
   issuer: z.array(DocumentListFacetOptionSchema),
   tag: z.array(DocumentListFacetOptionSchema),
   status: z.array(DocumentListFacetOptionSchema),
-  reviewState: z.array(DocumentListFacetOptionSchema)
+  reviewState: z.array(DocumentListFacetOptionSchema),
 });
 export type DocumentListFacetsResponse = z.infer<typeof DocumentListFacetsResponseSchema>;
 
@@ -469,7 +470,7 @@ export const DocumentListResponseSchema = z.object({
   total: z.number().int().min(0),
   totalPages: z.number().int().min(0),
   hasNext: z.boolean(),
-  hasPrev: z.boolean()
+  hasPrev: z.boolean(),
 });
 
 export type DocumentListResponse = z.infer<typeof DocumentListResponseSchema>;
@@ -484,16 +485,23 @@ export const DocumentSearchQuerySchema = z.object({
   issuerUuid: z.uuid().optional(),
   folderUuid: z.uuid().optional(),
   tagUuids: z.preprocess(
-    (value) => typeof value === 'string' ? value.split(',').map((item) => item.trim()).filter(Boolean) : value,
-    z.array(z.uuid()).max(20).optional()
+    (value) =>
+      typeof value === 'string'
+        ? value
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : value,
+    z.array(z.uuid()).max(20).optional(),
   ),
-  metadata: z.preprocess(
-    (value) => {
-      if (typeof value !== 'string' || value.trim() === '') return value;
-      try { return JSON.parse(value); } catch { return value; }
-    },
-    z.record(z.string(), z.string()).optional()
-  )
+  metadata: z.preprocess((value) => {
+    if (typeof value !== 'string' || value.trim() === '') return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }, z.record(z.string(), z.string()).optional()),
 });
 export type DocumentSearchQuery = z.infer<typeof DocumentSearchQuerySchema>;
 
@@ -502,18 +510,18 @@ export type SavedSearchKind = z.infer<typeof SavedSearchKindSchema>;
 
 export const SavedListSearchDefinitionSchema = z.object({
   kind: z.literal('list'),
-  query: DocumentListQuerySchema.partial()
+  query: DocumentListQuerySchema.partial(),
 });
 
 export const SavedSemanticSearchDefinitionSchema = z.object({
   kind: z.literal('semantic'),
   query: DocumentSearchQuerySchema,
-  onlySemantic: z.boolean().default(true)
+  onlySemantic: z.boolean().default(true),
 });
 
 export const SavedSearchDefinitionSchema = z.discriminatedUnion('kind', [
   SavedListSearchDefinitionSchema,
-  SavedSemanticSearchDefinitionSchema
+  SavedSemanticSearchDefinitionSchema,
 ]);
 export type SavedSearchDefinition = z.infer<typeof SavedSearchDefinitionSchema>;
 
@@ -523,30 +531,35 @@ export const SavedSearchSchema = z.object({
   name: z.string().trim().min(1).max(100),
   definition: SavedSearchDefinitionSchema,
   createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime()
+  updatedAt: z.iso.datetime(),
 });
 export type SavedSearch = z.infer<typeof SavedSearchSchema>;
 
 export const CreateSavedSearchInputSchema = z.object({
   name: z.string().trim().min(1).max(100),
-  definition: SavedSearchDefinitionSchema
+  definition: SavedSearchDefinitionSchema,
 });
 export type CreateSavedSearchInput = z.infer<typeof CreateSavedSearchInputSchema>;
 
-export const UpdateSavedSearchInputSchema = z.object({
-  name: z.string().trim().min(1).max(100).optional(),
-  definition: SavedSearchDefinitionSchema.optional()
-}).refine((input) => Object.keys(input).length > 0, 'At least one saved search property is required');
+export const UpdateSavedSearchInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100).optional(),
+    definition: SavedSearchDefinitionSchema.optional(),
+  })
+  .refine(
+    (input) => Object.keys(input).length > 0,
+    'At least one saved search property is required',
+  );
 export type UpdateSavedSearchInput = z.infer<typeof UpdateSavedSearchInputSchema>;
 
 export const SavedSearchListResponseSchema = z.object({
-  items: z.array(SavedSearchSchema)
+  items: z.array(SavedSearchSchema),
 });
 export type SavedSearchListResponse = z.infer<typeof SavedSearchListResponseSchema>;
 
 export const SavedSearchDeleteResponseSchema = z.object({
   deleted: z.literal(true),
-  uuid: z.uuid()
+  uuid: z.uuid(),
 });
 export type SavedSearchDeleteResponse = z.infer<typeof SavedSearchDeleteResponseSchema>;
 
@@ -555,14 +568,14 @@ export const DocumentSearchResultSchema = z.object({
   pageNumber: z.number().int().positive().nullable(),
   snippet: z.string().max(1000),
   matchType: z.enum(['text', 'title', 'semantic']),
-  semanticScore: z.number().min(0).max(1).nullable()
+  semanticScore: z.number().min(0).max(1).nullable(),
 });
 export type DocumentSearchResult = z.infer<typeof DocumentSearchResultSchema>;
 
 export const DocumentSearchResponseSchema = z.object({
   query: z.string().min(1),
   items: z.array(DocumentSearchResultSchema),
-  total: z.number().int().nonnegative()
+  total: z.number().int().nonnegative(),
 });
 export type DocumentSearchResponse = z.infer<typeof DocumentSearchResponseSchema>;
 
@@ -571,7 +584,7 @@ export const PipelineJobKindSchema = z.enum([
   'thumbnail',
   'text-extraction',
   'ocr',
-  'embedding'
+  'embedding',
 ]);
 export type PipelineJobKind = z.infer<typeof PipelineJobKindSchema>;
 
@@ -580,7 +593,7 @@ export const PipelineJobStatusSchema = z.enum([
   'running',
   'succeeded',
   'failed',
-  'cancelled'
+  'cancelled',
 ]);
 export type PipelineJobStatus = z.infer<typeof PipelineJobStatusSchema>;
 
@@ -598,7 +611,7 @@ export const PipelineJobSchema = z.object({
   completedAt: z.iso.datetime().nullable().optional(),
   lastError: z.string().max(2000).nullable().optional(),
   createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime()
+  updatedAt: z.iso.datetime(),
 });
 export type PipelineJob = z.infer<typeof PipelineJobSchema>;
 
@@ -607,13 +620,13 @@ export const PipelineJobEventSchema = z.object({
   jobUuid: z.uuid(),
   type: z.string().min(1).max(100),
   message: z.string().max(2000).nullable().optional(),
-  createdAt: z.iso.datetime()
+  createdAt: z.iso.datetime(),
 });
 export type PipelineJobEvent = z.infer<typeof PipelineJobEventSchema>;
 
 export const DocumentPipelineResponseSchema = z.object({
   jobs: z.array(PipelineJobSchema),
-  events: z.array(PipelineJobEventSchema)
+  events: z.array(PipelineJobEventSchema),
 });
 export type DocumentPipelineResponse = z.infer<typeof DocumentPipelineResponseSchema>;
 
@@ -621,7 +634,7 @@ export const PaginationMetaSchema = z.object({
   page: z.number().int().min(1),
   pageSize: z.number().int().min(1),
   total: z.number().int().min(0),
-  totalPages: z.number().int().min(0)
+  totalPages: z.number().int().min(0),
 });
 
 export type PaginationMeta = z.infer<typeof PaginationMetaSchema>;
@@ -629,7 +642,7 @@ export type PaginationMeta = z.infer<typeof PaginationMetaSchema>;
 export const HealthResponseSchema = z.object({
   status: z.literal('ok'),
   service: z.literal('api'),
-  version: z.string().min(1)
+  version: z.string().min(1),
 });
 
 export type HealthResponse = z.infer<typeof HealthResponseSchema>;
@@ -637,21 +650,21 @@ export type HealthResponse = z.infer<typeof HealthResponseSchema>;
 export const ApiErrorSchema = z.object({
   code: z.string().min(1),
   message: z.string().min(1),
-  requestId: z.string().min(1).optional()
+  requestId: z.string().min(1).optional(),
 });
 
 export type ApiError = z.infer<typeof ApiErrorSchema>;
 
 export const LoginInputSchema = z.object({
   username: z.string().trim().min(1).max(100),
-  password: z.string().min(1).max(512)
+  password: z.string().min(1).max(512),
 });
 
 export type LoginInput = z.infer<typeof LoginInputSchema>;
 
 export const SetupStatusSchema = z.object({
   required: z.boolean(),
-  available: z.boolean()
+  available: z.boolean(),
 });
 
 export type SetupStatus = z.infer<typeof SetupStatusSchema>;
@@ -659,14 +672,14 @@ export type SetupStatus = z.infer<typeof SetupStatusSchema>;
 export const SetupAdminInputSchema = z.object({
   setupSecret: z.string().min(1).max(512),
   username: z.string().trim().min(1).max(100),
-  password: z.string().min(12).max(512)
+  password: z.string().min(12).max(512),
 });
 
 export type SetupAdminInput = z.infer<typeof SetupAdminInputSchema>;
 
 export const ChangePasswordInputSchema = z.object({
   currentPassword: z.string().min(1).max(512),
-  newPassword: z.string().min(12).max(512)
+  newPassword: z.string().min(12).max(512),
 });
 
 export type ChangePasswordInput = z.infer<typeof ChangePasswordInputSchema>;
@@ -675,7 +688,7 @@ export const AuthenticatedUserSchema = z.object({
   uuid: z.uuid(),
   username: z.string().min(1),
   isAdmin: z.boolean(),
-  mustChangePassword: z.boolean()
+  mustChangePassword: z.boolean(),
 });
 
 export type AuthenticatedUser = z.infer<typeof AuthenticatedUserSchema>;
@@ -688,12 +701,12 @@ export const UserDirectoryItemSchema = z.object({
   uuid: z.uuid(),
   username: z.string().min(1).max(100),
   email: z.string().email().nullable(),
-  isAdmin: z.boolean()
+  isAdmin: z.boolean(),
 });
 export type UserDirectoryItem = z.infer<typeof UserDirectoryItemSchema>;
 
 export const UserDirectoryResponseSchema = z.object({
-  items: z.array(UserDirectoryItemSchema)
+  items: z.array(UserDirectoryItemSchema),
 });
 export type UserDirectoryResponse = z.infer<typeof UserDirectoryResponseSchema>;
 
@@ -703,14 +716,20 @@ export type AppLanguage = z.infer<typeof AppLanguageSchema>;
 export const LocalizedTextSchema = z.record(AppLanguageSchema, z.string().trim().max(150));
 export type LocalizedText = z.infer<typeof LocalizedTextSchema>;
 
-export const SettingControlTypeSchema = z.enum(['text', 'password', 'textarea', 'checkbox', 'select']);
+export const SettingControlTypeSchema = z.enum([
+  'text',
+  'password',
+  'textarea',
+  'checkbox',
+  'select',
+]);
 export type SettingControlType = z.infer<typeof SettingControlTypeSchema>;
 
 export const SettingValueSchema = z.union([z.string(), z.number(), z.boolean()]);
 
 export const SettingsSectionSchema = z.object({
   key: z.string().trim().min(1).max(100),
-  label: z.string().trim().min(1).max(200)
+  label: z.string().trim().min(1).max(200),
 });
 
 export type SettingsSection = z.infer<typeof SettingsSectionSchema>;
@@ -728,7 +747,7 @@ export const SettingsMapItemSchema = z.object({
   requiredIfValue: SettingValueSchema.optional(),
   pattern: z.string().max(1000).optional(),
   patternMessage: z.string().max(500).optional(),
-  options: z.array(z.string().trim().min(1).max(100)).max(50).optional()
+  options: z.array(z.string().trim().min(1).max(100)).max(50).optional(),
 });
 
 export type SettingsMapItem = z.infer<typeof SettingsMapItemSchema>;
@@ -738,21 +757,21 @@ export const ApplicationSettingsDataSchema = z.object({
   value: z.string(),
   isEncrypted: z.boolean(),
   // The database column is nullable, so API responses may contain null.
-  description: z.string().max(500).nullable().optional()
+  description: z.string().max(500).nullable().optional(),
 });
 
 export type ApplicationSettingsData = z.infer<typeof ApplicationSettingsDataSchema>;
 
 export const ApplicationSettingsTemplateSchema = z.object({
   sections: z.array(SettingsSectionSchema),
-  items: z.array(SettingsMapItemSchema)
+  items: z.array(SettingsMapItemSchema),
 });
 
 export type ApplicationSettingsTemplate = z.infer<typeof ApplicationSettingsTemplateSchema>;
 
 export const ApplicationSettingsResponseSchema = z.object({
   template: ApplicationSettingsTemplateSchema,
-  data: z.array(ApplicationSettingsDataSchema)
+  data: z.array(ApplicationSettingsDataSchema),
 });
 
 export type ApplicationSettingsResponse = z.infer<typeof ApplicationSettingsResponseSchema>;
@@ -761,7 +780,7 @@ export const SetApplicationSettingInputSchema = z.object({
   key: z.string().trim().min(1).max(255),
   value: z.string().max(100_000),
   isEncrypted: z.boolean().optional().default(false),
-  description: z.string().trim().max(500).optional()
+  description: z.string().trim().max(500).optional(),
 });
 
 export type SetApplicationSettingInput = z.infer<typeof SetApplicationSettingInputSchema>;
@@ -784,20 +803,20 @@ export const VocabularyItemSchema = z.object({
   active: z.boolean(),
   scope: VocabularyScopeSchema,
   createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime()
+  updatedAt: z.string().datetime(),
 });
 export type VocabularyItem = z.infer<typeof VocabularyItemSchema>;
 
 export const VocabularyDeleteResponseSchema = z.object({
   deleted: z.literal(true),
-  uuid: z.uuid()
+  uuid: z.uuid(),
 });
 export type VocabularyDeleteResponse = z.infer<typeof VocabularyDeleteResponseSchema>;
 
 export const VocabularyResponseSchema = z.object({
   documentTypes: z.array(VocabularyItemSchema),
   categories: z.array(VocabularyItemSchema),
-  tags: z.array(VocabularyItemSchema)
+  tags: z.array(VocabularyItemSchema),
 });
 export type VocabularyResponse = z.infer<typeof VocabularyResponseSchema>;
 
@@ -806,7 +825,7 @@ export const CreateVocabularyItemSchema = z.object({
   translations: LocalizedTextSchema.optional(),
   description: z.string().trim().max(500).optional(),
   scope: VocabularyScopeSchema.optional().default('personal'),
-  folderUuid: z.uuid().nullable().optional()
+  folderUuid: z.uuid().nullable().optional(),
 });
 export type CreateVocabularyItem = z.infer<typeof CreateVocabularyItemSchema>;
 
@@ -814,7 +833,7 @@ export const UpdateVocabularyItemSchema = z.object({
   name: z.string().trim().min(1).max(150).optional(),
   translations: LocalizedTextSchema.optional(),
   description: z.string().trim().max(500).nullable().optional(),
-  folderUuid: z.uuid().nullable().optional()
+  folderUuid: z.uuid().nullable().optional(),
 });
 export type UpdateVocabularyItem = z.infer<typeof UpdateVocabularyItemSchema>;
 
@@ -824,17 +843,28 @@ export const DocumentMetadataSchema = z.object({
   category: VocabularyItemSchema.nullable(),
   tags: z.array(VocabularyItemSchema),
   custom: z.record(z.string(), z.unknown()),
-  suggestion: DocumentTitleSuggestionSchema.nullable()
+  suggestion: DocumentTitleSuggestionSchema.nullable(),
 });
 export type DocumentMetadata = z.infer<typeof DocumentMetadataSchema>;
 
-export const MetadataFieldTypeSchema = z.enum(['text', 'number', 'date', 'datetime', 'boolean', 'select', 'multi-select']);
+export const MetadataFieldTypeSchema = z.enum([
+  'text',
+  'number',
+  'date',
+  'datetime',
+  'boolean',
+  'select',
+  'multi-select',
+]);
 export type MetadataFieldType = z.infer<typeof MetadataFieldTypeSchema>;
 
 export const MetadataDefinitionSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid().nullable(),
-  key: z.string().regex(/^[a-z][a-zA-Z0-9_]*$/).max(100),
+  key: z
+    .string()
+    .regex(/^[a-z][a-zA-Z0-9_]*$/)
+    .max(100),
   label: z.string().trim().min(1).max(150),
   type: MetadataFieldTypeSchema,
   options: z.array(z.string().trim().min(1).max(150)).nullable(),
@@ -843,23 +873,26 @@ export const MetadataDefinitionSchema = z.object({
   active: z.boolean(),
   scope: VocabularyScopeSchema,
   createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime()
+  updatedAt: z.string().datetime(),
 });
 export type MetadataDefinition = z.infer<typeof MetadataDefinitionSchema>;
 
 export const MetadataDefinitionsResponseSchema = z.object({
-  items: z.array(MetadataDefinitionSchema)
+  items: z.array(MetadataDefinitionSchema),
 });
 export type MetadataDefinitionsResponse = z.infer<typeof MetadataDefinitionsResponseSchema>;
 
 export const CreateMetadataDefinitionSchema = z.object({
-  key: z.string().regex(/^[a-z][a-zA-Z0-9_]*$/).max(100),
+  key: z
+    .string()
+    .regex(/^[a-z][a-zA-Z0-9_]*$/)
+    .max(100),
   label: z.string().trim().min(1).max(150),
   type: MetadataFieldTypeSchema,
   options: z.array(z.string().trim().min(1).max(150)).optional(),
   unique: z.boolean().optional().default(false),
   mandatory: z.boolean().optional().default(false),
-  scope: VocabularyScopeSchema.optional().default('personal')
+  scope: VocabularyScopeSchema.optional().default('personal'),
 });
 export type CreateMetadataDefinition = z.infer<typeof CreateMetadataDefinitionSchema>;
 
@@ -868,6 +901,6 @@ export const SetDocumentMetadataInputSchema = z.object({
   documentTypeUuid: z.uuid().nullable().optional(),
   categoryUuid: z.uuid().nullable().optional(),
   tagUuids: z.array(z.uuid()).optional(),
-  custom: z.record(z.string(), z.unknown()).optional()
+  custom: z.record(z.string(), z.unknown()).optional(),
 });
 export type SetDocumentMetadataInput = z.infer<typeof SetDocumentMetadataInputSchema>;

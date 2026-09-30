@@ -57,10 +57,10 @@ async function bootstrap(): Promise<void> {
   const corsOptions = {
     origin: rootUri,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true
+    credentials: true,
   };
 
-  if (nestConfigService.get<string>(ConfigKeys.NODE_ENV)!=='development') {
+  if (nestConfigService.get<string>(ConfigKeys.NODE_ENV) !== 'development') {
     app.enableCors(corsOptions);
   } else {
     logger.debug!('Skip Cors');
@@ -76,26 +76,28 @@ async function bootstrap(): Promise<void> {
     port: nestConfigService.get<number>(ConfigKeys.DATABASE_PORT) ?? 5432,
     database: nestConfigService.get<string>(ConfigKeys.DATABASE_NAME),
     user: nestConfigService.get<string>(ConfigKeys.DATABASE_USER),
-    password: nestConfigService.get<string>(ConfigKeys.DATABASE_PASSWORD)
+    password: nestConfigService.get<string>(ConfigKeys.DATABASE_PASSWORD),
   });
   const PgSession = connectPgSimple(session);
 
-  app.use(session({
-    proxy: secureCookies,
-    store: new PgSession({
-      pool: pgPool,
-      tableName: 'user_sessions'
+  app.use(
+    session({
+      proxy: secureCookies,
+      store: new PgSession({
+        pool: pgPool,
+        tableName: 'user_sessions',
+      }),
+      secret: sessionSecret,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: secureCookies,
+        sameSite: 'lax',
+        maxAge: Number(nestConfigService.get<string>(ConfigKeys.SESSION_TTL_MS) ?? 86_400_000),
+      },
     }),
-    secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: secureCookies,
-      sameSite: 'lax',
-      maxAge: Number(nestConfigService.get<string>(ConfigKeys.SESSION_TTL_MS) ?? 86_400_000)
-    }
-  }));
+  );
   logger.log(`Session cookies configured as ${secureCookies ? 'secure HTTPS' : 'HTTP-compatible'}`);
 
   app.setGlobalPrefix(nestConfigService.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1');
@@ -103,14 +105,19 @@ async function bootstrap(): Promise<void> {
   // Complete Nest initialization, including event subscriber registration,
   // before starting the database connection and opening the HTTP listener.
   await app.init();
-  logger.log("Initialization is done. Start App")
+  logger.log('Initialization is done. Start App');
   await app.get(DatabaseConnectionService).start();
   await app.get(DatabaseMigrationService).waitUntilInitialized();
   await app.listen(Number(nestConfigService.get<string>(ConfigKeys.API_PORT) ?? 3000));
 
-  void app.get(AuthenticationService).ensureBootstrapAdmin().catch((error: unknown) => {
-    logger.error(`Bootstrap administrator initialization failed: ${error instanceof Error ? error.message : String(error)}`);
-  });
+  void app
+    .get(AuthenticationService)
+    .ensureBootstrapAdmin()
+    .catch((error: unknown) => {
+      logger.error(
+        `Bootstrap administrator initialization failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
 }
 
 void bootstrap().catch((error: unknown) => {

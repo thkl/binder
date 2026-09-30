@@ -8,7 +8,7 @@ export class HealthController {
     return HealthResponseSchema.parse({
       status: 'ok',
       service: 'api',
-      version: '0.1.0'
+      version: '0.1.0',
     });
   }
 }

@@ -125,10 +125,7 @@ export class BinderLogger {
 
   errorit(message: any): void {
     if (message instanceof Error) {
-      this.logger.error(
-        `${message.message} at ${message.stack}`,
-        createContext(this.name),
-      );
+      this.logger.error(`${message.message} at ${message.stack}`, createContext(this.name));
     } else {
       this.logger.error(message, createContext(this.name));
     }

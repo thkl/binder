@@ -10,5 +10,4 @@ export const environment = {
   protocol: 'http',
   apiPort: '3000',
   httpOptions: {},
-  
 };

@@ -1,6 +1,11 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { ApiResponse, MaintenanceRequestResponseSchema, MaintenanceStatusResponse, MaintenanceStatusResponseSchema } from '@binder/common';
+import {
+  ApiResponse,
+  MaintenanceRequestResponseSchema,
+  MaintenanceStatusResponse,
+  MaintenanceStatusResponseSchema,
+} from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
 
@@ -18,7 +23,10 @@ export class MaintenanceService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(this.application.getApiUrl('v1', 'maintenance/status'), { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>(
+          this.application.getApiUrl('v1', 'maintenance/status'),
+          { withCredentials: true },
+        ),
       );
       this.status.set(MaintenanceStatusResponseSchema.parse(response.data));
     } catch (error) {
@@ -32,7 +40,11 @@ export class MaintenanceService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>(this.application.getApiUrl('v1', 'maintenance/backup'), {}, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(
+          this.application.getApiUrl('v1', 'maintenance/backup'),
+          {},
+          { withCredentials: true },
+        ),
       );
       return MaintenanceRequestResponseSchema.parse(response.data).uuid;
     } catch (error) {

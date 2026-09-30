@@ -1,5 +1,9 @@
 import { Body, Controller, Get, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
-import { ChangePasswordInputSchema, LoginInputSchema, UserDirectoryResponseSchema } from '@binder/common';
+import {
+  ChangePasswordInputSchema,
+  LoginInputSchema,
+  UserDirectoryResponseSchema,
+} from '@binder/common';
 import type { Request } from 'express';
 import { AuthenticationService } from '../service/authentication.service';
 import { SessionRequest } from '../models/request.model';
@@ -8,7 +12,6 @@ import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { Throttle } from '@nestjs/throttler';
 import { ensureCsrfToken } from '../../../shared/security/csrf-token';
- 
 
 @Controller('auth')
 export class AuthenticationController {
@@ -26,13 +29,13 @@ export class AuthenticationController {
   async login(@Body() body: unknown, @Req() request: SessionRequest) {
     const result = await this.authentication.login(LoginInputSchema.parse(body));
     await new Promise<void>((resolve, reject) => {
-      request.session.regenerate((error) => error ? reject(error) : resolve());
+      request.session.regenerate((error) => (error ? reject(error) : resolve()));
     });
     request.session.userId = result.uuid;
     request.session.mustChangePassword = result.mustChangePassword;
     const csrfToken = ensureCsrfToken(request);
     await new Promise<void>((resolve, reject) => {
-      request.session.save((error) => error ? reject(error) : resolve());
+      request.session.save((error) => (error ? reject(error) : resolve()));
     });
     return { data: result, csrfToken };
   }
@@ -57,7 +60,7 @@ export class AuthenticationController {
     }
     const result = await this.authentication.changePassword(
       request.session.userId,
-      ChangePasswordInputSchema.parse(body)
+      ChangePasswordInputSchema.parse(body),
     );
     request.session.mustChangePassword = false;
     const csrfToken = ensureCsrfToken(request);
@@ -67,7 +70,7 @@ export class AuthenticationController {
   @Post('logout')
   async logout(@Req() request: SessionRequest): Promise<{ data: null }> {
     await new Promise<void>((resolve, reject) => {
-      request.session.destroy((error) => error ? reject(error) : resolve());
+      request.session.destroy((error) => (error ? reject(error) : resolve()));
     });
     return { data: null };
   }

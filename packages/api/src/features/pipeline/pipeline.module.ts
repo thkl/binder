@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { PipelineServiceModule } from './pipeline.service.module';
 
 @Module({
-  imports: [PipelineServiceModule]
+  imports: [PipelineServiceModule],
 })
 export class PipelineModule {}
-

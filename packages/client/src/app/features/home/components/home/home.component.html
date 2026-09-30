@@ -12,7 +12,8 @@
         type="search"
         [placeholder]="'home.placeholder' | t"
         [attr.aria-label]="'home.title' | t"
-        autocomplete="off">
+        autocomplete="off"
+      />
       <button type="submit" [disabled]="search.loading() || !searchQuery().trim()">
         {{ search.loading() ? ('home.searching' | t) : ('home.search' | t) }}
       </button>
@@ -25,7 +26,8 @@
       aria-labelledby="home-upload-title"
       (dragover)="onUploadDragOver($event)"
       (dragleave)="onUploadDragLeave($event)"
-      (drop)="onUploadDrop($event)">
+      (drop)="onUploadDrop($event)"
+    >
       <div class="home-upload-copy">
         <span class="home-upload-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" focusable="false">
@@ -43,12 +45,14 @@
         type="file"
         accept="application/pdf,.pdf"
         [disabled]="documents.uploading()"
-        (change)="onUploadSelected($event)">
+        (change)="onUploadSelected($event)"
+      />
       <button
         type="button"
         class="home-upload-button"
         [disabled]="documents.uploading()"
-        (click)="uploadInput.click()">
+        (click)="uploadInput.click()"
+      >
         {{ documents.uploading() ? ('documents.uploading' | t) : ('home.chooseFile' | t) }}
       </button>
       @if (uploadMessage() === 'success') {
@@ -61,35 +65,57 @@
 
     @if (search.vocabulary(); as vocabulary) {
       <div class="search-filters" aria-label="Search filters">
-        <label>{{ 'home.type' | t }}
+        <label
+          >{{ 'home.type' | t }}
           <select [value]="selectedType()" (change)="selectedType.set($any($event.target).value)">
             <option value="">{{ 'home.anyType' | t }}</option>
-            @for (item of vocabulary.documentTypes; track item.uuid) { <option [value]="item.uuid">{{ itemName(item) }}</option> }
+            @for (item of vocabulary.documentTypes; track item.uuid) {
+              <option [value]="item.uuid">{{ itemName(item) }}</option>
+            }
           </select>
         </label>
-        <label>{{ 'home.category' | t }}
-          <select [value]="selectedCategory()" (change)="selectedCategory.set($any($event.target).value)">
+        <label
+          >{{ 'home.category' | t }}
+          <select
+            [value]="selectedCategory()"
+            (change)="selectedCategory.set($any($event.target).value)"
+          >
             <option value="">{{ 'home.anyCategory' | t }}</option>
-            @for (item of vocabulary.categories; track item.uuid) { <option [value]="item.uuid">{{ itemName(item) }}</option> }
+            @for (item of vocabulary.categories; track item.uuid) {
+              <option [value]="item.uuid">{{ itemName(item) }}</option>
+            }
           </select>
         </label>
-        <label>{{ 'home.tag' | t }}
+        <label
+          >{{ 'home.tag' | t }}
           <select [value]="selectedTag()" (change)="selectedTag.set($any($event.target).value)">
             <option value="">{{ 'home.anyTag' | t }}</option>
-            @for (item of vocabulary.tags; track item.uuid) { <option [value]="item.uuid">{{ itemName(item) }}</option> }
+            @for (item of vocabulary.tags; track item.uuid) {
+              <option [value]="item.uuid">{{ itemName(item) }}</option>
+            }
           </select>
         </label>
-        <label>{{ 'home.issuer' | t }}
-          <select [value]="selectedIssuer()" (change)="selectedIssuer.set($any($event.target).value)">
+        <label
+          >{{ 'home.issuer' | t }}
+          <select
+            [value]="selectedIssuer()"
+            (change)="selectedIssuer.set($any($event.target).value)"
+          >
             <option value="">{{ 'home.anyIssuer' | t }}</option>
-            @for (issuer of search.issuers(); track issuer.uuid) { <option [value]="issuer.uuid">{{ issuer.name }}</option> }
+            @for (issuer of search.issuers(); track issuer.uuid) {
+              <option [value]="issuer.uuid">{{ issuer.name }}</option>
+            }
           </select>
         </label>
-        <label>{{ 'home.results' | t }}
-          <select (change)="onlySemantic.set($any($event.target).value==='true')">
-            <option value="true" [selected]="onlySemantic()?'selected':undefined">{{ 'home.resultSemantic' | t }}</option>
-            <option value="false" [selected]="onlySemantic()?undefined:'selected'">{{ 'home.resultAll' | t }}</option>
-
+        <label
+          >{{ 'home.results' | t }}
+          <select (change)="onlySemantic.set($any($event.target).value === 'true')">
+            <option value="true" [selected]="onlySemantic() ? 'selected' : undefined">
+              {{ 'home.resultSemantic' | t }}
+            </option>
+            <option value="false" [selected]="onlySemantic() ? undefined : 'selected'">
+              {{ 'home.resultAll' | t }}
+            </option>
           </select>
         </label>
         <label class="threshold-control">
@@ -100,8 +126,9 @@
             max="1"
             step="0.05"
             [value]="semanticThreshold()"
-            (input)="semanticThreshold.set(+$any($event.target).value)">
-          <output>{{ semanticThreshold() | percent:'1.0-0' }}</output>
+            (input)="semanticThreshold.set(+$any($event.target).value)"
+          />
+          <output>{{ semanticThreshold() | percent: '1.0-0' }}</output>
         </label>
       </div>
     }
@@ -115,7 +142,8 @@
         (searchSelected)="loadSavedSearch($event)"
         (saveRequested)="saveCurrentSearch($event)"
         (renameRequested)="renameSavedSearch($event)"
-        (removeRequested)="removeSavedSearch($event)" />
+        (removeRequested)="removeSavedSearch($event)"
+      />
     </div>
     @if (savedSearches.error(); as savedSearchError) {
       <div class="notice error" role="alert">{{ savedSearchError }}</div>
@@ -128,33 +156,61 @@
   }
 
   @if (search.loading()) {
-    <section class="search-state"><span class="spinner"></span><p>{{ 'home.searching' | t }}</p></section>
+    <section class="search-state">
+      <span class="spinner"></span>
+      <p>{{ 'home.searching' | t }}</p>
+    </section>
   } @else if (search.result(); as result) {
     <section class="results-card" aria-live="polite">
       <header class="results-header">
-        <div><p class="section-kicker">{{ 'home.results' | t }}</p><h3>{{ result.total }} {{ result.total === 1 ? ('home.document' | t) : ('home.documents' | t) }} {{ 'home.found' | t }}</h3></div>
+        <div>
+          <p class="section-kicker">{{ 'home.results' | t }}</p>
+          <h3>
+            {{ result.total }}
+            {{ result.total === 1 ? ('home.document' | t) : ('home.documents' | t) }}
+            {{ 'home.found' | t }}
+          </h3>
+        </div>
         <span class="query-badge">“{{ result.query }}”</span>
       </header>
       @if (result.items.length === 0) {
-        <div class="search-state"><span class="empty-symbol" aria-hidden="true">⌕</span><h4>{{ 'home.noMatches' | t }}</h4><p>{{ 'home.tryFewer' | t }}</p></div>
+        <div class="search-state">
+          <span class="empty-symbol" aria-hidden="true">⌕</span>
+          <h4>{{ 'home.noMatches' | t }}</h4>
+          <p>{{ 'home.tryFewer' | t }}</p>
+        </div>
       } @else {
         <div class="result-list">
           @for (item of searchResult(); track item.document.uuid + '-' + item.pageNumber) {
             <article class="result-row">
-              <div class="result-mark" aria-hidden="true">{{ item.matchType === 'semantic' ? '✦' : item.matchType === 'text' ? '¶' : 'T' }}</div>
+              <div class="result-mark" aria-hidden="true">
+                {{ item.matchType === 'semantic' ? '✦' : item.matchType === 'text' ? '¶' : 'T' }}
+              </div>
               <div class="result-copy">
-                <a href="" (click)="openDocument($event, item.document.uuid)">{{ item.document.title || item.document.originalFilename }}</a>
+                <a href="" (click)="openDocument($event, item.document.uuid)">{{
+                  item.document.title || item.document.originalFilename
+                }}</a>
                 <small>
-                  {{ item.document.originalFilename }}{{ item.pageNumber ? ' · Page ' + item.pageNumber : ' · Title match' }}
+                  {{ item.document.originalFilename
+                  }}{{ item.pageNumber ? ' · Page ' + item.pageNumber : ' · Title match' }}
                   @if (item.semanticScore !== null) {
                     <span
                       class="semantic-score"
-                      [attr.aria-label]="('home.semanticMatch' | t) + ': ' + (item.semanticScore | percent:'1.0-0')">
-                      {{ 'home.semanticMatch' | t }} {{ item.semanticScore | percent:'1.0-0' }}
+                      [attr.aria-label]="
+                        ('home.semanticMatch' | t) + ': ' + (item.semanticScore | percent: '1.0-0')
+                      "
+                    >
+                      {{ 'home.semanticMatch' | t }} {{ item.semanticScore | percent: '1.0-0' }}
                     </span>
                   }
                 </small>
-                @if (item.document.metadataSummary.documentType || item.document.metadataSummary.category || item.document.metadataSummary.issuer || item.document.metadataSummary.tags.length > 0 || item.document.metadataSummary.custom.length > 0) {
+                @if (
+                  item.document.metadataSummary.documentType ||
+                  item.document.metadataSummary.category ||
+                  item.document.metadataSummary.issuer ||
+                  item.document.metadataSummary.tags.length > 0 ||
+                  item.document.metadataSummary.custom.length > 0
+                ) {
                   <div class="metadata-pills" [attr.aria-label]="'documents.metadata' | t">
                     @if (item.document.metadataSummary.documentType; as documentType) {
                       <span class="metadata-pill type-pill">{{ itemName(documentType) }}</span>
@@ -169,7 +225,10 @@
                       <span class="metadata-pill tag-pill">#{{ itemName(tag) }}</span>
                     }
                     @for (custom of item.document.metadataSummary.custom; track custom.key) {
-                      <span class="metadata-pill custom-pill" [attr.title]="custom.label + ': ' + formatCustomMetadata(custom.value)">
+                      <span
+                        class="metadata-pill custom-pill"
+                        [attr.title]="custom.label + ': ' + formatCustomMetadata(custom.value)"
+                      >
                         {{ custom.label }}: {{ formatCustomMetadata(custom.value) }}
                       </span>
                     }
@@ -178,8 +237,16 @@
                 <p>{{ item.snippet || 'No text snippet available.' }}</p>
               </div>
               <div class="result-actions">
-                <a class="open-result" href="" (click)="openDocument($event, item.document.uuid)">{{ 'documents.open' | t }} ↗</a>
-                <button type="button" class="metadata-result" (click)="openMetadata($event, item.document.uuid)">{{ 'documents.metadata' | t }}</button>
+                <a class="open-result" href="" (click)="openDocument($event, item.document.uuid)"
+                  >{{ 'documents.open' | t }} ↗</a
+                >
+                <button
+                  type="button"
+                  class="metadata-result"
+                  (click)="openMetadata($event, item.document.uuid)"
+                >
+                  {{ 'documents.metadata' | t }}
+                </button>
               </div>
             </article>
           }
@@ -190,7 +257,9 @@
     <section class="search-empty">
       <div class="empty-symbol" aria-hidden="true">✦</div>
       <h3>{{ 'home.history' | t }}</h3>
-      <p>Results combine keyword matches with semantic matches when hosted embeddings are enabled.</p>
+      <p>
+        Results combine keyword matches with semantic matches when hosted embeddings are enabled.
+      </p>
     </section>
   }
 </section>
@@ -208,6 +277,7 @@
       (discardRequest)="discardMetadataChanges()"
       (suggestionTitleAccepted)="titleSuggestionAccepted()"
       (suggestionDismissed)="reloadSearch()"
-      (suggestionAccepted)="titleSuggestionAccepted()" />
+      (suggestionAccepted)="titleSuggestionAccepted()"
+    />
   }
 }

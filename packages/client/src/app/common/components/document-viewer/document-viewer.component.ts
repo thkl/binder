@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, HostListener, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TranslatePipe } from '../../i18n/i18n.service';
 
@@ -8,7 +16,7 @@ import { TranslatePipe } from '../../i18n/i18n.service';
   imports: [TranslatePipe],
   templateUrl: './document-viewer.component.html',
   styleUrl: './document-viewer.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocumentViewerComponent {
   readonly documentUuid = input.required<string>();
@@ -17,8 +25,12 @@ export class DocumentViewerComponent {
 
   private readonly sanitizer = inject(DomSanitizer);
 
-  readonly fileUrl = computed<SafeResourceUrl>(() => this.sanitizer.bypassSecurityTrustResourceUrl(`/api/v1/documents/${this.documentUuid()}/file`));
+  readonly fileUrl = computed<SafeResourceUrl>(() =>
+    this.sanitizer.bypassSecurityTrustResourceUrl(`/api/v1/documents/${this.documentUuid()}/file`),
+  );
 
   @HostListener('document:keydown.escape')
-  closeWithEscape(): void { this.closed.emit(); }
+  closeWithEscape(): void {
+    this.closed.emit();
+  }
 }

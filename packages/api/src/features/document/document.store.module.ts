@@ -6,6 +6,6 @@ import { DocumentStorageIssueStore } from './store/document-storage-issue.store'
 @Module({
   imports: [DatabaseModule],
   providers: [DocumentStore, DocumentStorageIssueStore],
-  exports: [DocumentStore, DocumentStorageIssueStore]
+  exports: [DocumentStore, DocumentStorageIssueStore],
 })
 export class DocumentStoreModule {}

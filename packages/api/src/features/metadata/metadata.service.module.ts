@@ -6,6 +6,6 @@ import { FolderServiceModule } from '../folder/folder.service.module';
 @Module({
   imports: [MetadataStoreModule, FolderServiceModule],
   providers: [MetadataService],
-  exports: [MetadataService]
+  exports: [MetadataService],
 })
 export class MetadataServiceModule {}

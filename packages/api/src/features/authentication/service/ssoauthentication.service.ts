@@ -18,10 +18,12 @@ import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 export class SSOAuthenticationService {
   private config!: Configuration;
 
-  constructor(private readonly settingsService: ApplicationSettingsService, 
-    
-    private readonly appConfig: ConfigService<BinderConfig>) {}
- 
+  constructor(
+    private readonly settingsService: ApplicationSettingsService,
+
+    private readonly appConfig: ConfigService<BinderConfig>,
+  ) {}
+
   @OnEvent('database.connected')
   async initialize(): Promise<boolean> {
     if (this.config) {
@@ -30,8 +32,7 @@ export class SSOAuthenticationService {
 
     const OIDC_ISSUER_URL = await this.settingsService.get('oidc.ISSUER_URL');
     const OIDC_CLIENT_ID = await this.settingsService.get('oidc.CLIENT_ID');
-    const OIDC_CLIENT_SECRET =
-      await this.settingsService.get('oidc.CLIENT_SECRET');
+    const OIDC_CLIENT_SECRET = await this.settingsService.get('oidc.CLIENT_SECRET');
 
     if (!OIDC_ISSUER_URL || !OIDC_CLIENT_ID || !OIDC_CLIENT_SECRET) {
       return false;
@@ -39,14 +40,9 @@ export class SSOAuthenticationService {
     // Dynamic discovery fetches endpoints (auth, token, keys) automatically
     const issuerUrl = new URL(OIDC_ISSUER_URL); // e.g., 'https://accounts.google.com'
 
-    this.config = await discovery(
-      issuerUrl,
-      OIDC_CLIENT_ID,
-      OIDC_CLIENT_SECRET,
-    );
+    this.config = await discovery(issuerUrl, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET);
     return true;
   }
-
 
   async isActive(): Promise<boolean> {
     return this.config !== undefined;
@@ -58,7 +54,7 @@ export class SSOAuthenticationService {
       return;
     }
     const rootUrl = this.appConfig.get<string>(ConfigKeys.ROOT_URI);
-    const redirect_uri = `${rootUrl}/api/v1/ssoauth/callback`
+    const redirect_uri = `${rootUrl}/api/v1/ssoauth/callback`;
     if (!redirect_uri) {
       return;
     }
@@ -88,11 +84,7 @@ export class SSOAuthenticationService {
   }
 
   // 2. Process callback and validate tokens
-  async handleCallback(
-    currentUrl: URL,
-    expectedState: string,
-    codeVerifier: string,
-  ) {
+  async handleCallback(currentUrl: URL, expectedState: string, codeVerifier: string) {
     if (!(await this.initialize())) {
       throw new Error('SSO is not configured');
     }
@@ -103,16 +95,11 @@ export class SSOAuthenticationService {
 
     // Extract verified claims from the ID token payload
     const claims = tokens.claims();
-    const requireEmailVerified = await this.settingsService.get(
-      'oidc.email_verified',
-    );
-    const mustUseEmailVerified = requireEmailVerified?.toLowerCase() === 'true' ||
-      requireEmailVerified === '1';
+    const requireEmailVerified = await this.settingsService.get('oidc.email_verified');
+    const mustUseEmailVerified =
+      requireEmailVerified?.toLowerCase() === 'true' || requireEmailVerified === '1';
 
-    if (
-      mustUseEmailVerified &&
-      (claims === undefined || claims.email_verified !== true)
-    ) {
+    if (mustUseEmailVerified && (claims === undefined || claims.email_verified !== true)) {
       throw new Error('email_verified not set in claims');
     }
 

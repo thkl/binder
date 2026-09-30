@@ -12,7 +12,7 @@ import {
   VocabularyItem,
   VocabularyDeleteResponseSchema,
   VocabularyResponse,
-  VocabularyResponseSchema
+  VocabularyResponseSchema,
 } from '@binder/common';
 import { DocumentCategory, DocumentTag, DocumentType } from '../models/vocabulary.entity';
 import { MetadataStore } from '../store/metadata.store';
@@ -24,39 +24,59 @@ type VocabularyKind = 'documentTypes' | 'categories' | 'tags';
 export class MetadataService {
   constructor(
     private readonly store: MetadataStore,
-    private readonly folders: FolderService
+    private readonly folders: FolderService,
   ) {}
 
   async list(ownerUuid: string) {
     const [documentTypes, categories, tags] = await Promise.all([
       this.store.list(DocumentType, ownerUuid),
       this.store.list(DocumentCategory, ownerUuid),
-      this.store.list(DocumentTag, ownerUuid)
+      this.store.list(DocumentTag, ownerUuid),
     ]);
     return VocabularyResponseSchema.parse({
       documentTypes: documentTypes.map((item) => this.toResponse(item)),
       categories: categories.map((item) => this.toResponse(item)),
-      tags: tags.map((item) => this.toResponse(item))
+      tags: tags.map((item) => this.toResponse(item)),
     });
   }
 
-  async create(kind: VocabularyKind, ownerUuid: string, input: CreateVocabularyItem, isAdmin: boolean): Promise<VocabularyItem> {
+  async create(
+    kind: VocabularyKind,
+    ownerUuid: string,
+    input: CreateVocabularyItem,
+    isAdmin: boolean,
+  ): Promise<VocabularyItem> {
     if (input.scope === 'system' && !isAdmin) {
       throw new BadRequestException('Only administrators can create system vocabulary entries');
     }
     if (input.folderUuid && input.scope === 'system') {
-      throw new BadRequestException('Workspace vocabulary entries cannot be linked to personal folders');
+      throw new BadRequestException(
+        'Workspace vocabulary entries cannot be linked to personal folders',
+      );
     }
     if (input.folderUuid && kind === 'tags') {
       throw new BadRequestException('Tags cannot be linked to automatic folders');
     }
     if (input.folderUuid) await this.folders.ensureOwned(ownerUuid, input.folderUuid);
     const model = this.modelFor(kind);
-    const item = await this.store.create(model, input.scope === 'system' ? null : ownerUuid, input.name, input.description ?? null, input.translations ?? {}, input.folderUuid ?? null);
+    const item = await this.store.create(
+      model,
+      input.scope === 'system' ? null : ownerUuid,
+      input.name,
+      input.description ?? null,
+      input.translations ?? {},
+      input.folderUuid ?? null,
+    );
     return this.toResponse(item);
   }
 
-  async update(kind: VocabularyKind, ownerUuid: string, uuid: string, input: UpdateVocabularyItem, isAdmin: boolean): Promise<VocabularyItem> {
+  async update(
+    kind: VocabularyKind,
+    ownerUuid: string,
+    uuid: string,
+    input: UpdateVocabularyItem,
+    isAdmin: boolean,
+  ): Promise<VocabularyItem> {
     const model = this.modelFor(kind);
     const existing = await model.findByPk(uuid);
     if (!existing || (existing.ownerUuid !== null && existing.ownerUuid !== ownerUuid)) {
@@ -69,7 +89,9 @@ export class MetadataService {
       throw new BadRequestException('Tags cannot be linked to automatic folders');
     }
     if (input.folderUuid && existing.ownerUuid === null) {
-      throw new BadRequestException('Workspace vocabulary entries cannot be linked to personal folders');
+      throw new BadRequestException(
+        'Workspace vocabulary entries cannot be linked to personal folders',
+      );
     }
     if (input.folderUuid) await this.folders.ensureOwned(ownerUuid, input.folderUuid);
     if (input.name && input.name.toLocaleLowerCase() !== existing.name.toLocaleLowerCase()) {
@@ -77,8 +99,8 @@ export class MetadataService {
         where: {
           uuid: { [Op.ne]: uuid },
           ownerUuid: existing.ownerUuid,
-          name: { [Op.iLike]: input.name }
-        }
+          name: { [Op.iLike]: input.name },
+        },
       });
       if (duplicate) throw new BadRequestException(`A value named '${input.name}' already exists`);
     }
@@ -86,7 +108,9 @@ export class MetadataService {
       ...(input.name === undefined ? {} : { name: input.name }),
       ...(input.description === undefined ? {} : { description: input.description }),
       ...(input.translations === undefined ? {} : { translations: input.translations }),
-      ...(kind === 'tags' || input.folderUuid === undefined ? {} : { folderUuid: input.folderUuid })
+      ...(kind === 'tags' || input.folderUuid === undefined
+        ? {}
+        : { folderUuid: input.folderUuid }),
     });
     if (!updated) throw new NotFoundException('Metadata value not found');
     return this.toResponse(updated);
@@ -94,7 +118,9 @@ export class MetadataService {
 
   async clone(kind: VocabularyKind, ownerUuid: string, uuid: string): Promise<VocabularyItem> {
     if (kind === 'tags') {
-      throw new BadRequestException('Only document types and categories can be copied to personal vocabulary');
+      throw new BadRequestException(
+        'Only document types and categories can be copied to personal vocabulary',
+      );
     }
 
     const model = this.modelFor(kind);
@@ -102,8 +128,8 @@ export class MetadataService {
       where: {
         uuid,
         active: true,
-        ownerUuid: { [Op.or]: [null, ownerUuid] }
-      }
+        ownerUuid: { [Op.or]: [null, ownerUuid] },
+      },
     });
     if (!source) throw new NotFoundException('Metadata value not found');
     if (source.ownerUuid !== null) {
@@ -117,11 +143,13 @@ export class MetadataService {
         source.name,
         source.description,
         source.translations ?? {},
-        null
+        null,
       );
       return this.toResponse(copy);
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Unable to copy metadata value');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Unable to copy metadata value',
+      );
     }
   }
 
@@ -132,7 +160,11 @@ export class MetadataService {
 
     const model = this.modelFor(kind);
     const existing = await model.findByPk(uuid);
-    if (!existing || !existing.active || (existing.ownerUuid !== null && existing.ownerUuid !== ownerUuid)) {
+    if (
+      !existing ||
+      !existing.active ||
+      (existing.ownerUuid !== null && existing.ownerUuid !== ownerUuid)
+    ) {
       throw new NotFoundException('Metadata value not found');
     }
     if (existing.ownerUuid === null && !isAdmin) {
@@ -158,8 +190,8 @@ export class MetadataService {
         active: item.active,
         scope: item.ownerUuid === null ? 'system' : 'personal',
         createdAt: item.createdAt.toISOString(),
-        updatedAt: item.updatedAt.toISOString()
-      }))
+        updatedAt: item.updatedAt.toISOString(),
+      })),
     });
   }
 
@@ -168,7 +200,7 @@ export class MetadataService {
     return VocabularyResponseSchema.parse({
       documentTypes: this.preferPersonal(vocabulary.documentTypes),
       categories: this.preferPersonal(vocabulary.categories),
-      tags: this.preferPersonal(vocabulary.tags)
+      tags: this.preferPersonal(vocabulary.tags),
     });
   }
 
@@ -176,7 +208,10 @@ export class MetadataService {
     if (input.scope === 'system' && !isAdmin) {
       throw new BadRequestException('Only administrators can create system metadata fields');
     }
-    const definition = await this.store.createDefinition(input.scope === 'system' ? null : ownerUuid, input);
+    const definition = await this.store.createDefinition(
+      input.scope === 'system' ? null : ownerUuid,
+      input,
+    );
     return {
       uuid: definition.uuid,
       ownerUuid: definition.ownerUuid,
@@ -189,56 +224,85 @@ export class MetadataService {
       active: definition.active,
       scope: definition.ownerUuid === null ? 'system' : 'personal',
       createdAt: definition.createdAt.toISOString(),
-      updatedAt: definition.updatedAt.toISOString()
+      updatedAt: definition.updatedAt.toISOString(),
     };
   }
 
   async getDocumentMetadata(ownerUuid: string, documentUuid: string) {
     const metadata = await this.store.getDocumentMetadata(ownerUuid, documentUuid);
     if (!metadata) throw new NotFoundException('Document not found');
-    const suggestion = metadata.suggestion ? DocumentTitleSuggestionSchema.safeParse(metadata.suggestion) : null;
+    const suggestion = metadata.suggestion
+      ? DocumentTitleSuggestionSchema.safeParse(metadata.suggestion)
+      : null;
     return DocumentMetadataSchema.parse({
-      issuer: metadata.issuer ? {
-        uuid: metadata.issuer.uuid,
-        ownerUuid: metadata.issuer.ownerUuid,
-        name: metadata.issuer.name,
-        address: metadata.issuer.address,
-        zipCode: metadata.issuer.zipCode,
-        city: metadata.issuer.city,
-        country: metadata.issuer.country,
-        custom: metadata.issuer.custom ?? {},
-        folderUuid: metadata.issuer.folderUuid,
-        createdAt: metadata.issuer.createdAt.toISOString(),
-        updatedAt: metadata.issuer.updatedAt.toISOString()
-      } : null,
+      issuer: metadata.issuer
+        ? {
+            uuid: metadata.issuer.uuid,
+            ownerUuid: metadata.issuer.ownerUuid,
+            name: metadata.issuer.name,
+            address: metadata.issuer.address,
+            zipCode: metadata.issuer.zipCode,
+            city: metadata.issuer.city,
+            country: metadata.issuer.country,
+            custom: metadata.issuer.custom ?? {},
+            folderUuid: metadata.issuer.folderUuid,
+            createdAt: metadata.issuer.createdAt.toISOString(),
+            updatedAt: metadata.issuer.updatedAt.toISOString(),
+          }
+        : null,
       documentType: metadata.documentType ? this.toResponse(metadata.documentType) : null,
       category: metadata.category ? this.toResponse(metadata.category) : null,
       tags: metadata.tags.map((tag) => this.toResponse(tag)),
       custom: metadata.custom,
-      suggestion: suggestion?.success ? suggestion.data : null
+      suggestion: suggestion?.success ? suggestion.data : null,
     });
   }
 
-  async getDocumentMetadataSummaries(ownerUuid: string, documents: Array<{ uuid: string; documentTypeUuid: string | null; categoryUuid: string | null; issuerUuid: string | null }>) {
+  async getDocumentMetadataSummaries(
+    ownerUuid: string,
+    documents: Array<{
+      uuid: string;
+      documentTypeUuid: string | null;
+      categoryUuid: string | null;
+      issuerUuid: string | null;
+    }>,
+  ) {
     const summaries = await this.store.getDocumentMetadataSummaries(ownerUuid, documents);
-    return new Map([...summaries.entries()].map(([uuid, summary]) => [uuid, DocumentMetadataSummarySchema.parse({
-      documentType: summary.documentType ? {
-        uuid: summary.documentType.uuid,
-        name: summary.documentType.name,
-        translations: summary.documentType.translations ?? {}
-      } : null,
-      category: summary.category ? {
-        uuid: summary.category.uuid,
-        name: summary.category.name,
-        translations: summary.category.translations ?? {}
-      } : null,
-      issuer: summary.issuer ? { uuid: summary.issuer.uuid, name: summary.issuer.name } : null,
-      tags: summary.tags.map((tag) => ({ uuid: tag.uuid, name: tag.name, translations: tag.translations ?? {} })),
-      custom: summary.custom
-    })]));
+    return new Map(
+      [...summaries.entries()].map(([uuid, summary]) => [
+        uuid,
+        DocumentMetadataSummarySchema.parse({
+          documentType: summary.documentType
+            ? {
+                uuid: summary.documentType.uuid,
+                name: summary.documentType.name,
+                translations: summary.documentType.translations ?? {},
+              }
+            : null,
+          category: summary.category
+            ? {
+                uuid: summary.category.uuid,
+                name: summary.category.name,
+                translations: summary.category.translations ?? {},
+              }
+            : null,
+          issuer: summary.issuer ? { uuid: summary.issuer.uuid, name: summary.issuer.name } : null,
+          tags: summary.tags.map((tag) => ({
+            uuid: tag.uuid,
+            name: tag.name,
+            translations: tag.translations ?? {},
+          })),
+          custom: summary.custom,
+        }),
+      ]),
+    );
   }
 
-  async setDocumentMetadata(ownerUuid: string, documentUuid: string, input: SetDocumentMetadataInput) {
+  async setDocumentMetadata(
+    ownerUuid: string,
+    documentUuid: string,
+    input: SetDocumentMetadataInput,
+  ) {
     try {
       const metadata = await this.store.setDocumentMetadata(
         ownerUuid,
@@ -246,22 +310,27 @@ export class MetadataService {
         input.issuerUuid,
         input.documentTypeUuid,
         input.categoryUuid,
-        input.tagUuids
+        input.tagUuids,
       );
       if (!metadata) throw new NotFoundException('Document not found');
       if (input.custom !== undefined) {
         await this.store.setCustomValues(ownerUuid, documentUuid, input.custom);
       }
       const result = await this.getDocumentMetadata(ownerUuid, documentUuid);
-      const routingFolders = [result?.issuer?.folderUuid, result?.documentType?.folderUuid, result?.category?.folderUuid]
-        .filter((uuid): uuid is string => Boolean(uuid));
+      const routingFolders = [
+        result?.issuer?.folderUuid,
+        result?.documentType?.folderUuid,
+        result?.category?.folderUuid,
+      ].filter((uuid): uuid is string => Boolean(uuid));
       if (routingFolders.length > 0) {
         await this.folders.applyMetadataRouting(ownerUuid, documentUuid, routingFolders);
       }
       return result;
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
-      throw new BadRequestException(error instanceof Error ? error.message : 'Invalid document metadata');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Invalid document metadata',
+      );
     }
   }
 
@@ -281,7 +350,17 @@ export class MetadataService {
     });
   }
 
-  private toResponse(item: { uuid: string; ownerUuid: string | null; name: string; translations: Record<string, string>; description: string | null; folderUuid?: string | null; active: boolean; createdAt: Date; updatedAt: Date }): VocabularyItem {
+  private toResponse(item: {
+    uuid: string;
+    ownerUuid: string | null;
+    name: string;
+    translations: Record<string, string>;
+    description: string | null;
+    folderUuid?: string | null;
+    active: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): VocabularyItem {
     return {
       uuid: item.uuid,
       ownerUuid: item.ownerUuid,
@@ -292,7 +371,7 @@ export class MetadataService {
       active: item.active,
       scope: item.ownerUuid === null ? 'system' : 'personal',
       createdAt: item.createdAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString()
+      updatedAt: item.updatedAt.toISOString(),
     };
   }
 }

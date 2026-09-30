@@ -5,7 +5,7 @@ import { CsrfGuard } from './csrf.guard.js';
 
 function context(request: Record<string, unknown>) {
   return {
-    switchToHttp: () => ({ getRequest: () => request })
+    switchToHttp: () => ({ getRequest: () => request }),
   } as never;
 }
 
@@ -15,13 +15,13 @@ function request(overrides: Record<string, unknown> = {}): Record<string, unknow
     path: '/api/v1/documents',
     headers: {},
     session: { csrfToken: 'a'.repeat(64) },
-    ...overrides
+    ...overrides,
   };
 }
 
 function guard(): CsrfGuard {
   return new CsrfGuard({
-    get: () => 'https://binder.example.test'
+    get: () => 'https://binder.example.test',
   } as never);
 }
 
@@ -32,33 +32,42 @@ test('allows safe requests without a CSRF token', () => {
 test('accepts a matching CSRF token for authenticated mutations', () => {
   assert.equal(
     guard().canActivate(context(request({ headers: { 'x-csrf-token': 'a'.repeat(64) } }))),
-    true
+    true,
   );
 });
 
 test('rejects authenticated mutations without a matching token', () => {
   assert.throws(
     () => guard().canActivate(context(request())),
-    (error: unknown) => error instanceof ForbiddenException
+    (error: unknown) => error instanceof ForbiddenException,
   );
 });
 
 test('requires the configured browser origin for login', () => {
   assert.equal(
-    guard().canActivate(context(request({
-      path: '/api/v1/auth/login',
-      session: {},
-      headers: { origin: 'https://binder.example.test' }
-    }))),
-    true
+    guard().canActivate(
+      context(
+        request({
+          path: '/api/v1/auth/login',
+          session: {},
+          headers: { origin: 'https://binder.example.test' },
+        }),
+      ),
+    ),
+    true,
   );
 
   assert.throws(
-    () => guard().canActivate(context(request({
-      path: '/api/v1/auth/login',
-      session: {},
-      headers: { origin: 'https://attacker.example.test' }
-    }))),
-    (error: unknown) => error instanceof ForbiddenException
+    () =>
+      guard().canActivate(
+        context(
+          request({
+            path: '/api/v1/auth/login',
+            session: {},
+            headers: { origin: 'https://attacker.example.test' },
+          }),
+        ),
+      ),
+    (error: unknown) => error instanceof ForbiddenException,
   );
 });

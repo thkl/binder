@@ -6,12 +6,26 @@
       <p class="muted">{{ 'maintenance.copy' | t }}</p>
     </div>
     <div class="heading-actions">
-      <button class="run-button" type="button" (click)="requestBackup()" [disabled]="requestingBackup()">
-        @if (requestingBackup()) { <span class="spinner"></span> }
+      <button
+        class="run-button"
+        type="button"
+        (click)="requestBackup()"
+        [disabled]="requestingBackup()"
+      >
+        @if (requestingBackup()) {
+          <span class="spinner"></span>
+        }
         {{ requestingBackup() ? ('maintenance.requesting' | t) : ('maintenance.runNow' | t) }}
       </button>
-      <button class="refresh-button" type="button" (click)="maintenance.load()" [disabled]="maintenance.loading()">
-        @if (maintenance.loading()) { <span class="spinner"></span> }
+      <button
+        class="refresh-button"
+        type="button"
+        (click)="maintenance.load()"
+        [disabled]="maintenance.loading()"
+      >
+        @if (maintenance.loading()) {
+          <span class="spinner"></span>
+        }
         {{ maintenance.loading() ? ('maintenance.loading' | t) : ('maintenance.refresh' | t) }}
       </button>
     </div>
@@ -30,7 +44,11 @@
       <article class="status-card glass-card">
         <span class="status-label">{{ 'maintenance.destination' | t }}</span>
         <strong [class.warning]="!status.backupRootConfigured">
-          {{ status.backupRootConfigured ? ('maintenance.configured' | t) : ('maintenance.notConfigured' | t) }}
+          {{
+            status.backupRootConfigured
+              ? ('maintenance.configured' | t)
+              : ('maintenance.notConfigured' | t)
+          }}
         </strong>
         <small>{{ 'maintenance.destinationHint' | t }}</small>
       </article>
@@ -50,26 +68,50 @@
       </header>
 
       @if (latestRuns().length === 0) {
-        <div class="empty-state"><span aria-hidden="true">⌁</span><p>{{ 'maintenance.noRuns' | t }}</p></div>
+        <div class="empty-state">
+          <span aria-hidden="true">⌁</span>
+          <p>{{ 'maintenance.noRuns' | t }}</p>
+        </div>
       } @else {
         <div class="run-list" role="list">
           @for (run of latestRuns(); track run.jobKey) {
             <article class="run-row" role="listitem">
-              <div class="run-mark" [class.failed]="run.status === 'failed'" [class.running]="run.status === 'running'" aria-hidden="true">
+              <div
+                class="run-mark"
+                [class.failed]="run.status === 'failed'"
+                [class.running]="run.status === 'running'"
+                aria-hidden="true"
+              >
                 {{ run.status === 'succeeded' ? '✓' : run.status === 'failed' ? '!' : '…' }}
               </div>
               <div class="run-copy">
                 <strong>{{ jobLabel(run.jobKey) }}</strong>
-                <small>{{ statusLabel(run.status) }} · {{ run.startedAt | date:'medium' }}</small>
-                @if (run.error) { <span class="run-error">{{ run.error }}</span> }
+                <small>{{ statusLabel(run.status) }} · {{ run.startedAt | date: 'medium' }}</small>
+                @if (run.error) {
+                  <span class="run-error">{{ run.error }}</span>
+                }
               </div>
               <div class="run-result">
-                @if (run.artifactName) { <strong>{{ run.artifactName }}</strong> }
-                @if (run.sizeBytes !== null) { <span>{{ fileSize(run.sizeBytes) }}</span> }
-                @if (run.deletedFiles !== null) { <span>{{ run.deletedFiles }} {{ 'maintenance.deleted' | t }}</span> }
-                @if (run.checkedFiles !== null) { <span>{{ run.checkedFiles }} {{ 'maintenance.checked' | t }}</span> }
-                @if (run.issueCount !== null && run.issueCount > 0) { <span class="run-issues">{{ run.issueCount }} {{ 'maintenance.issues' | t }}</span> }
-                @if (run.nextRunAt) { <small>{{ 'maintenance.next' | t }} {{ run.nextRunAt | date:'medium' }}</small> }
+                @if (run.artifactName) {
+                  <strong>{{ run.artifactName }}</strong>
+                }
+                @if (run.sizeBytes !== null) {
+                  <span>{{ fileSize(run.sizeBytes) }}</span>
+                }
+                @if (run.deletedFiles !== null) {
+                  <span>{{ run.deletedFiles }} {{ 'maintenance.deleted' | t }}</span>
+                }
+                @if (run.checkedFiles !== null) {
+                  <span>{{ run.checkedFiles }} {{ 'maintenance.checked' | t }}</span>
+                }
+                @if (run.issueCount !== null && run.issueCount > 0) {
+                  <span class="run-issues"
+                    >{{ run.issueCount }} {{ 'maintenance.issues' | t }}</span
+                  >
+                }
+                @if (run.nextRunAt) {
+                  <small>{{ 'maintenance.next' | t }} {{ run.nextRunAt | date: 'medium' }}</small>
+                }
               </div>
             </article>
           }

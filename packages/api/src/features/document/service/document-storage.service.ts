@@ -21,15 +21,21 @@ export class DocumentStorageService {
 
   constructor(
     private readonly config: ConfigService<BinderConfig>,
-    private readonly settings: ApplicationSettingsService
+    private readonly settings: ApplicationSettingsService,
   ) {}
 
-  async storePdf(buffer: Buffer, uuid: string, originalFilename: string): Promise<StoredDocumentFile> {
+  async storePdf(
+    buffer: Buffer,
+    uuid: string,
+    originalFilename: string,
+  ): Promise<StoredDocumentFile> {
     if (buffer.length === 0) {
       throw new BadRequestException('The uploaded document is empty');
     }
 
-    const maxBytes = Number(await this.settings.get('documents.maxUploadBytes', String(this.defaultMaxUploadBytes)));
+    const maxBytes = Number(
+      await this.settings.get('documents.maxUploadBytes', String(this.defaultMaxUploadBytes)),
+    );
     if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) {
       throw new Error('documents.maxUploadBytes must be a positive integer');
     }
@@ -94,10 +100,7 @@ export class DocumentStorageService {
         const bounds = page.getBounds();
         const pageWidth = Math.max(1, bounds[2] - bounds[0]);
         const scale = 480 / pageWidth;
-        const pixmap = page.toPixmap(
-          mupdf.Matrix.scale(scale, scale),
-          mupdf.ColorSpace.DeviceRGB
-        );
+        const pixmap = page.toPixmap(mupdf.Matrix.scale(scale, scale), mupdf.ColorSpace.DeviceRGB);
         try {
           await fs.mkdir(dirname(thumbnailPath), { recursive: true, mode: 0o750 });
           await fs.writeFile(temporaryPath, pixmap.asPNG(), { mode: 0o640 });
@@ -136,8 +139,13 @@ export class DocumentStorageService {
     if (this.storageRoot) return this.storageRoot;
     const appRoot = this.config.get<string>(ConfigKeys.APP_ROOT_PATH) ?? process.cwd();
     const envStorageRoot = this.config.get<string>(ConfigKeys.DOCUMENT_STORAGE_ROOT);
-    const configuredRoot = envStorageRoot ?? await this.settings.get('documents.storageRoot', join(appRoot, 'storage')) ?? join(appRoot, 'storage');
-    this.storageRoot = isAbsolute(configuredRoot) ? configuredRoot : resolve(appRoot, configuredRoot);
+    const configuredRoot =
+      envStorageRoot ??
+      (await this.settings.get('documents.storageRoot', join(appRoot, 'storage'))) ??
+      join(appRoot, 'storage');
+    this.storageRoot = isAbsolute(configuredRoot)
+      ? configuredRoot
+      : resolve(appRoot, configuredRoot);
     return this.storageRoot;
   }
 

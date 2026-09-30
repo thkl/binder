@@ -6,7 +6,6 @@ import { ConfigService } from '@nestjs/config';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { BinderLogger } from '../service/logger.helper';
 import { BinderConfig, ConfigKeys } from '../config/config.keys';
- 
 
 /**
  * Encryption Service
@@ -46,9 +45,7 @@ export class EncryptionService implements OnModuleInit {
       this.validateMasterKey();
       this.logger.log('Encryption service initialized successfully');
     } catch (error) {
-      this.logger.error(
-        'Failed to initialize encryption service: ' + (error as Error).message,
-      );
+      this.logger.error('Failed to initialize encryption service: ' + (error as Error).message);
       throw error;
     }
   }
@@ -85,8 +82,7 @@ export class EncryptionService implements OnModuleInit {
         throw error;
       }
       throw new Error(
-        'ENCRYPTION_KEY is not valid base64. ' +
-          'Generate a new key with: openssl rand -base64 32',
+        'ENCRYPTION_KEY is not valid base64. ' + 'Generate a new key with: openssl rand -base64 32',
       );
     }
   }
@@ -147,11 +143,7 @@ export class EncryptionService implements OnModuleInit {
       const ivBuffer = Buffer.from(iv, 'hex');
 
       // Create decipher
-      const decipher = createDecipheriv(
-        this.ALGORITHM,
-        this.masterKey,
-        ivBuffer,
-      );
+      const decipher = createDecipheriv(this.ALGORITHM, this.masterKey, ivBuffer);
 
       // Decrypt data
       let decrypted = decipher.update(encrypted, 'base64', 'utf8');
@@ -160,9 +152,7 @@ export class EncryptionService implements OnModuleInit {
       return decrypted;
     } catch (error) {
       this.logger.error('Decryption failed (corrupted data or wrong key)');
-      throw new Error(
-        'Failed to decrypt data - data may be corrupted or encryption key changed',
-      );
+      throw new Error('Failed to decrypt data - data may be corrupted or encryption key changed');
     }
   }
 
@@ -206,10 +196,7 @@ export class EncryptionService implements OnModuleInit {
       const decrypted = this.decrypt(encrypted, iv);
       return decrypted === testData;
     } catch (error) {
-      this.logger.error(
-        'Encryption health check failed',
-        (error as Error).stack,
-      );
+      this.logger.error('Encryption health check failed', (error as Error).stack);
       return false;
     }
   }

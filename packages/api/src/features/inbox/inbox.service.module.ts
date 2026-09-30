@@ -7,6 +7,6 @@ import { InboxService } from './service/inbox.service';
 @Module({
   imports: [InboxStoreModule, DocumentServiceModule, SharedModule],
   providers: [InboxService],
-  exports: [InboxService]
+  exports: [InboxService],
 })
 export class InboxServiceModule {}

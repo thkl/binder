@@ -4,7 +4,14 @@ import { basename, dirname, extname, join } from 'node:path';
 import { Op } from 'sequelize';
 import { config } from './config.js';
 import { sequelize } from './database.js';
-import { ApplicationSetting, Document, InboxItem, PipelineJob, PipelineJobEvent, User } from './models.js';
+import {
+  ApplicationSetting,
+  Document,
+  InboxItem,
+  PipelineJob,
+  PipelineJobEvent,
+  User,
+} from './models.js';
 import { logger } from './logger.js';
 import { resolveStoragePath } from './storage.js';
 import { validatePdfBuffer } from './extraction.js';
@@ -48,32 +55,45 @@ export async function importInboxDocuments(force = false): Promise<void> {
   }
 
   if (candidates.length > 0) {
-    logger.info('Inbox scan completed', { candidates: candidates.length, imported, duplicates, rejected, ownerUuid });
+    logger.info('Inbox scan completed', {
+      candidates: candidates.length,
+      imported,
+      duplicates,
+      rejected,
+      ownerUuid,
+    });
   }
 }
 
-async function importFile(inboxPath: string, filename: string, ownerUuid: string, completionStage: 'import' | 'ai-analysis'): Promise<'imported' | 'duplicate' | 'rejected' | 'skipped'> {
+async function importFile(
+  inboxPath: string,
+  filename: string,
+  ownerUuid: string,
+  completionStage: 'import' | 'ai-analysis',
+): Promise<'imported' | 'duplicate' | 'rejected' | 'skipped'> {
   const sourcePath = join(inboxPath, filename);
   const initial = await statFile(sourcePath);
   if (!initial) return 'skipped';
 
-  const inboxItem = await InboxItem.findOne({
-    where: { originalFilename: filename, status: { [Op.in]: ['new', 'processing'] } },
-    order: [['createdAt', 'DESC']]
-  }) ?? await InboxItem.create({
-    uuid: randomUUID(),
-    ownerUuid,
-    documentUuid: null,
-    originalFilename: safeFilename(filename),
-    checksumSha256: null,
-    sizeBytes: initial.size,
-    status: 'new',
-    aiStatus: 'pending',
-    aiSuggestion: null,
-    autoApplied: false,
-    lastError: null,
-    aiError: null
-  });
+  const inboxItem =
+    (await InboxItem.findOne({
+      where: { originalFilename: filename, status: { [Op.in]: ['new', 'processing'] } },
+      order: [['createdAt', 'DESC']],
+    })) ??
+    (await InboxItem.create({
+      uuid: randomUUID(),
+      ownerUuid,
+      documentUuid: null,
+      originalFilename: safeFilename(filename),
+      checksumSha256: null,
+      sizeBytes: initial.size,
+      status: 'new',
+      aiStatus: 'pending',
+      aiSuggestion: null,
+      autoApplied: false,
+      lastError: null,
+      aiError: null,
+    }));
 
   await inboxItem.update({ sizeBytes: initial.size, lastError: null });
 
@@ -88,9 +108,17 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
     await moveTo(sourcePath, join(inboxPath, 'rejected'), filename);
     await inboxItem.update({
       status: 'rejected',
-      lastError: extname(filename).toLowerCase() !== '.pdf' ? 'Unsupported file type' : 'File exceeds the configured upload limit'
+      lastError:
+        extname(filename).toLowerCase() !== '.pdf'
+          ? 'Unsupported file type'
+          : 'File exceeds the configured upload limit',
     });
-    logger.warn('Rejected inbox file', { filename, sizeBytes: initial.size, reason: extname(filename).toLowerCase() !== '.pdf' ? 'unsupported-file-type' : 'file-too-large' });
+    logger.warn('Rejected inbox file', {
+      filename,
+      sizeBytes: initial.size,
+      reason:
+        extname(filename).toLowerCase() !== '.pdf' ? 'unsupported-file-type' : 'file-too-large',
+    });
     return 'rejected';
   }
 
@@ -113,8 +141,17 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
     const duplicate = await Document.findOne({ where: { checksumSha256 } });
     if (duplicate) {
       await moveTo(claimedPath, join(inboxPath, 'duplicates'), filename);
-      await inboxItem.update({ status: 'duplicate', checksumSha256, documentUuid: duplicate.uuid, lastError: null });
-      logger.info('Skipped duplicate inbox document', { filename, duplicateDocumentUuid: duplicate.uuid, checksumSha256 });
+      await inboxItem.update({
+        status: 'duplicate',
+        checksumSha256,
+        documentUuid: duplicate.uuid,
+        lastError: null,
+      });
+      logger.info('Skipped duplicate inbox document', {
+        filename,
+        duplicateDocumentUuid: duplicate.uuid,
+        checksumSha256,
+      });
       return 'duplicate';
     }
 
@@ -127,52 +164,64 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
 
     try {
       await sequelize.transaction(async (transaction) => {
-        const document = await Document.create({
-          uuid: documentUuid,
-          ownerUuid,
-          originalFilename: safeFilename(filename),
-          title: safeFilename(filename),
-          mimeType: 'application/pdf',
-          sizeBytes: buffer.length,
-          checksumSha256,
-          storageKey,
-          thumbnailKey: null,
-          pageCount: 1,
-          issuerUuid: null,
-          isNew: true,
-          status: 'scanning'
-        }, { transaction });
-        const job = await PipelineJob.create({
-          uuid: randomUUID(),
-          documentUuid: document.uuid,
-          ownerUuid,
-          kind: 'malware-scan',
-          status: 'queued',
-          attempts: 0,
-          maxAttempts: 3,
-          availableAt: new Date(),
-          lockedAt: null,
-          lockedBy: null,
-          startedAt: null,
-          completedAt: null,
-          lastError: null
-        }, { transaction });
-        await PipelineJobEvent.create({
-          uuid: randomUUID(),
-          jobUuid: job.uuid,
-          type: 'queued',
-          message: 'Queued malware scan from inbox import'
-        }, { transaction });
+        const document = await Document.create(
+          {
+            uuid: documentUuid,
+            ownerUuid,
+            originalFilename: safeFilename(filename),
+            title: safeFilename(filename),
+            mimeType: 'application/pdf',
+            sizeBytes: buffer.length,
+            checksumSha256,
+            storageKey,
+            thumbnailKey: null,
+            pageCount: 1,
+            issuerUuid: null,
+            isNew: true,
+            status: 'scanning',
+          },
+          { transaction },
+        );
+        const job = await PipelineJob.create(
+          {
+            uuid: randomUUID(),
+            documentUuid: document.uuid,
+            ownerUuid,
+            kind: 'malware-scan',
+            status: 'queued',
+            attempts: 0,
+            maxAttempts: 3,
+            availableAt: new Date(),
+            lockedAt: null,
+            lockedBy: null,
+            startedAt: null,
+            completedAt: null,
+            lastError: null,
+          },
+          { transaction },
+        );
+        await PipelineJobEvent.create(
+          {
+            uuid: randomUUID(),
+            jobUuid: job.uuid,
+            type: 'queued',
+            message: 'Queued malware scan from inbox import',
+          },
+          { transaction },
+        );
         if (completionStage === 'import') {
           await inboxItem.destroy({ transaction });
         } else {
-          await inboxItem.update({
-            status: 'imported',
-            documentUuid: document.uuid,
-            checksumSha256,
-            sizeBytes: buffer.length,
-            lastError: null
-          }, { transaction });
+          await inboxItem.update(
+            {
+              status: 'imported',
+              documentUuid: document.uuid,
+              checksumSha256,
+              sizeBytes: buffer.length,
+              lastError: null,
+            },
+            { transaction },
+          );
         }
       });
     } catch (error) {
@@ -180,22 +229,43 @@ async function importFile(inboxPath: string, filename: string, ownerUuid: string
       throw error;
     }
 
-    logger.info('Imported inbox document', { documentUuid, filename, storageKey, ownerUuid, completionStage, inboxItemRemoved: completionStage === 'import' });
+    logger.info('Imported inbox document', {
+      documentUuid,
+      filename,
+      storageKey,
+      ownerUuid,
+      completionStage,
+      inboxItemRemoved: completionStage === 'import',
+    });
     return 'imported';
   } catch (error) {
-    await inboxItem.update({
-      status: 'failed',
-      lastError: (error instanceof Error ? error.message : String(error)).slice(0, 2000)
-    }).catch((updateError) => logger.error('Unable to update inbox item after import failure', { filename, error: updateError }));
+    await inboxItem
+      .update({
+        status: 'failed',
+        lastError: (error instanceof Error ? error.message : String(error)).slice(0, 2000),
+      })
+      .catch((updateError) =>
+        logger.error('Unable to update inbox item after import failure', {
+          filename,
+          error: updateError,
+        }),
+      );
     await moveToIfPresent(claimedPath, join(inboxPath, 'rejected'), filename);
-    logger.error('Inbox document import failed', { filename, error: error instanceof Error ? error.message : String(error) });
+    logger.error('Inbox document import failed', {
+      filename,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return 'rejected';
   }
 }
 
 async function getCompletionStage(): Promise<'import' | 'ai-analysis'> {
   const setting = await ApplicationSetting.findByPk('inbox.completionStage');
-  return setting?.value === 'import' ? 'import' : setting?.value === 'ai-analysis' ? 'ai-analysis' : config.inbox.completionStage;
+  return setting?.value === 'import'
+    ? 'import'
+    : setting?.value === 'ai-analysis'
+      ? 'ai-analysis'
+      : config.inbox.completionStage;
 }
 
 async function statFile(path: string): Promise<{ size: number; mtimeMs: number } | null> {
@@ -209,10 +279,17 @@ async function statFile(path: string): Promise<{ size: number; mtimeMs: number }
 
 async function moveTo(sourcePath: string, directory: string, filename: string): Promise<void> {
   await fs.mkdir(directory, { recursive: true, mode: 0o750 });
-  await fs.rename(sourcePath, join(directory, `${Date.now()}-${randomUUID()}-${safeFilename(filename)}`));
+  await fs.rename(
+    sourcePath,
+    join(directory, `${Date.now()}-${randomUUID()}-${safeFilename(filename)}`),
+  );
 }
 
-async function moveToIfPresent(sourcePath: string, directory: string, filename: string): Promise<void> {
+async function moveToIfPresent(
+  sourcePath: string,
+  directory: string,
+  filename: string,
+): Promise<void> {
   if (await statFile(sourcePath)) await moveTo(sourcePath, directory, filename);
 }
 

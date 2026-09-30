@@ -18,9 +18,9 @@ export class IssuerStore extends BaseCrudStore<Issuer> {
     return this.model.findAll({
       where: {
         ownerUuid,
-        ...(query?.trim() ? { name: { [Op.iLike]: `%${query.trim()}%` } } : {})
+        ...(query?.trim() ? { name: { [Op.iLike]: `%${query.trim()}%` } } : {}),
       },
-      order: [['name', 'ASC']]
+      order: [['name', 'ASC']],
     });
   }
 }

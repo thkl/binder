@@ -3,11 +3,10 @@ import { IStoreUser, NamedQueryAddingOptions } from '../../../shared/datastore/q
 import { User } from '../models/user.entity';
 import { BaseCrudStore } from '../../../shared/datastore/base-crud.store';
 
-
 export type UserStoreQueries = {
-    findByEmail: { email: string };
-    findActiveUsers:object;
-    findByUsername: { username: string };
+  findByEmail: { email: string };
+  findActiveUsers: object;
+  findByUsername: { username: string };
 };
 
 /**
@@ -44,7 +43,7 @@ const findActiveUsers: NamedQueryAddingOptions<User> = {
  * - findActiveUsers: Find all active users (for admin operations)
  */
 @Injectable()
-export class UserStore extends BaseCrudStore<User,IStoreUser, UserStoreQueries> {
+export class UserStore extends BaseCrudStore<User, IStoreUser, UserStoreQueries> {
   constructor() {
     super(User);
     this.registerIdField('uuid');
@@ -56,9 +55,9 @@ export class UserStore extends BaseCrudStore<User,IStoreUser, UserStoreQueries> 
     this.addNamedQueryWithOptions({
       name: 'findByUsername',
       findOptions: {
-        where: {username : "$username" },
+        where: { username: '$username' },
       },
-      parameters:[{name:"username",type:"string"}]
-    })
+      parameters: [{ name: 'username', type: 'string' }],
+    });
   }
 }

@@ -1,9 +1,11 @@
-
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SearchService } from '../../services/search.service';
 import { DocumentsService } from '../../../documents/services/documents.service';
-import { DocumentDrawerComponent, DocumentDrawerTab } from '../../../documents/components/document-drawer/document-drawer.component';
+import {
+  DocumentDrawerComponent,
+  DocumentDrawerTab,
+} from '../../../documents/components/document-drawer/document-drawer.component';
 import { SavedSearchMenuComponent } from '../../../documents/components/saved-search-menu/saved-search-menu.component';
 import { SavedSearchService } from '../../../documents/services/saved-search.service';
 import type { Document } from '@binder/common';
@@ -16,7 +18,7 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
   imports: [CommonModule, DocumentDrawerComponent, SavedSearchMenuComponent, TranslatePipe],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent {
   readonly search = inject(SearchService);
@@ -46,32 +48,40 @@ export class HomeComponent {
 
   readonly drawerDocument = computed(() => {
     const uuid = this.drawerDocumentUuid();
-    const current = this.search.result()?.items.find((item) => item.document.uuid === uuid)?.document;
+    const current = this.search
+      .result()
+      ?.items.find((item) => item.document.uuid === uuid)?.document;
     return current ?? this.drawerDocumentSnapshot();
   });
 
-  searchResult = computed(()=>{
+  searchResult = computed(() => {
     const result = this.search.result();
     if (result) {
-      const sorted = (this.onlySemantic()?result.items.filter(item=>item.semanticScore!==null):result.items).sort((i1,i2)=>{
+      const sorted = (
+        this.onlySemantic()
+          ? result.items.filter((item) => item.semanticScore !== null)
+          : result.items
+      ).sort((i1, i2) => {
         if (i1.semanticScore === null && i2.semanticScore === null) {
           return 0;
         }
         if (i1.semanticScore ?? 0 > (i2.semanticScore ?? 0)) return 1;
         if (i2.semanticScore ?? 0 > (i1.semanticScore ?? 0)) return -1;
-        return 0
-      })
+        return 0;
+      });
       return sorted;
     } else {
       return [];
     }
-  })
+  });
 
-
-  itemName(item: { name: string; translations: Record<string, string> }): string { return this.i18n.name(item); }
+  itemName(item: { name: string; translations: Record<string, string> }): string {
+    return this.i18n.name(item);
+  }
 
   formatCustomMetadata(value: unknown): string {
-    if (Array.isArray(value)) return value.map((item) => this.formatCustomMetadata(item)).join(', ');
+    if (Array.isArray(value))
+      return value.map((item) => this.formatCustomMetadata(item)).join(', ');
     if (value !== null && typeof value === 'object') return JSON.stringify(value);
     return String(value);
   }
@@ -143,7 +153,7 @@ export class HomeComponent {
       documentTypeUuid: this.selectedType() || undefined,
       categoryUuid: this.selectedCategory() || undefined,
       issuerUuid: this.selectedIssuer() || undefined,
-      tagUuids: this.selectedTag() ? [this.selectedTag()] : undefined
+      tagUuids: this.selectedTag() ? [this.selectedTag()] : undefined,
     });
     if (!parsed.success) return;
 
@@ -152,8 +162,8 @@ export class HomeComponent {
       definition: {
         kind: 'semantic',
         query: parsed.data,
-        onlySemantic: this.onlySemantic()
-      }
+        onlySemantic: this.onlySemantic(),
+      },
     });
     if (saved) this.selectedSavedSearchUuid.set(saved.uuid);
   }
@@ -181,7 +191,7 @@ export class HomeComponent {
 
   async removeSavedSearch(uuid: string): Promise<void> {
     if (!window.confirm(this.i18n.t('documents.savedSearchDeleteConfirm'))) return;
-    if (await this.savedSearches.remove(uuid) && this.selectedSavedSearchUuid() === uuid) {
+    if ((await this.savedSearches.remove(uuid)) && this.selectedSavedSearchUuid() === uuid) {
       this.selectedSavedSearchUuid.set(null);
     }
   }
@@ -196,7 +206,7 @@ export class HomeComponent {
       categoryUuid: this.selectedCategory() || undefined,
       issuerUuid: this.selectedIssuer() || undefined,
       tagUuids: this.selectedTag() ? [this.selectedTag()] : undefined,
-      semanticThreshold: this.semanticThreshold()
+      semanticThreshold: this.semanticThreshold(),
     });
   }
 
@@ -268,6 +278,8 @@ export class HomeComponent {
   }
 
   private findDocument(uuid: string): Document | null {
-    return this.search.result()?.items.find((item) => item.document.uuid === uuid)?.document ?? null;
+    return (
+      this.search.result()?.items.find((item) => item.document.uuid === uuid)?.document ?? null
+    );
   }
 }

@@ -1,6 +1,23 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import type { CreateIssuerInput, Document, DocumentMetadata, DocumentTitleSuggestion, FolderNode, Issuer, UpdateIssuerInput } from '@binder/common';
+import type {
+  CreateIssuerInput,
+  Document,
+  DocumentMetadata,
+  DocumentTitleSuggestion,
+  FolderNode,
+  Issuer,
+  UpdateIssuerInput,
+} from '@binder/common';
 import { MetadataService } from '../../services/metadata.service';
 import { DocumentsService } from '../../../documents/services/documents.service';
 import { FoldersService } from '../../../documents/services/folders.service';
@@ -12,7 +29,7 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
   imports: [DecimalPipe, TranslatePipe],
   templateUrl: './document-metadata-editor.component.html',
   styleUrl: './document-metadata-editor.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocumentMetadataEditorComponent {
   readonly documentUuid = input.required<string>();
@@ -67,7 +84,9 @@ export class DocumentMetadataEditorComponent {
   readonly originalFolderUuids = signal<string[]>([]);
   readonly filteredTags = computed(() => {
     const search = this.tagSearch().trim().toLowerCase();
-    return (this.metadata.vocabulary()?.tags ?? []).filter((tag) => !search || tag.name.toLowerCase().includes(search));
+    return (this.metadata.vocabulary()?.tags ?? []).filter(
+      (tag) => !search || tag.name.toLowerCase().includes(search),
+    );
   });
 
   private readonly documentInputEffect = effect(() => {
@@ -95,8 +114,7 @@ export class DocumentMetadataEditorComponent {
       this.metadata.loadVocabulary(),
       this.metadata.getDocumentMetadata(uuid),
       this.folders.listAll(),
-      this.folders.listForDocument(uuid)
-
+      this.folders.listForDocument(uuid),
     ]);
     if (uuid !== this.documentUuid()) return;
     if (current) this.applyMetadata(current);
@@ -109,24 +127,30 @@ export class DocumentMetadataEditorComponent {
   toggleTag(uuid: string): void {
     this.selectedTags.update((selected) => {
       const next = new Set(selected);
-      if (next.has(uuid)) next.delete(uuid); else next.add(uuid);
+      if (next.has(uuid)) next.delete(uuid);
+      else next.add(uuid);
       return next;
     });
     this.markMetadataDirty();
   }
 
-  isTagSelected(uuid: string): boolean { return this.selectedTags().has(uuid); }
+  isTagSelected(uuid: string): boolean {
+    return this.selectedTags().has(uuid);
+  }
 
   toggleFolder(uuid: string): void {
     this.selectedFolderUuids.update((selected) => {
       const next = new Set(selected);
-      if (next.has(uuid)) next.delete(uuid); else next.add(uuid);
+      if (next.has(uuid)) next.delete(uuid);
+      else next.add(uuid);
       return next;
     });
     this.markMetadataDirty();
   }
 
-  isFolderSelected(uuid: string): boolean { return this.selectedFolderUuids().has(uuid); }
+  isFolderSelected(uuid: string): boolean {
+    return this.selectedFolderUuids().has(uuid);
+  }
 
   folderPath(uuid: string): string {
     const byUuid = new Map(this.folderOptions().map((folder) => [folder.uuid, folder]));
@@ -154,7 +178,7 @@ export class DocumentMetadataEditorComponent {
       documentTypeUuid: this.documentTypeUuid() || null,
       categoryUuid: this.categoryUuid() || null,
       tagUuids: [...this.selectedTags()],
-      custom: this.customValues()
+      custom: this.customValues(),
     });
     if (result) {
       const persisted = await this.metadata.getDocumentMetadata(this.documentUuid());
@@ -162,16 +186,13 @@ export class DocumentMetadataEditorComponent {
       const routingFolderUuids = [
         persistedMetadata.issuer?.folderUuid,
         persistedMetadata.documentType?.folderUuid,
-        persistedMetadata.category?.folderUuid
+        persistedMetadata.category?.folderUuid,
       ].filter((uuid): uuid is string => Boolean(uuid));
-      const selectedFolderUuids = new Set([
-        ...this.selectedFolderUuids(),
-        ...routingFolderUuids
-      ]);
+      const selectedFolderUuids = new Set([...this.selectedFolderUuids(), ...routingFolderUuids]);
       const foldersSaved = await this.folders.setDocumentFolders(
         this.documentUuid(),
         [...selectedFolderUuids],
-        this.originalFolderUuids()
+        this.originalFolderUuids(),
       );
       if (!foldersSaved) return false;
       const persistedFolders = await this.folders.listForDocument(this.documentUuid());
@@ -220,14 +241,16 @@ export class DocumentMetadataEditorComponent {
     if (!suggestion) return;
     this.acceptedSuggestionFields.update((current) => {
       const next = new Set(current);
-      if (next.has(field)) next.delete(field); else next.add(field);
+      if (next.has(field)) next.delete(field);
+      else next.add(field);
       return next;
     });
     if (field === 'documentTypeUuid') this.documentTypeUuid.set(suggestion.documentTypeUuid ?? '');
     if (field === 'categoryUuid') this.categoryUuid.set(suggestion.categoryUuid ?? '');
     if (field === 'issuerUuid') this.issuerUuid.set(suggestion.issuerUuid ?? '');
     if (field === 'tagUuids') this.selectedTags.set(new Set(suggestion.tagUuids));
-    if (field === 'custom') this.customValues.update((current) => ({ ...current, ...suggestion.custom }));
+    if (field === 'custom')
+      this.customValues.update((current) => ({ ...current, ...suggestion.custom }));
     if (field === 'title') {
       this.title.set(suggestion.suggestedTitle);
       if (!this.applyingAllSuggestion) {
@@ -254,15 +277,15 @@ export class DocumentMetadataEditorComponent {
     } finally {
       this.applyingAllSuggestion = false;
     }
-    if (!await this.save()) return;
-    if (await this.metadata.clearDocumentSuggestion(this.documentUuid()) === null) return;
+    if (!(await this.save())) return;
+    if ((await this.metadata.clearDocumentSuggestion(this.documentUuid())) === null) return;
     this.inputSuggestion.set(null);
     this.serverSuggestion.set(null);
     this.suggestionAccepted.emit(suggestion.suggestedTitle);
   }
 
   async dismissSuggestion(): Promise<void> {
-    if (await this.metadata.clearDocumentSuggestion(this.documentUuid()) === null) return;
+    if ((await this.metadata.clearDocumentSuggestion(this.documentUuid())) === null) return;
     this.inputSuggestion.set(null);
     this.serverSuggestion.set(null);
     this.acceptedSuggestionFields.set(new Set());
@@ -285,15 +308,21 @@ export class DocumentMetadataEditorComponent {
     }
   }
 
-  isSuggestionAccepted(field: string): boolean { return this.acceptedSuggestionFields().has(field); }
+  isSuggestionAccepted(field: string): boolean {
+    return this.acceptedSuggestionFields().has(field);
+  }
 
   suggestedTypeName(uuid: string | null): string {
-    const item = this.metadata.vocabulary()?.documentTypes.find((candidate) => candidate.uuid === uuid);
+    const item = this.metadata
+      .vocabulary()
+      ?.documentTypes.find((candidate) => candidate.uuid === uuid);
     return item ? this.i18n.name(item) : 'No suggestion';
   }
 
   suggestedCategoryName(uuid: string | null): string {
-    const item = this.metadata.vocabulary()?.categories.find((candidate) => candidate.uuid === uuid);
+    const item = this.metadata
+      .vocabulary()
+      ?.categories.find((candidate) => candidate.uuid === uuid);
     return item ? this.i18n.name(item) : 'No suggestion';
   }
 
@@ -302,7 +331,9 @@ export class DocumentMetadataEditorComponent {
     return item?.name ?? 'No suggestion';
   }
 
-  itemName(item: { name: string; translations: Record<string, string> }): string { return this.i18n.name(item); }
+  itemName(item: { name: string; translations: Record<string, string> }): string {
+    return this.i18n.name(item);
+  }
 
   suggestedCustomCount(): number {
     const suggestion = this.activeSuggestion();
@@ -330,7 +361,9 @@ export class DocumentMetadataEditorComponent {
     const name = this.newTagName().trim();
     if (!name) return;
     if (await this.metadata.create('tags', { name, scope: 'personal' })) {
-      const tag = this.metadata.vocabulary()?.tags.find((item) => item.name.toLowerCase() === name.toLowerCase());
+      const tag = this.metadata
+        .vocabulary()
+        ?.tags.find((item) => item.name.toLowerCase() === name.toLowerCase());
       if (tag) this.selectedTags.update((selected) => new Set(selected).add(tag.uuid));
       this.newTagName.set('');
       this.tagSearch.set('');
@@ -338,7 +371,9 @@ export class DocumentMetadataEditorComponent {
     }
   }
 
-  customValue(key: string): unknown { return this.customValues()[key] ?? ''; }
+  customValue(key: string): unknown {
+    return this.customValues()[key] ?? '';
+  }
 
   setCustomValue(key: string, value: unknown): void {
     this.customValues.update((current) => ({ ...current, [key]: value }));
@@ -350,7 +385,13 @@ export class DocumentMetadataEditorComponent {
   }
 
   setMultiValue(key: string, event: Event): void {
-    this.setCustomValue(key, (event.target as HTMLInputElement).value.split(',').map((item) => item.trim()).filter(Boolean));
+    this.setCustomValue(
+      key,
+      (event.target as HTMLInputElement).value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    );
   }
 
   selectedIssuer(): Issuer | undefined {
@@ -384,10 +425,13 @@ export class DocumentMetadataEditorComponent {
     let custom: Record<string, unknown>;
     try {
       const parsed: unknown = JSON.parse(this.issuerCustomJson());
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Issuer custom fields must be a JSON object');
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+        throw new Error('Issuer custom fields must be a JSON object');
       custom = parsed as Record<string, unknown>;
     } catch (error) {
-      this.issuerError.set(error instanceof Error ? error.message : 'Custom issuer fields must be valid JSON');
+      this.issuerError.set(
+        error instanceof Error ? error.message : 'Custom issuer fields must be valid JSON',
+      );
       return;
     }
 
@@ -398,7 +442,7 @@ export class DocumentMetadataEditorComponent {
       city: this.issuerCity().trim() || null,
       country: this.issuerCountry().trim() || null,
       custom,
-      folderUuid: this.issuerFolderUuid() || null
+      folderUuid: this.issuerFolderUuid() || null,
     };
     const editingUuid = this.editingIssuerUuid();
     const result = editingUuid

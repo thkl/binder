@@ -5,7 +5,13 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
 import { Op } from 'sequelize';
-import { ApplicationSetting, Document, DocumentStorageIssue, MaintenanceRequest, MaintenanceRun } from './models.js';
+import {
+  ApplicationSetting,
+  Document,
+  DocumentStorageIssue,
+  MaintenanceRequest,
+  MaintenanceRun,
+} from './models.js';
 import { sequelize } from './database.js';
 import { logger } from './logger.js';
 import { CronSchedule } from './maintenance-cron.js';
@@ -39,7 +45,7 @@ const DEFAULT_SETTINGS: MaintenanceSettings = {
   retentionDays: 30,
   timezone: 'UTC',
   storageConsistencyEnabled: true,
-  storageConsistencySchedule: '0 3 * * *'
+  storageConsistencySchedule: '0 3 * * *',
 };
 
 export class MaintenanceScheduler {
@@ -54,9 +60,12 @@ export class MaintenanceScheduler {
       await this.recoverInterruptedRuns();
       await this.triggerTick();
     } catch (error) {
-      logger.error('Maintenance scheduler initialization failed; pipeline processing will continue', {
-        error: this.errorMessage(error)
-      });
+      logger.error(
+        'Maintenance scheduler initialization failed; pipeline processing will continue',
+        {
+          error: this.errorMessage(error),
+        },
+      );
     }
     this.timer = setInterval(() => void this.triggerTick(), 5_000);
     logger.info('Worker maintenance scheduler started');
@@ -90,7 +99,10 @@ export class MaintenanceScheduler {
       }
 
       const now = new Date();
-      if (settings.enabled && this.shouldTrigger('backup', settings.schedule, now, settings.timezone)) {
+      if (
+        settings.enabled &&
+        this.shouldTrigger('backup', settings.schedule, now, settings.timezone)
+      ) {
         this.markTriggered('backup', now);
         const schedule = new CronSchedule(settings.schedule);
         const nextRunAt = schedule.nextOccurrence(now, settings.timezone);
@@ -98,7 +110,15 @@ export class MaintenanceScheduler {
         await this.runRetention(settings.root, settings.retentionDays, nextRunAt);
       }
 
-      if (settings.storageConsistencyEnabled && this.shouldTrigger('storage-consistency', settings.storageConsistencySchedule, now, settings.timezone)) {
+      if (
+        settings.storageConsistencyEnabled &&
+        this.shouldTrigger(
+          'storage-consistency',
+          settings.storageConsistencySchedule,
+          now,
+          settings.timezone,
+        )
+      ) {
         this.markTriggered('storage-consistency', now);
         const schedule = new CronSchedule(settings.storageConsistencySchedule);
         await this.runStorageConsistency(schedule.nextOccurrence(now, settings.timezone));
@@ -127,26 +147,46 @@ export class MaintenanceScheduler {
         durationMs: Date.now() - started,
         artifactName: result.artifactName,
         sizeBytes: result.sizeBytes,
-        error: null
+        error: null,
       });
       logger.info('PostgreSQL backup completed', result);
     } catch (error) {
-      await run.update({ status: 'failed', finishedAt: new Date(), durationMs: Date.now() - started, error: this.errorMessage(error) });
+      await run.update({
+        status: 'failed',
+        finishedAt: new Date(),
+        durationMs: Date.now() - started,
+        error: this.errorMessage(error),
+      });
       logger.error('PostgreSQL backup failed', { error: this.errorMessage(error) });
     }
   }
 
-  private async runRetention(backupRoot: string, retentionDays: number, nextRunAt: Date | null): Promise<void> {
+  private async runRetention(
+    backupRoot: string,
+    retentionDays: number,
+    nextRunAt: Date | null,
+  ): Promise<void> {
     if (await this.hasRunning('backup-retention')) return;
     const run = await this.startRun('backup-retention', nextRunAt);
     const started = Date.now();
 
     try {
       const deletedFiles = await this.removeExpired(backupRoot, retentionDays);
-      await run.update({ status: 'succeeded', finishedAt: new Date(), durationMs: Date.now() - started, deletedFiles, error: null });
+      await run.update({
+        status: 'succeeded',
+        finishedAt: new Date(),
+        durationMs: Date.now() - started,
+        deletedFiles,
+        error: null,
+      });
       logger.info('Backup retention cleanup completed', { deletedFiles, retentionDays });
     } catch (error) {
-      await run.update({ status: 'failed', finishedAt: new Date(), durationMs: Date.now() - started, error: this.errorMessage(error) });
+      await run.update({
+        status: 'failed',
+        finishedAt: new Date(),
+        durationMs: Date.now() - started,
+        error: this.errorMessage(error),
+      });
       logger.error('Backup retention cleanup failed', { error: this.errorMessage(error) });
     }
   }
@@ -165,7 +205,7 @@ export class MaintenanceScheduler {
         durationMs: Date.now() - started,
         checkedFiles: result.checkedFiles,
         issueCount: result.issueCount,
-        error: null
+        error: null,
       });
       logger.info('Document storage consistency check completed', result);
     } catch (error) {
@@ -173,16 +213,18 @@ export class MaintenanceScheduler {
         status: 'failed',
         finishedAt: new Date(),
         durationMs: Date.now() - started,
-        error: this.errorMessage(error)
+        error: this.errorMessage(error),
       });
-      logger.error('Document storage consistency check failed', { error: this.errorMessage(error) });
+      logger.error('Document storage consistency check failed', {
+        error: this.errorMessage(error),
+      });
     }
   }
 
   private async checkStorageConsistency(): Promise<{ checkedFiles: number; issueCount: number }> {
     const documents = await Document.findAll({
       attributes: ['uuid', 'ownerUuid', 'storageKey', 'sizeBytes', 'checksumSha256'],
-      order: [['uuid', 'ASC']]
+      order: [['uuid', 'ASC']],
     });
     let issueCount = 0;
 
@@ -209,7 +251,7 @@ export class MaintenanceScheduler {
         issueType: 'unreadable',
         actualSizeBytes: null,
         actualChecksumSha256: null,
-        details: `The configured storage key is invalid: ${this.errorMessage(error)}`
+        details: `The configured storage key is invalid: ${this.errorMessage(error)}`,
       };
     }
 
@@ -222,9 +264,10 @@ export class MaintenanceScheduler {
         issueType: code === 'ENOENT' ? 'missing' : 'unreadable',
         actualSizeBytes: null,
         actualChecksumSha256: null,
-        details: code === 'ENOENT'
-          ? 'The original document file is missing from storage.'
-          : `The original document file could not be read: ${this.errorMessage(error)}`
+        details:
+          code === 'ENOENT'
+            ? 'The original document file is missing from storage.'
+            : `The original document file could not be read: ${this.errorMessage(error)}`,
       };
     }
 
@@ -233,7 +276,7 @@ export class MaintenanceScheduler {
         issueType: 'unreadable',
         actualSizeBytes: stats.size,
         actualChecksumSha256: null,
-        details: 'The document storage key does not point to a regular file.'
+        details: 'The document storage key does not point to a regular file.',
       };
     }
 
@@ -243,7 +286,7 @@ export class MaintenanceScheduler {
         issueType: 'size-mismatch',
         actualSizeBytes: stats.size,
         actualChecksumSha256: null,
-        details: `The file size is ${stats.size} bytes, but the database expects ${expectedSizeBytes} bytes.`
+        details: `The file size is ${stats.size} bytes, but the database expects ${expectedSizeBytes} bytes.`,
       };
     }
 
@@ -254,7 +297,7 @@ export class MaintenanceScheduler {
           issueType: 'checksum-mismatch',
           actualSizeBytes: stats.size,
           actualChecksumSha256,
-          details: 'The file checksum differs from the checksum stored in the database.'
+          details: 'The file checksum differs from the checksum stored in the database.',
         };
       }
     } catch (error) {
@@ -262,7 +305,7 @@ export class MaintenanceScheduler {
         issueType: 'unreadable',
         actualSizeBytes: stats.size,
         actualChecksumSha256: null,
-        details: `The document file could not be checksummed: ${this.errorMessage(error)}`
+        details: `The document file could not be checksummed: ${this.errorMessage(error)}`,
       };
     }
 
@@ -294,7 +337,7 @@ export class MaintenanceScheduler {
       actualChecksumSha256: problem.actualChecksumSha256,
       details: problem.details.slice(0, 1000),
       lastDetectedAt: now,
-      resolvedAt: null
+      resolvedAt: null,
     };
 
     if (issue) {
@@ -305,13 +348,13 @@ export class MaintenanceScheduler {
     await DocumentStorageIssue.create({
       uuid: randomUUID(),
       firstDetectedAt: now,
-      ...values
+      ...values,
     });
     logger.warn('Document storage issue detected', {
       documentUuid: document.uuid,
       ownerUuid: document.ownerUuid,
       issueType: problem.issueType,
-      storageKey: document.storageKey
+      storageKey: document.storageKey,
     });
   }
 
@@ -324,40 +367,63 @@ export class MaintenanceScheduler {
     logger.info('Document storage issue resolved', { documentUuid });
   }
 
-  private async createBackup(backupRoot: string): Promise<{ artifactName: string; sizeBytes: number }> {
+  private async createBackup(
+    backupRoot: string,
+  ): Promise<{ artifactName: string; sizeBytes: number }> {
     await fs.mkdir(backupRoot, { recursive: true, mode: 0o770 });
 
     const artifactName = `binder-${this.timestamp(new Date())}.dump`;
-    const temporaryPath = path.join(backupRoot, `.${artifactName}.${process.pid}.${randomUUID()}.tmp`);
+    const temporaryPath = path.join(
+      backupRoot,
+      `.${artifactName}.${process.pid}.${randomUUID()}.tmp`,
+    );
     const artifactPath = path.join(backupRoot, artifactName);
     const manifestPath = path.join(backupRoot, `${artifactName}.json`);
 
     try {
-      const { stderr } = await execFileAsync(process.env.PG_DUMP_PATH ?? 'pg_dump', [
-        '--format=custom', '--file', temporaryPath,
-        '--host', readRequiredEnvironment('DATABASE_HOST'),
-        '--port', String(process.env.DATABASE_PORT ?? 5432),
-        '--username', readRequiredEnvironment('DATABASE_USER'),
-        readRequiredEnvironment('DATABASE_NAME')
-      ], {
-        env: { ...process.env, PGPASSWORD: readRequiredEnvironment('DATABASE_PASSWORD') },
-        maxBuffer: 1024 * 1024
-      });
+      const { stderr } = await execFileAsync(
+        process.env.PG_DUMP_PATH ?? 'pg_dump',
+        [
+          '--format=custom',
+          '--file',
+          temporaryPath,
+          '--host',
+          readRequiredEnvironment('DATABASE_HOST'),
+          '--port',
+          String(process.env.DATABASE_PORT ?? 5432),
+          '--username',
+          readRequiredEnvironment('DATABASE_USER'),
+          readRequiredEnvironment('DATABASE_NAME'),
+        ],
+        {
+          env: { ...process.env, PGPASSWORD: readRequiredEnvironment('DATABASE_PASSWORD') },
+          maxBuffer: 1024 * 1024,
+        },
+      );
 
-      if (stderr.trim()) logger.warn('pg_dump reported warnings', { stderr: stderr.trim().slice(0, 2000) });
+      if (stderr.trim())
+        logger.warn('pg_dump reported warnings', { stderr: stderr.trim().slice(0, 2000) });
       await fs.chmod(temporaryPath, 0o660);
       await fs.rename(temporaryPath, artifactPath);
       const stats = await fs.stat(artifactPath);
-      await fs.writeFile(manifestPath, `${JSON.stringify({
-        format: 'pg_dump-custom',
-        createdAt: new Date().toISOString(),
-        database: readRequiredEnvironment('DATABASE_NAME'),
-        host: readRequiredEnvironment('DATABASE_HOST'),
-        port: Number(process.env.DATABASE_PORT ?? 5432),
-        applicationVersion: process.env.APP_VERSION ?? 'unknown',
-        artifactName,
-        sizeBytes: stats.size
-      }, null, 2)}\n`, { mode: 0o660 });
+      await fs.writeFile(
+        manifestPath,
+        `${JSON.stringify(
+          {
+            format: 'pg_dump-custom',
+            createdAt: new Date().toISOString(),
+            database: readRequiredEnvironment('DATABASE_NAME'),
+            host: readRequiredEnvironment('DATABASE_HOST'),
+            port: Number(process.env.DATABASE_PORT ?? 5432),
+            applicationVersion: process.env.APP_VERSION ?? 'unknown',
+            artifactName,
+            sizeBytes: stats.size,
+          },
+          null,
+          2,
+        )}\n`,
+        { mode: 0o660 },
+      );
 
       return { artifactName, sizeBytes: stats.size };
     } catch (error) {
@@ -394,37 +460,52 @@ export class MaintenanceScheduler {
             'backup.retentionDays',
             'maintenance.timezone',
             'maintenance.storageConsistency.enabled',
-            'maintenance.storageConsistency.schedule'
-          ]
-        }
-      }
+            'maintenance.storageConsistency.schedule',
+          ],
+        },
+      },
     });
     const values = new Map(settings.map((setting) => [setting.key, setting.value]));
     const retentionDays = Number(values.get('backup.retentionDays'));
 
     return {
       root: this.resolveConfiguredPath(values.get('backup.root')?.trim() || DEFAULT_SETTINGS.root),
-      enabled: values.get('backup.enabled') === undefined ? DEFAULT_SETTINGS.enabled : values.get('backup.enabled')?.toLowerCase() === 'true',
+      enabled:
+        values.get('backup.enabled') === undefined
+          ? DEFAULT_SETTINGS.enabled
+          : values.get('backup.enabled')?.toLowerCase() === 'true',
       schedule: values.get('backup.schedule')?.trim() || DEFAULT_SETTINGS.schedule,
-      retentionDays: Number.isInteger(retentionDays) && retentionDays > 0 ? retentionDays : DEFAULT_SETTINGS.retentionDays,
+      retentionDays:
+        Number.isInteger(retentionDays) && retentionDays > 0
+          ? retentionDays
+          : DEFAULT_SETTINGS.retentionDays,
       timezone: values.get('maintenance.timezone')?.trim() || DEFAULT_SETTINGS.timezone,
-      storageConsistencyEnabled: values.get('maintenance.storageConsistency.enabled') === undefined
-        ? DEFAULT_SETTINGS.storageConsistencyEnabled
-        : values.get('maintenance.storageConsistency.enabled')?.toLowerCase() === 'true',
-      storageConsistencySchedule: values.get('maintenance.storageConsistency.schedule')?.trim() || DEFAULT_SETTINGS.storageConsistencySchedule
+      storageConsistencyEnabled:
+        values.get('maintenance.storageConsistency.enabled') === undefined
+          ? DEFAULT_SETTINGS.storageConsistencyEnabled
+          : values.get('maintenance.storageConsistency.enabled')?.toLowerCase() === 'true',
+      storageConsistencySchedule:
+        values.get('maintenance.storageConsistency.schedule')?.trim() ||
+        DEFAULT_SETTINGS.storageConsistencySchedule,
     };
   }
 
   private async recoverInterruptedRuns(): Promise<void> {
-    const [updated] = await MaintenanceRun.update({
-      status: 'failed',
-      finishedAt: new Date(),
-      error: 'Worker restarted before the maintenance job completed'
-    }, { where: { status: 'running' } });
-    if (updated > 0) logger.warn('Marked interrupted maintenance runs as failed', { count: updated });
+    const [updated] = await MaintenanceRun.update(
+      {
+        status: 'failed',
+        finishedAt: new Date(),
+        error: 'Worker restarted before the maintenance job completed',
+      },
+      { where: { status: 'running' } },
+    );
+    if (updated > 0)
+      logger.warn('Marked interrupted maintenance runs as failed', { count: updated });
   }
 
-  private async hasRunning(jobKey: 'backup' | 'backup-retention' | 'storage-consistency'): Promise<boolean> {
+  private async hasRunning(
+    jobKey: 'backup' | 'backup-retention' | 'storage-consistency',
+  ): Promise<boolean> {
     return Boolean(await MaintenanceRun.findOne({ where: { jobKey, status: 'running' } }));
   }
 
@@ -435,26 +516,55 @@ export class MaintenanceScheduler {
         order: [['createdAt', 'ASC']],
         transaction,
         lock: transaction.LOCK.UPDATE,
-        skipLocked: true
+        skipLocked: true,
       });
       if (!request) return null;
 
-      const run = await MaintenanceRun.create({
-        uuid: randomUUID(), jobKey: 'backup', status: 'running', startedAt: new Date(), finishedAt: null,
-        nextRunAt: null, durationMs: null, artifactName: null, sizeBytes: null, deletedFiles: null,
-        checkedFiles: null, issueCount: null, error: null
-      }, { transaction });
+      const run = await MaintenanceRun.create(
+        {
+          uuid: randomUUID(),
+          jobKey: 'backup',
+          status: 'running',
+          startedAt: new Date(),
+          finishedAt: null,
+          nextRunAt: null,
+          durationMs: null,
+          artifactName: null,
+          sizeBytes: null,
+          deletedFiles: null,
+          checkedFiles: null,
+          issueCount: null,
+          error: null,
+        },
+        { transaction },
+      );
       await request.destroy({ transaction });
-      logger.info('Claimed manual PostgreSQL backup request', { requestUuid: request.uuid, runUuid: run.uuid });
+      logger.info('Claimed manual PostgreSQL backup request', {
+        requestUuid: request.uuid,
+        runUuid: run.uuid,
+      });
       return run;
     });
   }
 
-  private startRun(jobKey: 'backup' | 'backup-retention' | 'storage-consistency', nextRunAt: Date | null): Promise<MaintenanceRun> {
+  private startRun(
+    jobKey: 'backup' | 'backup-retention' | 'storage-consistency',
+    nextRunAt: Date | null,
+  ): Promise<MaintenanceRun> {
     return MaintenanceRun.create({
-      uuid: randomUUID(), jobKey, status: 'running', startedAt: new Date(), finishedAt: null,
-      nextRunAt, durationMs: null, artifactName: null, sizeBytes: null, deletedFiles: null,
-      checkedFiles: null, issueCount: null, error: null
+      uuid: randomUUID(),
+      jobKey,
+      status: 'running',
+      startedAt: new Date(),
+      finishedAt: null,
+      nextRunAt,
+      durationMs: null,
+      artifactName: null,
+      sizeBytes: null,
+      deletedFiles: null,
+      checkedFiles: null,
+      issueCount: null,
+      error: null,
     } as never);
   }
 
@@ -475,11 +585,23 @@ export class MaintenanceScheduler {
   }
 
   private timestamp(date: Date): string {
-    return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z').replace('T', '-').replace('Z', '');
+    return date
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d{3}Z$/, 'Z')
+      .replace('T', '-')
+      .replace('Z', '');
   }
 
   private errorMessage(error: unknown): string {
-    if (error && typeof error === 'object' && 'stderr' in error && typeof error.stderr === 'string' && error.stderr.trim()) return error.stderr.trim().slice(0, 2000);
+    if (
+      error &&
+      typeof error === 'object' &&
+      'stderr' in error &&
+      typeof error.stderr === 'string' &&
+      error.stderr.trim()
+    )
+      return error.stderr.trim().slice(0, 2000);
     return error instanceof Error ? error.message : String(error);
   }
 

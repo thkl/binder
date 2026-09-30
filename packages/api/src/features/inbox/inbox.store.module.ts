@@ -5,6 +5,6 @@ import { InboxItemStore } from './store/inbox-item.store';
 @Module({
   imports: [DatabaseModule],
   providers: [InboxItemStore],
-  exports: [InboxItemStore]
+  exports: [InboxItemStore],
 })
 export class InboxStoreModule {}

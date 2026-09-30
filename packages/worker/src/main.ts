@@ -21,8 +21,8 @@ async function main(): Promise<void> {
     malwareScan: {
       required: config.malwareScan.required,
       command: config.malwareScan.command,
-      timeoutMs: config.malwareScan.timeoutMs
-    }
+      timeoutMs: config.malwareScan.timeoutMs,
+    },
   });
   await startPipelineWorker();
 }

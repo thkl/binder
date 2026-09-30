@@ -5,6 +5,6 @@ import { MetadataServiceModule } from './metadata.service.module';
 
 @Module({
   imports: [MetadataServiceModule, AuthenticationServiceModule],
-  controllers: [MetadataController]
+  controllers: [MetadataController],
 })
 export class MetadataModule {}

@@ -1,9 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   ApplicationSettingsResponse,
   SettingsMapItem,
-  SetApplicationSettingInput
+  SetApplicationSettingInput,
 } from '@binder/common';
 import { SettingsService } from '../../services/settings.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
@@ -14,7 +21,7 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
   imports: [TranslatePipe],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -27,9 +34,7 @@ export class SettingsComponent implements OnInit {
   readonly values = signal<Record<string, string | boolean>>({});
 
   readonly sections = computed(() => this.settingsService.settings()?.template.sections ?? []);
-  readonly activeSectionLabel = computed(() =>
-    this.sectionLabel(this.activeSection())
-  );
+  readonly activeSectionLabel = computed(() => this.sectionLabel(this.activeSection()));
   readonly activeItems = computed(() => {
     const response = this.settingsService.settings();
     return response?.template.items.filter((item) => item.section === this.activeSection()) ?? [];
@@ -49,7 +54,7 @@ export class SettingsComponent implements OnInit {
   async loadSettings(): Promise<void> {
     const [response] = await Promise.all([
       this.settingsService.load(),
-      this.settingsService.loadUsers()
+      this.settingsService.loadUsers(),
     ]);
     if (!response) {
       return;
@@ -58,7 +63,9 @@ export class SettingsComponent implements OnInit {
     this.values.set(this.createInitialValues(response));
     const requestedSection = this.activeSection();
     const firstSection = response.template.sections[0]?.key;
-    const sectionExists = response.template.sections.some((section) => section.key === requestedSection);
+    const sectionExists = response.template.sections.some(
+      (section) => section.key === requestedSection,
+    );
 
     if (!sectionExists && firstSection) {
       this.activeSection.set(firstSection);
@@ -82,8 +89,10 @@ export class SettingsComponent implements OnInit {
   }
 
   description(item: SettingsMapItem): string {
-    return this.settingsService.settings()?.data.find((setting) => setting.key === item.key)?.description
-      ?? item.key;
+    return (
+      this.settingsService.settings()?.data.find((setting) => setting.key === item.key)
+        ?.description ?? item.key
+    );
   }
 
   patternHint(item: SettingsMapItem): string {
@@ -109,7 +118,8 @@ export class SettingsComponent implements OnInit {
   }
 
   updateText(item: SettingsMapItem, event: Event): void {
-    const value = (event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
+    const value = (event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)
+      .value;
     this.values.update((current) => ({ ...current, [item.key]: value }));
     this.saved.set(false);
   }
@@ -126,12 +136,14 @@ export class SettingsComponent implements OnInit {
       return;
     }
 
-    const input = response.template.items.map((item): SetApplicationSettingInput => ({
-      key: item.key,
-      value: this.serializeValue(item),
-      isEncrypted: item.encrypted,
-      description: response.data.find((data) => data.key === item.key)?.description ?? undefined
-    }));
+    const input = response.template.items.map(
+      (item): SetApplicationSettingInput => ({
+        key: item.key,
+        value: this.serializeValue(item),
+        isEncrypted: item.encrypted,
+        description: response.data.find((data) => data.key === item.key)?.description ?? undefined,
+      }),
+    );
 
     if (await this.settingsService.saveAll(input)) {
       this.saved.set(true);
@@ -147,14 +159,18 @@ export class SettingsComponent implements OnInit {
     return typeof value === 'string' ? value : String(value ?? '');
   }
 
-  private createInitialValues(response: ApplicationSettingsResponse): Record<string, string | boolean> {
+  private createInitialValues(
+    response: ApplicationSettingsResponse,
+  ): Record<string, string | boolean> {
     const stored = new Map(response.data.map((setting) => [setting.key, setting.value]));
-    return Object.fromEntries(response.template.items.map((item) => {
-      const value = stored.get(item.key);
-      if (item.type === 'checkbox') {
-        return [item.key, value === undefined ? item.default === true : value === 'true'];
-      }
-      return [item.key, value ?? String(item.default ?? '')];
-    }));
+    return Object.fromEntries(
+      response.template.items.map((item) => {
+        const value = stored.get(item.key);
+        if (item.type === 'checkbox') {
+          return [item.key, value === undefined ? item.default === true : value === 'true'];
+        }
+        return [item.key, value ?? String(item.default ?? '')];
+      }),
+    );
   }
 }

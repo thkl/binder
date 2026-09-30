@@ -14,47 +14,47 @@
   overflow-y: auto;
   border: 1px solid var(--glass-border);
   border-radius: 1.1rem;
-  background: linear-gradient(145deg, rgba(20, 52, 88, .76), rgba(7, 22, 41, .86));
-  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, .12);
+  background: linear-gradient(145deg, rgba(20, 52, 88, 0.76), rgba(7, 22, 41, 0.86));
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.12);
 }
 
 .folder-tree-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: .75rem;
-  padding: 1.15rem 1rem .7rem;
+  gap: 0.75rem;
+  padding: 1.15rem 1rem 0.7rem;
 }
 
 .folder-tree-kicker {
   color: var(--cyan);
-  font-size: .62rem;
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: .16em;
+  letter-spacing: 0.16em;
 }
 
 .folder-tree h3 {
-  margin: .3rem 0 0;
+  margin: 0.3rem 0 0;
   color: #e5f1ff;
   font-size: 1rem;
-  letter-spacing: -.02em;
+  letter-spacing: -0.02em;
 }
 
 .folder-tree-copy {
   margin: 0;
-  padding: 0 1rem .9rem;
+  padding: 0 1rem 0.9rem;
   color: #8da4bf;
-  font-size: .7rem;
+  font-size: 0.7rem;
   line-height: 1.5;
 }
 
 .folder-icon-button {
   width: 2.4rem;
   height: 2.4rem;
-  border: 1px solid rgba(97, 215, 244, .3);
-  border-radius: .55rem;
+  border: 1px solid rgba(97, 215, 244, 0.3);
+  border-radius: 0.55rem;
   color: var(--cyan);
-  background: rgba(97, 215, 244, .08);
+  background: rgba(97, 215, 244, 0.08);
   cursor: pointer;
   font-size: 1.25rem;
 }
@@ -66,74 +66,74 @@
 }
 
 .folder-tree-error {
-  margin: 0 1rem .75rem;
-  padding: .55rem .65rem;
-  border: 1px solid rgba(255, 120, 120, .25);
-  border-radius: .45rem;
+  margin: 0 1rem 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(255, 120, 120, 0.25);
+  border-radius: 0.45rem;
   color: #ffb0b0;
-  background: rgba(255, 120, 120, .1);
-  font-size: .68rem;
+  background: rgba(255, 120, 120, 0.1);
+  font-size: 0.68rem;
 }
 
 .folder-create-form {
-  margin: 0 .75rem .75rem;
-  padding: .65rem;
-  border: 1px solid rgba(97, 215, 244, .2);
-  border-radius: .65rem;
-  background: rgba(5, 18, 35, .45);
+  margin: 0 0.75rem 0.75rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(97, 215, 244, 0.2);
+  border-radius: 0.65rem;
+  background: rgba(5, 18, 35, 0.45);
 }
 
 .folder-create-form label {
   display: block;
-  margin-bottom: .35rem;
+  margin-bottom: 0.35rem;
   color: #cfe0f5;
-  font-size: .68rem;
+  font-size: 0.68rem;
   font-weight: 700;
 }
 
 .folder-form-row {
   display: flex;
   flex-wrap: wrap;
-  gap: .35rem;
+  gap: 0.35rem;
 }
 
 .folder-form-row input {
   flex: 1 1 8rem;
   min-width: 0;
   min-height: 2.35rem;
-  border: 1px solid rgba(157, 190, 232, .22);
-  border-radius: .4rem;
-  padding: .4rem .5rem;
+  border: 1px solid rgba(157, 190, 232, 0.22);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.5rem;
   color: #e5f1ff;
-  background: rgba(5, 18, 35, .75);
+  background: rgba(5, 18, 35, 0.75);
   font: inherit;
-  font-size: .75rem;
+  font-size: 0.75rem;
 }
 
 .folder-form-row select {
   flex: 1 1 8rem;
   min-width: 0;
   min-height: 2.35rem;
-  border: 1px solid rgba(157, 190, 232, .22);
-  border-radius: .4rem;
-  padding: .4rem .5rem;
+  border: 1px solid rgba(157, 190, 232, 0.22);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.5rem;
   color: #e5f1ff;
-  background: rgba(5, 18, 35, .75);
+  background: rgba(5, 18, 35, 0.75);
   font: inherit;
-  font-size: .75rem;
+  font-size: 0.75rem;
 }
 
 .folder-form-row button,
 .folder-actions button {
   min-height: 2.35rem;
-  border: 1px solid rgba(97, 215, 244, .22);
-  border-radius: .4rem;
-  padding: .35rem .55rem;
+  border: 1px solid rgba(97, 215, 244, 0.22);
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.55rem;
   color: var(--cyan);
-  background: rgba(97, 215, 244, .08);
+  background: rgba(97, 215, 244, 0.08);
   cursor: pointer;
   font: inherit;
-  font-size: .68rem;
+  font-size: 0.68rem;
   font-weight: 700;
 }
 
@@ -147,7 +147,7 @@
 
 .folder-form-row button:disabled {
   cursor: not-allowed;
-  opacity: .45;
+  opacity: 0.45;
 }
 
 .folder-form-row button.quiet {
@@ -157,7 +157,7 @@
 }
 
 .folder-tree-list {
-  padding: .3rem .45rem .8rem;
+  padding: 0.3rem 0.45rem 0.8rem;
 }
 
 .folder-root-row,
@@ -167,13 +167,13 @@
   width: 100%;
   min-height: 2.75rem;
   align-items: center;
-  gap: .2rem;
+  gap: 0.2rem;
   border: 0;
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   color: #a9bfd8;
   background: transparent;
   font: inherit;
-  font-size: .75rem;
+  font-size: 0.75rem;
   text-align: left;
 }
 
@@ -186,13 +186,13 @@
 .folder-row:hover,
 .folder-root-row:focus-within,
 .folder-row:focus-within {
-  background: rgba(97, 215, 244, .07);
+  background: rgba(97, 215, 244, 0.07);
 }
 
 .folder-root-row.selected,
 .folder-select.selected {
   color: #e5f1ff;
-  background: rgba(97, 215, 244, .13);
+  background: rgba(97, 215, 244, 0.13);
 }
 
 .folder-disclosure {
@@ -213,7 +213,7 @@
 }
 
 .folder-disclosure span {
-  transition: transform .15s ease;
+  transition: transform 0.15s ease;
 }
 
 .folder-disclosure span.rotated {
@@ -230,10 +230,10 @@
   flex: 1;
   min-height: 2.35rem;
   align-items: center;
-  gap: .45rem;
+  gap: 0.45rem;
   border: 0;
-  border-radius: .4rem;
-  padding: .25rem .4rem;
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.4rem;
   color: inherit;
   background: transparent;
   font: inherit;
@@ -243,7 +243,7 @@
 .folder-glyph {
   flex: 0 0 auto;
   color: var(--cyan);
-  font-size: .85rem;
+  font-size: 0.85rem;
 }
 
 .folder-label {
@@ -260,25 +260,25 @@
   flex: 0 0 auto;
   margin-left: auto;
   color: #7188a5;
-  font-size: .65rem;
+  font-size: 0.65rem;
 }
 
 .folder-actions {
   display: flex;
   position: absolute;
   top: 50%;
-  right: .35rem;
+  right: 0.35rem;
   z-index: 1;
-  gap: .1rem;
-  padding: .1rem;
-  border: 1px solid rgba(97, 215, 244, .16);
-  border-radius: .5rem;
-  background: rgba(7, 22, 41, .92);
+  gap: 0.1rem;
+  padding: 0.1rem;
+  border: 1px solid rgba(97, 215, 244, 0.16);
+  border-radius: 0.5rem;
+  background: rgba(7, 22, 41, 0.92);
   backdrop-filter: blur(8px);
   opacity: 0;
   pointer-events: none;
   transform: translateY(-50%);
-  transition: opacity .15s ease;
+  transition: opacity 0.15s ease;
 }
 
 .folder-row:hover .folder-actions,
@@ -298,14 +298,14 @@
 .folder-actions button:hover,
 .folder-actions button:focus-visible {
   color: var(--cyan);
-  background: rgba(97, 215, 244, .08);
+  background: rgba(97, 215, 244, 0.08);
 }
 
 .folder-actions button.danger:hover,
 .folder-actions button.danger:focus-visible {
-  border-color: rgba(255, 120, 120, .45);
+  border-color: rgba(255, 120, 120, 0.45);
   color: #ffb0b0;
-  background: rgba(255, 120, 120, .08);
+  background: rgba(255, 120, 120, 0.08);
 }
 
 .folder-editor {
@@ -320,15 +320,15 @@
 }
 
 .folder-empty {
-  margin: .8rem .75rem;
+  margin: 0.8rem 0.75rem;
   color: #7188a5;
-  font-size: .72rem;
+  font-size: 0.72rem;
 }
 
 .folder-tree-divider {
   height: 1px;
-  margin: .65rem .5rem;
-  background: rgba(157, 190, 232, .14);
+  margin: 0.65rem 0.5rem;
+  background: rgba(157, 190, 232, 0.14);
 }
 
 .unassigned-folder-row {
@@ -336,15 +336,15 @@
   width: 100%;
   min-height: 2.75rem;
   align-items: center;
-  gap: .45rem;
+  gap: 0.45rem;
   border: 0;
-  border-radius: .5rem;
-  padding: .25rem .4rem;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.4rem;
   color: #a9bfd8;
   background: transparent;
   cursor: pointer;
   font: inherit;
-  font-size: .75rem;
+  font-size: 0.75rem;
   text-align: left;
 }
 
@@ -352,7 +352,7 @@
 .unassigned-folder-row:focus-visible,
 .unassigned-folder-row.selected {
   color: #e5f1ff;
-  background: rgba(97, 215, 244, .13);
+  background: rgba(97, 215, 244, 0.13);
   outline: none;
 }
 
@@ -375,12 +375,11 @@
   stroke-width: 1.5;
 }
 
-.folder-row-root select{
-  background-color:rgba(97, 215, 244, .13);;
+.folder-row-root select {
+  background-color: rgba(97, 215, 244, 0.13);
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .folder-disclosure span,
   .folder-actions {
     transition: none;

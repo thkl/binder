@@ -1,12 +1,9 @@
-import { Column, DataType, Model, PrimaryKey, Table } from "sequelize-typescript";
+import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript';
 
 @Table({
   tableName: 'settings',
   timestamps: true,
-  indexes: [
-    { fields: ['key'], unique: true },
-    { fields: ['isEncrypted'] },
-  ],
+  indexes: [{ fields: ['key'], unique: true }, { fields: ['isEncrypted'] }],
 })
 export class ApplicationSetting extends Model {
   /**

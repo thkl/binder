@@ -9,31 +9,31 @@ import { ApplicationSettingsService } from '../features/settings/service/applica
 import { ApplicationSettingStore } from '../features/settings/store/application-setting.store';
 
 @Module({
-    imports: [
-        ThrottlerModule.forRoot({
-            throttlers: [
-                {
-                    ttl: 60000,
-                    limit: 60,
-                },
-            ],
-        }),
-    ],
-    controllers: [],
-    providers: [
-        LoggingService,
+  imports: [
+    ThrottlerModule.forRoot({
+      throttlers: [
         {
-            provide: APP_GUARD,
-            useClass: CustomThrottlerGuard,
+          ttl: 60000,
+          limit: 60,
         },
-        {
-            provide: APP_GUARD,
-            useClass: CsrfGuard,
-        },
-        EncryptionService,
-        ApplicationSettingStore,
-        ApplicationSettingsService
-    ],
-    exports: [LoggingService, EncryptionService, ApplicationSettingsService]
+      ],
+    }),
+  ],
+  controllers: [],
+  providers: [
+    LoggingService,
+    {
+      provide: APP_GUARD,
+      useClass: CustomThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
+    },
+    EncryptionService,
+    ApplicationSettingStore,
+    ApplicationSettingsService,
+  ],
+  exports: [LoggingService, EncryptionService, ApplicationSettingsService],
 })
-export class SharedModule { }
+export class SharedModule {}

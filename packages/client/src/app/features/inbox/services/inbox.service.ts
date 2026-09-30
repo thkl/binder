@@ -8,7 +8,7 @@ import {
   InboxBulkRemoveResponseSchema,
   InboxRemoveResponseSchema,
   InboxQueueItem,
-  InboxQueueResponseSchema
+  InboxQueueResponseSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 
@@ -28,7 +28,7 @@ export class InboxService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>('/api/v1/inbox', { withCredentials: true })
+        this.http.get<ApiResponse<unknown>>('/api/v1/inbox', { withCredentials: true }),
       );
       const queue = InboxQueueResponseSchema.parse(response.data);
       this.items.set(queue.items);
@@ -45,11 +45,19 @@ export class InboxService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.post<ApiResponse<unknown>>('/api/v1/inbox/ai-process', {}, { withCredentials: true })
+        this.http.post<ApiResponse<unknown>>(
+          '/api/v1/inbox/ai-process',
+          {},
+          { withCredentials: true },
+        ),
       );
       const result = InboxAiProcessResponseSchema.parse(response.data);
       this.items.set(result.items);
-      this.aiCandidates.set(result.items.filter((item) => item.status === 'imported' && ['pending', 'failed'].includes(item.aiStatus)).length);
+      this.aiCandidates.set(
+        result.items.filter(
+          (item) => item.status === 'imported' && ['pending', 'failed'].includes(item.aiStatus),
+        ).length,
+      );
       return result;
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
@@ -63,13 +71,16 @@ export class InboxService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.delete<ApiResponse<unknown>>(`/api/v1/inbox/${uuid}`, { withCredentials: true })
+        this.http.delete<ApiResponse<unknown>>(`/api/v1/inbox/${uuid}`, { withCredentials: true }),
       );
       const result = InboxRemoveResponseSchema.parse(response.data);
       if (result.removed) {
         const removedItem = this.items().find((item) => item.uuid === uuid);
         this.items.update((items) => items.filter((item) => item.uuid !== uuid));
-        if (removedItem?.status === 'imported' && ['pending', 'failed'].includes(removedItem.aiStatus)) {
+        if (
+          removedItem?.status === 'imported' &&
+          ['pending', 'failed'].includes(removedItem.aiStatus)
+        ) {
           this.aiCandidates.update((count) => Math.max(0, count - 1));
         }
       }
@@ -84,7 +95,9 @@ export class InboxService {
     this.error.set(null);
     try {
       const response = await firstValueFrom(
-        this.http.delete<ApiResponse<unknown>>(`/api/v1/inbox/status/${status}`, { withCredentials: true })
+        this.http.delete<ApiResponse<unknown>>(`/api/v1/inbox/status/${status}`, {
+          withCredentials: true,
+        }),
       );
       const result = InboxBulkRemoveResponseSchema.parse(response.data);
       if (result.removed > 0) await this.load();
@@ -101,7 +114,11 @@ export class InboxService {
     source.onmessage = (event) => {
       try {
         const change = InboxChangeEventSchema.safeParse(JSON.parse(event.data));
-        if (change.success && change.data.type === 'inbox.changed' && change.data.reason !== 'connected') {
+        if (
+          change.success &&
+          change.data.type === 'inbox.changed' &&
+          change.data.reason !== 'connected'
+        ) {
           void this.load();
         }
       } catch {

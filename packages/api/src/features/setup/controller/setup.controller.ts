@@ -20,13 +20,13 @@ export class SetupController {
     const result = await this.setup.createAdministrator(SetupAdminInputSchema.parse(body));
 
     await new Promise<void>((resolve, reject) => {
-      request.session.regenerate((error) => error ? reject(error) : resolve());
+      request.session.regenerate((error) => (error ? reject(error) : resolve()));
     });
     request.session.userId = result.uuid;
     request.session.mustChangePassword = false;
     const csrfToken = ensureCsrfToken(request);
     await new Promise<void>((resolve, reject) => {
-      request.session.save((error) => error ? reject(error) : resolve());
+      request.session.save((error) => (error ? reject(error) : resolve()));
     });
 
     return { data: result, csrfToken };

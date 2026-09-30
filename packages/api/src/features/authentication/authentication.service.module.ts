@@ -6,8 +6,8 @@ import { SharedModule } from '../../shared/shared.service.module';
 import { AuthenticationGuard } from './guards/authentication.guard';
 
 @Module({
-  imports: [AuthenticationStoreModule,SharedModule],
+  imports: [AuthenticationStoreModule, SharedModule],
   providers: [AuthenticationService, SSOAuthenticationService, AuthenticationGuard],
-  exports: [AuthenticationService, SSOAuthenticationService, AuthenticationGuard]
+  exports: [AuthenticationService, SSOAuthenticationService, AuthenticationGuard],
 })
 export class AuthenticationServiceModule {}

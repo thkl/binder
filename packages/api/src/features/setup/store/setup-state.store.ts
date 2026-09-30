@@ -21,7 +21,7 @@ export class SetupStateStore {
   async isRequired(): Promise<boolean> {
     const [state, userCount] = await Promise.all([
       SetupState.findByPk(this.singletonId),
-      User.count()
+      User.count(),
     ]);
 
     return !state?.completedAt && userCount === 0;
@@ -34,7 +34,7 @@ export class SetupStateStore {
     return this.sequelize.transaction(async (transaction) => {
       const state = await SetupState.findByPk(this.singletonId, {
         transaction,
-        lock: transaction.LOCK.UPDATE
+        lock: transaction.LOCK.UPDATE,
       });
 
       if (!state || state.completedAt) {
@@ -47,13 +47,16 @@ export class SetupStateStore {
         throw new SetupAlreadyCompletedError();
       }
 
-      const user = await User.create({
-        username: attributes.username,
-        passwordHash: attributes.passwordHash,
-        isAdmin: true,
-        isActive: true,
-        mustChangePassword: false
-      }, { transaction });
+      const user = await User.create(
+        {
+          username: attributes.username,
+          passwordHash: attributes.passwordHash,
+          isAdmin: true,
+          isActive: true,
+          mustChangePassword: false,
+        },
+        { transaction },
+      );
 
       await this.markCompleted(state, transaction);
       return user;

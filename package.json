@@ -12,12 +12,15 @@
     "dev": "pnpm --parallel --filter @binder/api --filter @binder/client --filter @binder/worker run dev",
     "start:worker": "pnpm --filter @binder/worker start",
     "lint": "pnpm -r --if-present run lint",
+    "format": "prettier --write \"packages/*/src/**/*.{ts,html,css}\"",
+    "format:check": "prettier --check \"packages/*/src/**/*.{ts,html,css}\"",
     "test": "pnpm -r --if-present run test",
     "typecheck": "pnpm -r --workspace-concurrency=1 --if-present run typecheck",
     "start:debug": "pnpm -r --workspace-concurrency=1 --if-present run start:debug",
     "start:client": "pnpm --filter @binder/client start"
   },
   "devDependencies": {
+    "prettier": "3.6.2",
     "typescript": "^6.0.0"
   }
 }

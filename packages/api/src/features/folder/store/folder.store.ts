@@ -19,16 +19,23 @@ export class FolderStore extends BaseCrudStore<Folder> {
     return this.model.findAll({
       where: {
         ownerUuid,
-        parentUuid: parentUuid === null ? { [Op.is]: null } : parentUuid
+        parentUuid: parentUuid === null ? { [Op.is]: null } : parentUuid,
       },
-      order: [['sortPosition', 'ASC'], ['name', 'ASC'], ['uuid', 'ASC']]
+      order: [
+        ['sortPosition', 'ASC'],
+        ['name', 'ASC'],
+        ['uuid', 'ASC'],
+      ],
     });
   }
 
   listAll(ownerUuid: string): Promise<Folder[]> {
     return this.model.findAll({
       where: { ownerUuid },
-      order: [['name', 'ASC'], ['uuid', 'ASC']]
+      order: [
+        ['name', 'ASC'],
+        ['uuid', 'ASC'],
+      ],
     });
   }
 
@@ -59,13 +66,16 @@ export class FolderStore extends BaseCrudStore<Folder> {
   async listForDocument(ownerUuid: string, documentUuid: string): Promise<Folder[]> {
     const links = await DocumentFolder.findAll({
       where: { documentUuid },
-      attributes: ['folderUuid']
+      attributes: ['folderUuid'],
     });
     const folderUuids = links.map((link) => link.folderUuid);
     if (folderUuids.length === 0) return [];
     return this.model.findAll({
       where: { ownerUuid, uuid: { [Op.in]: folderUuids } },
-      order: [['name', 'ASC'], ['uuid', 'ASC']]
+      order: [
+        ['name', 'ASC'],
+        ['uuid', 'ASC'],
+      ],
     });
   }
 
@@ -78,26 +88,33 @@ export class FolderStore extends BaseCrudStore<Folder> {
   }
 
   listDocumentLinks(folderUuid: string, documentUuids: string[]): Promise<DocumentFolder[]> {
-    return DocumentFolder.findAll({ where: { folderUuid, documentUuid: { [Op.in]: documentUuids } } });
+    return DocumentFolder.findAll({
+      where: { folderUuid, documentUuid: { [Op.in]: documentUuids } },
+    });
   }
 
   listDocumentLinksForFolders(folderUuids: string[]): Promise<DocumentFolder[]> {
     if (folderUuids.length === 0) return Promise.resolve([]);
     return DocumentFolder.findAll({
       where: { folderUuid: { [Op.in]: folderUuids } },
-      order: [['folderUuid', 'ASC'], ['documentUuid', 'ASC']]
+      order: [
+        ['folderUuid', 'ASC'],
+        ['documentUuid', 'ASC'],
+      ],
     });
   }
 
   createLinks(folderUuid: string, documentUuids: string[]): Promise<[number, number]> {
     return DocumentFolder.bulkCreate(
       documentUuids.map((documentUuid) => ({ folderUuid, documentUuid })),
-      { ignoreDuplicates: true }
+      { ignoreDuplicates: true },
     ).then((created) => [created.length, documentUuids.length - created.length]);
   }
 
   removeLinks(folderUuid: string, documentUuids?: string[]): Promise<number> {
-    return DocumentFolder.destroy({ where: { folderUuid, ...(documentUuids ? { documentUuid: { [Op.in]: documentUuids } } : {}) } });
+    return DocumentFolder.destroy({
+      where: { folderUuid, ...(documentUuids ? { documentUuid: { [Op.in]: documentUuids } } : {}) },
+    });
   }
 
   removeFolderLinks(folderUuid: string): Promise<number> {

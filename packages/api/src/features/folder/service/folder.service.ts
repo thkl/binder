@@ -8,7 +8,7 @@ import {
   FolderListResponseSchema,
   FolderNodeSchema,
   MoveFolderInput,
-  UpdateFolderInput
+  UpdateFolderInput,
 } from '@binder/common';
 import { DocumentStore } from '../../document/store/document.store';
 import { FolderStore } from '../store/folder.store';
@@ -17,7 +17,7 @@ import { FolderStore } from '../store/folder.store';
 export class FolderService {
   constructor(
     private readonly folders: FolderStore,
-    private readonly documents: DocumentStore
+    private readonly documents: DocumentStore,
   ) {}
 
   async list(ownerUuid: string, parentUuid: string | null) {
@@ -33,7 +33,7 @@ export class FolderService {
   async listAll(ownerUuid: string) {
     const folders = await this.folders.listAll(ownerUuid);
     return FolderDocumentListResponseSchema.parse({
-      items: await Promise.all(folders.map((folder) => this.toNode(folder)))
+      items: await Promise.all(folders.map((folder) => this.toNode(folder))),
     });
   }
 
@@ -42,7 +42,7 @@ export class FolderService {
     if (!document) throw new NotFoundException('Document not found');
     const folders = await this.folders.listForDocument(ownerUuid, documentUuid);
     return FolderDocumentListResponseSchema.parse({
-      items: await Promise.all(folders.map((folder) => this.toNode(folder)))
+      items: await Promise.all(folders.map((folder) => this.toNode(folder))),
     });
   }
 
@@ -57,7 +57,7 @@ export class FolderService {
         ownerUuid,
         parentUuid: input.parentUuid ?? null,
         name: input.name.trim(),
-        sortPosition: input.sortPosition ?? 0
+        sortPosition: input.sortPosition ?? 0,
       });
       return this.toNode(folder);
     } catch (error) {
@@ -71,7 +71,7 @@ export class FolderService {
     try {
       const updated = await this.folders.update(uuid, {
         ...(input.name === undefined ? {} : { name: input.name.trim() }),
-        ...(input.sortPosition === undefined ? {} : { sortPosition: input.sortPosition })
+        ...(input.sortPosition === undefined ? {} : { sortPosition: input.sortPosition }),
       });
       return this.toNode(updated ?? folder);
     } catch (error) {
@@ -92,7 +92,7 @@ export class FolderService {
     try {
       const updated = await this.folders.update(uuid, {
         parentUuid: input.parentUuid,
-        ...(input.sortPosition === undefined ? {} : { sortPosition: input.sortPosition })
+        ...(input.sortPosition === undefined ? {} : { sortPosition: input.sortPosition }),
       });
       return this.toNode(updated ?? folder);
     } catch (error) {
@@ -111,7 +111,7 @@ export class FolderService {
     return FolderDeleteResponseSchema.parse({
       deleted: true,
       promotedChildren: children.length,
-      removedLinks
+      removedLinks,
     });
   }
 
@@ -125,7 +125,7 @@ export class FolderService {
     return FolderDocumentActionResponseSchema.parse({
       folderUuid,
       affected: created,
-      skipped: duplicate + documentUuids.length - eligibleUuids.length
+      skipped: duplicate + documentUuids.length - eligibleUuids.length,
     });
   }
 
@@ -133,7 +133,11 @@ export class FolderService {
     await this.requireFolder(ownerUuid, uuid);
   }
 
-  async applyMetadataRouting(ownerUuid: string, documentUuid: string, folderUuids: string[]): Promise<void> {
+  async applyMetadataRouting(
+    ownerUuid: string,
+    documentUuid: string,
+    folderUuids: string[],
+  ): Promise<void> {
     for (const folderUuid of [...new Set(folderUuids)]) {
       await this.linkDocuments(ownerUuid, folderUuid, { documentUuids: [documentUuid] });
     }
@@ -146,7 +150,7 @@ export class FolderService {
     return FolderDocumentActionResponseSchema.parse({
       folderUuid,
       affected,
-      skipped: documentUuids.length - affected
+      skipped: documentUuids.length - affected,
     });
   }
 
@@ -156,12 +160,18 @@ export class FolderService {
     return folder;
   }
 
-  private async assertNotDescendant(ownerUuid: string, folderUuid: string, parentUuid: string): Promise<void> {
+  private async assertNotDescendant(
+    ownerUuid: string,
+    folderUuid: string,
+    parentUuid: string,
+  ): Promise<void> {
     const visited = new Set<string>();
     let current: string | null = parentUuid;
     while (current) {
       if (current === folderUuid) {
-        throw new ConflictException('A folder cannot be moved into itself or one of its descendants');
+        throw new ConflictException(
+          'A folder cannot be moved into itself or one of its descendants',
+        );
       }
       if (visited.has(current)) {
         throw new ConflictException('The folder hierarchy contains a cycle');
@@ -175,7 +185,7 @@ export class FolderService {
   private async toNode(folder: import('../models/folder.entity').Folder) {
     const [childCount, documentCount] = await Promise.all([
       this.folders.countChildren(folder.ownerUuid, folder.uuid),
-      this.folders.countDocuments(folder.uuid)
+      this.folders.countDocuments(folder.uuid),
     ]);
     return FolderNodeSchema.parse({
       uuid: folder.uuid,
@@ -187,7 +197,7 @@ export class FolderService {
       documentCount,
       hasChildren: childCount > 0,
       createdAt: folder.createdAt.toISOString(),
-      updatedAt: folder.updatedAt.toISOString()
+      updatedAt: folder.updatedAt.toISOString(),
     });
   }
 

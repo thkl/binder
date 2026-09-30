@@ -17,111 +17,286 @@
   <div class="metadata-layout">
     <aside class="library-nav glass-card" aria-label="Metadata categories">
       <p class="sidebar-label">{{ 'metadata.vocabulary' | t }}</p>
-      <button type="button" class="nav-item" [class.active]="activeKind() === 'documentTypes'" (click)="selectKind('documentTypes')">
-        <span class="nav-icon type-icon" aria-hidden="true">D</span><span>{{ 'metadata.types' | t }}</span>
+      <button
+        type="button"
+        class="nav-item"
+        [class.active]="activeKind() === 'documentTypes'"
+        (click)="selectKind('documentTypes')"
+      >
+        <span class="nav-icon type-icon" aria-hidden="true">D</span
+        ><span>{{ 'metadata.types' | t }}</span>
         <small>{{ metadata.vocabulary()?.documentTypes?.length ?? 0 }}</small>
       </button>
-      <button type="button" class="nav-item" [class.active]="activeKind() === 'categories'" (click)="selectKind('categories')">
-        <span class="nav-icon category-icon" aria-hidden="true">C</span><span>{{ 'metadata.categories' | t }}</span>
+      <button
+        type="button"
+        class="nav-item"
+        [class.active]="activeKind() === 'categories'"
+        (click)="selectKind('categories')"
+      >
+        <span class="nav-icon category-icon" aria-hidden="true">C</span
+        ><span>{{ 'metadata.categories' | t }}</span>
         <small>{{ metadata.vocabulary()?.categories?.length ?? 0 }}</small>
       </button>
-      <button type="button" class="nav-item" [class.active]="activeKind() === 'tags'" (click)="selectKind('tags')">
-        <span class="nav-icon tag-icon" aria-hidden="true">#</span><span>{{ 'metadata.tags' | t }}</span>
+      <button
+        type="button"
+        class="nav-item"
+        [class.active]="activeKind() === 'tags'"
+        (click)="selectKind('tags')"
+      >
+        <span class="nav-icon tag-icon" aria-hidden="true">#</span
+        ><span>{{ 'metadata.tags' | t }}</span>
         <small>{{ metadata.vocabulary()?.tags?.length ?? 0 }}</small>
       </button>
-      <div class="nav-note"><span class="status-dot" aria-hidden="true"></span> {{ 'metadata.workspaceNote' | t }}</div>
+      <div class="nav-note">
+        <span class="status-dot" aria-hidden="true"></span> {{ 'metadata.workspaceNote' | t }}
+      </div>
     </aside>
 
     <main class="library-content glass-card">
       <header class="content-heading">
-        <div><p class="section-kicker">{{ 'metadata.available' | t }}</p><h3>{{ kindLabel(activeKind()) }}</h3></div>
-        <span class="count-badge">{{ activeItems().length }} {{ 'metadata.entries' | t }}</span>
-        @if (auth.user()?.isAdmin && this.activeKind()!=='tags') {
         <div>
-          <div aria-label="scope" class="scope-switcher">
-              <button type="button" [class.active]="currentScope()==='system'" (click)="switchScope('system')">{{ 'metadata.workspace' | t }}</button>
-              <button type="button" [class.active]="currentScope()==='personal'" (click)="switchScope('personal')">{{('metadata.personal' | t) }}</button></div>
+          <p class="section-kicker">{{ 'metadata.available' | t }}</p>
+          <h3>{{ kindLabel(activeKind()) }}</h3>
         </div>
+        <span class="count-badge">{{ activeItems().length }} {{ 'metadata.entries' | t }}</span>
+        @if (auth.user()?.isAdmin && this.activeKind() !== 'tags') {
+          <div>
+            <div aria-label="scope" class="scope-switcher">
+              <button
+                type="button"
+                [class.active]="currentScope() === 'system'"
+                (click)="switchScope('system')"
+              >
+                {{ 'metadata.workspace' | t }}
+              </button>
+              <button
+                type="button"
+                [class.active]="currentScope() === 'personal'"
+                (click)="switchScope('personal')"
+              >
+                {{ 'metadata.personal' | t }}
+              </button>
+            </div>
+          </div>
         }
       </header>
 
       @if (showCreate()) {
         <form class="create-form" (submit)="$event.preventDefault(); create()">
-          <div class="form-title"><strong>{{ 'metadata.create' | t }}</strong><small>{{ 'metadata.createCopy' | t }}</small></div>
-          <label><span>{{ 'metadata.name' | t }}</span><input [value]="name()" (input)="name.set($any($event.target).value)" maxlength="150" required autocomplete="off"></label>
-          <label><span>{{ 'metadata.description' | t }} <em>{{ 'metadata.optional' | t }}</em></span>
-            <input [value]="description()" (input)="description.set($any($event.target).value)" maxlength="500">
+          <div class="form-title">
+            <strong>{{ 'metadata.create' | t }}</strong
+            ><small>{{ 'metadata.createCopy' | t }}</small>
+          </div>
+          <label
+            ><span>{{ 'metadata.name' | t }}</span
+            ><input
+              [value]="name()"
+              (input)="name.set($any($event.target).value)"
+              maxlength="150"
+              required
+              autocomplete="off"
+          /></label>
+          <label
+            ><span
+              >{{ 'metadata.description' | t }} <em>{{ 'metadata.optional' | t }}</em></span
+            >
+            <input
+              [value]="description()"
+              (input)="description.set($any($event.target).value)"
+              maxlength="500"
+            />
           </label>
           <div class="translation-fields">
-            <label><span>{{ 'metadata.englishLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="translationEn()" (input)="translationEn.set($any($event.target).value)" maxlength="150" placeholder="Invoice"></label>
-            <label><span>{{ 'metadata.germanLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="translationDe()" (input)="translationDe.set($any($event.target).value)" maxlength="150" placeholder="Rechnung"></label>
+            <label
+              ><span
+                >{{ 'metadata.englishLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span
+              ><input
+                [value]="translationEn()"
+                (input)="translationEn.set($any($event.target).value)"
+                maxlength="150"
+                placeholder="Invoice"
+            /></label>
+            <label
+              ><span
+                >{{ 'metadata.germanLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span
+              ><input
+                [value]="translationDe()"
+                (input)="translationDe.set($any($event.target).value)"
+                maxlength="150"
+                placeholder="Rechnung"
+            /></label>
           </div>
           @if (auth.user()?.isAdmin) {
             <label class="scope-toggle">
-              <input type="checkbox" [checked]="systemScope() || currentScope()==='system' " (change)="systemScope.set($any($event.target).checked)"><span>
-                <strong>{{ 'metadata.workspaceValue' | t }}</strong><small>{{ 'metadata.workspaceValueCopy' | t }}</small>
-              </span></label>
+              <input
+                type="checkbox"
+                [checked]="systemScope() || currentScope() === 'system'"
+                (change)="systemScope.set($any($event.target).checked)"
+              /><span>
+                <strong>{{ 'metadata.workspaceValue' | t }}</strong
+                ><small>{{ 'metadata.workspaceValueCopy' | t }}</small>
+              </span></label
+            >
           }
           @if (activeKind() !== 'tags' && !systemScope() && folders.allFolders().length > 0) {
-              <div class="value-edit">
-            <label><span>{{ 'metadata.folderRouting' | t }}</span>
-              <select [value]="folderUuid()" (change)="folderUuid.set($any($event.target).value)">
-                <option value="">{{ 'metadata.noFolderRouting' | t }}</option
-                  >@for (folder of folders.allFolders(); track folder.uuid) { 
-                    <option [value]="folder.uuid">{{ folder.name }}</option> 
-                  }</select>
-                  <small class="field-help">{{ 'metadata.folderRoutingHint' | t }}</small></label>
+            <div class="value-edit">
+              <label
+                ><span>{{ 'metadata.folderRouting' | t }}</span>
+                <select [value]="folderUuid()" (change)="folderUuid.set($any($event.target).value)">
+                  <option value="">{{ 'metadata.noFolderRouting' | t }}</option>
+                  @for (folder of folders.allFolders(); track folder.uuid) {
+                    <option [value]="folder.uuid">{{ folder.name }}</option>
+                  }
+                </select>
+                <small class="field-help">{{ 'metadata.folderRoutingHint' | t }}</small></label
+              >
             </div>
           }
-          <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreate.set(false)">{{ 'metadata.cancel' | t }}</button><button type="submit" class="primary-button" [disabled]="metadata.saving() || !name().trim()">{{ metadata.saving() ? ('metadata.creating' | t) : ('metadata.createValue' | t) }}</button></div>
+          <div class="form-actions">
+            <button type="button" class="secondary-button" (click)="showCreate.set(false)">
+              {{ 'metadata.cancel' | t }}</button
+            ><button
+              type="submit"
+              class="primary-button"
+              [disabled]="metadata.saving() || !name().trim()"
+            >
+              {{ metadata.saving() ? ('metadata.creating' | t) : ('metadata.createValue' | t) }}
+            </button>
+          </div>
         </form>
       }
 
       @if (metadata.loading()) {
-        <div class="empty-state"><span class="spinner"></span><p>{{ 'metadata.loading' | t }}</p></div>
+        <div class="empty-state">
+          <span class="spinner"></span>
+          <p>{{ 'metadata.loading' | t }}</p>
+        </div>
       } @else if (activeItems().length === 0) {
-        <div class="empty-state"><span class="empty-symbol" aria-hidden="true">＋</span><h4>{{ 'metadata.noValues' | t }}</h4><p>{{ 'metadata.createFirst' | t }}</p><button class="secondary-button" type="button" (click)="showCreate.set(true)">{{ 'metadata.createOne' | t }}</button></div>
+        <div class="empty-state">
+          <span class="empty-symbol" aria-hidden="true">＋</span>
+          <h4>{{ 'metadata.noValues' | t }}</h4>
+          <p>{{ 'metadata.createFirst' | t }}</p>
+          <button class="secondary-button" type="button" (click)="showCreate.set(true)">
+            {{ 'metadata.createOne' | t }}
+          </button>
+        </div>
       } @else {
         <div class="value-list">
           @for (item of activeItems(); track item.uuid) {
             <article class="value-row">
-              <span class="value-mark" [class.system]="item.scope === 'system'" aria-hidden="true">{{ item.scope === 'system' ? '◆' : '●' }}</span>
+              <span
+                class="value-mark"
+                [class.system]="item.scope === 'system'"
+                aria-hidden="true"
+                >{{ item.scope === 'system' ? '◆' : '●' }}</span
+              >
               @if (editingUuid() === item.uuid) {
                 <div class="value-edit">
-                  <label><span>{{ 'metadata.name' | t }}</span><input [value]="editingName()" (input)="editingName.set($any($event.target).value)" maxlength="150" required></label>
-                  <label><span>{{ 'metadata.description' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="editingDescription()" (input)="editingDescription.set($any($event.target).value)" maxlength="500"></label>
+                  <label
+                    ><span>{{ 'metadata.name' | t }}</span
+                    ><input
+                      [value]="editingName()"
+                      (input)="editingName.set($any($event.target).value)"
+                      maxlength="150"
+                      required
+                  /></label>
+                  <label
+                    ><span
+                      >{{ 'metadata.description' | t }} <em>{{ 'metadata.optional' | t }}</em></span
+                    ><input
+                      [value]="editingDescription()"
+                      (input)="editingDescription.set($any($event.target).value)"
+                      maxlength="500"
+                  /></label>
                   <div class="translation-fields">
-                    <label><span>{{ 'metadata.englishLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="editingTranslationEn()" (input)="editingTranslationEn.set($any($event.target).value)" maxlength="150"></label>
-                    <label><span>{{ 'metadata.germanLabel' | t }} <em>{{ 'metadata.optional' | t }}</em></span><input [value]="editingTranslationDe()" (input)="editingTranslationDe.set($any($event.target).value)" maxlength="150"></label>
+                    <label
+                      ><span
+                        >{{ 'metadata.englishLabel' | t }}
+                        <em>{{ 'metadata.optional' | t }}</em></span
+                      ><input
+                        [value]="editingTranslationEn()"
+                        (input)="editingTranslationEn.set($any($event.target).value)"
+                        maxlength="150"
+                    /></label>
+                    <label
+                      ><span
+                        >{{ 'metadata.germanLabel' | t }}
+                        <em>{{ 'metadata.optional' | t }}</em></span
+                      ><input
+                        [value]="editingTranslationDe()"
+                        (input)="editingTranslationDe.set($any($event.target).value)"
+                        maxlength="150"
+                    /></label>
                   </div>
                   @if (item.scope === 'personal' && folders.allFolders().length > 0) {
-                    <label><span>{{ 'metadata.folderRouting' | t }}</span><select [value]="editingFolderUuid()" (change)="editingFolderUuid.set($any($event.target).value)">
-                      <option value="">{{ 'metadata.noFolderRouting' | t }}</option>
-                      @for (folder of folders.allFolders(); track folder.uuid) {
-                        <option [value]="folder.uuid">{{ folderPath(folder.uuid) }}</option>
-                      }
-                    </select></label>
+                    <label
+                      ><span>{{ 'metadata.folderRouting' | t }}</span
+                      ><select
+                        [value]="editingFolderUuid()"
+                        (change)="editingFolderUuid.set($any($event.target).value)"
+                      >
+                        <option value="">{{ 'metadata.noFolderRouting' | t }}</option>
+                        @for (folder of folders.allFolders(); track folder.uuid) {
+                          <option [value]="folder.uuid">{{ folderPath(folder.uuid) }}</option>
+                        }
+                      </select></label
+                    >
                   }
                   <div class="value-edit-actions">
-                    <button type="button" class="secondary-button" (click)="cancelEdit()">{{ 'metadata.cancel' | t }}</button>
-                    <button type="button" class="primary-button" [disabled]="metadata.saving() || !editingName().trim()" (click)="saveEdit(item)">{{ 'metadata.save' | t }}</button>
+                    <button type="button" class="secondary-button" (click)="cancelEdit()">
+                      {{ 'metadata.cancel' | t }}
+                    </button>
+                    <button
+                      type="button"
+                      class="primary-button"
+                      [disabled]="metadata.saving() || !editingName().trim()"
+                      (click)="saveEdit(item)"
+                    >
+                      {{ 'metadata.save' | t }}
+                    </button>
                   </div>
                 </div>
               } @else {
-                <div class="value-copy"><strong>{{ itemName(item) }}</strong><small>{{ item.description || ('metadata.noDescription' | t) }}</small>@if (item.folderUuid) { <small class="routing-note">→ {{ folderPath(item.folderUuid) }}</small> }</div>
+                <div class="value-copy">
+                  <strong>{{ itemName(item) }}</strong
+                  ><small>{{ item.description || ('metadata.noDescription' | t) }}</small>
+                  @if (item.folderUuid) {
+                    <small class="routing-note">→ {{ folderPath(item.folderUuid) }}</small>
+                  }
+                </div>
                 <div class="value-actions">
                   @if (canEdit(item)) {
-                    <button type="button" class="row-action" (click)="startEdit(item)">{{ 'metadata.edit' | t }}</button>
+                    <button type="button" class="row-action" (click)="startEdit(item)">
+                      {{ 'metadata.edit' | t }}
+                    </button>
                   }
                   @if (canClone(item)) {
-                    <button type="button" class="row-action" [disabled]="metadata.saving()" (click)="cloneItem(item)">{{ metadata.saving() ? ('metadata.copying' | t) : ('metadata.copyPersonal' | t) }}</button>
+                    <button
+                      type="button"
+                      class="row-action"
+                      [disabled]="metadata.saving()"
+                      (click)="cloneItem(item)"
+                    >
+                      {{
+                        metadata.saving() ? ('metadata.copying' | t) : ('metadata.copyPersonal' | t)
+                      }}
+                    </button>
                   }
                   @if (canDelete(item)) {
-                    <button type="button" class="row-action danger-action" [disabled]="metadata.saving()" (click)="deleteItem(item)">{{ 'metadata.delete' | t }}</button>
+                    <button
+                      type="button"
+                      class="row-action danger-action"
+                      [disabled]="metadata.saving()"
+                      (click)="deleteItem(item)"
+                    >
+                      {{ 'metadata.delete' | t }}
+                    </button>
                   }
                 </div>
               }
-              <span class="scope-badge" [class.system]="item.scope === 'system'">{{ item.scope === 'system' ? ('metadata.workspace' | t) : ('metadata.personal' | t) }}</span>
+              <span class="scope-badge" [class.system]="item.scope === 'system'">{{
+                item.scope === 'system' ? ('metadata.workspace' | t) : ('metadata.personal' | t)
+              }}</span>
             </article>
           }
         </div>
@@ -130,16 +305,90 @@
   </div>
 
   <section class="definitions-card glass-card">
-    <header class="content-heading"><div><p class="section-kicker">{{ 'metadata.flexible' | t }}</p><h3>{{ 'metadata.custom' | t }}</h3></div><span class="count-badge">{{ metadata.definitions().length }} {{ 'settings.fields' | t }}</span></header>
+    <header class="content-heading">
+      <div>
+        <p class="section-kicker">{{ 'metadata.flexible' | t }}</p>
+        <h3>{{ 'metadata.custom' | t }}</h3>
+      </div>
+      <span class="count-badge"
+        >{{ metadata.definitions().length }} {{ 'settings.fields' | t }}</span
+      >
+    </header>
     <p class="definition-intro">{{ 'metadata.customCopy' | t }}</p>
     <form class="definition-form" (submit)="$event.preventDefault(); createDefinition()">
-      <label><span>{{ 'metadata.key' | t }}</span><input [value]="definitionKey()" (input)="definitionKey.set($any($event.target).value)" placeholder="issueDate" pattern="[a-z][a-zA-Z0-9_]*" title="Start with a lowercase letter; then use only letters, numbers, or underscores." aria-describedby="metadata-key-help" required><small id="metadata-key-help" class="field-help">Lowercase letter first; then letters, numbers, or underscores only. Example: <code>issueDate</code></small></label>
-      <label><span>{{ 'metadata.label' | t }}</span><input [value]="definitionLabel()" (input)="definitionLabel.set($any($event.target).value)" placeholder="Date of issue" required></label>
-      <label><span>{{ 'metadata.fieldType' | t }}</span><select [value]="definitionType()" (change)="definitionType.set($any($event.target).value)"><option value="text">Text</option><option value="number">Number</option><option value="date">{{ 'metadata.date' | t }}</option><option value="datetime">{{ 'metadata.dateTime' | t }}</option><option value="boolean">{{ 'metadata.yesNo' | t }}</option><option value="select">{{ 'metadata.select' | t }}</option><option value="multi-select">{{ 'metadata.multiSelect' | t }}</option></select></label>
-      @if (definitionType() === 'select' || definitionType() === 'multi-select') { <label><span>Options <small>comma separated</small></span><input [value]="definitionOptions()" (input)="definitionOptions.set($any($event.target).value)" placeholder="Open, In progress, Done" required></label> }
-      <label class="definition-check"><input type="checkbox" [checked]="definitionMandatory()" (change)="definitionMandatory.set($any($event.target).checked)"><span>{{ 'metadata.required' | t }}</span></label>
-      <button class="primary-button" type="submit" [disabled]="metadata.saving() || !definitionKey().trim() || !definitionLabel().trim()">{{ metadata.saving() ? ('metadata.adding' | t) : ('metadata.addField' | t) }}</button>
+      <label
+        ><span>{{ 'metadata.key' | t }}</span
+        ><input
+          [value]="definitionKey()"
+          (input)="definitionKey.set($any($event.target).value)"
+          placeholder="issueDate"
+          pattern="[a-z][a-zA-Z0-9_]*"
+          title="Start with a lowercase letter; then use only letters, numbers, or underscores."
+          aria-describedby="metadata-key-help"
+          required
+        /><small id="metadata-key-help" class="field-help"
+          >Lowercase letter first; then letters, numbers, or underscores only. Example:
+          <code>issueDate</code></small
+        ></label
+      >
+      <label
+        ><span>{{ 'metadata.label' | t }}</span
+        ><input
+          [value]="definitionLabel()"
+          (input)="definitionLabel.set($any($event.target).value)"
+          placeholder="Date of issue"
+          required
+      /></label>
+      <label
+        ><span>{{ 'metadata.fieldType' | t }}</span
+        ><select
+          [value]="definitionType()"
+          (change)="definitionType.set($any($event.target).value)"
+        >
+          <option value="text">Text</option>
+          <option value="number">Number</option>
+          <option value="date">{{ 'metadata.date' | t }}</option>
+          <option value="datetime">{{ 'metadata.dateTime' | t }}</option>
+          <option value="boolean">{{ 'metadata.yesNo' | t }}</option>
+          <option value="select">{{ 'metadata.select' | t }}</option>
+          <option value="multi-select">{{ 'metadata.multiSelect' | t }}</option>
+        </select></label
+      >
+      @if (definitionType() === 'select' || definitionType() === 'multi-select') {
+        <label
+          ><span>Options <small>comma separated</small></span
+          ><input
+            [value]="definitionOptions()"
+            (input)="definitionOptions.set($any($event.target).value)"
+            placeholder="Open, In progress, Done"
+            required
+        /></label>
+      }
+      <label class="definition-check"
+        ><input
+          type="checkbox"
+          [checked]="definitionMandatory()"
+          (change)="definitionMandatory.set($any($event.target).checked)"
+        /><span>{{ 'metadata.required' | t }}</span></label
+      >
+      <button
+        class="primary-button"
+        type="submit"
+        [disabled]="metadata.saving() || !definitionKey().trim() || !definitionLabel().trim()"
+      >
+        {{ metadata.saving() ? ('metadata.adding' | t) : ('metadata.addField' | t) }}
+      </button>
     </form>
-    @if (metadata.definitions().length > 0) { <div class="definition-list">@for (definition of metadata.definitions(); track definition.uuid) { <div class="definition-row"><strong>{{ definition.label }}</strong><code>{{ definition.key }}</code><span>{{ definition.type }}{{ definition.mandatory ? ' · required' : '' }}</span></div> }</div> }
+    @if (metadata.definitions().length > 0) {
+      <div class="definition-list">
+        @for (definition of metadata.definitions(); track definition.uuid) {
+          <div class="definition-row">
+            <strong>{{ definition.label }}</strong
+            ><code>{{ definition.key }}</code
+            ><span>{{ definition.type }}{{ definition.mandatory ? ' · required' : '' }}</span>
+          </div>
+        }
+      </div>
+    }
   </section>
 </section>

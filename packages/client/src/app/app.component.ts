@@ -11,15 +11,26 @@ type NavigationMenu = 'documents' | 'settings';
 @Component({
   selector: 'binder-root',
   standalone: true,
-  imports: [LoginComponent, OnboardingComponent, ChangePasswordComponent, RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe],
+  imports: [
+    LoginComponent,
+    OnboardingComponent,
+    ChangePasswordComponent,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    TranslatePipe,
+  ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
   readonly openMenu = signal<NavigationMenu | null>(null);
 
-  constructor(readonly auth: AuthService, readonly i18n: I18nService) {}
+  constructor(
+    readonly auth: AuthService,
+    readonly i18n: I18nService,
+  ) {}
 
   ngOnInit(): void {
     void this.auth.restoreSession();
@@ -35,7 +46,7 @@ export class AppComponent implements OnInit {
 
   toggleMenu(menu: NavigationMenu, event: Event): void {
     event.stopPropagation();
-    this.openMenu.update((current) => current === menu ? null : menu);
+    this.openMenu.update((current) => (current === menu ? null : menu));
   }
 
   closeMenu(): void {

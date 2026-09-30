@@ -1,4 +1,14 @@
-import { AllowNull, Column, CreatedAt, DataType, Default, Model, PrimaryKey, Table, UpdatedAt } from 'sequelize-typescript';
+import {
+  AllowNull,
+  Column,
+  CreatedAt,
+  DataType,
+  Default,
+  Model,
+  PrimaryKey,
+  Table,
+  UpdatedAt,
+} from 'sequelize-typescript';
 import type { LocalizedText } from '@binder/common';
 
 export interface VocabularyAttributes {
@@ -15,13 +25,26 @@ export interface VocabularyAttributes {
 
 export type VocabularyCreationAttributes = Omit<VocabularyAttributes, 'createdAt' | 'updatedAt'>;
 
-export type MetadataFieldType = 'text' | 'number' | 'date' | 'datetime' | 'boolean' | 'select' | 'multi-select';
+export type MetadataFieldType =
+  | 'text'
+  | 'number'
+  | 'date'
+  | 'datetime'
+  | 'boolean'
+  | 'select'
+  | 'multi-select';
 
-abstract class VocabularyBase<T extends VocabularyAttributes = VocabularyAttributes> extends Model<T, VocabularyCreationAttributes> {
-  @PrimaryKey @Default(DataType.UUIDV4) @Column({ field: 'id', type: DataType.UUID })
+abstract class VocabularyBase<T extends VocabularyAttributes = VocabularyAttributes> extends Model<
+  T,
+  VocabularyCreationAttributes
+> {
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
 
-  @AllowNull @Column({ field: 'owner_id', type: DataType.UUID })
+  @AllowNull
+  @Column({ field: 'owner_id', type: DataType.UUID })
   declare ownerUuid: string | null;
 
   @Column({ type: DataType.STRING(150), allowNull: false })
@@ -30,16 +53,19 @@ abstract class VocabularyBase<T extends VocabularyAttributes = VocabularyAttribu
   @Column({ type: DataType.JSONB, allowNull: false, defaultValue: {} })
   declare translations: LocalizedText;
 
-  @AllowNull @Column({ type: DataType.STRING(500) })
+  @AllowNull
+  @Column({ type: DataType.STRING(500) })
   declare description: string | null;
 
   @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: true })
   declare active: boolean;
 
-  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE })
+  @CreatedAt
+  @Column({ field: 'created_at', type: DataType.DATE })
   declare createdAt: Date;
 
-  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE })
+  @UpdatedAt
+  @Column({ field: 'updated_at', type: DataType.DATE })
   declare updatedAt: Date;
 }
 
@@ -56,7 +82,8 @@ export class DocumentCategory extends VocabularyBase {
   @Column({ field: 'folder_id', type: DataType.UUID, allowNull: true })
   declare folderUuid: string | null;
 
-  @AllowNull @Column({ field: 'parent_id', type: DataType.UUID })
+  @AllowNull
+  @Column({ field: 'parent_id', type: DataType.UUID })
   declare parentUuid: string | null;
 }
 
@@ -65,22 +92,28 @@ export class DocumentTag extends VocabularyBase {}
 
 @Table({ tableName: 'document_tag_assignments', underscored: true, timestamps: false })
 export class DocumentTagAssignment extends Model {
-  @PrimaryKey @Column({ field: 'document_id', type: DataType.UUID })
+  @PrimaryKey
+  @Column({ field: 'document_id', type: DataType.UUID })
   declare documentUuid: string;
 
-  @PrimaryKey @Column({ field: 'tag_id', type: DataType.UUID })
+  @PrimaryKey
+  @Column({ field: 'tag_id', type: DataType.UUID })
   declare tagUuid: string;
 
-  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE })
+  @CreatedAt
+  @Column({ field: 'created_at', type: DataType.DATE })
   declare createdAt: Date;
 }
 
 @Table({ tableName: 'metadata_definitions', underscored: true, timestamps: true })
 export class MetadataDefinition extends Model {
-  @PrimaryKey @Default(DataType.UUIDV4) @Column({ field: 'id', type: DataType.UUID })
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
   declare uuid: string;
 
-  @AllowNull @Column({ field: 'owner_id', type: DataType.UUID })
+  @AllowNull
+  @Column({ field: 'owner_id', type: DataType.UUID })
   declare ownerUuid: string | null;
 
   @Column({ type: DataType.STRING(100), allowNull: false })
@@ -92,7 +125,8 @@ export class MetadataDefinition extends Model {
   @Column({ type: DataType.STRING(32), allowNull: false })
   declare type: MetadataFieldType;
 
-  @AllowNull @Column({ type: DataType.JSONB })
+  @AllowNull
+  @Column({ type: DataType.JSONB })
   declare options: string[] | null;
 
   @Column({ field: 'is_unique', type: DataType.BOOLEAN, defaultValue: false })
@@ -104,27 +138,33 @@ export class MetadataDefinition extends Model {
   @Column({ type: DataType.BOOLEAN, defaultValue: true })
   declare active: boolean;
 
-  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE })
+  @CreatedAt
+  @Column({ field: 'created_at', type: DataType.DATE })
   declare createdAt: Date;
 
-  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE })
+  @UpdatedAt
+  @Column({ field: 'updated_at', type: DataType.DATE })
   declare updatedAt: Date;
 }
 
 @Table({ tableName: 'document_metadata_values', underscored: true, timestamps: true })
 export class DocumentMetadataValue extends Model {
-  @PrimaryKey @Column({ field: 'document_id', type: DataType.UUID })
+  @PrimaryKey
+  @Column({ field: 'document_id', type: DataType.UUID })
   declare documentUuid: string;
 
-  @PrimaryKey @Column({ field: 'definition_id', type: DataType.UUID })
+  @PrimaryKey
+  @Column({ field: 'definition_id', type: DataType.UUID })
   declare definitionUuid: string;
 
   @Column({ type: DataType.JSONB, allowNull: false })
   declare value: unknown;
 
-  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE })
+  @CreatedAt
+  @Column({ field: 'created_at', type: DataType.DATE })
   declare createdAt: Date;
 
-  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE })
+  @UpdatedAt
+  @Column({ field: 'updated_at', type: DataType.DATE })
   declare updatedAt: Date;
 }

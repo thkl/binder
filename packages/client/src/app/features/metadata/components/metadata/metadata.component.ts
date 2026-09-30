@@ -1,12 +1,25 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { CreateMetadataDefinition, CreateVocabularyItem, MetadataFieldType, UpdateVocabularyItem, VocabularyItem } from '@binder/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
+import {
+  CreateMetadataDefinition,
+  CreateVocabularyItem,
+  MetadataFieldType,
+  UpdateVocabularyItem,
+  VocabularyItem,
+} from '@binder/common';
 import { AuthService } from '../../../authentication/services/auth.service';
 import { MetadataService } from '../../services/metadata.service';
 import { FoldersService } from '../../../documents/services/folders.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 type VocabularyKind = 'documentTypes' | 'categories' | 'tags';
-type Scopes = 'system' | 'personal'
+type Scopes = 'system' | 'personal';
 
 @Component({
   selector: 'binder-metadata',
@@ -14,7 +27,7 @@ type Scopes = 'system' | 'personal'
   imports: [TranslatePipe],
   templateUrl: './metadata.component.html',
   styleUrl: './metadata.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MetadataComponent implements OnInit {
   readonly metadata = inject(MetadataService);
@@ -47,7 +60,7 @@ export class MetadataComponent implements OnInit {
     const scope = this.currentScope();
     const vocabulary = this.metadata.vocabulary();
     if (this.activeKind() !== 'tags') {
-      return vocabulary ? vocabulary[this.activeKind()].filter(item => item.scope === scope) : [];
+      return vocabulary ? vocabulary[this.activeKind()].filter((item) => item.scope === scope) : [];
     } else {
       if (!vocabulary) return [];
       return vocabulary[this.activeKind()];
@@ -71,14 +84,20 @@ export class MetadataComponent implements OnInit {
 
   switchScope(scope: Scopes): void {
     this.currentScope.set(scope);
-    this.systemScope.set((scope === 'system'))
+    this.systemScope.set(scope === 'system');
   }
 
   kindLabel(kind: VocabularyKind): string {
-    return kind === 'documentTypes' ? this.i18n.t('metadata.types') : kind === 'categories' ? this.i18n.t('metadata.categories') : this.i18n.t('metadata.tags');
+    return kind === 'documentTypes'
+      ? this.i18n.t('metadata.types')
+      : kind === 'categories'
+        ? this.i18n.t('metadata.categories')
+        : this.i18n.t('metadata.tags');
   }
 
-  itemName(item: { name: string; translations: Record<string, string> }): string { return this.i18n.name(item); }
+  itemName(item: { name: string; translations: Record<string, string> }): string {
+    return this.i18n.name(item);
+  }
 
   folderPath(uuid: string): string {
     const byUuid = new Map(this.folders.allFolders().map((folder) => [folder.uuid, folder]));
@@ -128,13 +147,17 @@ export class MetadataComponent implements OnInit {
       translations,
       ...(this.activeKind() === 'tags' || item.scope === 'system'
         ? {}
-        : { folderUuid: this.editingFolderUuid() || null })
+        : { folderUuid: this.editingFolderUuid() || null }),
     };
-    if (await this.metadata.updateVocabulary(this.vocabularyPath(), item.uuid, input)) this.cancelEdit();
+    if (await this.metadata.updateVocabulary(this.vocabularyPath(), item.uuid, input))
+      this.cancelEdit();
   }
 
   canEdit(item: VocabularyItem): boolean {
-    return this.activeKind() !== 'tags' && (item.scope === 'personal' || this.auth.user()?.isAdmin === true);
+    return (
+      this.activeKind() !== 'tags' &&
+      (item.scope === 'personal' || this.auth.user()?.isAdmin === true)
+    );
   }
 
   canClone(item: VocabularyItem): boolean {
@@ -142,13 +165,19 @@ export class MetadataComponent implements OnInit {
   }
 
   canDelete(item: VocabularyItem): boolean {
-    return this.activeKind() !== 'tags' && (item.scope === 'personal' || this.auth.user()?.isAdmin === true);
+    return (
+      this.activeKind() !== 'tags' &&
+      (item.scope === 'personal' || this.auth.user()?.isAdmin === true)
+    );
   }
 
   async cloneItem(item: VocabularyItem): Promise<void> {
     if (!this.canClone(item)) return;
 
-    const copy = await this.metadata.cloneVocabulary(this.vocabularyPath() as 'document-types' | 'categories', item.uuid);
+    const copy = await this.metadata.cloneVocabulary(
+      this.vocabularyPath() as 'document-types' | 'categories',
+      item.uuid,
+    );
     if (copy) this.startEdit(copy);
   }
 
@@ -157,7 +186,10 @@ export class MetadataComponent implements OnInit {
     const confirmed = window.confirm(this.i18n.t('metadata.deleteConfirm'));
     if (!confirmed) return;
 
-    await this.metadata.deleteVocabulary(this.vocabularyPath() as 'document-types' | 'categories', item.uuid);
+    await this.metadata.deleteVocabulary(
+      this.vocabularyPath() as 'document-types' | 'categories',
+      item.uuid,
+    );
   }
 
   vocabularyPath(): 'document-types' | 'categories' | 'tags' {
@@ -167,7 +199,11 @@ export class MetadataComponent implements OnInit {
     return 'tags';
   }
 
-  private setTranslation(translations: Record<string, string>, language: 'en' | 'de', value: string): void {
+  private setTranslation(
+    translations: Record<string, string>,
+    language: 'en' | 'de',
+    value: string,
+  ): void {
     const trimmed = value.trim();
     if (trimmed) {
       translations[language] = trimmed;
@@ -179,17 +215,22 @@ export class MetadataComponent implements OnInit {
   async create(): Promise<void> {
     const name = this.name().trim();
     if (!name) return;
-    const kind = this.activeKind() === 'documentTypes' ? 'document-types'
-      : this.activeKind() === 'categories' ? 'categories' : 'tags';
+    const kind =
+      this.activeKind() === 'documentTypes'
+        ? 'document-types'
+        : this.activeKind() === 'categories'
+          ? 'categories'
+          : 'tags';
     const input: CreateVocabularyItem = {
       name,
       description: this.description().trim() || undefined,
       translations: {
         ...(this.translationEn().trim() ? { en: this.translationEn().trim() } : {}),
-        ...(this.translationDe().trim() ? { de: this.translationDe().trim() } : {})
+        ...(this.translationDe().trim() ? { de: this.translationDe().trim() } : {}),
       },
       scope: this.systemScope() && this.auth.user()?.isAdmin ? 'system' : 'personal',
-      folderUuid: this.activeKind() === 'tags' || this.systemScope() ? null : (this.folderUuid() || null)
+      folderUuid:
+        this.activeKind() === 'tags' || this.systemScope() ? null : this.folderUuid() || null,
     };
     if (await this.metadata.create(kind, input)) {
       this.name.set('');
@@ -211,11 +252,14 @@ export class MetadataComponent implements OnInit {
       label,
       type: this.definitionType(),
       options: ['select', 'multi-select'].includes(this.definitionType())
-        ? this.definitionOptions().split(',').map((item) => item.trim()).filter(Boolean)
+        ? this.definitionOptions()
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
         : undefined,
       mandatory: this.definitionMandatory(),
       unique: false,
-      scope: 'personal'
+      scope: 'personal',
     };
     if (await this.metadata.createDefinition(input)) {
       this.definitionKey.set('');

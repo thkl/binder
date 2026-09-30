@@ -5,6 +5,6 @@ import { IssuerServiceModule } from './issuer.service.module';
 
 @Module({
   imports: [IssuerServiceModule, AuthenticationServiceModule],
-  controllers: [IssuerController]
+  controllers: [IssuerController],
 })
 export class IssuerModule {}

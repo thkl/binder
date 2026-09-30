@@ -7,10 +7,16 @@ import {
   Model,
   PrimaryKey,
   Table,
-  UpdatedAt
+  UpdatedAt,
 } from 'sequelize-typescript';
 
-export type InboxItemStatus = 'new' | 'processing' | 'imported' | 'duplicate' | 'rejected' | 'failed';
+export type InboxItemStatus =
+  | 'new'
+  | 'processing'
+  | 'imported'
+  | 'duplicate'
+  | 'rejected'
+  | 'failed';
 export type InboxAiStatus = 'pending' | 'processing' | 'ready' | 'failed';
 
 export interface InboxItemAttributes {
@@ -30,7 +36,19 @@ export interface InboxItemAttributes {
   updatedAt: Date;
 }
 
-export type InboxItemCreationAttributes = Omit<InboxItemAttributes, 'createdAt' | 'updatedAt' | 'uuid' | 'status' | 'aiStatus' | 'documentUuid' | 'checksumSha256' | 'aiSuggestion' | 'lastError' | 'aiError'> & {
+export type InboxItemCreationAttributes = Omit<
+  InboxItemAttributes,
+  | 'createdAt'
+  | 'updatedAt'
+  | 'uuid'
+  | 'status'
+  | 'aiStatus'
+  | 'documentUuid'
+  | 'checksumSha256'
+  | 'aiSuggestion'
+  | 'lastError'
+  | 'aiError'
+> & {
   uuid?: string;
   documentUuid?: string | null;
   checksumSha256?: string | null;
@@ -69,14 +87,24 @@ export class InboxItem extends Model<InboxItemAttributes, InboxItemCreationAttri
   @Column({ type: DataType.STRING(32), allowNull: false, defaultValue: 'new' })
   declare status: InboxItemStatus;
 
-  @Column({ field: 'ai_status', type: DataType.STRING(32), allowNull: false, defaultValue: 'pending' })
+  @Column({
+    field: 'ai_status',
+    type: DataType.STRING(32),
+    allowNull: false,
+    defaultValue: 'pending',
+  })
   declare aiStatus: InboxAiStatus;
 
   @AllowNull
   @Column({ field: 'ai_suggestion', type: DataType.JSONB, allowNull: true })
   declare aiSuggestion: Record<string, unknown> | null;
 
-  @Column({ field: 'ai_auto_applied', type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+  @Column({
+    field: 'ai_auto_applied',
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
   declare autoApplied: boolean;
 
   @AllowNull

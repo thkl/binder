@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateIssuerInput, IssuerListResponseSchema, IssuerSchema, UpdateIssuerInput } from '@binder/common';
+import {
+  CreateIssuerInput,
+  IssuerListResponseSchema,
+  IssuerSchema,
+  UpdateIssuerInput,
+} from '@binder/common';
 import { IssuerStore } from '../store/issuer.store';
 import { FolderStore } from '../../folder/store/folder.store';
 
@@ -7,7 +12,7 @@ import { FolderStore } from '../../folder/store/folder.store';
 export class IssuerService {
   constructor(
     private readonly issuers: IssuerStore,
-    private readonly folders: FolderStore
+    private readonly folders: FolderStore,
   ) {}
 
   async list(ownerUuid: string, query?: string) {
@@ -26,7 +31,7 @@ export class IssuerService {
       city: input.city ?? null,
       country: input.country ?? null,
       custom: input.custom ?? {},
-      folderUuid: input.folderUuid ?? null
+      folderUuid: input.folderUuid ?? null,
     });
     return this.toResponse(issuer);
   }
@@ -42,7 +47,7 @@ export class IssuerService {
       city: input.city === undefined ? existing.city : input.city,
       country: input.country === undefined ? existing.country : input.country,
       custom: input.custom === undefined ? existing.custom : input.custom,
-      folderUuid: input.folderUuid === undefined ? existing.folderUuid : input.folderUuid
+      folderUuid: input.folderUuid === undefined ? existing.folderUuid : input.folderUuid,
     });
     return this.toResponse(updated ?? existing);
   }
@@ -59,11 +64,12 @@ export class IssuerService {
       custom: item.custom ?? {},
       folderUuid: item.folderUuid,
       createdAt: item.createdAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString()
+      updatedAt: item.updatedAt.toISOString(),
     });
   }
 
   private async ensureFolder(ownerUuid: string, folderUuid: string): Promise<void> {
-    if (!(await this.folders.findOwned(ownerUuid, folderUuid))) throw new NotFoundException('Folder not found');
+    if (!(await this.folders.findOwned(ownerUuid, folderUuid)))
+      throw new NotFoundException('Folder not found');
   }
 }

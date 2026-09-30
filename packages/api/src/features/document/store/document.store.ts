@@ -7,7 +7,7 @@ import {
   DocumentListFacetOption,
   DocumentListFacetsResponse,
   DocumentListQuery,
-  DocumentSearchQuery
+  DocumentSearchQuery,
 } from '@binder/common';
 import {
   DocumentCategory,
@@ -15,7 +15,7 @@ import {
   DocumentTagAssignment,
   DocumentMetadataValue,
   DocumentType,
-  MetadataDefinition
+  MetadataDefinition,
 } from '../../metadata/models/vocabulary.entity';
 import { DocumentFolder } from '../../folder/models/document-folder.entity';
 import { Issuer } from '../../issuer/models/issuer.entity';
@@ -46,15 +46,18 @@ export class DocumentStore extends BaseCrudStore<Document> {
       where,
       order: [
         [query.sort, sortDirection],
-        ['uuid', 'ASC']
-      ]
+        ['uuid', 'ASC'],
+      ],
     });
   }
 
   async findOwnedPageText(ownerUuid: string, uuid: string) {
     const document = await this.findOwnedByUuid(ownerUuid, uuid);
     if (!document) return null;
-    const pages = await DocumentPage.findAll({ where: { documentUuid: uuid }, order: [['pageNumber', 'ASC']] });
+    const pages = await DocumentPage.findAll({
+      where: { documentUuid: uuid },
+      order: [['pageNumber', 'ASC']],
+    });
     return { document, pages };
   }
 
@@ -67,17 +70,18 @@ export class DocumentStore extends BaseCrudStore<Document> {
 
     const sortDirection = query.direction.toUpperCase() as 'ASC' | 'DESC';
     const groupDirection = query.groupDirection.toUpperCase() as 'ASC' | 'DESC';
-    const order: Order = query.groupBy === 'none'
-      ? [[query.sort, sortDirection]]
-      : [
-        [this.groupField(query.groupBy), groupDirection],
-        [query.sort, sortDirection]
-      ];
+    const order: Order =
+      query.groupBy === 'none'
+        ? [[query.sort, sortDirection]]
+        : [
+            [this.groupField(query.groupBy), groupDirection],
+            [query.sort, sortDirection],
+          ];
     const result = await this.model.findAndCountAll({
       where,
       order,
       limit: query.pageSize,
-      offset: (query.page - 1) * query.pageSize
+      offset: (query.page - 1) * query.pageSize,
     });
 
     const total = result.count as number;
@@ -89,25 +93,40 @@ export class DocumentStore extends BaseCrudStore<Document> {
       total,
       totalPages: total === 0 ? 0 : Math.ceil(total / query.pageSize),
       hasNext: query.page * query.pageSize < total,
-      hasPrev: query.page > 1
+      hasPrev: query.page > 1,
     };
   }
 
-  async findOwnedFacets(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListFacetsResponse> {
-    const [typeDocuments, categoryDocuments, issuerDocuments, tagDocuments, statusDocuments, reviewDocuments] = await Promise.all([
+  async findOwnedFacets(
+    ownerUuid: string,
+    query: DocumentListQuery,
+  ): Promise<DocumentListFacetsResponse> {
+    const [
+      typeDocuments,
+      categoryDocuments,
+      issuerDocuments,
+      tagDocuments,
+      statusDocuments,
+      reviewDocuments,
+    ] = await Promise.all([
       this.findFacetDocuments(ownerUuid, query, 'documentType'),
       this.findFacetDocuments(ownerUuid, query, 'category'),
       this.findFacetDocuments(ownerUuid, query, 'issuer'),
       this.findFacetDocuments(ownerUuid, query, 'tag'),
       this.findFacetDocuments(ownerUuid, query, 'status'),
-      this.findFacetDocuments(ownerUuid, query, 'reviewState')
+      this.findFacetDocuments(ownerUuid, query, 'reviewState'),
     ]);
 
     const [documentType, category, issuer, tag] = await Promise.all([
       this.buildVocabularyFacetOptions(DocumentType, typeDocuments, 'documentTypeUuid', ownerUuid),
-      this.buildVocabularyFacetOptions(DocumentCategory, categoryDocuments, 'categoryUuid', ownerUuid),
+      this.buildVocabularyFacetOptions(
+        DocumentCategory,
+        categoryDocuments,
+        'categoryUuid',
+        ownerUuid,
+      ),
       this.buildIssuerFacetOptions(issuerDocuments, ownerUuid),
-      this.buildTagFacetOptions(tagDocuments, ownerUuid)
+      this.buildTagFacetOptions(tagDocuments, ownerUuid),
     ]);
 
     return {
@@ -117,31 +136,31 @@ export class DocumentStore extends BaseCrudStore<Document> {
       tag,
       status: this.buildScalarFacetOptions(
         statusDocuments.map((document) => document.status),
-        (status) => status
+        (status) => status,
       ),
       reviewState: this.buildScalarFacetOptions(
-        reviewDocuments.map((document) => document.isNew ? 'new' : 'reviewed'),
-        (state) => state === 'new' ? 'New' : 'Reviewed'
-      )
+        reviewDocuments.map((document) => (document.isNew ? 'new' : 'reviewed')),
+        (state) => (state === 'new' ? 'New' : 'Reviewed'),
+      ),
     };
   }
 
   private async findFacetDocuments(
     ownerUuid: string,
     query: DocumentListQuery,
-    excludedFacet: DocumentFacetKey
+    excludedFacet: DocumentFacetKey,
   ): Promise<Document[]> {
     const where = await this.createOwnedWhere(ownerUuid, query, excludedFacet);
     return this.model.findAll({
       where,
-      attributes: ['uuid', 'documentTypeUuid', 'categoryUuid', 'issuerUuid', 'status', 'isNew']
+      attributes: ['uuid', 'documentTypeUuid', 'categoryUuid', 'issuerUuid', 'status', 'isNew'],
     });
   }
 
   private async createOwnedWhere(
     ownerUuid: string,
     query: DocumentListQuery,
-    excludedFacet?: DocumentFacetKey
+    excludedFacet?: DocumentFacetKey,
   ): Promise<WhereOptions<Document>> {
     const where: WhereOptions<Document> = { ownerUuid };
 
@@ -150,9 +169,12 @@ export class DocumentStore extends BaseCrudStore<Document> {
     } else if (query.folderUuid) {
       const links = await DocumentFolder.findAll({
         where: { folderUuid: query.folderUuid },
-        attributes: ['documentUuid']
+        attributes: ['documentUuid'],
       });
-      this.restrictToDocumentUuids(where, links.map((link) => link.documentUuid));
+      this.restrictToDocumentUuids(
+        where,
+        links.map((link) => link.documentUuid),
+      );
     } else if (query.unassigned) {
       await this.restrictToUnassignedDocuments(where);
     }
@@ -161,7 +183,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
       (where as unknown as Record<PropertyKey, unknown>)[Op.or] = [
         { title: { [Op.iLike]: `%${query.q}%` } },
         { originalFilename: { [Op.iLike]: `%${query.q}%` } },
-        { checksumSha256: { [Op.iLike]: `%${query.q}%` } }
+        { checksumSha256: { [Op.iLike]: `%${query.q}%` } },
       ];
     }
 
@@ -221,9 +243,9 @@ export class DocumentStore extends BaseCrudStore<Document> {
     const assignments = await DocumentTagAssignment.findAll({
       where: {
         documentUuid: { [Op.in]: candidateUuids },
-        tagUuid: { [Op.in]: tagUuids }
+        tagUuid: { [Op.in]: tagUuids },
       },
-      attributes: ['documentUuid', 'tagUuid']
+      attributes: ['documentUuid', 'tagUuid'],
     });
     const tagsByDocument = new Map<string, Set<string>>();
     for (const assignment of assignments) {
@@ -234,37 +256,34 @@ export class DocumentStore extends BaseCrudStore<Document> {
 
     this.restrictToDocumentUuids(
       where,
-      candidateUuids.filter((uuid) => tagUuids.every((tagUuid) => tagsByDocument.get(uuid)?.has(tagUuid)))
+      candidateUuids.filter((uuid) =>
+        tagUuids.every((tagUuid) => tagsByDocument.get(uuid)?.has(tagUuid)),
+      ),
     );
   }
 
   private restrictToDocumentUuids(where: WhereOptions<Document>, uuids: string[]): void {
     const whereRecord = where as unknown as Record<string, unknown>;
     const currentUuid = whereRecord.uuid;
-    const currentIn = currentUuid && typeof currentUuid === 'object'
-      ? (currentUuid as Record<PropertyKey, unknown>)[Op.in]
-      : undefined;
-    const currentValues = Array.isArray(currentIn) ? currentIn as string[] : null;
-    const restricted = currentValues
-      ? uuids.filter((uuid) => currentValues.includes(uuid))
-      : uuids;
+    const currentIn =
+      currentUuid && typeof currentUuid === 'object'
+        ? (currentUuid as Record<PropertyKey, unknown>)[Op.in]
+        : undefined;
+    const currentValues = Array.isArray(currentIn) ? (currentIn as string[]) : null;
+    const restricted = currentValues ? uuids.filter((uuid) => currentValues.includes(uuid)) : uuids;
     whereRecord.uuid = { [Op.in]: restricted };
   }
 
   private async restrictToUnassignedDocuments(where: WhereOptions<Document>): Promise<void> {
     const links = await DocumentFolder.findAll({
-      attributes: ['documentUuid']
+      attributes: ['documentUuid'],
     });
     const assignedDocumentUuids = [...new Set(links.map((link) => link.documentUuid))];
     if (assignedDocumentUuids.length === 0) return;
 
     const whereRecord = where as unknown as Record<PropertyKey, unknown>;
     const existingAnd = whereRecord[Op.and];
-    const conditions = Array.isArray(existingAnd)
-      ? existingAnd
-      : existingAnd
-        ? [existingAnd]
-        : [];
+    const conditions = Array.isArray(existingAnd) ? existingAnd : existingAnd ? [existingAnd] : [];
 
     conditions.push({ uuid: { [Op.notIn]: assignedDocumentUuids } });
     whereRecord[Op.and] = conditions;
@@ -278,42 +297,60 @@ export class DocumentStore extends BaseCrudStore<Document> {
     model: typeof DocumentType | typeof DocumentCategory,
     documents: Document[],
     field: 'documentTypeUuid' | 'categoryUuid',
-    ownerUuid: string
+    ownerUuid: string,
   ): Promise<DocumentListFacetOption[]> {
-    const ids = [...new Set(documents.map((document) => document[field]).filter((uuid): uuid is string => Boolean(uuid)))];
+    const ids = [
+      ...new Set(
+        documents
+          .map((document) => document[field])
+          .filter((uuid): uuid is string => Boolean(uuid)),
+      ),
+    ];
     if (ids.length === 0) return [];
 
     const values = await model.findAll({
       where: {
         uuid: { [Op.in]: ids },
         active: true,
-        ownerUuid: { [Op.or]: [null, ownerUuid] }
+        ownerUuid: { [Op.or]: [null, ownerUuid] },
       },
-      attributes: ['uuid', 'name', 'translations']
+      attributes: ['uuid', 'name', 'translations'],
     });
     const counts = this.countBy(documents, (document) => document[field]);
     return this.optionsFromValues(values, counts);
   }
 
-  private async buildIssuerFacetOptions(documents: Document[], ownerUuid: string): Promise<DocumentListFacetOption[]> {
-    const ids = [...new Set(documents.map((document) => document.issuerUuid).filter((uuid): uuid is string => Boolean(uuid)))];
+  private async buildIssuerFacetOptions(
+    documents: Document[],
+    ownerUuid: string,
+  ): Promise<DocumentListFacetOption[]> {
+    const ids = [
+      ...new Set(
+        documents
+          .map((document) => document.issuerUuid)
+          .filter((uuid): uuid is string => Boolean(uuid)),
+      ),
+    ];
     if (ids.length === 0) return [];
 
     const values = await Issuer.findAll({
       where: { uuid: { [Op.in]: ids }, ownerUuid },
-      attributes: ['uuid', 'name']
+      attributes: ['uuid', 'name'],
     });
     const counts = this.countBy(documents, (document) => document.issuerUuid);
     return this.optionsFromValues(values, counts);
   }
 
-  private async buildTagFacetOptions(documents: Document[], ownerUuid: string): Promise<DocumentListFacetOption[]> {
+  private async buildTagFacetOptions(
+    documents: Document[],
+    ownerUuid: string,
+  ): Promise<DocumentListFacetOption[]> {
     const documentUuids = documents.map((document) => document.uuid);
     if (documentUuids.length === 0) return [];
 
     const assignments = await DocumentTagAssignment.findAll({
       where: { documentUuid: { [Op.in]: documentUuids } },
-      attributes: ['documentUuid', 'tagUuid']
+      attributes: ['documentUuid', 'tagUuid'],
     });
     const tagIds = [...new Set(assignments.map((assignment) => assignment.tagUuid))];
     if (tagIds.length === 0) return [];
@@ -322,9 +359,9 @@ export class DocumentStore extends BaseCrudStore<Document> {
       where: {
         uuid: { [Op.in]: tagIds },
         active: true,
-        ownerUuid: { [Op.or]: [null, ownerUuid] }
+        ownerUuid: { [Op.or]: [null, ownerUuid] },
       },
-      attributes: ['uuid', 'name', 'translations']
+      attributes: ['uuid', 'name', 'translations'],
     });
     const counts = new Map<string, number>();
     for (const assignment of assignments) {
@@ -335,27 +372,31 @@ export class DocumentStore extends BaseCrudStore<Document> {
 
   private optionsFromValues(
     values: Array<{ uuid: string; name: string; translations?: Record<string, string> }>,
-    counts: Map<string, number>
+    counts: Map<string, number>,
   ): DocumentListFacetOption[] {
     return values
       .map((value) => ({
         value: value.uuid,
         label: value.name,
         count: counts.get(value.uuid) ?? 0,
-        translations: value.translations ?? {}
+        translations: value.translations ?? {},
       }))
-      .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base', numeric: true }));
+      .sort((left, right) =>
+        left.label.localeCompare(right.label, undefined, { sensitivity: 'base', numeric: true }),
+      );
   }
 
   private buildScalarFacetOptions<T extends string>(
     values: T[],
-    label: (value: T) => string
+    label: (value: T) => string,
   ): DocumentListFacetOption[] {
     const counts = new Map<T, number>();
     for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
     return [...counts.entries()]
       .map(([value, count]) => ({ value, label: label(value), count, translations: {} }))
-      .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base' }));
+      .sort((left, right) =>
+        left.label.localeCompare(right.label, undefined, { sensitivity: 'base' }),
+      );
   }
 
   private countBy<T>(items: Document[], selector: (item: Document) => T | null): Map<T, number> {
@@ -373,8 +414,8 @@ export class DocumentStore extends BaseCrudStore<Document> {
       attributes: ['uuid'],
       order: [
         [query.sort, query.direction.toUpperCase() as 'ASC' | 'DESC'],
-        ['uuid', 'ASC']
-      ]
+        ['uuid', 'ASC'],
+      ],
     });
     const candidateUuids = candidateDocuments.map((document) => document.uuid);
     const total = candidateUuids.length;
@@ -388,7 +429,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
         total: 0,
         totalPages: 0,
         hasNext: false,
-        hasPrev: query.page > 1
+        hasPrev: query.page > 1,
       };
     }
 
@@ -398,8 +439,8 @@ export class DocumentStore extends BaseCrudStore<Document> {
       attributes: ['documentUuid', 'tagUuid'],
       order: [
         ['tagUuid', query.groupDirection.toUpperCase() as 'ASC' | 'DESC'],
-        ['documentUuid', 'ASC']
-      ]
+        ['documentUuid', 'ASC'],
+      ],
     });
     const documentsByTag = new Map<string, string[]>();
     const assignedDocuments = new Set<string>();
@@ -414,15 +455,17 @@ export class DocumentStore extends BaseCrudStore<Document> {
       assignedDocuments.add(assignment.documentUuid);
     }
 
-    const groupedUuids = [...documentsByTag.values()]
-      .flatMap((uuids) => uuids.sort((left, right) => sortPosition.get(left)! - sortPosition.get(right)!));
+    const groupedUuids = [...documentsByTag.values()].flatMap((uuids) =>
+      uuids.sort((left, right) => sortPosition.get(left)! - sortPosition.get(right)!),
+    );
     const untaggedUuids = candidateUuids.filter((uuid) => !assignedDocuments.has(uuid));
     const orderedUuids = [...groupedUuids, ...untaggedUuids];
     const offset = (query.page - 1) * query.pageSize;
     const pageUuids = orderedUuids.slice(offset, offset + query.pageSize);
-    const rows = pageUuids.length === 0
-      ? []
-      : await this.model.findAll({ where: { ...where, uuid: { [Op.in]: pageUuids } } });
+    const rows =
+      pageUuids.length === 0
+        ? []
+        : await this.model.findAll({ where: { ...where, uuid: { [Op.in]: pageUuids } } });
     const documentsByUuid = new Map(rows.map((document) => [document.uuid, document]));
 
     return {
@@ -436,7 +479,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
       total,
       totalPages: Math.ceil(total / query.pageSize),
       hasNext: query.page * query.pageSize < total,
-      hasPrev: query.page > 1
+      hasPrev: query.page > 1,
     };
   }
 
@@ -469,7 +512,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
     const documentWhere: WhereOptions<Document> = {
       ownerUuid,
       status: query.status ? query.status : { [Op.notIn]: blockedStatuses },
-      ...(allowedUuids ? { uuid: { [Op.in]: allowedUuids } } : {})
+      ...(allowedUuids ? { uuid: { [Op.in]: allowedUuids } } : {}),
     };
     const tokens = this.searchTokens(query.q);
     if (tokens.length === 0) return [];
@@ -478,15 +521,15 @@ export class DocumentStore extends BaseCrudStore<Document> {
       where: { searchVector: { [Op.match]: textQuery } },
       include: [{ model: Document, required: true, where: documentWhere }],
       order: [['pageNumber', 'ASC']],
-      limit: Math.min(250, Math.max(query.limit * 8, 25))
+      limit: Math.min(250, Math.max(query.limit * 8, 25)),
     });
     const titleRows = await this.model.findAll({
       where: {
         ...documentWhere,
-        searchVector: { [Op.match]: textQuery }
+        searchVector: { [Op.match]: textQuery },
       },
       order: [['updatedAt', 'DESC']],
-      limit: query.limit
+      limit: query.limit,
     });
 
     const pageHits = pageRows
@@ -495,59 +538,95 @@ export class DocumentStore extends BaseCrudStore<Document> {
         document: page.document!,
         pageNumber: page.pageNumber,
         text: page.text,
-        score: 0.5
+        score: 0.5,
       }))
       .sort((left, right) => right.score - left.score);
     const pageDocumentUuids = new Set(pageHits.map((hit) => hit.document.uuid));
     const titleHits = titleRows
       .filter((document) => !pageDocumentUuids.has(document.uuid))
-      .map((document) => ({ document, pageNumber: null, text: document.title ?? document.originalFilename, score: 1 }));
+      .map((document) => ({
+        document,
+        pageNumber: null,
+        text: document.title ?? document.originalFilename,
+        score: 1,
+      }));
 
     return [...pageHits, ...titleHits].slice(0, query.limit);
   }
 
-  private async findMetadataMatches(ownerUuid: string, query: DocumentSearchQuery): Promise<string[] | null> {
+  private async findMetadataMatches(
+    ownerUuid: string,
+    query: DocumentSearchQuery,
+  ): Promise<string[] | null> {
     const blockedStatuses: Document['status'][] = ['uploaded', 'scanning', 'quarantined'];
     if (query.status && blockedStatuses.includes(query.status)) return [];
-    const hasFilters = Boolean(query.status || query.issuerUuid || query.documentTypeUuid || query.categoryUuid || query.folderUuid || query.tagUuids?.length || query.metadata);
+    const hasFilters = Boolean(
+      query.status ||
+        query.issuerUuid ||
+        query.documentTypeUuid ||
+        query.categoryUuid ||
+        query.folderUuid ||
+        query.tagUuids?.length ||
+        query.metadata,
+    );
     if (!hasFilters) return null;
     const documents = await this.model.findAll({
       where: { ownerUuid, status: query.status ? query.status : { [Op.notIn]: blockedStatuses } },
-      attributes: ['uuid', 'issuerUuid', 'documentTypeUuid', 'categoryUuid']
+      attributes: ['uuid', 'issuerUuid', 'documentTypeUuid', 'categoryUuid'],
     });
     let allowed = new Set(documents.map((document) => document.uuid));
     if (query.folderUuid && allowed.size > 0) {
       const links = await DocumentFolder.findAll({
         where: { folderUuid: query.folderUuid, documentUuid: { [Op.in]: [...allowed] } },
-        attributes: ['documentUuid']
+        attributes: ['documentUuid'],
       });
       allowed = new Set(links.map((link) => link.documentUuid));
     }
     if (query.issuerUuid || query.documentTypeUuid || query.categoryUuid) {
-      const matching = documents.filter((document) =>
-        (!query.issuerUuid || document.issuerUuid === query.issuerUuid) &&
-        (!query.documentTypeUuid || document.documentTypeUuid === query.documentTypeUuid) &&
-        (!query.categoryUuid || document.categoryUuid === query.categoryUuid)
+      const matching = documents.filter(
+        (document) =>
+          (!query.issuerUuid || document.issuerUuid === query.issuerUuid) &&
+          (!query.documentTypeUuid || document.documentTypeUuid === query.documentTypeUuid) &&
+          (!query.categoryUuid || document.categoryUuid === query.categoryUuid),
       );
       allowed = new Set(matching.map((document) => document.uuid));
     }
     if (query.tagUuids?.length && allowed.size > 0) {
-      const assignments = await DocumentTagAssignment.findAll({ where: { documentUuid: { [Op.in]: [...allowed] }, tagUuid: { [Op.in]: query.tagUuids } } });
+      const assignments = await DocumentTagAssignment.findAll({
+        where: { documentUuid: { [Op.in]: [...allowed] }, tagUuid: { [Op.in]: query.tagUuids } },
+      });
       const tagsByDocument = new Map<string, Set<string>>();
       for (const assignment of assignments) {
         const tags = tagsByDocument.get(assignment.documentUuid) ?? new Set<string>();
         tags.add(assignment.tagUuid);
         tagsByDocument.set(assignment.documentUuid, tags);
       }
-      allowed = new Set([...allowed].filter((documentUuid) => query.tagUuids!.every((tagUuid) => tagsByDocument.get(documentUuid)?.has(tagUuid))));
+      allowed = new Set(
+        [...allowed].filter((documentUuid) =>
+          query.tagUuids!.every((tagUuid) => tagsByDocument.get(documentUuid)?.has(tagUuid)),
+        ),
+      );
     }
     if (query.metadata && allowed.size > 0) {
-      const definitions = await MetadataDefinition.findAll({ where: { key: { [Op.in]: Object.keys(query.metadata) }, active: true, ownerUuid: { [Op.or]: [null, ownerUuid] } } });
-      const definitionByKey = new Map(definitions.map((definition) => [definition.key, definition.uuid]));
+      const definitions = await MetadataDefinition.findAll({
+        where: {
+          key: { [Op.in]: Object.keys(query.metadata) },
+          active: true,
+          ownerUuid: { [Op.or]: [null, ownerUuid] },
+        },
+      });
+      const definitionByKey = new Map(
+        definitions.map((definition) => [definition.key, definition.uuid]),
+      );
       for (const [key, value] of Object.entries(query.metadata)) {
         const definitionUuid = definitionByKey.get(key);
-        if (!definitionUuid) { allowed.clear(); break; }
-        const values = await DocumentMetadataValue.findAll({ where: { documentUuid: { [Op.in]: [...allowed] }, definitionUuid, value } });
+        if (!definitionUuid) {
+          allowed.clear();
+          break;
+        }
+        const values = await DocumentMetadataValue.findAll({
+          where: { documentUuid: { [Op.in]: [...allowed] }, definitionUuid, value },
+        });
         allowed = new Set(values.map((item) => item.documentUuid));
       }
     }
@@ -556,11 +635,54 @@ export class DocumentStore extends BaseCrudStore<Document> {
 
   private searchTokens(query: string): string[] {
     const stopWords = new Set([
-      'a', 'an', 'and', 'about', 'are', 'find', 'for', 'from', 'get', 'i', 'in', 'me', 'my', 'of', 'on', 'show', 'the', 'to', 'with',
-      'ein', 'eine', 'einen', 'einer', 'einem', 'eines', 'und', 'über', 'finde', 'für', 'mir', 'meine', 'von', 'der', 'die', 'das', 'den', 'dem', 'zu', 'mit'
+      'a',
+      'an',
+      'and',
+      'about',
+      'are',
+      'find',
+      'for',
+      'from',
+      'get',
+      'i',
+      'in',
+      'me',
+      'my',
+      'of',
+      'on',
+      'show',
+      'the',
+      'to',
+      'with',
+      'ein',
+      'eine',
+      'einen',
+      'einer',
+      'einem',
+      'eines',
+      'und',
+      'über',
+      'finde',
+      'für',
+      'mir',
+      'meine',
+      'von',
+      'der',
+      'die',
+      'das',
+      'den',
+      'dem',
+      'zu',
+      'mit',
     ]);
-    return [...new Set(query.toLocaleLowerCase().split(/\s+/)
-      .map((token) => token.replace(/[^\p{L}\p{N}-]/gu, ''))
-      .filter((token) => token.length >= 3 && !stopWords.has(token)))];
+    return [
+      ...new Set(
+        query
+          .toLocaleLowerCase()
+          .split(/\s+/)
+          .map((token) => token.replace(/[^\p{L}\p{N}-]/gu, ''))
+          .filter((token) => token.length >= 3 && !stopWords.has(token)),
+      ),
+    ];
   }
 }

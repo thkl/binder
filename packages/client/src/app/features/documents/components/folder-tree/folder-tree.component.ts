@@ -8,7 +8,7 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
   imports: [TranslatePipe],
   templateUrl: './folder-tree.component.html',
   styleUrl: './folder-tree.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FolderTreeComponent {
   readonly folderSelected = output<string | null>();
@@ -98,7 +98,12 @@ export class FolderTreeComponent {
   }
 
   async remove(uuid: string, name: string): Promise<void> {
-    if (!window.confirm(`${name}: ${this.folders.selectedFolderUuid() === uuid ? 'This folder is selected. ' : ''}Delete the folder and keep its documents?`)) return;
+    if (
+      !window.confirm(
+        `${name}: ${this.folders.selectedFolderUuid() === uuid ? 'This folder is selected. ' : ''}Delete the folder and keep its documents?`,
+      )
+    )
+      return;
     await this.folders.remove(uuid);
   }
 

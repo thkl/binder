@@ -4,7 +4,7 @@ import {
   DocumentPipelineResponse,
   DocumentPipelineResponseSchema,
   PipelineJob,
-  PipelineJobEvent
+  PipelineJobEvent,
 } from '@binder/common';
 import { PipelineJobKind, PipelineJob as PipelineJobEntity } from '../models/pipeline-job.entity';
 import { PipelineJobEventStore } from '../store/pipeline-job-event.store';
@@ -15,13 +15,13 @@ export class PipelineService {
   constructor(
     private readonly jobs: PipelineJobStore,
     private readonly events: PipelineJobEventStore,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async enqueue(
     documentUuid: string,
     ownerUuid: string,
-    kind: PipelineJobKind = 'text-extraction'
+    kind: PipelineJobKind = 'text-extraction',
   ): Promise<PipelineJob> {
     const active = await this.jobs.findActive(documentUuid, kind);
     if (active) {
@@ -40,14 +40,19 @@ export class PipelineService {
       lockedBy: null,
       startedAt: null,
       completedAt: null,
-      lastError: null
+      lastError: null,
     });
-    await this.events.create({ uuid: undefined, jobUuid: job.uuid, type: 'queued', message: `Queued ${kind}` });
+    await this.events.create({
+      uuid: undefined,
+      jobUuid: job.uuid,
+      type: 'queued',
+      message: `Queued ${kind}`,
+    });
     this.eventEmitter.emit('pipeline.job.queued', {
       jobUuid: job.uuid,
       documentUuid,
       ownerUuid,
-      kind
+      kind,
     });
     return this.toJobResponse(job);
   }
@@ -61,7 +66,7 @@ export class PipelineService {
     const events = await this.events.findForJobs(jobs.map((job) => job.uuid));
     return DocumentPipelineResponseSchema.parse({
       jobs: jobs.map((job) => this.toJobResponse(job)),
-      events: events.map((event) => this.toEventResponse(event))
+      events: events.map((event) => this.toEventResponse(event)),
     });
   }
 
@@ -80,18 +85,19 @@ export class PipelineService {
       completedAt: job.completedAt?.toISOString() ?? null,
       lastError: job.lastError,
       createdAt: job.createdAt.toISOString(),
-      updatedAt: job.updatedAt.toISOString()
+      updatedAt: job.updatedAt.toISOString(),
     };
   }
 
-  private toEventResponse(event: import('../models/pipeline-job-event.entity').PipelineJobEvent): PipelineJobEvent {
+  private toEventResponse(
+    event: import('../models/pipeline-job-event.entity').PipelineJobEvent,
+  ): PipelineJobEvent {
     return {
       uuid: event.uuid,
       jobUuid: event.jobUuid,
       type: event.type,
       message: event.message,
-      createdAt: event.createdAt.toISOString()
+      createdAt: event.createdAt.toISOString(),
     };
   }
 }
-
