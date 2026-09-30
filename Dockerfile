@@ -47,6 +47,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     ca-certificates \
     clamav \
+    clamav-daemon \
     curl \
     ghostscript \
     gnupg \
@@ -62,6 +63,8 @@ RUN apt-get update \
     > /etc/apt/sources.list.d/pgdg.list \
   && apt-get update \
   && apt-get install -y --no-install-recommends postgresql-client-17 \
+  && command -v clamdscan \
+  && clamdscan --version \
   && pg_dump --version \
   && rm -rf /var/lib/apt/lists/*
 
