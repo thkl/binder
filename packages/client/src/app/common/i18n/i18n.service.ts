@@ -887,6 +887,10 @@ const CALMER_COPY: Record<string, TranslationMap> = {
 
 const EXTENDED_COPY: Record<string, TranslationMap> = {
   en: {
+    'settings.security': 'Security',
+    'setting.security.malwareScan.required': 'Require malware scanning before processing',
+    'setting.security.malwareScan.command': 'Malware scanner executable',
+    'setting.security.malwareScan.timeoutMs': 'Malware scan timeout (ms)',
     'maintenance.storageConsistency.enabled': 'Enable document storage checks',
     'maintenance.storageConsistency.schedule': 'Storage check schedule (cron)',
     'setting.maintenance.storageConsistency.enabled': 'Enable document storage checks',
@@ -1012,6 +1016,10 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'inbox.remove': 'Remove',
   },
   de: {
+    'settings.security': 'Sicherheit',
+    'setting.security.malwareScan.required': 'Malware-Scan vor der Verarbeitung erzwingen',
+    'setting.security.malwareScan.command': 'Ausführbares Programm für den Malware-Scan',
+    'setting.security.malwareScan.timeoutMs': 'Zeitlimit für den Malware-Scan (ms)',
     'maintenance.storageConsistency.enabled': 'Dokumenten-Speicherprüfungen aktivieren',
     'maintenance.storageConsistency.schedule': 'Zeitplan für Speicherprüfung (Cron)',
     'setting.maintenance.storageConsistency.enabled': 'Dokumenten-Speicherprüfungen aktivieren',
