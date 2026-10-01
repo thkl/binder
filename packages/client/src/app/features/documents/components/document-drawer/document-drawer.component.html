@@ -49,6 +49,16 @@
       >
         {{ 'documents.metadata' | t }}
       </button>
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'history'"
+        [class.active]="activeTab() === 'history'"
+        aria-controls="document-drawer-history"
+        (click)="selectTab('history')"
+      >
+        {{ 'documents.history' | t }}
+      </button>
     </nav>
 
     <main class="drawer-content">
@@ -89,6 +99,11 @@
             (suggestionDismissed)="suggestionDismissed.emit()"
             (suggestionAccepted)="suggestionAccepted.emit($event)"
           />
+        </section>
+      }
+      @if (activeTab() === 'history') {
+        <section id="document-drawer-history" class="history-panel" role="tabpanel">
+          <binder-document-audit-history [documentUuid]="documentUuid()" />
         </section>
       }
     </main>

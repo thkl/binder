@@ -21,6 +21,7 @@ import {
   DocumentSearchQuerySchema,
   DocumentAnalysisFollowUpSchema,
   DocumentAnalysisPromptSchema,
+  DocumentAuditQuerySchema,
   SetDocumentMetadataInputSchema,
   SetDocumentTitleInputSchema,
 } from '@binder/common';
@@ -31,6 +32,7 @@ import { DocumentAnalysisService } from '../service/document-analysis.service';
 import { DocumentService, UploadedDocumentFile } from '../service/document.service';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { Throttle } from '@nestjs/throttler';
+import { DocumentAuditService } from '../service/document-audit.service';
 
 const HARD_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024;
 
@@ -42,6 +44,7 @@ export class DocumentController {
   constructor(
     private readonly documents: DocumentService,
     private readonly analysis: DocumentAnalysisService,
+    private readonly audit: DocumentAuditService,
   ) {}
 
   @Post()
@@ -143,6 +146,16 @@ export class DocumentController {
       `inline; filename="${this.safeFilename(result.document.originalFilename)}"`,
     );
     return new StreamableFile(result.stream, { type: result.document.mimeType });
+  }
+
+  @Get(':uuid/audit')
+  async auditHistory(
+    @Param('uuid') uuid: string,
+    @Query() query: Record<string, unknown>,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    const input = DocumentAuditQuerySchema.parse(query);
+    return { data: await this.audit.list(user.userId, uuid, input.page, input.pageSize) };
   }
 
   @Get(':uuid/extracted-text')

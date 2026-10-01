@@ -298,6 +298,15 @@
                     "document_analysis_sessions",
                     "settings"
                ]
+          },
+          "45": {
+               "created": [
+                    "document_audit_events"
+               ],
+               "required": [
+                    "documents",
+                    "users"
+               ]
           }
      }
 }

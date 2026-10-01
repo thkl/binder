@@ -10,6 +10,12 @@ rotated.
 
 This is a P3 feature.
 
+The first implementation stores append-only events in PostgreSQL in the
+`document_audit_events` table. Winston remains the operational log and is not
+used as the source of document history. The API exposes the owner-scoped,
+paginated `GET /api/v1/documents/:uuid/audit` endpoint, and the document drawer
+shows the events in a localized History tab.
+
 ## Events to record
 
 The first version should cover the document lifecycle and user-visible

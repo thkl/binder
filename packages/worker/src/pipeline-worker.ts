@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Op, Transaction } from 'sequelize';
 import { config } from './config.js';
 import { sequelize } from './database.js';
-import { Document, PipelineJob, PipelineJobEvent, JobKind } from './models.js';
+import { Document, DocumentAuditEvent, PipelineJob, PipelineJobEvent, JobKind } from './models.js';
 import { logger } from './logger.js';
 import { createThumbnail, writeDerivedText } from './storage.js';
 import { extractPdfPages } from './extraction.js';
@@ -176,6 +176,13 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
       },
     );
     await addEvent(transaction, job.uuid, 'claimed', `Claimed by ${config.workerId}`);
+    await addDocumentAudit(
+      transaction,
+      job,
+      'processing-started',
+      `Document processing started for ${job.kind}`,
+      { jobKind: job.kind },
+    );
     logger.info('Claimed pipeline job', { jobUuid: job.uuid, kind: job.kind });
     return {
       jobUuid: job.uuid,
@@ -278,6 +285,13 @@ async function completeMalwareScan(job: ClaimedJob): Promise<void> {
       { where: { uuid: job.documentUuid }, transaction },
     );
     await addEvent(transaction, job.jobUuid, 'scan-clean', 'Malware scan completed successfully');
+    await addDocumentAudit(
+      transaction,
+      job,
+      'processing-succeeded',
+      'Malware scan completed successfully',
+      { jobKind: job.kind },
+    );
     await queueFollowup(
       transaction,
       job,
@@ -310,6 +324,9 @@ async function quarantineJob(job: ClaimedJob, message: string): Promise<void> {
       { where: { uuid: job.documentUuid }, transaction },
     );
     await addEvent(transaction, job.jobUuid, 'quarantined', safeMessage);
+    await addDocumentAudit(transaction, job, 'quarantined', 'Document quarantined', {
+      jobKind: job.kind,
+    });
   });
 
   logger.error('Document quarantined after malware detection', {
@@ -346,6 +363,14 @@ async function completeJob(job: ClaimedJob, needsOcr: boolean): Promise<void> {
         lastError: null,
       },
       { where: { uuid: job.jobUuid }, transaction },
+    );
+
+    await addDocumentAudit(
+      transaction,
+      job,
+      'processing-succeeded',
+      `${job.kind} processing completed`,
+      { jobKind: job.kind },
     );
 
     if (needsOcr) {
@@ -455,6 +480,15 @@ async function failJob(job: ClaimedJob, message: string): Promise<void> {
           job.kind === 'malware-scan' ? 'quarantined' : 'failed',
           safe,
         );
+        await addDocumentAudit(
+          transaction,
+          job,
+          'processing-failed',
+          'Document processing failed',
+          {
+            jobKind: job.kind,
+          },
+        );
       }
     });
     logger.error('Pipeline job failed', { jobUuid: job.jobUuid, retry, error: safe });
@@ -511,6 +545,28 @@ async function addEvent(
 ): Promise<void> {
   await PipelineJobEvent.create(
     { uuid: randomUUID(), jobUuid, type, message: message.slice(0, 2000) },
+    { transaction },
+  );
+}
+
+async function addDocumentAudit(
+  transaction: Transaction,
+  job: Pick<ClaimedJob, 'documentUuid' | 'ownerUuid' | 'kind'>,
+  eventType: 'processing-started' | 'processing-succeeded' | 'processing-failed' | 'quarantined',
+  summary: string,
+  details: Record<string, unknown> = {},
+): Promise<void> {
+  await DocumentAuditEvent.create(
+    {
+      uuid: randomUUID(),
+      documentUuid: job.documentUuid,
+      ownerUuid: job.ownerUuid,
+      actorUuid: null,
+      actorType: 'worker',
+      eventType,
+      summary: summary.slice(0, 500),
+      details,
+    },
     { transaction },
   );
 }

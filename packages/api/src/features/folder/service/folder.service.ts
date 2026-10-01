@@ -12,12 +12,14 @@ import {
 } from '@binder/common';
 import { DocumentStore } from '../../document/store/document.store';
 import { FolderStore } from '../store/folder.store';
+import { DocumentAuditService } from '../../document/service/document-audit.service';
 
 @Injectable()
 export class FolderService {
   constructor(
     private readonly folders: FolderStore,
     private readonly documents: DocumentStore,
+    private readonly audit: DocumentAuditService,
   ) {}
 
   async list(ownerUuid: string, parentUuid: string | null) {
@@ -106,8 +108,22 @@ export class FolderService {
     for (const child of children) {
       await this.folders.update(child.uuid, { parentUuid: null });
     }
+    const links = await this.folders.listDocumentLinksForFolders([uuid]);
     const removedLinks = await this.folders.removeFolderLinks(uuid);
     await folder.destroy();
+    await Promise.all(
+      links.map((link) =>
+        this.audit.record({
+          documentUuid: link.documentUuid,
+          ownerUuid,
+          actorUuid: ownerUuid,
+          actorType: 'user',
+          eventType: 'folder-removed',
+          summary: 'Document removed from folder',
+          details: { folderUuid: uuid },
+        }),
+      ),
+    );
     return FolderDeleteResponseSchema.parse({
       deleted: true,
       promotedChildren: children.length,
@@ -121,7 +137,24 @@ export class FolderService {
     const documents = await this.documents.findOwnedByUuids(ownerUuid, documentUuids);
     const ownedUuids = new Set(documents.map((document) => document.uuid));
     const eligibleUuids = documentUuids.filter((uuid) => ownedUuids.has(uuid));
+    const existingLinks = await this.folders.listDocumentLinks(folderUuid, eligibleUuids);
+    const existingUuids = new Set(existingLinks.map((link) => link.documentUuid));
     const [created, duplicate] = await this.folders.createLinks(folderUuid, eligibleUuids);
+    await Promise.all(
+      eligibleUuids
+        .filter((documentUuid) => !existingUuids.has(documentUuid))
+        .map((documentUuid) =>
+          this.audit.record({
+            documentUuid,
+            ownerUuid,
+            actorUuid: ownerUuid,
+            actorType: 'user',
+            eventType: 'folder-added',
+            summary: 'Document added to folder',
+            details: { folderUuid },
+          }),
+        ),
+    );
     return FolderDocumentActionResponseSchema.parse({
       folderUuid,
       affected: created,
@@ -146,7 +179,21 @@ export class FolderService {
   async unlinkDocuments(ownerUuid: string, folderUuid: string, input: FolderDocumentInput) {
     await this.requireFolder(ownerUuid, folderUuid);
     const documentUuids = [...new Set(input.documentUuids)];
+    const existingLinks = await this.folders.listDocumentLinks(folderUuid, documentUuids);
     const affected = await this.folders.removeLinks(folderUuid, documentUuids);
+    await Promise.all(
+      existingLinks.map((link) =>
+        this.audit.record({
+          documentUuid: link.documentUuid,
+          ownerUuid,
+          actorUuid: ownerUuid,
+          actorType: 'user',
+          eventType: 'folder-removed',
+          summary: 'Document removed from folder',
+          details: { folderUuid },
+        }),
+      ),
+    );
     return FolderDocumentActionResponseSchema.parse({
       folderUuid,
       affected,

@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { Op } from 'sequelize';
-import { Document, DocumentFolder, Issuer } from './models.js';
+import { Document, DocumentAuditEvent, DocumentFolder, Issuer } from './models.js';
 import { logger } from './logger.js';
 
 interface Candidate {
@@ -46,6 +47,16 @@ export async function matchDocumentIssuer(
     { where: { uuid: documentUuid, ownerUuid, issuerUuid: { [Op.is]: null } } },
   );
   if (updated > 0) {
+    await DocumentAuditEvent.create({
+      uuid: randomUUID(),
+      documentUuid,
+      ownerUuid,
+      actorUuid: null,
+      actorType: 'worker',
+      eventType: 'metadata-changed',
+      summary: 'Issuer matched from extracted text',
+      details: { fields: ['issuer'] },
+    });
     if (best.issuer.folderUuid) {
       try {
         await DocumentFolder.findOrCreate({

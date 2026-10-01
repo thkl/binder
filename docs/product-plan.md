@@ -126,7 +126,7 @@ verification.
 - Add a Swift iOS companion app with Share Sheet document ingestion
 - Queue shared documents locally when offline and upload them automatically when the backend is reachable again
 - Generate validated PDF/A-2b archive derivatives while preserving the original upload
-- Record an owner-visible audit history for every document
+- ✅ Record an owner-visible audit history for every document, persisted in PostgreSQL and separate from operational logs
 - Add a secure first-run onboarding assistant that creates the administrator and validates the basic runtime settings
 - Let administrators inspect API and worker activity
 - Add bulk metadata editing for selected documents, including type, category, issuer, tags, custom fields, and virtual-folder assignments

@@ -7,6 +7,7 @@ import { sequelize } from './database.js';
 import {
   ApplicationSetting,
   Document,
+  DocumentAuditEvent,
   InboxItem,
   PipelineJob,
   PipelineJobEvent,
@@ -179,6 +180,19 @@ async function importFile(
             issuerUuid: null,
             isNew: true,
             status: 'scanning',
+          },
+          { transaction },
+        );
+        await DocumentAuditEvent.create(
+          {
+            uuid: randomUUID(),
+            documentUuid: document.uuid,
+            ownerUuid,
+            actorUuid: null,
+            actorType: 'worker',
+            eventType: 'uploaded',
+            summary: 'Document imported from inbox',
+            details: { source: 'inbox' },
           },
           { transaction },
         );

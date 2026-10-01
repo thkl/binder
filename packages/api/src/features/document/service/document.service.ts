@@ -40,6 +40,7 @@ import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { FolderStore } from '../../folder/store/folder.store';
 import { DocumentStorageIssueStore } from '../store/document-storage-issue.store';
 import { InboxItemStore } from '../../inbox/store/inbox-item.store';
+import { DocumentAuditService } from './document-audit.service';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -64,6 +65,7 @@ export class DocumentService {
     private readonly storageIssues: DocumentStorageIssueStore,
     private readonly inboxItems: InboxItemStore,
     private readonly eventEmitter: EventEmitter2,
+    private readonly audit: DocumentAuditService,
   ) {}
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -94,6 +96,14 @@ export class DocumentService {
         issuerUuid: null,
         isNew: true,
         status: 'scanning',
+      });
+      await this.recordAudit({
+        documentUuid: document.uuid,
+        ownerUuid,
+        actorUuid: ownerUuid,
+        actorType: 'user',
+        eventType: 'uploaded',
+        summary: 'Document uploaded',
       });
       await this.addManualUploadToInbox(
         document.uuid,
@@ -235,6 +245,8 @@ export class DocumentService {
       }
     }
 
+    await this.recordExportAudit(ownerUuid, documents, `Folder '${rootFolder.name}' exported`);
+
     void archive
       .finalize()
       .catch((error: unknown) =>
@@ -257,8 +269,9 @@ export class DocumentService {
     }
 
     documents.forEach((document) => this.assertDocumentContentAvailable(document));
-
-    return this.createFlatArchive(documents, 'selected-documents.zip');
+    const archive = await this.createFlatArchive(documents, 'selected-documents.zip');
+    await this.recordExportAudit(ownerUuid, documents, 'Selected documents exported');
+    return archive;
   }
 
   async exportFiltered(
@@ -271,8 +284,9 @@ export class DocumentService {
     }
 
     documents.forEach((document) => this.assertDocumentContentAvailable(document));
-
-    return this.createFlatArchive(documents, 'filtered-documents.zip');
+    const archive = await this.createFlatArchive(documents, 'filtered-documents.zip');
+    await this.recordExportAudit(ownerUuid, documents, 'Filtered documents exported');
+    return archive;
   }
 
   async facets(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListFacetsResponse> {
@@ -321,7 +335,19 @@ export class DocumentService {
           if (!document) {
             throw new NotFoundException('Document not found');
           }
-          await this.documents.update(uuid, { isNew: false });
+          const wasNew = document.isNew;
+          const updated = await this.documents.update(uuid, { isNew: false });
+          if (wasNew && updated?.isNew === false) {
+            await this.recordAudit({
+              documentUuid: uuid,
+              ownerUuid,
+              actorUuid: ownerUuid,
+              actorType: 'user',
+              eventType: 'metadata-changed',
+              summary: 'Document marked as reviewed',
+              details: { fields: ['reviewState'] },
+            });
+          }
         }
 
         items.push({ uuid, success: true, message: null });
@@ -504,7 +530,19 @@ export class DocumentService {
   async updateTitle(ownerUuid: string, uuid: string, input: SetDocumentTitleInput) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
+    const changed = document.title !== input.title;
     const updated = await this.documents.update(uuid, { title: input.title, isNew: false });
+    if (changed) {
+      await this.recordAudit({
+        documentUuid: uuid,
+        ownerUuid,
+        actorUuid: ownerUuid,
+        actorType: 'user',
+        eventType: 'title-changed',
+        summary: 'Document title changed',
+        details: { fields: ['title'] },
+      });
+    }
     return this.toDocumentResponse(updated ?? document);
   }
 
@@ -512,14 +550,34 @@ export class DocumentService {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
     this.assertDocumentContentAvailable(document);
-    return this.titleSuggestions.suggest(ownerUuid, uuid);
+    const suggestion = await this.titleSuggestions.suggest(ownerUuid, uuid);
+    await this.recordAudit({
+      documentUuid: uuid,
+      ownerUuid,
+      actorUuid: ownerUuid,
+      actorType: 'user',
+      eventType: 'ai-suggestion-generated',
+      summary: 'AI metadata suggestion generated',
+      details: { fields: this.suggestionFields(suggestion) },
+    });
+    return suggestion;
   }
 
   async clearSuggestion(ownerUuid: string, uuid: string) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
     const cleared = document.aiSuggestion !== null;
-    if (cleared) await this.documents.update(uuid, { aiSuggestion: null });
+    if (cleared) {
+      await this.documents.update(uuid, { aiSuggestion: null });
+      await this.recordAudit({
+        documentUuid: uuid,
+        ownerUuid,
+        actorUuid: ownerUuid,
+        actorType: 'user',
+        eventType: 'ai-suggestion-cleared',
+        summary: 'AI metadata suggestion dismissed',
+      });
+    }
     return ClearDocumentSuggestionResponseSchema.parse({ cleared });
   }
 
@@ -529,6 +587,14 @@ export class DocumentService {
       throw new NotFoundException('Document not found');
     }
     this.assertDocumentContentAvailable(document);
+    await this.recordAudit({
+      documentUuid: uuid,
+      ownerUuid,
+      actorUuid: ownerUuid,
+      actorType: 'user',
+      eventType: 'downloaded',
+      summary: 'Document downloaded',
+    });
     return {
       document: this.toDocumentResponse(document),
       stream: await this.storage.openReadStream(document.storageKey),
@@ -623,6 +689,15 @@ export class DocumentService {
     }
 
     const job = await this.pipeline.enqueue(updated.uuid, ownerUuid, 'malware-scan');
+    await this.recordAudit({
+      documentUuid: uuid,
+      ownerUuid,
+      actorUuid: ownerUuid,
+      actorType: 'user',
+      eventType: 'requeued',
+      summary: 'Document processing requeued',
+      details: { jobKind: 'malware-scan' },
+    });
     return {
       document: this.toDocumentResponse(updated),
       job,
@@ -646,7 +721,21 @@ export class DocumentService {
 
   async setMetadata(ownerUuid: string, uuid: string, input: SetDocumentMetadataInput) {
     const metadata = await this.metadata.setDocumentMetadata(ownerUuid, uuid, input);
-    if (metadata) await this.documents.update(uuid, { isNew: false });
+    if (metadata) {
+      await this.documents.update(uuid, { isNew: false });
+      const fields = this.metadataFields(input);
+      if (fields.length > 0) {
+        await this.recordAudit({
+          documentUuid: uuid,
+          ownerUuid,
+          actorUuid: ownerUuid,
+          actorType: 'user',
+          eventType: 'metadata-changed',
+          summary: 'Document metadata changed',
+          details: { fields },
+        });
+      }
+    }
     return metadata;
   }
 
@@ -714,7 +803,74 @@ export class DocumentService {
       }
     }
 
+    if (appliedFields.length > 0) {
+      await this.recordAudit({
+        documentUuid: uuid,
+        ownerUuid,
+        actorUuid: null,
+        actorType: 'system',
+        eventType: 'ai-suggestion-applied',
+        summary: 'AI metadata suggestion applied',
+        details: { fields: appliedFields },
+      });
+    }
+
     return { appliedFields };
+  }
+
+  private async recordExportAudit(
+    ownerUuid: string,
+    documents: Array<import('../models/document.entity').Document>,
+    summary: string,
+  ): Promise<void> {
+    await Promise.all(
+      documents.map((document) =>
+        this.recordAudit({
+          documentUuid: document.uuid,
+          ownerUuid,
+          actorUuid: ownerUuid,
+          actorType: 'user',
+          eventType: 'exported',
+          summary,
+        }),
+      ),
+    );
+  }
+
+  private metadataFields(input: SetDocumentMetadataInput): string[] {
+    const fields: string[] = [];
+    if (input.documentTypeUuid !== undefined) fields.push('documentType');
+    if (input.categoryUuid !== undefined) fields.push('category');
+    if (input.issuerUuid !== undefined) fields.push('issuer');
+    if (input.tagUuids !== undefined) fields.push('tags');
+    if (input.custom !== undefined) {
+      const customFields = Object.keys(input.custom)
+        .slice(0, 50)
+        .map((key) => `custom.${key}`);
+      fields.push(...(customFields.length > 0 ? customFields : ['custom']));
+    }
+    return [...new Set(fields)];
+  }
+
+  private suggestionFields(suggestion: DocumentTitleSuggestion): string[] {
+    const fields = ['title'];
+    if (suggestion.documentTypeUuid) fields.push('documentType');
+    if (suggestion.categoryUuid) fields.push('category');
+    if (suggestion.issuerUuid) fields.push('issuer');
+    if (suggestion.tagUuids.length > 0) fields.push('tags');
+    if (Object.keys(suggestion.custom).length > 0) fields.push('custom');
+    return fields;
+  }
+
+  private async recordAudit(input: Parameters<DocumentAuditService['record']>[0]): Promise<void> {
+    try {
+      await this.audit.record(input);
+    } catch (error) {
+      this.logger.error(
+        `Unable to record document audit event '${input.eventType}' for ${input.documentUuid}`,
+        error,
+      );
+    }
   }
 
   private toDocumentResponse(

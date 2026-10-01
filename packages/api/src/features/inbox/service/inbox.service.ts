@@ -14,6 +14,7 @@ import { DocumentService } from '../../document/service/document.service';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { InboxItem } from '../models/inbox-item.entity';
 import { InboxItemStore } from '../store/inbox-item.store';
+import { DocumentAuditService } from '../../document/service/document-audit.service';
 
 @Injectable()
 export class InboxService {
@@ -26,6 +27,7 @@ export class InboxService {
     private readonly documents: DocumentService,
     private readonly settings: ApplicationSettingsService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly audit: DocumentAuditService,
   ) {}
 
   async list() {
@@ -68,6 +70,7 @@ export class InboxService {
 
         try {
           const suggestion = await this.titleSuggestions.suggest(item.ownerUuid, item.documentUuid);
+          await this.recordSuggestionGenerated(item.ownerUuid, item.documentUuid, suggestion);
           let autoApplied = item.autoApplied;
           if (automaticApproval.enabled && suggestion.confidence >= automaticApproval.confidence) {
             try {
@@ -118,6 +121,34 @@ export class InboxService {
       });
     } finally {
       this.aiProcessing = false;
+    }
+  }
+
+  private async recordSuggestionGenerated(
+    ownerUuid: string,
+    documentUuid: string,
+    suggestion: DocumentTitleSuggestion,
+  ): Promise<void> {
+    try {
+      const fields = ['title'];
+      if (suggestion.documentTypeUuid) fields.push('documentType');
+      if (suggestion.categoryUuid) fields.push('category');
+      if (suggestion.issuerUuid) fields.push('issuer');
+      if (suggestion.tagUuids.length > 0) fields.push('tags');
+      if (Object.keys(suggestion.custom).length > 0) fields.push('custom');
+      await this.audit.record({
+        documentUuid,
+        ownerUuid,
+        actorUuid: null,
+        actorType: 'system',
+        eventType: 'ai-suggestion-generated',
+        summary: 'AI metadata suggestion generated',
+        details: { fields },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Unable to record AI suggestion audit event for ${documentUuid}: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 

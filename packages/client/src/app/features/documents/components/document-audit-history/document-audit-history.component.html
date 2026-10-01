@@ -1,0 +1,72 @@
+<section class="history-shell" aria-labelledby="document-history-title">
+  <header class="history-header">
+    <div>
+      <p class="history-kicker">{{ 'audit.kicker' | t }}</p>
+      <h3 id="document-history-title">{{ 'audit.title' | t }}</h3>
+      <p class="history-copy">{{ 'audit.copy' | t }}</p>
+    </div>
+    <button
+      type="button"
+      class="history-refresh"
+      [disabled]="loading()"
+      (click)="load(documentUuid(), page()?.page ?? 1)"
+    >
+      {{ 'audit.refresh' | t }}
+    </button>
+  </header>
+
+  @if (loading() && !page()) {
+    <p class="history-status">{{ 'audit.loading' | t }}</p>
+  } @else if (error(); as message) {
+    <div class="history-error" role="alert">{{ message }}</div>
+  } @else if (page(); as history) {
+    @if (history.items.length === 0) {
+      <div class="history-empty">
+        <strong>{{ 'audit.emptyTitle' | t }}</strong>
+        <p>{{ 'audit.emptyCopy' | t }}</p>
+      </div>
+    } @else {
+      <ol class="history-list">
+        @for (event of history.items; track event.uuid) {
+          <li class="history-entry">
+            <span class="history-dot" aria-hidden="true"></span>
+            <div class="history-entry-content">
+              <div class="history-entry-topline">
+                <strong>{{ eventLabel(event) }}</strong>
+                <time [attr.datetime]="event.createdAt">
+                  {{ event.createdAt | date: 'medium' }}
+                </time>
+              </div>
+              @if (fieldLabels(event); as fields) {
+                @if (fields) {
+                  <p class="history-fields">{{ 'audit.changed' | t }}: {{ fields }}</p>
+                }
+              }
+              <span class="history-actor">{{ actorLabel(event) }}</span>
+            </div>
+          </li>
+        }
+      </ol>
+    }
+
+    @if (history.totalPages > 1) {
+      <footer class="history-pagination">
+        <button
+          type="button"
+          [disabled]="!history.hasPrev || loading()"
+          (click)="load(documentUuid(), history.page - 1)"
+        >
+          {{ 'audit.previous' | t }}
+        </button>
+        <span>{{ history.page }} / {{ history.totalPages }}</span>
+        <button
+          type="button"
+          [disabled]="!history.hasNext || loading()"
+          (click)="load(documentUuid(), history.page + 1)"
+        >
+          {{ 'audit.next' | t }}
+        </button>
+      </footer>
+    }
+  }
+</section>

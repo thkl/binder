@@ -35,6 +35,7 @@ import { DocumentStorageIssue } from '../../features/document/models/document-st
 import { SetupState } from '../../features/setup/models/setup-state.entity';
 import { AiProviderProfile } from '../../features/ai-provider/models/ai-provider.entity';
 import { DocumentAnalysisSession } from '../../features/document/models/document-analysis-session.entity';
+import { DocumentAuditEventEntity } from '../../features/document/models/document-audit-event.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -86,6 +87,7 @@ export class DatabaseConnectionService {
       SetupState,
       AiProviderProfile,
       DocumentAnalysisSession,
+      DocumentAuditEventEntity,
     ]);
     await this.initialize();
   }

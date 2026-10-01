@@ -32,6 +32,7 @@ import { DocumentStorageIssue } from '../features/document/models/document-stora
 import { SetupState } from '../features/setup/models/setup-state.entity';
 import { AiProviderProfile } from '../features/ai-provider/models/ai-provider.entity';
 import { DocumentAnalysisSession } from '../features/document/models/document-analysis-session.entity';
+import { DocumentAuditEventEntity } from '../features/document/models/document-audit-event.entity';
 
 @Global()
 @Module({
@@ -105,6 +106,7 @@ import { DocumentAnalysisSession } from '../features/document/models/document-an
       SetupState,
       AiProviderProfile,
       DocumentAnalysisSession,
+      DocumentAuditEventEntity,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],

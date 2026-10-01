@@ -21,6 +21,24 @@ export type DocumentStatus =
   | 'failed'
   | 'quarantined';
 
+export type DocumentAuditActorType = 'user' | 'worker' | 'system';
+export type DocumentAuditEventType =
+  | 'uploaded'
+  | 'title-changed'
+  | 'metadata-changed'
+  | 'folder-added'
+  | 'folder-removed'
+  | 'ai-suggestion-generated'
+  | 'ai-suggestion-applied'
+  | 'ai-suggestion-cleared'
+  | 'requeued'
+  | 'downloaded'
+  | 'exported'
+  | 'processing-started'
+  | 'processing-succeeded'
+  | 'processing-failed'
+  | 'quarantined';
+
 @Table({ tableName: 'settings', timestamps: false })
 export class ApplicationSetting extends Model {
   @PrimaryKey
@@ -242,6 +260,39 @@ export class DocumentFolder extends Model {
   @PrimaryKey
   @Column({ field: 'folder_id', type: DataType.UUID })
   declare folderUuid: string;
+
+  @CreatedAt
+  @Column({ field: 'created_at', type: DataType.DATE })
+  declare createdAt: Date;
+}
+
+@Table({ tableName: 'document_audit_events', underscored: true, timestamps: false })
+export class DocumentAuditEvent extends Model {
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ field: 'document_id', type: DataType.UUID })
+  declare documentUuid: string;
+
+  @Column({ field: 'owner_id', type: DataType.UUID })
+  declare ownerUuid: string;
+
+  @Column({ field: 'actor_id', type: DataType.UUID, allowNull: true })
+  declare actorUuid: string | null;
+
+  @Column({ field: 'actor_type', type: DataType.STRING(16) })
+  declare actorType: DocumentAuditActorType;
+
+  @Column({ field: 'event_type', type: DataType.STRING(64) })
+  declare eventType: DocumentAuditEventType;
+
+  @Column({ type: DataType.STRING(500) })
+  declare summary: string;
+
+  @Column({ type: DataType.JSONB })
+  declare details: Record<string, unknown>;
 
   @CreatedAt
   @Column({ field: 'created_at', type: DataType.DATE })

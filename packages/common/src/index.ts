@@ -221,6 +221,57 @@ export const DocumentExtractedTextResponseSchema = z.object({
 });
 export type DocumentExtractedTextResponse = z.infer<typeof DocumentExtractedTextResponseSchema>;
 
+export const DocumentAuditActorTypeSchema = z.enum(['user', 'worker', 'system']);
+export type DocumentAuditActorType = z.infer<typeof DocumentAuditActorTypeSchema>;
+
+export const DocumentAuditEventTypeSchema = z.enum([
+  'uploaded',
+  'title-changed',
+  'metadata-changed',
+  'folder-added',
+  'folder-removed',
+  'ai-suggestion-generated',
+  'ai-suggestion-applied',
+  'ai-suggestion-cleared',
+  'requeued',
+  'downloaded',
+  'exported',
+  'processing-started',
+  'processing-succeeded',
+  'processing-failed',
+  'quarantined',
+]);
+export type DocumentAuditEventType = z.infer<typeof DocumentAuditEventTypeSchema>;
+
+export const DocumentAuditEventSchema = z.object({
+  uuid: z.uuid(),
+  documentUuid: z.uuid(),
+  actorUuid: z.uuid().nullable(),
+  actorType: DocumentAuditActorTypeSchema,
+  eventType: DocumentAuditEventTypeSchema,
+  summary: z.string().min(1).max(500),
+  details: z.record(z.string(), z.unknown()),
+  createdAt: z.iso.datetime(),
+});
+export type DocumentAuditEvent = z.infer<typeof DocumentAuditEventSchema>;
+
+export const DocumentAuditQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(25),
+});
+export type DocumentAuditQuery = z.infer<typeof DocumentAuditQuerySchema>;
+
+export const DocumentAuditResponseSchema = z.object({
+  items: z.array(DocumentAuditEventSchema),
+  page: z.number().int().min(1),
+  pageSize: z.number().int().min(1),
+  total: z.number().int().min(0),
+  totalPages: z.number().int().min(0),
+  hasNext: z.boolean(),
+  hasPrev: z.boolean(),
+});
+export type DocumentAuditResponse = z.infer<typeof DocumentAuditResponseSchema>;
+
 export const IssuerSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid(),

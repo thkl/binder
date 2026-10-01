@@ -15,14 +15,20 @@ import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
 import { ApplicationService } from '../../../../common/application.service';
 import { DocumentAnalysisComponent } from '../document-analysis/document-analysis.component';
+import { DocumentAuditHistoryComponent } from '../document-audit-history/document-audit-history.component';
 
-export type DocumentDrawerTab = 'preview' | 'metadata';
+export type DocumentDrawerTab = 'preview' | 'metadata' | 'history';
 export type DocumentDrawerMode = 'analysis' | 'metadata';
 
 @Component({
   selector: 'binder-document-drawer',
   standalone: true,
-  imports: [DocumentAnalysisComponent, DocumentMetadataEditorComponent, TranslatePipe],
+  imports: [
+    DocumentAnalysisComponent,
+    DocumentAuditHistoryComponent,
+    DocumentMetadataEditorComponent,
+    TranslatePipe,
+  ],
   templateUrl: './document-drawer.component.html',
   styleUrl: './document-drawer.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

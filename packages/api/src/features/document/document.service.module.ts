@@ -12,6 +12,7 @@ import { FolderStoreModule } from '../folder/folder.store.module';
 import { InboxStoreModule } from '../inbox/inbox.store.module';
 import { AiProviderServiceModule } from '../ai-provider/ai-provider.service.module';
 import { DocumentAnalysisService } from './service/document-analysis.service';
+import { DocumentAuditServiceModule } from './document-audit.service.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DocumentAnalysisService } from './service/document-analysis.service';
     FolderStoreModule,
     InboxStoreModule,
     AiProviderServiceModule,
+    DocumentAuditServiceModule,
     PipelineServiceModule,
     MetadataServiceModule,
     IssuerServiceModule,
@@ -31,6 +33,11 @@ import { DocumentAnalysisService } from './service/document-analysis.service';
     TitleSuggestionService,
     DocumentAnalysisService,
   ],
-  exports: [DocumentService, TitleSuggestionService, DocumentAnalysisService],
+  exports: [
+    DocumentService,
+    TitleSuggestionService,
+    DocumentAnalysisService,
+    DocumentAuditServiceModule,
+  ],
 })
 export class DocumentServiceModule {}
