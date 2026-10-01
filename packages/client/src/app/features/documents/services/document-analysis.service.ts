@@ -6,6 +6,8 @@ import {
   DocumentAnalysisPromptSchema,
   DocumentAnalysisResponse,
   DocumentAnalysisResponseSchema,
+  DocumentAnalysisSessionState,
+  DocumentAnalysisSessionStateSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -15,8 +17,12 @@ export class DocumentAnalysisService {
   private readonly http = inject(HttpClient);
   private readonly application = inject(ApplicationService);
 
-  async start(documentUuid: string, prompt: string): Promise<DocumentAnalysisResponse> {
-    const input = DocumentAnalysisPromptSchema.parse({ prompt });
+  async start(
+    documentUuid: string,
+    prompt: string,
+    forceNew = false,
+  ): Promise<DocumentAnalysisResponse> {
+    const input = DocumentAnalysisPromptSchema.parse({ prompt, forceNew });
     const response = await firstValueFrom(
       this.http.post<ApiResponse<unknown>>(
         this.application.getApiUrl('v1', `documents/${documentUuid}/analysis`),
@@ -25,6 +31,16 @@ export class DocumentAnalysisService {
       ),
     );
     return DocumentAnalysisResponseSchema.parse(response.data);
+  }
+
+  async load(documentUuid: string): Promise<DocumentAnalysisSessionState | null> {
+    const response = await firstValueFrom(
+      this.http.get<ApiResponse<unknown>>(
+        this.application.getApiUrl('v1', `documents/${documentUuid}/analysis`),
+        { withCredentials: true },
+      ),
+    );
+    return response.data === null ? null : DocumentAnalysisSessionStateSchema.parse(response.data);
   }
 
   async continue(

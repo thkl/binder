@@ -258,6 +258,8 @@ const EN: TranslationMap = {
   'setting.ai.apiKey': 'AI API key (shared)',
   'setting.ai.documentAnalysis.prompt': 'Document analysis prompt',
   'setting.ai.fileAnalysis.expirationSeconds': 'Uploaded analysis file lifetime (seconds)',
+  'setting.ai.fileAnalysis.expirationSeconds.hint':
+    'Use 3600 seconds (1 hour) to 2592000 seconds (30 days).',
   'setting.ai.fileAnalysis.timeoutMs': 'PDF analysis request timeout (ms)',
   'setting.oidc.ISSUER_URL': 'Issuer',
   'setting.oidc.CLIENT_ID': 'Client ID',
@@ -635,6 +637,8 @@ const DE: TranslationMap = {
   'setting.ai.apiKey': 'KI-API-Schlüssel (gemeinsam)',
   'setting.ai.documentAnalysis.prompt': 'Dokumentanalyse-Prompt',
   'setting.ai.fileAnalysis.expirationSeconds': 'Aufbewahrungsdauer der Analysedatei (Sekunden)',
+  'setting.ai.fileAnalysis.expirationSeconds.hint':
+    'Verwenden Sie 3600 Sekunden (1 Stunde) bis 2592000 Sekunden (30 Tage).',
   'setting.ai.fileAnalysis.timeoutMs': 'Zeitlimit für PDF-Analyse (ms)',
   'setting.oidc.ISSUER_URL': 'Aussteller',
   'setting.oidc.CLIENT_ID': 'Client-ID',
@@ -969,6 +973,7 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'analysis.promptPlaceholder': 'Ask for a summary, a table explanation, or a specific detail…',
     'analysis.send': 'Send',
     'analysis.sending': 'Analyzing…',
+    'analysis.restoring': 'Restoring the previous analysis…',
     'analysis.empty': 'Your analysis conversation will appear here.',
     'analysis.you': 'You',
     'analysis.binder': 'Binder',
@@ -1163,6 +1168,7 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
       'Nach einer Zusammenfassung, einer Tabellenerklärung oder einem Detail fragen…',
     'analysis.send': 'Senden',
     'analysis.sending': 'Analyse läuft…',
+    'analysis.restoring': 'Vorherige Analyse wird wiederhergestellt…',
     'analysis.empty': 'Ihre Analyse-Unterhaltung erscheint hier.',
     'analysis.you': 'Sie',
     'analysis.binder': 'Binder',

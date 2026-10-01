@@ -34,6 +34,7 @@ export class DocumentDrawerComponent {
   readonly externalClosePrompt = input(false);
 
   readonly closeRequest = output<void>();
+  readonly tabChange = output<DocumentDrawerTab>();
   readonly dirtyChange = output<boolean>();
   readonly manuallySaved = output<void>();
   readonly suggestionTitleAccepted = output<string>();
@@ -63,6 +64,7 @@ export class DocumentDrawerComponent {
 
   selectTab(tab: DocumentDrawerTab): void {
     this.activeTab.set(tab);
+    this.tabChange.emit(tab);
   }
 
   handleDirtyChange(dirty: boolean): void {

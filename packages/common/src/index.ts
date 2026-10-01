@@ -872,6 +872,7 @@ export type DocumentAnalysisMessage = z.infer<typeof DocumentAnalysisMessageSche
 
 export const DocumentAnalysisPromptSchema = z.object({
   prompt: z.string().trim().min(1).max(10_000),
+  forceNew: z.boolean().optional().default(false),
 });
 export type DocumentAnalysisPrompt = z.infer<typeof DocumentAnalysisPromptSchema>;
 
@@ -889,6 +890,14 @@ export const DocumentAnalysisResponseSchema = z.object({
   fileExpiresAt: z.iso.datetime().nullable(),
 });
 export type DocumentAnalysisResponse = z.infer<typeof DocumentAnalysisResponseSchema>;
+
+export const DocumentAnalysisSessionStateSchema = z.object({
+  sessionUuid: z.uuid(),
+  documentUuid: z.uuid(),
+  messages: z.array(DocumentAnalysisMessageSchema).max(100),
+  fileExpiresAt: z.iso.datetime().nullable(),
+});
+export type DocumentAnalysisSessionState = z.infer<typeof DocumentAnalysisSessionStateSchema>;
 
 export type ApiResponse<T> = { data: T };
 

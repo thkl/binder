@@ -292,6 +292,12 @@
                     "documents",
                     "ai_provider_profiles"
                ]
+          },
+          "44": {
+               "required": [
+                    "document_analysis_sessions",
+                    "settings"
+               ]
           }
      }
 }

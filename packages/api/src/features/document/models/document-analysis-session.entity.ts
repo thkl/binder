@@ -9,6 +9,7 @@ import {
   Table,
   UpdatedAt,
 } from 'sequelize-typescript';
+import type { DocumentAnalysisMessage } from '@binder/common';
 
 export interface DocumentAnalysisSessionAttributes {
   uuid: string;
@@ -18,6 +19,7 @@ export interface DocumentAnalysisSessionAttributes {
   remoteFileId: string;
   remoteResponseId: string | null;
   fileExpiresAt: Date | null;
+  messages: DocumentAnalysisMessage[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +59,14 @@ export class DocumentAnalysisSession extends Model<
   @AllowNull
   @Column({ field: 'file_expires_at', type: DataType.DATE, allowNull: true })
   declare fileExpiresAt: Date | null;
+
+  @Column({
+    field: 'messages',
+    type: DataType.JSONB,
+    allowNull: false,
+    defaultValue: [],
+  })
+  declare messages: DocumentAnalysisMessage[];
 
   @CreatedAt
   @Column({ field: 'created_at', type: DataType.DATE })

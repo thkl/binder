@@ -31,6 +31,6 @@ import { DocumentAnalysisService } from './service/document-analysis.service';
     TitleSuggestionService,
     DocumentAnalysisService,
   ],
-  exports: [DocumentService, TitleSuggestionService,DocumentAnalysisService],
+  exports: [DocumentService, TitleSuggestionService, DocumentAnalysisService],
 })
 export class DocumentServiceModule {}

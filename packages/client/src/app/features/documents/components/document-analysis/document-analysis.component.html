@@ -23,6 +23,9 @@
   }
 
   <div class="analysis-messages" aria-live="polite">
+    @if (restoring()) {
+      <p class="analysis-status">{{ 'analysis.restoring' | t }}</p>
+    }
     @if (messages().length === 0) {
       <p class="analysis-empty">{{ 'analysis.empty' | t }}</p>
     } @else {
@@ -53,10 +56,14 @@
         maxlength="10000"
         [value]="prompt()"
         [placeholder]="'analysis.promptPlaceholder' | t"
-        [disabled]="sending()"
+        [disabled]="sending() || restoring()"
         (input)="updatePrompt($event)"
       ></textarea>
-      <button type="submit" class="analysis-send" [disabled]="sending() || !prompt().trim()">
+      <button
+        type="submit"
+        class="analysis-send"
+        [disabled]="sending() || restoring() || !prompt().trim()"
+      >
         {{ sending() ? ('analysis.sending' | t) : ('analysis.send' | t) }}
       </button>
     </div>

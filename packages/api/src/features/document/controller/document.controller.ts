@@ -173,7 +173,14 @@ export class DocumentController {
     @CurrentUser() user: ScopedUser,
   ) {
     const input = DocumentAnalysisPromptSchema.parse(body);
-    return { data: await this.analysis.start(user.userId, uuid, input.prompt) };
+    return {
+      data: await this.analysis.start(user.userId, uuid, input.prompt, input.forceNew),
+    };
+  }
+
+  @Get(':uuid/analysis')
+  async activeAnalysis(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.analysis.getActiveSession(user.userId, uuid) };
   }
 
   @Post(':uuid/analysis/messages')

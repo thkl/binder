@@ -651,6 +651,7 @@
         [initialTab]="drawerTab()"
         [suggestion]="titleSuggestions()[drawerUuid] || null"
         [externalClosePrompt]="metadataClosePrompt()"
+        (tabChange)="drawerTab.set($event)"
         (dirtyChange)="metadataDirtyChanged($event)"
         (manuallySaved)="metadataSaved(drawerUuid)"
         (closeRequest)="requestCloseMetadata()"

@@ -40,9 +40,13 @@ and is never applied to document metadata automatically.
 
 The API stores the remote file ID and response-chain ID in
 `document_analysis_sessions`, scoped to the authenticated owner and document.
-The client receives only a local session UUID and the messages. Follow-up
-messages reuse the provider upload and response chain, so the PDF is not
-uploaded again for every question.
+The session also stores the bounded conversation history. When the document
+workspace is opened again, the client restores the active unexpired session
+from the API. Follow-up messages reuse the provider upload and response chain,
+so closing the workspace does not cause another PDF upload.
+
+Starting a new analysis resets the response chain and conversation history but
+continues to reuse the same provider upload while it remains valid.
 
 Provider uploads must use the provider's automatic expiration controls. The
 default is one hour after creation, and the duration plus request timeout are
