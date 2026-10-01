@@ -17,7 +17,7 @@
   position: relative;
   display: flex;
   width: min(110rem, 100%);
-  height: min(96dvh, 68rem);
+  height: 96dvh;
   min-width: 0;
   flex-direction: column;
   overflow: hidden;
