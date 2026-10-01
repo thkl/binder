@@ -5,6 +5,9 @@ import { logger } from './logger.js';
 import { runExternalCommand } from './ocr.js';
 import { resolveStoragePath, storageExists } from './storage.js';
 
+const PDF_A_PROFILE = 'pdfa-2b';
+const OCRMY_PDF_OUTPUT_TYPE = 'pdfa-2';
+
 /**
  * Creates a validated PDF/A-2b derivative with OCRmyPDF/Ghostscript.
  * The original upload is never replaced. If OCR already produced a derived
@@ -23,20 +26,22 @@ export async function runPdfa(originalStorageKey: string, documentUuid: string):
     documentUuid,
     source: sourceKey,
     output: archiveKey,
-    profile: 'pdfa-2b',
+    profile: PDF_A_PROFILE,
+    ocrmypdfOutputType: OCRMY_PDF_OUTPUT_TYPE,
   });
 
   try {
     await runExternalCommand(
       'ocrmypdf',
-      ['--skip-text', '--output-type', 'pdfa-2b', sourcePath, temporaryPath],
+      ['--skip-text', '--output-type', OCRMY_PDF_OUTPUT_TYPE, sourcePath, temporaryPath],
       documentUuid,
     );
     await fs.rename(temporaryPath, archivePath);
     logger.info('PDF/A archive generated and validated', {
       documentUuid,
       archiveKey,
-      profile: 'pdfa-2b',
+      profile: PDF_A_PROFILE,
+      ocrmypdfOutputType: OCRMY_PDF_OUTPUT_TYPE,
     });
     return archiveKey;
   } finally {

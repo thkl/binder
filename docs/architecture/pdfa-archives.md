@@ -14,7 +14,8 @@ original file.
 ## Implementation status
 
 The first implementation is available behind the `documents.pdfa.enabled`
-setting. The worker uses OCRmyPDF with the `pdfa-2b` output profile and stores
+setting. The worker targets PDF/A-2b. OCRmyPDF exposes that target through its
+`pdfa-2` `--output-type` value, and stores
 the result at `derived/<document-uuid>/archive.pdf`. A user can also request
 generation for an individual document from the document list or viewer.
 
