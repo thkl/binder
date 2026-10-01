@@ -129,7 +129,11 @@ verification.
 - ✅ Record an owner-visible audit history for every document, persisted in PostgreSQL and separate from operational logs
 - Add a secure first-run onboarding assistant that creates the administrator and validates the basic runtime settings
 - Let administrators inspect API and worker activity
-- Add bulk metadata editing for selected documents, including type, category, issuer, tags, custom fields, and virtual-folder assignments
+- ✅ Add bulk metadata editing for selected documents, including type, category, issuer, tags, custom fields, and virtual-folder assignments:
+  - Preview empty values, existing values, conflicts, and the affected documents before applying changes.
+  - Require explicit confirmation before overwriting existing metadata or folder assignments.
+  - Offer fill-empty, skip-existing, and replace-selected policies.
+  - Store each successful operation as an immutable metadata change set so it can be rolled back safely.
 
 ### P4 — document history
 
@@ -143,6 +147,8 @@ verification.
   without user confirmation.
 - Define how version metadata, folders, search results, and the current/latest
   version are represented while retaining owner-scoped access checks.
+- Link reversible metadata change sets into the document history timeline while
+  keeping metadata rollback separate from binary PDF version families.
 
 ### Later
 

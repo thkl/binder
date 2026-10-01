@@ -10,11 +10,12 @@ rotated.
 
 This is a P3 feature.
 
-The first implementation stores append-only events in PostgreSQL in the
+The implementation stores append-only events in PostgreSQL in the
 `document_audit_events` table. Winston remains the operational log and is not
 used as the source of document history. The API exposes the owner-scoped,
 paginated `GET /api/v1/documents/:uuid/audit` endpoint, and the document drawer
-shows the events in a localized History tab.
+shows the events in a localized History tab. Bulk metadata changes add a
+linked immutable change set and expose a guarded rollback action in that tab.
 
 ## Events to record
 
@@ -46,6 +47,12 @@ that is necessary for the UI and safe for the configured retention policy.
 Audit entries are append-only from the application perspective. Corrections to
 an audit record require a new event rather than mutating the historical event.
 Retention and administrator access must be explicit before production use.
+
+Audit events are not by themselves a rollback mechanism. Metadata edits that
+need to be reversible create a linked immutable change set containing the
+before/after values needed for the selected fields. A rollback creates a new
+audit event and checks that the document has not changed since the change set
+was created.
 
 ## API and ownership
 

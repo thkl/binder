@@ -251,6 +251,8 @@ export const DocumentAuditEventSchema = z.object({
   eventType: DocumentAuditEventTypeSchema,
   summary: z.string().min(1).max(500),
   details: z.record(z.string(), z.unknown()),
+  changeSetUuid: z.uuid().nullable(),
+  rollbackAvailable: z.boolean().default(false),
   createdAt: z.iso.datetime(),
 });
 export type DocumentAuditEvent = z.infer<typeof DocumentAuditEventSchema>;
@@ -357,6 +359,80 @@ export const DocumentBulkActionResponseSchema = z.object({
   items: z.array(DocumentBulkActionItemSchema),
 });
 export type DocumentBulkActionResponse = z.infer<typeof DocumentBulkActionResponseSchema>;
+
+export const BulkMetadataPolicySchema = z.enum(['fill-empty', 'skip-existing', 'replace-selected']);
+export type BulkMetadataPolicy = z.infer<typeof BulkMetadataPolicySchema>;
+
+export const BulkMetadataInputSchema = z.object({
+  documentUuids: z
+    .array(z.uuid())
+    .min(1)
+    .max(100)
+    .refine((uuids) => new Set(uuids).size === uuids.length, 'Document UUIDs must be unique'),
+  policy: BulkMetadataPolicySchema,
+  metadata: z.lazy(() => SetDocumentMetadataInputSchema).default({}),
+  folderUuids: z.array(z.uuid()).max(100).optional(),
+});
+export type BulkMetadataInput = z.infer<typeof BulkMetadataInputSchema>;
+
+export const BulkMetadataPreviewItemSchema = z.object({
+  documentUuid: z.uuid(),
+  title: z.string().max(255).nullable(),
+  applicableFields: z.array(z.string()),
+  conflictingFields: z.array(z.string()),
+  canApply: z.boolean(),
+  reason: z.string().nullable(),
+});
+export type BulkMetadataPreviewItem = z.infer<typeof BulkMetadataPreviewItemSchema>;
+
+export const BulkMetadataPreviewResponseSchema = z.object({
+  policy: BulkMetadataPolicySchema,
+  requested: z.number().int().nonnegative(),
+  eligible: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+  conflicts: z.number().int().nonnegative(),
+  items: z.array(BulkMetadataPreviewItemSchema),
+});
+export type BulkMetadataPreviewResponse = z.infer<typeof BulkMetadataPreviewResponseSchema>;
+
+export const DocumentChangeSetStatusSchema = z.enum(['applied', 'rolled-back']);
+export type DocumentChangeSetStatus = z.infer<typeof DocumentChangeSetStatusSchema>;
+
+export const DocumentChangeSetSchema = z.object({
+  uuid: z.uuid(),
+  ownerUuid: z.uuid(),
+  actorUuid: z.uuid().nullable(),
+  policy: BulkMetadataPolicySchema,
+  status: DocumentChangeSetStatusSchema,
+  documentCount: z.number().int().nonnegative(),
+  createdAt: z.iso.datetime(),
+  rolledBackAt: z.iso.datetime().nullable(),
+  rolledBackBy: z.uuid().nullable(),
+});
+export type DocumentChangeSet = z.infer<typeof DocumentChangeSetSchema>;
+
+export const BulkMetadataApplyResponseSchema = z.object({
+  changeSet: DocumentChangeSetSchema,
+  requested: z.number().int().nonnegative(),
+  applied: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+  conflicts: z.number().int().nonnegative(),
+});
+export type BulkMetadataApplyResponse = z.infer<typeof BulkMetadataApplyResponseSchema>;
+
+export const DocumentChangeSetRollbackResponseSchema = z.object({
+  changeSet: DocumentChangeSetSchema,
+  rolledBack: z.number().int().nonnegative(),
+  conflicts: z.array(
+    z.object({
+      documentUuid: z.uuid(),
+      reason: z.string().min(1),
+    }),
+  ),
+});
+export type DocumentChangeSetRollbackResponse = z.infer<
+  typeof DocumentChangeSetRollbackResponseSchema
+>;
 
 export const ClearDocumentSuggestionResponseSchema = z.object({ cleared: z.boolean() });
 export type ClearDocumentSuggestionResponse = z.infer<typeof ClearDocumentSuggestionResponseSchema>;

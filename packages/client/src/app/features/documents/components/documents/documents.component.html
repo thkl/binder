@@ -289,6 +289,14 @@
             </button>
             <button
               type="button"
+              class="bulk-action-button primary"
+              [disabled]="bulkActionInProgress() !== null"
+              (click)="openBulkMetadata()"
+            >
+              {{ 'documents.bulkMetadataTitle' | t }}
+            </button>
+            <button
+              type="button"
               class="bulk-action-button"
               [disabled]="bulkActionInProgress() !== null"
               (click)="runBulkAction('requeue')"
@@ -353,6 +361,9 @@
           </span>
         }
         @if (folderActionMessage(); as message) {
+          <span class="bulk-result" role="status">{{ message }}</span>
+        }
+        @if (bulkMetadataMessage(); as message) {
           <span class="bulk-result" role="status">{{ message }}</span>
         }
       </div>
@@ -663,5 +674,19 @@
         (suggestionAccepted)="acceptSuggestedMetadata(drawerUuid, $event)"
       />
     }
+  }
+
+  @if (bulkMetadataDialogOpen()) {
+    <binder-bulk-metadata-dialog
+      [documentUuids]="selectedDocumentUuidList()"
+      [documentTypes]="bulkDocumentTypes()"
+      [categories]="bulkCategories()"
+      [tags]="bulkTags()"
+      [issuers]="metadata.issuers()"
+      [folders]="folders.allFolders()"
+      [definitions]="metadata.definitions()"
+      (closed)="bulkMetadataDialogOpen.set(false)"
+      (applied)="bulkMetadataApplied($event)"
+    />
   }
 </section>

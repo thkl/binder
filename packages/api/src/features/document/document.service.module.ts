@@ -13,6 +13,8 @@ import { InboxStoreModule } from '../inbox/inbox.store.module';
 import { AiProviderServiceModule } from '../ai-provider/ai-provider.service.module';
 import { DocumentAnalysisService } from './service/document-analysis.service';
 import { DocumentAuditServiceModule } from './document-audit.service.module';
+import { DocumentChangeSetStoreModule } from './document-change-set.store.module';
+import { DocumentBulkMetadataService } from './service/document-bulk-metadata.service';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { DocumentAuditServiceModule } from './document-audit.service.module';
     InboxStoreModule,
     AiProviderServiceModule,
     DocumentAuditServiceModule,
+    DocumentChangeSetStoreModule,
     PipelineServiceModule,
     MetadataServiceModule,
     IssuerServiceModule,
@@ -32,12 +35,14 @@ import { DocumentAuditServiceModule } from './document-audit.service.module';
     SemanticSearchService,
     TitleSuggestionService,
     DocumentAnalysisService,
+    DocumentBulkMetadataService,
   ],
   exports: [
     DocumentService,
     TitleSuggestionService,
     DocumentAnalysisService,
     DocumentAuditServiceModule,
+    DocumentBulkMetadataService,
   ],
 })
 export class DocumentServiceModule {}

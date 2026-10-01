@@ -33,6 +33,7 @@ import { SetupState } from '../features/setup/models/setup-state.entity';
 import { AiProviderProfile } from '../features/ai-provider/models/ai-provider.entity';
 import { DocumentAnalysisSession } from '../features/document/models/document-analysis-session.entity';
 import { DocumentAuditEventEntity } from '../features/document/models/document-audit-event.entity';
+import { DocumentMetadataChangeSet } from '../features/document/models/document-metadata-change-set.entity';
 
 @Global()
 @Module({
@@ -107,6 +108,7 @@ import { DocumentAuditEventEntity } from '../features/document/models/document-a
       AiProviderProfile,
       DocumentAnalysisSession,
       DocumentAuditEventEntity,
+      DocumentMetadataChangeSet,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],

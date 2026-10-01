@@ -6,6 +6,13 @@ import {
   DocumentBulkActionInput,
   DocumentBulkActionResponse,
   DocumentBulkActionResponseSchema,
+  BulkMetadataInput,
+  BulkMetadataApplyResponse,
+  BulkMetadataApplyResponseSchema,
+  BulkMetadataPreviewResponse,
+  BulkMetadataPreviewResponseSchema,
+  DocumentChangeSetRollbackResponse,
+  DocumentChangeSetRollbackResponseSchema,
   DocumentListFacetsResponse,
   DocumentListFacetsResponseSchema,
   DocumentListQuery,
@@ -156,6 +163,61 @@ export class DocumentsService {
         ),
       );
       const result = DocumentBulkActionResponseSchema.parse(response.data);
+      await this.load();
+      return result;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  async previewBulkMetadata(input: BulkMetadataInput): Promise<BulkMetadataPreviewResponse | null> {
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', 'documents/bulk-metadata/preview'),
+          input,
+          { withCredentials: true },
+        ),
+      );
+      return BulkMetadataPreviewResponseSchema.parse(response.data);
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  async applyBulkMetadata(input: BulkMetadataInput): Promise<BulkMetadataApplyResponse | null> {
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', 'documents/bulk-metadata'),
+          input,
+          { withCredentials: true },
+        ),
+      );
+      const result = BulkMetadataApplyResponseSchema.parse(response.data);
+      await this.load();
+      return result;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  async rollbackChangeSet(uuid: string): Promise<DocumentChangeSetRollbackResponse | null> {
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/change-sets/${uuid}/rollback`),
+          {},
+          { withCredentials: true },
+        ),
+      );
+      const result = DocumentChangeSetRollbackResponseSchema.parse(response.data);
       await this.load();
       return result;
     } catch (error) {

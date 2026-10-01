@@ -19,13 +19,14 @@ export interface DocumentAuditEventAttributes {
   eventType: DocumentAuditEventType;
   summary: string;
   details: Record<string, unknown>;
+  changeSetUuid: string | null;
   createdAt: Date;
 }
 
 export type DocumentAuditEventCreationAttributes = Omit<
   DocumentAuditEventAttributes,
-  'uuid' | 'createdAt'
-> & { uuid?: string };
+  'uuid' | 'createdAt' | 'changeSetUuid'
+> & { uuid?: string; changeSetUuid?: string | null };
 
 @Table({ tableName: 'document_audit_events', underscored: true, timestamps: false })
 export class DocumentAuditEventEntity extends Model<
@@ -58,6 +59,10 @@ export class DocumentAuditEventEntity extends Model<
 
   @Column({ type: DataType.JSONB, allowNull: false, defaultValue: {} })
   declare details: Record<string, unknown>;
+
+  @AllowNull
+  @Column({ field: 'change_set_id', type: DataType.UUID, allowNull: true })
+  declare changeSetUuid: string | null;
 
   @CreatedAt
   @Column({ field: 'created_at', type: DataType.DATE })

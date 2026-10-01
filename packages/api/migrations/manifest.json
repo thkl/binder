@@ -307,6 +307,16 @@
                     "documents",
                     "users"
                ]
+          },
+          "46": {
+               "created": [
+                    "document_metadata_change_sets"
+               ],
+               "required": [
+                    "document_audit_events",
+                    "documents",
+                    "users"
+               ]
           }
      }
 }

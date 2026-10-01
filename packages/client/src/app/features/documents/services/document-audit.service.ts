@@ -5,6 +5,8 @@ import {
   DocumentAuditQuerySchema,
   DocumentAuditResponse,
   DocumentAuditResponseSchema,
+  DocumentChangeSetRollbackResponse,
+  DocumentChangeSetRollbackResponseSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -27,6 +29,17 @@ export class DocumentAuditService {
       ),
     );
     return DocumentAuditResponseSchema.parse(response.data);
+  }
+
+  async rollback(changeSetUuid: string): Promise<DocumentChangeSetRollbackResponse> {
+    const response = await firstValueFrom(
+      this.http.post<ApiResponse<unknown>>(
+        this.application.getApiUrl('v1', `documents/change-sets/${changeSetUuid}/rollback`),
+        {},
+        { withCredentials: true },
+      ),
+    );
+    return DocumentChangeSetRollbackResponseSchema.parse(response.data);
   }
 
   errorMessage(error: unknown): string {

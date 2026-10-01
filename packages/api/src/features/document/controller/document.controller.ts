@@ -22,6 +22,7 @@ import {
   DocumentAnalysisFollowUpSchema,
   DocumentAnalysisPromptSchema,
   DocumentAuditQuerySchema,
+  BulkMetadataInputSchema,
   SetDocumentMetadataInputSchema,
   SetDocumentTitleInputSchema,
 } from '@binder/common';
@@ -33,6 +34,7 @@ import { DocumentService, UploadedDocumentFile } from '../service/document.servi
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { Throttle } from '@nestjs/throttler';
 import { DocumentAuditService } from '../service/document-audit.service';
+import { DocumentBulkMetadataService } from '../service/document-bulk-metadata.service';
 
 const HARD_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024;
 
@@ -45,6 +47,7 @@ export class DocumentController {
     private readonly documents: DocumentService,
     private readonly analysis: DocumentAnalysisService,
     private readonly audit: DocumentAuditService,
+    private readonly bulkMetadata: DocumentBulkMetadataService,
   ) {}
 
   @Post()
@@ -130,6 +133,32 @@ export class DocumentController {
     return {
       data: await this.documents.bulkAction(user.userId, DocumentBulkActionInputSchema.parse(body)),
     };
+  }
+
+  @Post('bulk-metadata/preview')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  async previewBulkMetadata(@Body() body: unknown, @CurrentUser() user: ScopedUser) {
+    return {
+      data: await this.bulkMetadata.preview(user.userId, BulkMetadataInputSchema.parse(body)),
+    };
+  }
+
+  @Post('bulk-metadata')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async applyBulkMetadata(@Body() body: unknown, @CurrentUser() user: ScopedUser) {
+    return {
+      data: await this.bulkMetadata.apply(
+        user.userId,
+        user.userId,
+        BulkMetadataInputSchema.parse(body),
+      ),
+    };
+  }
+
+  @Post('change-sets/:uuid/rollback')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async rollbackChangeSet(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.bulkMetadata.rollback(user.userId, user.userId, uuid) };
   }
 
   @Get(':uuid/file')

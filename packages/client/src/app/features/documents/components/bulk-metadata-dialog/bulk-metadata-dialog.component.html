@@ -1,0 +1,210 @@
+<div class="dialog-backdrop" role="presentation" (click)="closed.emit()">
+  <section
+    class="dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="bulk-metadata-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="dialog-header">
+      <div>
+        <p class="dialog-kicker">{{ 'documents.bulkMetadataKicker' | t }}</p>
+        <h2 id="bulk-metadata-title">{{ 'documents.bulkMetadataTitle' | t }}</h2>
+        <p class="dialog-copy">
+          {{ documentUuids().length }} {{ 'documents.bulkMetadataSelected' | t }}
+        </p>
+      </div>
+      <button type="button" class="icon-button" (click)="closed.emit()" aria-label="Close">
+        ×
+      </button>
+    </header>
+
+    <div class="dialog-body">
+      <label class="field policy-field">
+        <span>{{ 'documents.bulkMetadataPolicy' | t }}</span>
+        <select [value]="policy()" (change)="setPolicy($event)">
+          <option value="fill-empty">{{ 'documents.bulkMetadataFillEmpty' | t }}</option>
+          <option value="skip-existing">{{ 'documents.bulkMetadataSkipExisting' | t }}</option>
+          <option value="replace-selected">{{ 'documents.bulkMetadataReplace' | t }}</option>
+        </select>
+      </label>
+
+      <p class="hint">{{ 'documents.bulkMetadataPolicyHint' | t }}</p>
+
+      <div class="field-grid">
+        <label class="choice-field">
+          <input
+            type="checkbox"
+            [checked]="isEnabled('documentTypeUuid')"
+            (change)="toggleField('documentTypeUuid')"
+          />
+          <span>{{ 'documents.type' | t }}</span>
+          <select
+            [disabled]="!isEnabled('documentTypeUuid')"
+            [value]="documentTypeUuid()"
+            (change)="selectValue('documentTypeUuid', $event)"
+          >
+            <option value="">{{ 'documents.bulkMetadataClear' | t }}</option>
+            @for (item of documentTypes(); track item.uuid) {
+              <option [value]="item.uuid">{{ i18n.name(item) }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="choice-field">
+          <input
+            type="checkbox"
+            [checked]="isEnabled('categoryUuid')"
+            (change)="toggleField('categoryUuid')"
+          />
+          <span>{{ 'documents.category' | t }}</span>
+          <select
+            [disabled]="!isEnabled('categoryUuid')"
+            [value]="categoryUuid()"
+            (change)="selectValue('categoryUuid', $event)"
+          >
+            <option value="">{{ 'documents.bulkMetadataClear' | t }}</option>
+            @for (item of categories(); track item.uuid) {
+              <option [value]="item.uuid">{{ i18n.name(item) }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="choice-field">
+          <input
+            type="checkbox"
+            [checked]="isEnabled('issuerUuid')"
+            (change)="toggleField('issuerUuid')"
+          />
+          <span>{{ 'documents.issuer' | t }}</span>
+          <select
+            [disabled]="!isEnabled('issuerUuid')"
+            [value]="issuerUuid()"
+            (change)="selectValue('issuerUuid', $event)"
+          >
+            <option value="">{{ 'documents.bulkMetadataClear' | t }}</option>
+            @for (item of issuers(); track item.uuid) {
+              <option [value]="item.uuid">{{ item.name }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="choice-field">
+          <input
+            type="checkbox"
+            [checked]="isEnabled('folders')"
+            (change)="toggleField('folders')"
+          />
+          <span>{{ 'documents.folder' | t }}</span>
+          <select
+            [disabled]="!isEnabled('folders')"
+            [value]="folderUuid()"
+            (change)="selectValue('folderUuid', $event)"
+          >
+            <option value="">{{ 'documents.bulkMetadataClear' | t }}</option>
+            @for (item of folders(); track item.uuid) {
+              <option [value]="item.uuid">{{ item.name }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <fieldset class="tag-fieldset">
+        <legend>
+          <label>
+            <input
+              type="checkbox"
+              [checked]="isEnabled('tagUuids')"
+              (change)="toggleField('tagUuids')"
+            />
+            {{ 'documents.tags' | t }}
+          </label>
+        </legend>
+        <div class="tag-options" [class.disabled]="!isEnabled('tagUuids')">
+          @for (tag of tags(); track tag.uuid) {
+            <label>
+              <input
+                type="checkbox"
+                [checked]="tagUuids().has(tag.uuid)"
+                [disabled]="!isEnabled('tagUuids')"
+                (change)="toggleTag(tag.uuid, $event)"
+              />
+              {{ i18n.name(tag) }}
+            </label>
+          }
+        </div>
+      </fieldset>
+
+      @if (definitions().length > 0) {
+        <fieldset class="custom-fieldset">
+          <legend>{{ 'documents.customMetadata' | t }}</legend>
+          @for (definition of definitions(); track definition.uuid) {
+            <label class="choice-field">
+              <input
+                type="checkbox"
+                [checked]="isEnabled('custom.' + definition.key)"
+                (change)="toggleField('custom.' + definition.key)"
+              />
+              <span>{{ definition.label }}</span>
+              <input
+                [type]="
+                  definition.type === 'number'
+                    ? 'number'
+                    : definition.type === 'date'
+                      ? 'date'
+                      : 'text'
+                "
+                [value]="customValues()[definition.key] || ''"
+                [disabled]="!isEnabled('custom.' + definition.key)"
+                (input)="setCustomValue(definition.key, $event)"
+              />
+            </label>
+          }
+        </fieldset>
+      }
+
+      @if (preview(); as result) {
+        <section class="preview-summary" aria-live="polite">
+          <strong>{{ 'documents.bulkMetadataPreview' | t }}</strong>
+          <span>{{ result.eligible }} {{ 'documents.bulkMetadataEligible' | t }}</span>
+          <span>{{ result.conflicts }} {{ 'documents.bulkMetadataConflicts' | t }}</span>
+          @if (result.skipped > 0) {
+            <span>{{ result.skipped }} {{ 'documents.bulkMetadataSkipped' | t }}</span>
+          }
+          @if (result.conflicts > 0 && policy() === 'replace-selected') {
+            <p class="preview-warning">{{ 'documents.bulkMetadataOverwriteWarning' | t }}</p>
+            <ul class="conflict-list">
+              @for (item of result.items; track item.documentUuid) {
+                @if (item.conflictingFields.length > 0) {
+                  <li>
+                    {{ item.title || item.documentUuid }}
+                    <small>{{ conflictingFieldLabels(item.conflictingFields) }}</small>
+                  </li>
+                }
+              }
+            </ul>
+          }
+        </section>
+      }
+
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+    </div>
+
+    <footer class="dialog-footer">
+      <button type="button" class="secondary-button" (click)="closed.emit()">
+        {{ 'common.cancel' | t }}
+      </button>
+      <button type="button" class="primary-button" [disabled]="loading()" (click)="reviewOrApply()">
+        @if (loading()) {
+          {{ 'documents.bulkMetadataWorking' | t }}
+        } @else if (preview()) {
+          {{ 'documents.bulkMetadataApply' | t }}
+        } @else {
+          {{ 'documents.bulkMetadataReview' | t }}
+        }
+      </button>
+    </footer>
+  </section>
+</div>

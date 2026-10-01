@@ -7,6 +7,8 @@ import {
 } from '@binder/common';
 import { DocumentStore } from '../store/document.store';
 import { DocumentAuditEventStore } from '../store/document-audit-event.store';
+import { DocumentMetadataChangeSet } from '../models/document-metadata-change-set.entity';
+import { Op } from 'sequelize';
 
 export interface RecordDocumentAuditInput {
   documentUuid: string;
@@ -16,6 +18,7 @@ export interface RecordDocumentAuditInput {
   eventType: DocumentAuditEventType;
   summary: string;
   details?: Record<string, unknown>;
+  changeSetUuid?: string | null;
 }
 
 @Injectable()
@@ -35,6 +38,7 @@ export class DocumentAuditService {
       eventType: input.eventType,
       summary: input.summary.slice(0, 500),
       details: this.safeDetails(input.details),
+      changeSetUuid: input.changeSetUuid ?? null,
     });
 
     return this.toResponse(event);
@@ -45,10 +49,27 @@ export class DocumentAuditService {
     if (!document) throw new NotFoundException('Document not found');
 
     const result = await this.events.findOwnedPage(ownerUuid, documentUuid, page, pageSize);
+    const changeSetUuids = result.rows
+      .map((event) => event.changeSetUuid)
+      .filter((uuid): uuid is string => uuid !== null);
+    const changeSets =
+      changeSetUuids.length > 0
+        ? await DocumentMetadataChangeSet.findAll({
+            where: { ownerUuid, uuid: { [Op.in]: changeSetUuids } },
+          })
+        : [];
+    const changeSetStatus = new Map(
+      changeSets.map((changeSet) => [changeSet.uuid, changeSet.status]),
+    );
     const totalPages = result.count === 0 ? 0 : Math.ceil(result.count / pageSize);
 
     return DocumentAuditResponseSchema.parse({
-      items: result.rows.map((event) => this.toResponse(event)),
+      items: result.rows.map((event) =>
+        this.toResponse(
+          event,
+          event.changeSetUuid !== null && changeSetStatus.get(event.changeSetUuid) === 'applied',
+        ),
+      ),
       page,
       pageSize,
       total: result.count,
@@ -60,6 +81,7 @@ export class DocumentAuditService {
 
   private toResponse(
     event: import('../models/document-audit-event.entity').DocumentAuditEventEntity,
+    changeSetApplied = false,
   ) {
     return {
       uuid: event.uuid,
@@ -69,6 +91,8 @@ export class DocumentAuditService {
       eventType: event.eventType,
       summary: event.summary,
       details: this.safeDetails(event.details),
+      changeSetUuid: event.changeSetUuid,
+      rollbackAvailable: changeSetApplied && event.details?.['action'] !== 'rollback',
       createdAt: event.createdAt.toISOString(),
     } satisfies DocumentAuditEvent;
   }
@@ -89,6 +113,10 @@ export class DocumentAuditService {
         : {}),
       ...(typeof details.folderUuid === 'string' ? { folderUuid: details.folderUuid } : {}),
       ...(typeof details.jobKind === 'string' ? { jobKind: details.jobKind } : {}),
+      ...(typeof details.action === 'string' ? { action: details.action } : {}),
+      ...(typeof details.changeSetUuid === 'string'
+        ? { changeSetUuid: details.changeSetUuid }
+        : {}),
     };
   }
 }

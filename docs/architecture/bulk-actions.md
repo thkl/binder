@@ -27,3 +27,28 @@ the endpoint never accepts an owner UUID from the client.
 The UI provides the same selection and action controls in list and icon views.
 Selection is page-scoped for now, which makes the scope explicit and avoids
 silently selecting documents that are not currently visible.
+
+## Bulk metadata editing
+
+Bulk metadata editing must not silently replace information that is already
+present. Before applying an edit, the API should provide a preview containing:
+
+- the selected document count;
+- the number of empty values that can be filled;
+- the number of existing values that would be replaced;
+- the fields and folders affected by the operation; and
+- documents that cannot be changed because they are outside the owner scope or
+  fail validation.
+
+The API provides this preview at `POST /api/v1/documents/bulk-metadata/preview`
+and applies an accepted request at `POST /api/v1/documents/bulk-metadata`. The
+client requires a review step and an additional confirmation when
+`replace-selected` would overwrite existing values. The available policies are
+`fill-empty`, `skip-existing`, and `replace-selected`.
+
+Every successful bulk edit creates one immutable change set in
+`document_metadata_change_sets` containing the actor, affected documents,
+affected fields, and the before/after values needed for rollback. The change
+set is linked to the per-document audit events. Rollback is available at
+`POST /api/v1/documents/change-sets/:uuid/rollback`; it verifies ownership and
+refuses to overwrite a newer conflicting edit.

@@ -225,18 +225,11 @@ export class HomeComponent {
 
   openMetadata(event: Event, uuid: string): void {
     event.preventDefault();
-    if (
-      this.drawerDocumentUuid() === uuid &&
-      this.drawerTab() === 'metadata' &&
-      this.drawerMode() === 'metadata'
-    ) {
-      return;
-    }
     if (!this.canLeaveMetadata()) return;
     this.metadataClosePrompt.set(false);
     this.metadataDirty.set(false);
     this.drawerTab.set('metadata');
-    this.drawerMode.set('metadata');
+    this.drawerMode.set('analysis');
     this.drawerDocumentSnapshot.set(this.findDocument(uuid));
     this.drawerDocumentUuid.set(uuid);
   }

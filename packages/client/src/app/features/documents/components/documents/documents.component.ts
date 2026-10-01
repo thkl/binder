@@ -19,9 +19,12 @@ import { DocumentActionsComponent } from '../document-actions/document-actions.c
 import { DocumentFilterMenuComponent } from '../document-filter-menu/document-filter-menu.component';
 import { FolderTreeComponent } from '../folder-tree/folder-tree.component';
 import { SavedSearchMenuComponent } from '../saved-search-menu/saved-search-menu.component';
+import { BulkMetadataDialogComponent } from '../bulk-metadata-dialog/bulk-metadata-dialog.component';
 import type { SavedSearchParameter } from '../saved-search-menu/saved-search-menu.component';
 import { SavedSearchService } from '../../services/saved-search.service';
+import { MetadataService } from '../../../metadata/services/metadata.service';
 import type {
+  BulkMetadataApplyResponse,
   Document,
   DocumentBulkAction,
   DocumentBulkActionResponse,
@@ -58,6 +61,7 @@ type DocumentFilterValues = {
     DocumentFilterMenuComponent,
     FolderTreeComponent,
     SavedSearchMenuComponent,
+    BulkMetadataDialogComponent,
     TranslatePipe,
   ],
   templateUrl: './documents.component.html',
@@ -68,6 +72,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly documents = inject(DocumentsService);
   readonly folders = inject(FoldersService);
   readonly savedSearches = inject(SavedSearchService);
+  readonly metadata = inject(MetadataService);
   private readonly i18n = inject(I18nService);
   private readonly document = inject(DOCUMENT);
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
@@ -90,6 +95,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly bulkActionResult = signal<DocumentBulkActionResponse | null>(null);
   readonly folderActionInProgress = signal<'add' | 'remove' | null>(null);
   readonly folderActionMessage = signal<string | null>(null);
+  readonly bulkMetadataDialogOpen = signal(false);
+  readonly bulkMetadataMessage = signal<string | null>(null);
   readonly listSearch = signal('');
   readonly activeFilterMenu = signal<DocumentFilterKey | null>(null);
   readonly selectedSavedSearchUuid = signal<string | null>(null);
@@ -114,6 +121,10 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   });
 
   readonly selectedCount = computed(() => this.selectedDocumentUuids().size);
+  readonly selectedDocumentUuidList = computed(() => [...this.selectedDocumentUuids()]);
+  readonly bulkDocumentTypes = computed(() => this.metadata.vocabulary()?.documentTypes ?? []);
+  readonly bulkCategories = computed(() => this.metadata.vocabulary()?.categories ?? []);
+  readonly bulkTags = computed(() => this.metadata.vocabulary()?.tags ?? []);
   readonly activeFilterCount = computed(() => {
     const values = this.filterValues();
     const selectedFilters = Object.values(values).filter(
@@ -167,6 +178,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.unassignedFolderSelected.set(false);
     this.folders.select(null);
     void this.folders.loadChildren(null);
+    void this.folders.listAll();
+    void this.metadata.loadVocabulary();
     void this.savedSearches.load();
     void this.documents.load({
       groupBy: this.groupMode(),
@@ -294,6 +307,21 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       this.clearSelection();
       await this.documents.load();
     }
+  }
+
+  openBulkMetadata(): void {
+    if (this.selectedCount() === 0) return;
+    this.bulkMetadataMessage.set(null);
+    this.bulkMetadataDialogOpen.set(true);
+  }
+
+  async bulkMetadataApplied(result: BulkMetadataApplyResponse): Promise<void> {
+    this.bulkMetadataDialogOpen.set(false);
+    this.bulkMetadataMessage.set(
+      `${result.applied} ${this.i18n.t('documents.bulkMetadataUpdated')}.`,
+    );
+    this.clearSelection();
+    await this.documents.load();
   }
 
   async fileSelected(event: Event): Promise<void> {
@@ -451,11 +479,11 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.documents.page.update((page) =>
       page
         ? {
-            ...page,
-            items: page.items.map((document) =>
-              document.uuid === uuid ? { ...document, isNew: false } : document,
-            ),
-          }
+          ...page,
+          items: page.items.map((document) =>
+            document.uuid === uuid ? { ...document, isNew: false } : document,
+          ),
+        }
         : page,
     );
   }
@@ -469,24 +497,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     await this.documents.requeueDocument(uuid);
   }
 
-  toggleMetadata(uuid: string): void {
-    if (
-      this.drawerDocumentUuid() === uuid &&
-      this.drawerTab() === 'metadata' &&
-      this.drawerMode() === 'metadata'
-    ) {
-      this.requestCloseMetadata();
-      return;
-    }
-    if (!this.canLeaveMetadata()) return;
 
-    this.metadataClosePrompt.set(false);
-    this.metadataDirty.set(false);
-    this.drawerTab.set('metadata');
-    this.drawerMode.set('metadata');
-    this.drawerDocumentSnapshot.set(this.findDocument(uuid));
-    this.drawerDocumentUuid.set(uuid);
-  }
 
   requestCloseMetadata(): void {
     if (!this.drawerDocumentUuid()) return;
@@ -520,6 +531,17 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.metadataClosePrompt.set(false);
     this.metadataDirty.set(false);
     this.drawerTab.set('preview');
+    this.drawerMode.set('analysis');
+    this.drawerDocumentSnapshot.set(this.findDocument(uuid));
+    this.drawerDocumentUuid.set(uuid);
+  }
+
+  toggleMetadata(uuid: string): void {
+    if (!this.canLeaveMetadata()) return;
+
+    this.metadataClosePrompt.set(false);
+    this.metadataDirty.set(false);
+    this.drawerTab.set('metadata');
     this.drawerMode.set('analysis');
     this.drawerDocumentSnapshot.set(this.findDocument(uuid));
     this.drawerDocumentUuid.set(uuid);
@@ -940,29 +962,29 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       case 'documentType':
         return document.metadataSummary.documentType
           ? [
-              {
-                key: document.metadataSummary.documentType.uuid,
-                label: document.metadataSummary.documentType.name,
-              },
-            ]
+            {
+              key: document.metadataSummary.documentType.uuid,
+              label: document.metadataSummary.documentType.name,
+            },
+          ]
           : [];
       case 'category':
         return document.metadataSummary.category
           ? [
-              {
-                key: document.metadataSummary.category.uuid,
-                label: document.metadataSummary.category.name,
-              },
-            ]
+            {
+              key: document.metadataSummary.category.uuid,
+              label: document.metadataSummary.category.name,
+            },
+          ]
           : [];
       case 'issuer':
         return document.metadataSummary.issuer
           ? [
-              {
-                key: document.metadataSummary.issuer.uuid,
-                label: document.metadataSummary.issuer.name,
-              },
-            ]
+            {
+              key: document.metadataSummary.issuer.uuid,
+              label: document.metadataSummary.issuer.name,
+            },
+          ]
           : [];
       case 'tag':
         return document.metadataSummary.tags.map((tag) => ({ key: tag.uuid, label: tag.name }));

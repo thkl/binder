@@ -43,6 +43,20 @@
                 }
               }
               <span class="history-actor">{{ actorLabel(event) }}</span>
+              @if (event.rollbackAvailable && event.changeSetUuid) {
+                <button
+                  type="button"
+                  class="history-rollback"
+                  [disabled]="rollingBack() !== null"
+                  (click)="rollback(event)"
+                >
+                  {{
+                    rollingBack() === event.changeSetUuid
+                      ? ('audit.rollingBack' | t)
+                      : ('audit.rollback' | t)
+                  }}
+                </button>
+              }
             </div>
           </li>
         }

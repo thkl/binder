@@ -18,6 +18,7 @@ export class DocumentAuditHistoryComponent {
   readonly page = signal<DocumentAuditResponse | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly rollingBack = signal<string | null>(null);
 
   private readonly audit = inject(DocumentAuditService);
   private readonly i18n = inject(I18nService);
@@ -60,5 +61,21 @@ export class DocumentAuditHistoryComponent {
           : this.i18n.t(`audit.field.${field}`),
       )
       .join(', ');
+  }
+
+  async rollback(event: DocumentAuditEvent): Promise<void> {
+    if (!event.changeSetUuid || this.rollingBack()) return;
+    if (!window.confirm(this.i18n.t('audit.rollbackConfirm'))) return;
+
+    this.rollingBack.set(event.changeSetUuid);
+    this.error.set(null);
+    try {
+      await this.audit.rollback(event.changeSetUuid);
+      await this.load(this.documentUuid(), 1);
+    } catch (error) {
+      this.error.set(this.audit.errorMessage(error));
+    } finally {
+      this.rollingBack.set(null);
+    }
   }
 }
