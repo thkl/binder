@@ -587,14 +587,6 @@ export class DocumentService {
       throw new NotFoundException('Document not found');
     }
     this.assertDocumentContentAvailable(document);
-    await this.recordAudit({
-      documentUuid: uuid,
-      ownerUuid,
-      actorUuid: ownerUuid,
-      actorType: 'user',
-      eventType: 'downloaded',
-      summary: 'Document downloaded',
-    });
     return {
       document: this.toDocumentResponse(document),
       stream: await this.storage.openReadStream(document.storageKey),
