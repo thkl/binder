@@ -12,6 +12,7 @@ import { DocumentsService } from '../../services/documents.service';
 import { FoldersService } from '../../services/folders.service';
 import {
   DocumentDrawerComponent,
+  DocumentDrawerMode,
   DocumentDrawerTab,
 } from '../document-drawer/document-drawer.component';
 import { DocumentActionsComponent } from '../document-actions/document-actions.component';
@@ -76,6 +77,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly groupDirection = signal<DocumentSortDirection>(this.readGroupDirection());
   readonly drawerDocumentUuid = signal<string | null>(null);
   readonly drawerTab = signal<DocumentDrawerTab>('preview');
+  readonly drawerMode = signal<DocumentDrawerMode>('analysis');
   readonly drawerDocumentSnapshot = signal<Document | null>(null);
   readonly unassignedFolderSelected = signal(false);
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
@@ -468,7 +470,11 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   toggleMetadata(uuid: string): void {
-    if (this.drawerDocumentUuid() === uuid && this.drawerTab() === 'metadata') {
+    if (
+      this.drawerDocumentUuid() === uuid &&
+      this.drawerTab() === 'metadata' &&
+      this.drawerMode() === 'metadata'
+    ) {
       this.requestCloseMetadata();
       return;
     }
@@ -477,6 +483,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.metadataClosePrompt.set(false);
     this.metadataDirty.set(false);
     this.drawerTab.set('metadata');
+    this.drawerMode.set('metadata');
     this.drawerDocumentSnapshot.set(this.findDocument(uuid));
     this.drawerDocumentUuid.set(uuid);
   }
@@ -513,6 +520,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.metadataClosePrompt.set(false);
     this.metadataDirty.set(false);
     this.drawerTab.set('preview');
+    this.drawerMode.set('analysis');
     this.drawerDocumentSnapshot.set(this.findDocument(uuid));
     this.drawerDocumentUuid.set(uuid);
   }
@@ -566,6 +574,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       this.titleSuggestions.update((current) => ({ ...current, [uuid]: suggestion }));
       if (this.drawerDocumentUuid() !== uuid && !this.canLeaveMetadata()) return;
       this.drawerTab.set('metadata');
+      this.drawerMode.set('metadata');
       this.drawerDocumentSnapshot.set(this.findDocument(uuid));
       this.drawerDocumentUuid.set(uuid);
     }

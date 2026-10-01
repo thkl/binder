@@ -13,6 +13,11 @@
   backdrop-filter: blur(5px);
 }
 
+.drawer-backdrop.metadata-mode {
+  place-items: stretch end;
+  padding: 0;
+}
+
 .drawer-panel {
   position: relative;
   display: flex;
@@ -26,6 +31,12 @@
   background: linear-gradient(160deg, #102e50 0%, #07182d 72%);
   box-shadow: 0 2rem 6rem rgba(0, 0, 0, 0.46);
   animation: drawer-in 0.2s ease-out;
+}
+
+.metadata-mode .drawer-panel {
+  width: min(42rem, 100%);
+  height: 100dvh;
+  border-radius: 1rem 0 0 1rem;
 }
 
 .drawer-header {
@@ -129,10 +140,19 @@
   padding: 0.8rem;
 }
 
+.preview-panel[hidden],
+.metadata-panel[hidden] {
+  display: none !important;
+}
+
 .document-workspace {
   display: grid;
-  grid-template-rows: minmax(0, 2fr) minmax(15rem, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 0.8rem;
+}
+
+.document-workspace.analysis-enabled {
+  grid-template-rows: minmax(0, 2fr) minmax(15rem, 1fr);
 }
 
 .pdf-pane,
@@ -247,10 +267,14 @@
   .drawer-panel {
     height: calc(100dvh - 1rem);
   }
+
+  .metadata-mode .drawer-panel {
+    height: 100dvh;
+  }
 }
 
 @media (max-width: 680px) {
-  .document-workspace {
+  .document-workspace.analysis-enabled {
     grid-template-rows: minmax(0, 1.2fr) minmax(17rem, 1fr);
   }
 

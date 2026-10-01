@@ -1,4 +1,9 @@
-<div class="drawer-backdrop" role="presentation" (click)="requestClose()">
+<div
+  class="drawer-backdrop"
+  [class.metadata-mode]="mode() === 'metadata'"
+  role="presentation"
+  (click)="requestClose()"
+>
   <aside
     class="drawer-panel"
     role="dialog"
@@ -53,7 +58,7 @@
         role="tabpanel"
         [hidden]="activeTab() !== 'preview'"
       >
-        <div class="document-workspace">
+        <div class="document-workspace" [class.analysis-enabled]="showAnalysis()">
           <div class="pdf-pane">
             <iframe
               class="document-frame"
@@ -61,12 +66,14 @@
               [title]="'viewer.preview' | t"
             ></iframe>
           </div>
-          <div class="analysis-pane">
-            <binder-document-analysis
-              [documentUuid]="documentUuid()"
-              [documentData]="documentData()"
-            />
-          </div>
+          @if (showAnalysis()) {
+            <div class="analysis-pane">
+              <binder-document-analysis
+                [documentUuid]="documentUuid()"
+                [documentData]="documentData()"
+              />
+            </div>
+          }
         </div>
       </section>
       @if (activeTab() === 'metadata') {

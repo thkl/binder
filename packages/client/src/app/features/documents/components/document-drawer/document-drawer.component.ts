@@ -17,6 +17,7 @@ import { ApplicationService } from '../../../../common/application.service';
 import { DocumentAnalysisComponent } from '../document-analysis/document-analysis.component';
 
 export type DocumentDrawerTab = 'preview' | 'metadata';
+export type DocumentDrawerMode = 'analysis' | 'metadata';
 
 @Component({
   selector: 'binder-document-drawer',
@@ -30,6 +31,7 @@ export class DocumentDrawerComponent {
   readonly documentUuid = input.required<string>();
   readonly documentData = input.required<Document>();
   readonly initialTab = input<DocumentDrawerTab>('preview');
+  readonly mode = input<DocumentDrawerMode>('analysis');
   readonly suggestion = input<DocumentTitleSuggestion | null>(null);
   readonly externalClosePrompt = input(false);
 
@@ -47,6 +49,7 @@ export class DocumentDrawerComponent {
   readonly dirty = signal(false);
   readonly closePrompt = signal(false);
   readonly showClosePrompt = computed(() => this.closePrompt() || this.externalClosePrompt());
+  readonly showAnalysis = computed(() => this.mode() === 'analysis');
   readonly fileUrl = computed<SafeResourceUrl>(() => {
     const url = this.application.getApiUrl('v1', `documents/${this.documentUuid()}/file`);
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);

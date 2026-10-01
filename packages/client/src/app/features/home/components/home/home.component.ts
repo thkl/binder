@@ -4,6 +4,7 @@ import { SearchService } from '../../services/search.service';
 import { DocumentsService } from '../../../documents/services/documents.service';
 import {
   DocumentDrawerComponent,
+  DocumentDrawerMode,
   DocumentDrawerTab,
 } from '../../../documents/components/document-drawer/document-drawer.component';
 import { SavedSearchMenuComponent } from '../../../documents/components/saved-search-menu/saved-search-menu.component';
@@ -28,6 +29,7 @@ export class HomeComponent {
   readonly searchQuery = signal('');
   readonly drawerDocumentUuid = signal<string | null>(null);
   readonly drawerTab = signal<DocumentDrawerTab>('preview');
+  readonly drawerMode = signal<DocumentDrawerMode>('analysis');
   readonly drawerDocumentSnapshot = signal<Document | null>(null);
   readonly metadataDirty = signal(false);
   readonly metadataClosePrompt = signal(false);
@@ -216,17 +218,25 @@ export class HomeComponent {
     this.metadataClosePrompt.set(false);
     this.metadataDirty.set(false);
     this.drawerTab.set('preview');
+    this.drawerMode.set('analysis');
     this.drawerDocumentSnapshot.set(this.findDocument(uuid));
     this.drawerDocumentUuid.set(uuid);
   }
 
   openMetadata(event: Event, uuid: string): void {
     event.preventDefault();
-    if (this.drawerDocumentUuid() === uuid && this.drawerTab() === 'metadata') return;
+    if (
+      this.drawerDocumentUuid() === uuid &&
+      this.drawerTab() === 'metadata' &&
+      this.drawerMode() === 'metadata'
+    ) {
+      return;
+    }
     if (!this.canLeaveMetadata()) return;
     this.metadataClosePrompt.set(false);
     this.metadataDirty.set(false);
     this.drawerTab.set('metadata');
+    this.drawerMode.set('metadata');
     this.drawerDocumentSnapshot.set(this.findDocument(uuid));
     this.drawerDocumentUuid.set(uuid);
   }

@@ -649,6 +649,7 @@
         [documentUuid]="drawerUuid"
         [documentData]="drawerDocument"
         [initialTab]="drawerTab()"
+        [mode]="drawerMode()"
         [suggestion]="titleSuggestions()[drawerUuid] || null"
         [externalClosePrompt]="metadataClosePrompt()"
         (tabChange)="drawerTab.set($event)"
