@@ -152,6 +152,24 @@ export class DocumentsService {
     return this.error() === null;
   }
 
+  async generateArchive(uuid: string): Promise<boolean> {
+    this.error.set(null);
+    try {
+      await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/${uuid}/archive`),
+          {},
+          { withCredentials: true },
+        ),
+      );
+      await this.load();
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    }
+  }
+
   async bulkAction(input: DocumentBulkActionInput): Promise<DocumentBulkActionResponse | null> {
     this.error.set(null);
     try {

@@ -11,6 +11,16 @@ export const DocumentStatusSchema = z.enum([
 
 export type DocumentStatus = z.infer<typeof DocumentStatusSchema>;
 
+export const DocumentArchiveStatusSchema = z.enum([
+  'not-requested',
+  'queued',
+  'processing',
+  'ready',
+  'failed',
+]);
+
+export type DocumentArchiveStatus = z.infer<typeof DocumentArchiveStatusSchema>;
+
 export const MaintenanceJobSchema = z.enum(['backup', 'backup-retention', 'storage-consistency']);
 export type MaintenanceJob = z.infer<typeof MaintenanceJobSchema>;
 
@@ -122,6 +132,10 @@ export const DocumentSchema = z.object({
   storageKey: z.string().min(1),
   thumbnailKey: z.string().min(1).nullable().optional(),
   thumbnailUrl: z.string().min(1),
+  archiveKey: z.string().min(1).nullable(),
+  archiveUrl: z.string().min(1).nullable(),
+  archiveStatus: DocumentArchiveStatusSchema,
+  archiveError: z.string().max(2000).nullable(),
   pageCount: z.number().int().min(1),
   issuerUuid: z.uuid().nullable(),
   isNew: z.boolean(),
@@ -712,6 +726,7 @@ export const PipelineJobKindSchema = z.enum([
   'text-extraction',
   'ocr',
   'embedding',
+  'pdfa',
 ]);
 export type PipelineJobKind = z.infer<typeof PipelineJobKindSchema>;
 

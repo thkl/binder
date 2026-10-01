@@ -263,6 +263,11 @@ export class HomeComponent {
     await this.reloadSearch();
   }
 
+  async generateArchive(uuid: string): Promise<void> {
+    await this.documents.generateArchive(uuid);
+    await this.reloadSearch();
+  }
+
   private closeDrawer(): void {
     this.metadataClosePrompt.set(false);
     this.metadataDirty.set(false);

@@ -17,6 +17,35 @@
         <h3 id="document-drawer-title">
           {{ documentData().title || documentData().originalFilename }}
         </h3>
+        <div class="drawer-downloads">
+          <a
+            class="drawer-download-link"
+            [href]="fileUrl()"
+            [attr.download]="documentData().originalFilename"
+          >
+            {{ 'documents.download' | t }}
+          </a>
+          @if (archiveReady() && archiveUrl(); as archiveUrl) {
+            <a
+              class="drawer-download-link"
+              [href]="archiveUrl"
+              [attr.download]="(documentData().title || documentData().originalFilename) + '.pdf'"
+            >
+              {{ 'documents.downloadArchive' | t }}
+            </a>
+          } @else {
+            <button
+              type="button"
+              class="drawer-download-link"
+              (click)="archiveRequested.emit()"
+              [disabled]="archiveBusy()"
+            >
+              {{
+                archiveBusy() ? ('documents.archiveQueued' | t) : ('documents.createArchive' | t)
+              }}
+            </button>
+          }
+        </div>
       </div>
       <button
         type="button"

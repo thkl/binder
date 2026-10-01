@@ -11,6 +11,19 @@ This is a P3 feature. It improves long-term portability, but it is not a
 backup, a legal authenticity guarantee, or a replacement for preserving the
 original file.
 
+## Implementation status
+
+The first implementation is available behind the `documents.pdfa.enabled`
+setting. The worker uses OCRmyPDF with the `pdfa-2b` output profile and stores
+the result at `derived/<document-uuid>/archive.pdf`. A user can also request
+generation for an individual document from the document list or viewer.
+
+The document response exposes `archiveStatus`, `archiveError`, and an archive
+download URL only after a successful conversion. The original file remains the
+viewer source and is always downloaded separately. PDF/A conversion failures
+are recorded against the archive job and do not change a usable document into
+a failed document; the archive action can be requested again.
+
 ## Storage model
 
 The original remains immutable and keeps its existing checksum:

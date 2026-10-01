@@ -154,6 +154,15 @@ export const settingsMap: SettingsMapItem[] = [
     section: 'documents',
   },
   {
+    key: 'documents.pdfa.enabled',
+    valueFrom: 'documents.pdfa.enabled',
+    encrypted: false,
+    default: false,
+    label: 'Automatically create PDF/A-2b archive derivatives',
+    type: 'checkbox',
+    section: 'documents',
+  },
+  {
     key: 'pipeline.pollIntervalMs',
     valueFrom: 'pipeline.pollIntervalMs',
     encrypted: false,

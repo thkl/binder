@@ -115,6 +115,10 @@ verification.
     chain instead of uploading the PDF again.
   - Keep the result as an explicit analysis response until the user chooses to
     save any metadata or notes.
+- Generate validated PDF/A-2b archive derivatives while preserving the original upload. ✅ Implemented:
+  - Keep the original immutable and write `derived/<document-uuid>/archive.pdf`.
+  - Run conversion through the existing worker with retryable `pdfa` jobs.
+  - Expose archive state in document responses and let users request or download the derivative.
 - Expand homepage document ingestion so the complete home content background is
   the PDF drop zone, with a clear drag-over state and the file-picker fallback
   retained.
@@ -125,7 +129,6 @@ verification.
 - Connect scanners and other external sources
 - Add a Swift iOS companion app with Share Sheet document ingestion
 - Queue shared documents locally when offline and upload them automatically when the backend is reachable again
-- Generate validated PDF/A-2b archive derivatives while preserving the original upload
 - ✅ Record an owner-visible audit history for every document, persisted in PostgreSQL and separate from operational logs
 - Add a secure first-run onboarding assistant that creates the administrator and validates the basic runtime settings
 - Let administrators inspect API and worker activity

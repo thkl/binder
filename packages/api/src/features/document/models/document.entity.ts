@@ -17,6 +17,7 @@ export type DocumentStatus =
   | 'ready'
   | 'failed'
   | 'quarantined';
+export type DocumentArchiveStatus = 'not-requested' | 'queued' | 'processing' | 'ready' | 'failed';
 
 export interface DocumentAttributes {
   uuid: string;
@@ -28,6 +29,9 @@ export interface DocumentAttributes {
   checksumSha256: string;
   storageKey: string;
   thumbnailKey: string | null;
+  archiveKey: string | null;
+  archiveStatus: DocumentArchiveStatus;
+  archiveError: string | null;
   pageCount: number;
   issuerUuid: string | null;
   isNew: boolean;
@@ -45,6 +49,9 @@ export type DocumentCreationAttributes = Omit<
   | 'uuid'
   | 'status'
   | 'thumbnailKey'
+  | 'archiveKey'
+  | 'archiveStatus'
+  | 'archiveError'
   | 'pageCount'
   | 'issuerUuid'
   | 'isNew'
@@ -52,6 +59,9 @@ export type DocumentCreationAttributes = Omit<
 > & {
   uuid?: string;
   thumbnailKey?: string | null;
+  archiveKey?: string | null;
+  archiveStatus?: DocumentArchiveStatus;
+  archiveError?: string | null;
   pageCount?: number;
   issuerUuid?: string | null;
   isNew?: boolean;
@@ -91,6 +101,22 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   @AllowNull
   @Column({ field: 'thumbnail_key', type: DataType.STRING(500), allowNull: true })
   declare thumbnailKey: string | null;
+
+  @AllowNull
+  @Column({ field: 'archive_key', type: DataType.STRING(500), allowNull: true })
+  declare archiveKey: string | null;
+
+  @Column({
+    field: 'archive_status',
+    type: DataType.STRING(32),
+    allowNull: false,
+    defaultValue: 'not-requested',
+  })
+  declare archiveStatus: DocumentArchiveStatus;
+
+  @AllowNull
+  @Column({ field: 'archive_error', type: DataType.STRING(2000), allowNull: true })
+  declare archiveError: string | null;
 
   @Column({ field: 'page_count', type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
   declare pageCount: number;

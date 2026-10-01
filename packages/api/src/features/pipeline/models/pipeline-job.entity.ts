@@ -15,7 +15,8 @@ export type PipelineJobKind =
   | 'thumbnail'
   | 'text-extraction'
   | 'ocr'
-  | 'embedding';
+  | 'embedding'
+  | 'pdfa';
 export type PipelineJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 
 export interface PipelineJobAttributes {

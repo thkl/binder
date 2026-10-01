@@ -11,7 +11,13 @@ import {
   UpdatedAt,
 } from 'sequelize-typescript';
 
-export type JobKind = 'malware-scan' | 'thumbnail' | 'text-extraction' | 'ocr' | 'embedding';
+export type JobKind =
+  | 'malware-scan'
+  | 'thumbnail'
+  | 'text-extraction'
+  | 'ocr'
+  | 'embedding'
+  | 'pdfa';
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 export type DocumentStatus =
   | 'uploaded'
@@ -20,6 +26,7 @@ export type DocumentStatus =
   | 'ready'
   | 'failed'
   | 'quarantined';
+export type DocumentArchiveStatus = 'not-requested' | 'queued' | 'processing' | 'ready' | 'failed';
 
 export type DocumentAuditActorType = 'user' | 'worker' | 'system';
 export type DocumentAuditEventType =
@@ -381,6 +388,20 @@ export class Document extends Model {
 
   @Column({ field: 'thumbnail_key', type: DataType.STRING, allowNull: true })
   declare thumbnailKey: string | null;
+
+  @Column({ field: 'archive_key', type: DataType.STRING, allowNull: true })
+  declare archiveKey: string | null;
+
+  @Column({
+    field: 'archive_status',
+    type: DataType.STRING(32),
+    allowNull: false,
+    defaultValue: 'not-requested',
+  })
+  declare archiveStatus: DocumentArchiveStatus;
+
+  @Column({ field: 'archive_error', type: DataType.STRING(2000), allowNull: true })
+  declare archiveError: string | null;
 
   @Column({ field: 'page_count', type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
   declare pageCount: number;

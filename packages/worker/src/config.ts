@@ -30,6 +30,9 @@ export interface WorkerConfig {
     chunkSize: number;
     chunkOverlap: number;
   };
+  pdfa: {
+    enabled: boolean;
+  };
   malwareScan: { required: boolean; command: string; timeoutMs: number };
 }
 
@@ -58,6 +61,7 @@ export const config: WorkerConfig = {
     chunkSize: 1200,
     chunkOverlap: 200,
   },
+  pdfa: { enabled: false },
   malwareScan: { required: true, command: 'clamdscan', timeoutMs: 120_000 },
 };
 
@@ -65,6 +69,7 @@ export async function loadRuntimeConfiguration(): Promise<void> {
   const keys = [
     'documents.storageRoot',
     'documents.maxUploadBytes',
+    'documents.pdfa.enabled',
     'pipeline.ocrLanguages',
     'pipeline.pollIntervalMs',
     'pipeline.lockTimeoutMs',
@@ -99,6 +104,7 @@ export async function loadRuntimeConfiguration(): Promise<void> {
     'documents.maxUploadBytes',
     config.maxUploadBytes,
   );
+  config.pdfa.enabled = readSettingBoolean(values, 'documents.pdfa.enabled', config.pdfa.enabled);
   const languages = values.get('pipeline.ocrLanguages')?.value;
   if (languages && /^[a-z]{3}(?:\+[a-z]{3})*$/.test(languages)) config.ocrLanguages = languages;
   config.pollIntervalMs = readSettingInteger(

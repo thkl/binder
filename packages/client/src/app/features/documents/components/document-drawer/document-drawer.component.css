@@ -67,6 +67,38 @@
   letter-spacing: -0.03em;
 }
 
+.drawer-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+.drawer-download-link {
+  border: 1px solid rgba(157, 190, 232, 0.2);
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.55rem;
+  color: #a9dfee;
+  background: rgba(97, 215, 244, 0.05);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.drawer-download-link:hover,
+.drawer-download-link:focus-visible {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  outline: none;
+}
+
+.drawer-download-link:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .drawer-close {
   display: grid;
   width: 2.5rem;

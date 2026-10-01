@@ -492,6 +492,7 @@
                     (metadata)="toggleMetadata(document.uuid)"
                     (suggest)="suggestTitle(document.uuid)"
                     (requeue)="requeueDocument(document.uuid)"
+                    (archive)="generateArchive(document.uuid)"
                   />
                 </article>
               }
@@ -632,6 +633,7 @@
                     (metadata)="toggleMetadata(document.uuid)"
                     (suggest)="suggestTitle(document.uuid)"
                     (requeue)="requeueDocument(document.uuid)"
+                    (archive)="generateArchive(document.uuid)"
                   />
                 </article>
               }
@@ -672,6 +674,7 @@
         (suggestionTitleAccepted)="acceptSuggestedTitleValue(drawerUuid, $event)"
         (suggestionDismissed)="dismissLocalTitleSuggestion(drawerUuid)"
         (suggestionAccepted)="acceptSuggestedMetadata(drawerUuid, $event)"
+        (archiveRequested)="generateArchive(drawerUuid)"
       />
     }
   }

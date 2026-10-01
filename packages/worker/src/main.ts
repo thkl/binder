@@ -18,6 +18,7 @@ async function main(): Promise<void> {
     maxUploadBytes: config.maxUploadBytes,
     inbox: config.inbox,
     embeddingsEnabled: config.embeddings.enabled,
+    pdfaEnabled: config.pdfa.enabled,
     malwareScan: {
       required: config.malwareScan.required,
       command: config.malwareScan.command,

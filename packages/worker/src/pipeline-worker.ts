@@ -7,6 +7,7 @@ import { logger } from './logger.js';
 import { createThumbnail, writeDerivedText } from './storage.js';
 import { extractPdfPages } from './extraction.js';
 import { runOcr } from './ocr.js';
+import { runPdfa } from './pdfa.js';
 import { embedDocument } from './embeddings.js';
 import { importInboxDocuments } from './inbox-importer.js';
 import { matchDocumentIssuer } from './issuer-matcher.js';
@@ -175,6 +176,12 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
         transaction,
       },
     );
+    if (job.kind === 'pdfa') {
+      await Document.update(
+        { archiveStatus: 'processing', archiveError: null },
+        { where: { uuid: job.documentUuid }, transaction },
+      );
+    }
     await addEvent(transaction, job.uuid, 'claimed', `Claimed by ${config.workerId}`);
     await addDocumentAudit(
       transaction,
@@ -262,6 +269,12 @@ async function processJob(job: ClaimedJob): Promise<void> {
         await embedDocument(job.documentUuid);
         await completeJob(job, false);
         break;
+
+      case 'pdfa': {
+        const archiveKey = await runPdfa(job.storageKey, job.documentUuid);
+        await completePdfaJob(job, archiveKey);
+        break;
+      }
     }
   } catch (error) {
     await failJob(job, error instanceof Error ? error.message : String(error));
@@ -379,15 +392,24 @@ async function completeJob(job: ClaimedJob, needsOcr: boolean): Promise<void> {
         { where: { uuid: job.documentUuid }, transaction },
       );
       await queueFollowup(transaction, job, 'ocr', 'No usable text layer found; queued OCR');
-    } else if (
-      (job.kind === 'text-extraction' || job.kind === 'ocr') &&
-      config.embeddings.enabled
-    ) {
+    } else if (job.kind === 'text-extraction' || job.kind === 'ocr') {
       await Document.update(
         { status: 'processing' },
         { where: { uuid: job.documentUuid }, transaction },
       );
-      await queueFollowup(transaction, job, 'embedding', 'Queued hosted embeddings');
+      if (config.embeddings.enabled) {
+        await queueFollowup(transaction, job, 'embedding', 'Queued hosted embeddings');
+      }
+      if (config.pdfa.enabled) {
+        await queueFollowup(transaction, job, 'pdfa', 'Queued PDF/A archive generation');
+      }
+      if (!config.embeddings.enabled && !config.pdfa.enabled) {
+        await Document.update(
+          { status: 'ready' },
+          { where: { uuid: job.documentUuid }, transaction },
+        );
+        await addEvent(transaction, job.jobUuid, 'completed', 'Job completed');
+      }
     } else {
       await Document.update(
         { status: 'ready' },
@@ -403,6 +425,45 @@ async function completeJob(job: ClaimedJob, needsOcr: boolean): Promise<void> {
     needsOcr,
   });
 }
+
+async function completePdfaJob(job: ClaimedJob, archiveKey: string): Promise<void> {
+  await sequelize.transaction(async (transaction) => {
+    await PipelineJob.update(
+      {
+        status: 'succeeded',
+        completedAt: new Date(),
+        lockedAt: null,
+        lockedBy: null,
+        lastError: null,
+      },
+      { where: { uuid: job.jobUuid }, transaction },
+    );
+    await Document.update(
+      { archiveKey, archiveStatus: 'ready', archiveError: null },
+      { where: { uuid: job.documentUuid }, transaction },
+    );
+    const activePostProcessingJobs = await PipelineJob.count({
+      where: {
+        documentUuid: job.documentUuid,
+        kind: { [Op.in]: ['embedding', 'pdfa'] },
+        status: { [Op.in]: ['queued', 'running'] },
+      },
+      transaction,
+    });
+    if (activePostProcessingJobs === 0) {
+      await Document.update(
+        { status: 'ready' },
+        { where: { uuid: job.documentUuid }, transaction },
+      );
+    }
+    await addEvent(transaction, job.jobUuid, 'completed', 'PDF/A archive generated');
+    await addDocumentAudit(transaction, job, 'processing-succeeded', 'PDF/A archive generated', {
+      jobKind: job.kind,
+      archiveKey,
+    });
+  });
+  logger.info('PDF/A pipeline job completed', { jobUuid: job.jobUuid, archiveKey });
+}
 async function queueFollowup(
   transaction: Transaction,
   job: ClaimedJob,
@@ -416,9 +477,15 @@ async function queueFollowup(
   await addEvent(
     transaction,
     job.jobUuid,
-    kind === 'ocr' ? 'ocr-required' : 'embedding-queued',
+    kind === 'ocr' ? 'ocr-required' : kind === 'embedding' ? 'embedding-queued' : 'pdfa-queued',
     message,
   );
+  if (kind === 'pdfa') {
+    await Document.update(
+      { archiveStatus: 'queued', archiveError: null },
+      { where: { uuid: job.documentUuid }, transaction },
+    );
+  }
   if (!existing) {
     const next = await PipelineJob.create(
       {
@@ -458,6 +525,12 @@ async function failJob(job: ClaimedJob, message: string): Promise<void> {
           },
           { where: { uuid: job.jobUuid }, transaction },
         );
+        if (job.kind === 'pdfa') {
+          await Document.update(
+            { archiveStatus: 'queued', archiveError: safe },
+            { where: { uuid: job.documentUuid }, transaction },
+          );
+        }
         await addEvent(transaction, job.jobUuid, 'retry-scheduled', `Retry scheduled: ${safe}`);
       } else {
         await PipelineJob.update(
@@ -470,10 +543,31 @@ async function failJob(job: ClaimedJob, message: string): Promise<void> {
           },
           { where: { uuid: job.jobUuid }, transaction },
         );
-        await Document.update(
-          { status: job.kind === 'malware-scan' ? 'quarantined' : 'failed' },
-          { where: { uuid: job.documentUuid }, transaction },
-        );
+        if (job.kind === 'pdfa') {
+          await Document.update(
+            { archiveStatus: 'failed', archiveError: safe },
+            { where: { uuid: job.documentUuid }, transaction },
+          );
+          const activePostProcessingJobs = await PipelineJob.count({
+            where: {
+              documentUuid: job.documentUuid,
+              kind: { [Op.in]: ['embedding', 'pdfa'] },
+              status: { [Op.in]: ['queued', 'running'] },
+            },
+            transaction,
+          });
+          if (activePostProcessingJobs === 0) {
+            await Document.update(
+              { status: 'ready' },
+              { where: { uuid: job.documentUuid }, transaction },
+            );
+          }
+        } else {
+          await Document.update(
+            { status: job.kind === 'malware-scan' ? 'quarantined' : 'failed' },
+            { where: { uuid: job.documentUuid }, transaction },
+          );
+        }
         await addEvent(
           transaction,
           job.jobUuid,
@@ -535,6 +629,7 @@ async function logQueueStatus(): Promise<void> {
   logger.info('Pipeline queue status', {
     jobs: Object.fromEntries(counts),
     embeddingsEnabled: config.embeddings.enabled,
+    pdfaEnabled: config.pdfa.enabled,
   });
 }
 async function addEvent(

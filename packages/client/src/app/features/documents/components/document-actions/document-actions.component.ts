@@ -20,11 +20,17 @@ export class DocumentActionsComponent {
   readonly metadata = output<void>();
   readonly suggest = output<void>();
   readonly requeue = output<void>();
+  readonly archive = output<void>();
 
   private readonly application = inject(ApplicationService);
 
   readonly fileUrl = computed(() =>
     this.application.getApiUrl('v1', 'documents/' + this.document().uuid + '/file'),
+  );
+  readonly archiveUrl = computed(() => this.document().archiveUrl);
+  readonly archiveReady = computed(() => this.document().archiveStatus === 'ready');
+  readonly archiveBusy = computed(() =>
+    ['queued', 'processing'].includes(this.document().archiveStatus),
   );
   readonly contentAvailable = computed(
     () => !['uploaded', 'scanning', 'quarantined'].includes(this.document().status),

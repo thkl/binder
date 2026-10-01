@@ -593,6 +593,63 @@ export class DocumentService {
     };
   }
 
+  async queueArchive(ownerUuid: string, uuid: string) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) throw new NotFoundException('Document not found');
+    this.assertDocumentContentAvailable(document);
+    if (!(await this.storage.exists(document.storageKey))) {
+      throw new BadRequestException('The original document file is not available in storage');
+    }
+
+    const queued = await this.documents.update(uuid, {
+      archiveKey: null,
+      archiveStatus: 'queued',
+      archiveError: null,
+    });
+    if (!queued) throw new NotFoundException('Document not found');
+
+    let job: Awaited<ReturnType<PipelineService['enqueue']>>;
+    try {
+      job = await this.pipeline.enqueue(uuid, ownerUuid, 'pdfa');
+    } catch (error) {
+      await this.documents.update(uuid, {
+        archiveStatus: 'failed',
+        archiveError: error instanceof Error ? error.message.slice(0, 2000) : String(error),
+      });
+      throw error;
+    }
+
+    const updated = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!updated) throw new NotFoundException('Document not found');
+    return { document: this.toDocumentResponse(updated), job };
+  }
+
+  async getArchive(ownerUuid: string, uuid: string) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) throw new NotFoundException('Document not found');
+    this.assertDocumentContentAvailable(document);
+    if (document.archiveStatus !== 'ready' || !document.archiveKey) {
+      throw new NotFoundException('The PDF/A archive is not available');
+    }
+    if (!(await this.storage.exists(document.archiveKey))) {
+      await this.documents.update(uuid, {
+        archiveStatus: 'failed',
+        archiveError: 'The generated PDF/A archive is missing from storage',
+      });
+      throw new NotFoundException('The PDF/A archive is missing from storage');
+    }
+
+    const baseName = this.sanitizeArchiveSegment(
+      document.title || document.originalFilename.replace(/\.pdf$/i, ''),
+      uuid,
+    );
+    return {
+      document: this.toDocumentResponse(document),
+      filename: `${baseName}.pdf`,
+      stream: await this.storage.openReadStream(document.archiveKey),
+    };
+  }
+
   async getExtractedText(ownerUuid: string, uuid: string) {
     const result = await this.documents.findOwnedPageText(ownerUuid, uuid);
     if (!result) throw new NotFoundException('Document not found');
@@ -880,6 +937,13 @@ export class DocumentService {
       storageKey: document.storageKey,
       thumbnailKey: document.thumbnailKey,
       thumbnailUrl: this.thumbnailUrl(document.uuid),
+      archiveKey: document.archiveKey,
+      archiveUrl:
+        document.archiveStatus === 'ready' && document.archiveKey
+          ? this.archiveUrl(document.uuid)
+          : null,
+      archiveStatus: document.archiveStatus,
+      archiveError: document.archiveError,
       pageCount: document.pageCount || 1,
       issuerUuid: document.issuerUuid,
       isNew: document.isNew,
@@ -899,6 +963,11 @@ export class DocumentService {
   private thumbnailUrl(uuid: string): string {
     const apiPrefix = this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
     return `/${apiPrefix}/documents/${uuid}/thumbnail`;
+  }
+
+  private archiveUrl(uuid: string): string {
+    const apiPrefix = this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
+    return `/${apiPrefix}/documents/${uuid}/archive`;
   }
 
   private createSnippet(text: string, query: string): string {

@@ -42,7 +42,11 @@ export async function runOcr(storageKey: string, documentUuid: string): Promise<
   }
 }
 
-function runExternalCommand(command: string, args: string[], documentUuid: string): Promise<void> {
+export function runExternalCommand(
+  command: string,
+  args: string[],
+  documentUuid: string,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -53,7 +57,7 @@ function runExternalCommand(command: string, args: string[], documentUuid: strin
       stderr = `${stderr}${chunk.toString('utf8')}`.slice(-4000);
     });
     child.stdout.on('data', (chunk) => {
-      logger.debug('OCR tool output', {
+      logger.debug('Document processing tool output', {
         documentUuid,
         output: chunk.toString('utf8').trim().slice(-1000),
       });

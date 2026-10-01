@@ -235,18 +235,24 @@ export class DatabaseMigrator {
 
     for (const version of versions) {
       const versionData: any = SafePropertyAccess.get(data, String(version));
-      const tablesToCheck = versionData?.created ?? versionData?.required ?? [];
+      // Required tables describe dependencies, not evidence that this
+      // migration ran. Only tables introduced by a migration can be used for
+      // conservative schema-version inference.
+      const tablesToCheck = versionData?.created ?? [];
+      if (tablesToCheck.length === 0) continue;
       const hasAllTables = tablesToCheck.every((table: string) => existingTables.includes(table));
 
       if (!hasAllTables) {
+        if (version <= version2Check) return Math.max(0, version - 1);
         break;
       }
 
       detectedVersion = version;
     }
 
-    this.logger.debug(`Detected database version ${detectedVersion}`);
-    return detectedVersion;
+    const result = Math.max(detectedVersion, version2Check);
+    this.logger.debug(`Detected database version ${result}`);
+    return result;
   }
 
   /**
@@ -300,36 +306,19 @@ export class DatabaseMigrator {
           resolve(0); // its a empty database
           return;
         }
-        let completed = false;
-        let version2Check = 1;
-        while (!completed) {
-          const versionData: any = SafePropertyAccess.get(data, String(version2Check));
-          if (versionData) {
-            let tables2Check = versionData['created'];
-            if (!tables2Check) {
-              tables2Check = versionData['required'];
-            }
-            if (tables2Check) {
-              const hasAll = tables2Check.every((str: string) => existingTables.includes(str));
-              if (!hasAll) {
-                dbVersion = version2Check - 1;
-                this.logger.debug(`Looks like we are on version ${version2Check - 1}`);
-                completed = true;
-                resolve(dbVersion);
-              } else {
-                version2Check = version2Check + 1;
-              }
-            } else {
-              this.logger.debug(`${version2Check} : no tablesFound`);
-              completed = true;
-            }
-          } else {
-            completed = true;
-            this.logger.debug(`Looks like we are on version ${version2Check - 1}`);
-            resolve(version2Check - 1);
-          }
+        const versions = Object.keys(data)
+          .map(Number)
+          .filter((version) => Number.isInteger(version) && version > 0)
+          .sort((a, b) => a - b);
+        for (const version of versions) {
+          const versionData: any = SafePropertyAccess.get(data, String(version));
+          const tablesToCheck = versionData?.created ?? [];
+          if (tablesToCheck.length === 0) continue;
+          if (!tablesToCheck.every((table: string) => existingTables.includes(table))) break;
+          dbVersion = version;
         }
-        resolve(version2Check);
+        this.logger.debug(`Looks like we are on version ${dbVersion}`);
+        resolve(dbVersion);
       } catch (e) {
         this.logger.error('Unable to predict the current version. we should skip automigration');
         this.logger.error(e);

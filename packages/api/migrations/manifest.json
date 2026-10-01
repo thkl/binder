@@ -317,6 +317,18 @@
                     "documents",
                     "users"
                ]
+          },
+          "47": {
+               "required": [
+                    "documents",
+                    "pipeline_jobs"
+               ]
+          },
+          "48": {
+               "required": [
+                    "documents",
+                    "settings"
+               ]
           }
      }
 }

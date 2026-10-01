@@ -12,6 +12,14 @@ export function resolveStoragePath(storageKey: string): string {
   if (rel.startsWith('..') || isAbsolute(rel)) throw new Error('Invalid document storage path');
   return absolute;
 }
+export async function storageExists(storageKey: string): Promise<boolean> {
+  try {
+    await fs.access(resolveStoragePath(storageKey));
+    return true;
+  } catch {
+    return false;
+  }
+}
 export async function writeDerivedText(documentUuid: string, text: string): Promise<void> {
   const target = resolveStoragePath(`derived/${documentUuid}/extracted.txt`);
   const temporary = `${target}.${randomUUID()}.tmp`;

@@ -11,7 +11,7 @@ process.
 Each job has:
 
 - an owning document and user
-  - a kind: `malware-scan`, `thumbnail`, `text-extraction`, `ocr`, or `embedding`
+  - a kind: `malware-scan`, `thumbnail`, `text-extraction`, `ocr`, `embedding`, or `pdfa`
 - a status: `queued`, `running`, `succeeded`, `failed`, or `cancelled`
 - attempt and retry limits
 - availability, lock, start, completion, and error fields
@@ -48,6 +48,7 @@ The first worker operations are:
 2. text extraction from text-based PDFs (implemented with MuPDF)
 3. OCR for scanned PDFs (job is queued when no text layer is found)
 4. chunking and search indexing
+5. optional PDF/A-2b archive generation, stored as a derived artifact
 
 Documents that fail scanning are marked `quarantined`. The API blocks their
 file, thumbnail, extracted-text, search, export, and AI access until an

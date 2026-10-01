@@ -280,6 +280,24 @@ export class DocumentController {
     return { data: await this.documents.requeue(user.userId, uuid) };
   }
 
+  @Post(':uuid/archive')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async queueArchive(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.queueArchive(user.userId, uuid) };
+  }
+
+  @Get(':uuid/archive')
+  async archive(
+    @Param('uuid') uuid: string,
+    @CurrentUser() user: ScopedUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.documents.getArchive(user.userId, uuid);
+    response.setHeader('Content-Type', 'application/pdf');
+    this.setArchiveHeaders(response, result.filename);
+    return new StreamableFile(result.stream, { type: 'application/pdf' });
+  }
+
   @Get(':uuid/thumbnail')
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   async thumbnail(

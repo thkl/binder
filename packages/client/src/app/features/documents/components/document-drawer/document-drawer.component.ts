@@ -50,6 +50,7 @@ export class DocumentDrawerComponent {
   readonly suggestionAccepted = output<string>();
   readonly keepEditingRequest = output<void>();
   readonly discardRequest = output<void>();
+  readonly archiveRequested = output<void>();
 
   readonly activeTab = signal<DocumentDrawerTab>('preview');
   readonly dirty = signal(false);
@@ -60,6 +61,11 @@ export class DocumentDrawerComponent {
     const url = this.application.getApiUrl('v1', `documents/${this.documentUuid()}/file`);
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   });
+  readonly archiveUrl = computed(() => this.documentData().archiveUrl);
+  readonly archiveReady = computed(() => this.documentData().archiveStatus === 'ready');
+  readonly archiveBusy = computed(() =>
+    ['queued', 'processing'].includes(this.documentData().archiveStatus),
+  );
 
   private readonly sanitizer = inject(DomSanitizer);
   private readonly application = inject(ApplicationService);

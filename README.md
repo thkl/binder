@@ -21,7 +21,15 @@ pnpm build
 pnpm dev
 ```
 
-The API serves the built Angular client from `CLIENT_PATH` and exposes `GET /api/v1/health`. Database, authentication, document storage, and processing are intentionally the next implementation slices.
+The API serves the built Angular client from `CLIENT_PATH` and exposes `GET /api/v1/health`.
+
+## Implemented workflows
+
+- Upload and process documents with filesystem-backed originals and PostgreSQL metadata.
+- Search documents using extracted text and optional semantic ranking.
+- Edit document metadata individually or in bulk, with preview, overwrite policies, and rollback through document history.
+- Organize documents with owner-scoped virtual folders and export selected or filtered documents as ZIP archives.
+- Optionally generate validated PDF/A-2b archive derivatives without replacing the original upload.
 
 The PostgreSQL connection is configured through `DATABASE_URL`. Sequelize schema synchronization is disabled; feature models and explicit migrations will be added in the next database slice.
 

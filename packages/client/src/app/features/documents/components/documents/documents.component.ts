@@ -479,11 +479,11 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.documents.page.update((page) =>
       page
         ? {
-          ...page,
-          items: page.items.map((document) =>
-            document.uuid === uuid ? { ...document, isNew: false } : document,
-          ),
-        }
+            ...page,
+            items: page.items.map((document) =>
+              document.uuid === uuid ? { ...document, isNew: false } : document,
+            ),
+          }
         : page,
     );
   }
@@ -497,7 +497,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     await this.documents.requeueDocument(uuid);
   }
 
-
+  async generateArchive(uuid: string): Promise<void> {
+    await this.documents.generateArchive(uuid);
+  }
 
   requestCloseMetadata(): void {
     if (!this.drawerDocumentUuid()) return;
@@ -962,29 +964,29 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       case 'documentType':
         return document.metadataSummary.documentType
           ? [
-            {
-              key: document.metadataSummary.documentType.uuid,
-              label: document.metadataSummary.documentType.name,
-            },
-          ]
+              {
+                key: document.metadataSummary.documentType.uuid,
+                label: document.metadataSummary.documentType.name,
+              },
+            ]
           : [];
       case 'category':
         return document.metadataSummary.category
           ? [
-            {
-              key: document.metadataSummary.category.uuid,
-              label: document.metadataSummary.category.name,
-            },
-          ]
+              {
+                key: document.metadataSummary.category.uuid,
+                label: document.metadataSummary.category.name,
+              },
+            ]
           : [];
       case 'issuer':
         return document.metadataSummary.issuer
           ? [
-            {
-              key: document.metadataSummary.issuer.uuid,
-              label: document.metadataSummary.issuer.name,
-            },
-          ]
+              {
+                key: document.metadataSummary.issuer.uuid,
+                label: document.metadataSummary.issuer.name,
+              },
+            ]
           : [];
       case 'tag':
         return document.metadataSummary.tags.map((tag) => ({ key: tag.uuid, label: tag.name }));
