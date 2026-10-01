@@ -14,6 +14,7 @@ import { DocumentAuditService } from '../../services/document-audit.service';
 })
 export class DocumentAuditHistoryComponent {
   readonly documentUuid = input.required<string>();
+  readonly refreshKey = input('');
 
   readonly page = signal<DocumentAuditResponse | null>(null);
   readonly loading = signal(false);
@@ -25,6 +26,7 @@ export class DocumentAuditHistoryComponent {
 
   private readonly loadEffect = effect(() => {
     const documentUuid = this.documentUuid();
+    this.refreshKey();
     if (documentUuid) void this.load(documentUuid, 1);
   });
 

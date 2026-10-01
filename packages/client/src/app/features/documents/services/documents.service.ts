@@ -22,6 +22,8 @@ import {
   DocumentExportSelectionInput,
   DocumentStorageIssue,
   DocumentStorageIssueListResponseSchema,
+  Document as BinderDocument,
+  DocumentSchema,
   SetDocumentTitleInputSchema,
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
@@ -163,11 +165,53 @@ export class DocumentsService {
         ),
       );
       await this.load();
-      return true;
+
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        await this.delay(1_000);
+        const document = await this.getDocument(uuid);
+        if (!document) continue;
+        this.updateDocumentInPage(document);
+        if (document.archiveStatus === 'ready') return true;
+        if (document.archiveStatus === 'failed') {
+          this.error.set(
+            document.archiveError
+              ? `PDF/A archive generation failed: ${document.archiveError}`
+              : 'PDF/A archive generation failed.',
+          );
+          return false;
+        }
+      }
+
+      this.error.set('PDF/A archive generation is still running. Please refresh shortly.');
+      return false;
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
       return false;
     }
+  }
+
+  private async getDocument(uuid: string): Promise<BinderDocument | null> {
+    const response = await firstValueFrom(
+      this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1', `documents/${uuid}`), {
+        withCredentials: true,
+      }),
+    );
+    return DocumentSchema.parse(response.data);
+  }
+
+  private updateDocumentInPage(document: BinderDocument): void {
+    this.page.update((page) =>
+      page
+        ? {
+            ...page,
+            items: page.items.map((item) => (item.uuid === document.uuid ? document : item)),
+          }
+        : page,
+    );
+  }
+
+  private delay(milliseconds: number): Promise<void> {
+    return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
   }
 
   async bulkAction(input: DocumentBulkActionInput): Promise<DocumentBulkActionResponse | null> {

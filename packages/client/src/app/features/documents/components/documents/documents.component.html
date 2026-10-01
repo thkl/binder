@@ -483,6 +483,15 @@
                   <span class="status" [class]="'status ' + document.status">{{
                     document.status
                   }}</span>
+                  @if (document.archiveStatus === 'ready') {
+                    <span
+                      class="archive-indicator"
+                      [attr.aria-label]="'documents.pdfaAvailable' | t"
+                      [title]="'documents.pdfaAvailable' | t"
+                    >
+                      PDF/A
+                    </span>
+                  }
 
                   <binder-document-actions
                     class="document-row-actions"
@@ -622,6 +631,15 @@
                     <span class="status" [class]="'status ' + document.status">{{
                       document.status
                     }}</span>
+                    @if (document.archiveStatus === 'ready') {
+                      <span
+                        class="archive-indicator"
+                        [attr.aria-label]="'documents.pdfaAvailable' | t"
+                        [title]="'documents.pdfaAvailable' | t"
+                      >
+                        PDF/A
+                      </span>
+                    }
                   </div>
 
                   <binder-document-actions

@@ -696,6 +696,21 @@ h2 {
   background: rgba(246, 216, 145, 0.1);
 }
 
+.archive-indicator {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  border: 1px solid rgba(117, 224, 190, 0.3);
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  color: #a9f2d7;
+  background: rgba(117, 224, 190, 0.1);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
 .document-row-actions,
 .preview-card-actions {
   display: block;

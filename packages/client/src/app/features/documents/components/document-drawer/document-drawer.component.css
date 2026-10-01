@@ -67,6 +67,11 @@
   letter-spacing: -0.03em;
 }
 
+.drawer-heading .archive-indicator {
+  display: inline-flex;
+  margin-top: 0.5rem;
+}
+
 .drawer-downloads {
   display: flex;
   flex-wrap: wrap;

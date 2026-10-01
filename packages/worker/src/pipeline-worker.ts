@@ -457,9 +457,8 @@ async function completePdfaJob(job: ClaimedJob, archiveKey: string): Promise<voi
       );
     }
     await addEvent(transaction, job.jobUuid, 'completed', 'PDF/A archive generated');
-    await addDocumentAudit(transaction, job, 'processing-succeeded', 'PDF/A archive generated', {
+    await addDocumentAudit(transaction, job, 'archive-generated', 'PDF/A archive generated', {
       jobKind: job.kind,
-      archiveKey,
     });
   });
   logger.info('PDF/A pipeline job completed', { jobUuid: job.jobUuid, archiveKey });
@@ -485,6 +484,9 @@ async function queueFollowup(
       { archiveStatus: 'queued', archiveError: null },
       { where: { uuid: job.documentUuid }, transaction },
     );
+    await addDocumentAudit(transaction, job, 'archive-queued', 'PDF/A archive generation queued', {
+      jobKind: kind,
+    });
   }
   if (!existing) {
     const next = await PipelineJob.create(
@@ -577,11 +579,9 @@ async function failJob(job: ClaimedJob, message: string): Promise<void> {
         await addDocumentAudit(
           transaction,
           job,
-          'processing-failed',
-          'Document processing failed',
-          {
-            jobKind: job.kind,
-          },
+          job.kind === 'pdfa' ? 'archive-failed' : 'processing-failed',
+          job.kind === 'pdfa' ? 'PDF/A archive generation failed' : 'Document processing failed',
+          { jobKind: job.kind },
         );
       }
     });
@@ -647,7 +647,14 @@ async function addEvent(
 async function addDocumentAudit(
   transaction: Transaction,
   job: Pick<ClaimedJob, 'documentUuid' | 'ownerUuid' | 'kind'>,
-  eventType: 'processing-started' | 'processing-succeeded' | 'processing-failed' | 'quarantined',
+  eventType:
+    | 'processing-started'
+    | 'processing-succeeded'
+    | 'processing-failed'
+    | 'archive-queued'
+    | 'archive-generated'
+    | 'archive-failed'
+    | 'quarantined',
   summary: string,
   details: Record<string, unknown> = {},
 ): Promise<void> {

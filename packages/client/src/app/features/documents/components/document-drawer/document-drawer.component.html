@@ -17,6 +17,9 @@
         <h3 id="document-drawer-title">
           {{ documentData().title || documentData().originalFilename }}
         </h3>
+        @if (documentData().archiveStatus === 'ready') {
+          <span class="archive-indicator">{{ 'documents.pdfaAvailable' | t }}</span>
+        }
         <div class="drawer-downloads">
           <a
             class="drawer-download-link"
@@ -132,7 +135,10 @@
       }
       @if (activeTab() === 'history') {
         <section id="document-drawer-history" class="history-panel" role="tabpanel">
-          <binder-document-audit-history [documentUuid]="documentUuid()" />
+          <binder-document-audit-history
+            [documentUuid]="documentUuid()"
+            [refreshKey]="documentData().updatedAt"
+          />
         </section>
       }
     </main>

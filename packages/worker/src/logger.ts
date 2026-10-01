@@ -11,10 +11,19 @@ const maxFiles = process.env.LOG_FILE_MAX_FILES ?? '14d';
 const useConsole = process.env.LOG_CONSOLE !== 'false';
 const logFormat =
   process.env.LOG_JSON === 'true'
-    ? format.combine(format.timestamp(), format.json())
+    ? format.combine(format.errors({ stack: true }), format.timestamp(), format.json())
     : format.combine(
+        format.errors({ stack: true }),
         format.timestamp(),
-        format.printf((info) => `${info.timestamp} | ${info.level} | ${info.message}`),
+        format.printf((info) => {
+          const metadata = Object.fromEntries(
+            Object.entries(info).filter(
+              ([key]) => !['level', 'message', 'timestamp'].includes(key),
+            ),
+          );
+          const suffix = Object.keys(metadata).length ? ` ${JSON.stringify(metadata)}` : '';
+          return `${info.timestamp} | ${info.level} | ${info.message}${suffix}`;
+        }),
       );
 
 fs.mkdirSync(logDirectory, { recursive: true });

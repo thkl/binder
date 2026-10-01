@@ -608,6 +608,16 @@ export class DocumentService {
     });
     if (!queued) throw new NotFoundException('Document not found');
 
+    await this.recordAudit({
+      documentUuid: uuid,
+      ownerUuid,
+      actorUuid: ownerUuid,
+      actorType: 'user',
+      eventType: 'archive-queued',
+      summary: 'PDF/A archive generation requested',
+      details: { jobKind: 'pdfa' },
+    });
+
     let job: Awaited<ReturnType<PipelineService['enqueue']>>;
     try {
       job = await this.pipeline.enqueue(uuid, ownerUuid, 'pdfa');
