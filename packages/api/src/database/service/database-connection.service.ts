@@ -34,6 +34,7 @@ import { SavedSearch } from '../../features/saved-search/models/saved-search.ent
 import { DocumentStorageIssue } from '../../features/document/models/document-storage-issue.entity';
 import { SetupState } from '../../features/setup/models/setup-state.entity';
 import { AiProviderProfile } from '../../features/ai-provider/models/ai-provider.entity';
+import { DocumentAnalysisSession } from '../../features/document/models/document-analysis-session.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -84,6 +85,7 @@ export class DatabaseConnectionService {
       DocumentStorageIssue,
       SetupState,
       AiProviderProfile,
+      DocumentAnalysisSession,
     ]);
     await this.initialize();
   }

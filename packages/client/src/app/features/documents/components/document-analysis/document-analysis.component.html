@@ -1,0 +1,64 @@
+<section class="analysis-shell" aria-labelledby="document-analysis-title">
+  <header class="analysis-header">
+    <div>
+      <p class="analysis-kicker">{{ 'analysis.kicker' | t }}</p>
+      <h3 id="document-analysis-title">{{ 'analysis.title' | t }}</h3>
+    </div>
+    @if (sessionUuid()) {
+      <button type="button" class="analysis-reset" (click)="startNewAnalysis()">
+        {{ 'analysis.newChat' | t }}
+      </button>
+    }
+  </header>
+
+  @if (!sessionUuid()) {
+    <aside class="analysis-disclosure">
+      <strong>{{ 'analysis.disclosureTitle' | t }}</strong>
+      <p>{{ 'analysis.disclosureCopy' | t }}</p>
+    </aside>
+  } @else if (fileExpiresAt(); as expiresAt) {
+    <p class="analysis-expiry">
+      {{ 'analysis.uploaded' | t }} {{ 'analysis.expires' | t }} {{ expiresAt | date: 'medium' }}.
+    </p>
+  }
+
+  <div class="analysis-messages" aria-live="polite">
+    @if (messages().length === 0) {
+      <p class="analysis-empty">{{ 'analysis.empty' | t }}</p>
+    } @else {
+      @for (message of messages(); track $index) {
+        <article class="analysis-message" [class.user-message]="message.role === 'user'">
+          <span class="message-role">
+            {{ message.role === 'user' ? ('analysis.you' | t) : ('analysis.binder' | t) }}
+          </span>
+          <p>{{ message.text }}</p>
+        </article>
+      }
+    }
+    @if (sending()) {
+      <p class="analysis-status">{{ 'analysis.sending' | t }}</p>
+    }
+  </div>
+
+  @if (error(); as errorMessage) {
+    <p class="analysis-error" role="alert">{{ errorMessage }}</p>
+  }
+
+  <form class="analysis-form" (submit)="$event.preventDefault(); send()">
+    <label for="document-analysis-prompt">{{ 'analysis.promptLabel' | t }}</label>
+    <div class="analysis-input-row">
+      <textarea
+        id="document-analysis-prompt"
+        rows="2"
+        maxlength="10000"
+        [value]="prompt()"
+        [placeholder]="'analysis.promptPlaceholder' | t"
+        [disabled]="sending()"
+        (input)="updatePrompt($event)"
+      ></textarea>
+      <button type="submit" class="analysis-send" [disabled]="sending() || !prompt().trim()">
+        {{ sending() ? ('analysis.sending' | t) : ('analysis.send' | t) }}
+      </button>
+    </div>
+  </form>
+</section>

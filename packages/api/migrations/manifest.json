@@ -277,6 +277,21 @@
                "required": [
                     "settings"
                ]
+          },
+          "42": {
+               "required": [
+                    "ai_provider_profiles"
+               ]
+          },
+          "43": {
+               "created": [
+                    "document_analysis_sessions"
+               ],
+               "required": [
+                    "users",
+                    "documents",
+                    "ai_provider_profiles"
+               ]
           }
      }
 }

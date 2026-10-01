@@ -85,6 +85,13 @@
               @if (provider.embeddingEndpoint && provider.embeddingModel) {
                 <span>{{ 'aiProviders.embeddings' | t }} · {{ provider.embeddingModel }}</span>
               }
+              @if (
+                provider.fileUploadEndpoint &&
+                provider.fileAnalysisEndpoint &&
+                provider.fileAnalysisModel
+              ) {
+                <span>{{ 'aiProviders.fileAnalysis' | t }} · {{ provider.fileAnalysisModel }}</span>
+              }
             </div>
             <div class="provider-actions">
               @if (provider.assistantEndpoint && provider.assistantModel) {
@@ -168,6 +175,32 @@
             type="text"
             [value]="draft().assistantModel"
             (input)="updateText('assistantModel', $event)"
+          />
+        </label>
+        <label class="provider-field">
+          <span>{{ 'aiProviders.fileUploadEndpoint' | t }}</span>
+          <input
+            type="url"
+            [value]="draft().fileUploadEndpoint"
+            placeholder="https://…/files"
+            (input)="updateText('fileUploadEndpoint', $event)"
+          />
+        </label>
+        <label class="provider-field">
+          <span>{{ 'aiProviders.fileAnalysisEndpoint' | t }}</span>
+          <input
+            type="url"
+            [value]="draft().fileAnalysisEndpoint"
+            placeholder="https://…/responses"
+            (input)="updateText('fileAnalysisEndpoint', $event)"
+          />
+        </label>
+        <label class="provider-field">
+          <span>{{ 'aiProviders.fileAnalysisModel' | t }}</span>
+          <input
+            type="text"
+            [value]="draft().fileAnalysisModel"
+            (input)="updateText('fileAnalysisModel', $event)"
           />
         </label>
         <label class="provider-field">

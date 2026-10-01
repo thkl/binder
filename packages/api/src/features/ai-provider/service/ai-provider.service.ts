@@ -30,6 +30,9 @@ export interface ResolvedAiProvider {
   apiKey: string;
   assistantEndpoint: string;
   assistantModel: string;
+  fileUploadEndpoint: string;
+  fileAnalysisEndpoint: string;
+  fileAnalysisModel: string;
   embeddingEndpoint: string;
   embeddingModel: string;
 }
@@ -58,6 +61,9 @@ export class AiProviderService {
       providerType: input.providerType,
       assistantEndpoint: this.toNullable(input.assistantEndpoint),
       assistantModel: this.toNullable(input.assistantModel),
+      fileUploadEndpoint: this.toNullable(input.fileUploadEndpoint),
+      fileAnalysisEndpoint: this.toNullable(input.fileAnalysisEndpoint),
+      fileAnalysisModel: this.toNullable(input.fileAnalysisModel),
       embeddingEndpoint: this.toNullable(input.embeddingEndpoint),
       embeddingModel: this.toNullable(input.embeddingModel),
       apiKey: encryptedSecret.value,
@@ -79,6 +85,12 @@ export class AiProviderService {
       changes.assistantEndpoint = this.toNullable(input.assistantEndpoint);
     if (input.assistantModel !== undefined)
       changes.assistantModel = this.toNullable(input.assistantModel);
+    if (input.fileUploadEndpoint !== undefined)
+      changes.fileUploadEndpoint = this.toNullable(input.fileUploadEndpoint);
+    if (input.fileAnalysisEndpoint !== undefined)
+      changes.fileAnalysisEndpoint = this.toNullable(input.fileAnalysisEndpoint);
+    if (input.fileAnalysisModel !== undefined)
+      changes.fileAnalysisModel = this.toNullable(input.fileAnalysisModel);
     if (input.embeddingEndpoint !== undefined)
       changes.embeddingEndpoint = this.toNullable(input.embeddingEndpoint);
     if (input.embeddingModel !== undefined)
@@ -207,6 +219,28 @@ export class AiProviderService {
     return this.resolveLegacy(task);
   }
 
+  async resolveFileAnalysis(providerUuid?: string | null): Promise<ResolvedAiProvider | null> {
+    let runtime: ResolvedAiProvider | null;
+
+    if (providerUuid !== undefined) {
+      if (!providerUuid) return null;
+      const provider = await this.providers.findByUuid(providerUuid);
+      runtime = provider?.enabled ? this.toRuntime(provider) : null;
+    } else {
+      runtime = await this.resolve('assistant');
+    }
+
+    if (
+      !runtime?.fileUploadEndpoint ||
+      !runtime.fileAnalysisEndpoint ||
+      !runtime.fileAnalysisModel
+    ) {
+      return null;
+    }
+
+    return runtime;
+  }
+
   private async resolveLegacy(task: AiProviderTask): Promise<ResolvedAiProvider | null> {
     const providerType = await this.settings.get('ai.provider', 'openai-compatible');
     const apiKey = await this.settings.get('ai.apiKey', '');
@@ -214,6 +248,8 @@ export class AiProviderService {
     const assistantModel = await this.settings.get('ai.model', '');
     const embeddingEndpoint = await this.settings.get('embeddings.endpoint', '');
     const embeddingModel = await this.settings.get('embeddings.model', '');
+    const fileUploadEndpoint = await this.settings.get('ai.fileUploadEndpoint', '');
+    const fileAnalysisEndpoint = await this.settings.get('ai.fileAnalysisEndpoint', '');
 
     if (providerType !== 'openai-compatible') return null;
     const runtime: ResolvedAiProvider = {
@@ -223,6 +259,9 @@ export class AiProviderService {
       apiKey: apiKey ?? '',
       assistantEndpoint: assistantEndpoint ?? '',
       assistantModel: assistantModel ?? '',
+      fileUploadEndpoint: fileUploadEndpoint ?? '',
+      fileAnalysisEndpoint: fileAnalysisEndpoint ?? '',
+      fileAnalysisModel: assistantModel ?? '',
       embeddingEndpoint: embeddingEndpoint ?? '',
       embeddingModel: embeddingModel ?? '',
     };
@@ -296,6 +335,9 @@ export class AiProviderService {
           : '',
       assistantEndpoint: provider.assistantEndpoint ?? '',
       assistantModel: provider.assistantModel ?? '',
+      fileUploadEndpoint: provider.fileUploadEndpoint ?? '',
+      fileAnalysisEndpoint: provider.fileAnalysisEndpoint ?? '',
+      fileAnalysisModel: provider.fileAnalysisModel ?? '',
       embeddingEndpoint: provider.embeddingEndpoint ?? '',
       embeddingModel: provider.embeddingModel ?? '',
     };
@@ -313,6 +355,9 @@ export class AiProviderService {
       providerType: provider.providerType,
       assistantEndpoint: provider.assistantEndpoint,
       assistantModel: provider.assistantModel,
+      fileUploadEndpoint: provider.fileUploadEndpoint,
+      fileAnalysisEndpoint: provider.fileAnalysisEndpoint,
+      fileAnalysisModel: provider.fileAnalysisModel,
       embeddingEndpoint: provider.embeddingEndpoint,
       embeddingModel: provider.embeddingModel,
       apiKeyConfigured: Boolean(provider.apiKey && provider.apiKeyIv),

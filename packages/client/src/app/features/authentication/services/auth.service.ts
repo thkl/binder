@@ -22,6 +22,7 @@ export class AuthService {
   readonly loading = signal(true);
   readonly setupRequired = signal(false);
   readonly setupAvailable = signal(false);
+  readonly onboardingActive = signal(false);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
   readonly appService = inject(ApplicationService);
@@ -34,6 +35,7 @@ export class AuthService {
   async restoreSession(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+    this.onboardingActive.set(false);
     try {
       try {
         const setupResponse = await firstValueFrom(
@@ -93,6 +95,7 @@ export class AuthService {
       this.user.set(AuthenticatedUserSchema.parse(response.data));
       this.setupRequired.set(false);
       this.setupAvailable.set(false);
+      this.onboardingActive.set(true);
       return true;
     } catch (error) {
       this.error.set(
@@ -176,7 +179,13 @@ export class AuthService {
       ),
     );
     this.user.set(null);
+    this.onboardingActive.set(false);
     this.csrf.clear();
+  }
+
+  finishOnboarding(): void {
+    this.onboardingActive.set(false);
+    this.error.set(null);
   }
 
   private setCsrfToken(response: { csrfToken?: unknown }): void {

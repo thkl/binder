@@ -96,7 +96,7 @@ verification.
   - Select the provider separately for document assistance and embeddings.
   - Keep provider-specific endpoints and models while sharing the existing
     server-side safety and response validation.
-- Add optional, user-triggered PDF file analysis with a custom prompt:
+- Optional, user-triggered PDF file analysis with a custom prompt ✅ Implemented:
   - Make the complete workflow manual: the user opens a document they are
     authorized to access, sees the PDF in the client, enters a prompt below the
     preview, and explicitly starts the analysis.
@@ -108,6 +108,11 @@ verification.
     provider-side uploads where the provider supports deletion.
   - Configure automatic expiration for provider uploads using the provider's
     file-lifetime controls, with a short default such as one hour.
+  - Keep the provider file ID and response chain server-side in an
+    owner-scoped analysis session; the client receives only its local session
+    UUID and chat messages.
+  - Reuse the provider upload for follow-up messages through the response
+    chain instead of uploading the PDF again.
   - Keep the result as an explicit analysis response until the user chooses to
     save any metadata or notes.
 - Expand homepage document ingestion so the complete home content background is

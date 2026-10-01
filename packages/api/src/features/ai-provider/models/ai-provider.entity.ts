@@ -18,6 +18,9 @@ export interface AiProviderAttributes {
   providerType: AiProviderType;
   assistantEndpoint: string | null;
   assistantModel: string | null;
+  fileUploadEndpoint: string | null;
+  fileAnalysisEndpoint: string | null;
+  fileAnalysisModel: string | null;
   embeddingEndpoint: string | null;
   embeddingModel: string | null;
   apiKey: string;
@@ -52,6 +55,18 @@ export class AiProviderProfile extends Model<AiProviderAttributes, AiProviderCre
   @AllowNull
   @Column({ field: 'assistant_model', type: DataType.STRING(150), allowNull: true })
   declare assistantModel: string | null;
+
+  @AllowNull
+  @Column({ field: 'file_upload_endpoint', type: DataType.STRING(500), allowNull: true })
+  declare fileUploadEndpoint: string | null;
+
+  @AllowNull
+  @Column({ field: 'file_analysis_endpoint', type: DataType.STRING(500), allowNull: true })
+  declare fileAnalysisEndpoint: string | null;
+
+  @AllowNull
+  @Column({ field: 'file_analysis_model', type: DataType.STRING(150), allowNull: true })
+  declare fileAnalysisModel: string | null;
 
   @AllowNull
   @Column({ field: 'embedding_endpoint', type: DataType.STRING(500), allowNull: true })

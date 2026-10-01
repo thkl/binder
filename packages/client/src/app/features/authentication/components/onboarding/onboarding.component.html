@@ -20,83 +20,111 @@
       </div>
 
       <ol class="step-list" aria-label="Onboarding steps">
-        <li class="active"><span>1</span>{{ 'setup.stepAdmin' | t }}</li>
-        <li><span>2</span>{{ 'setup.stepSettings' | t }}</li>
+        <li [class.active]="step() === 'admin'" [class.complete]="step() === 'ai'">
+          <span>1</span>{{ 'setup.stepAdmin' | t }}
+        </li>
+        <li [class.active]="step() === 'ai'"><span>2</span>{{ 'setup.stepAi' | t }}</li>
         <li><span>3</span>{{ 'setup.stepWorkspace' | t }}</li>
       </ol>
     </div>
 
     <div class="form-panel">
-      <div class="form-heading">
-        <p class="eyebrow">{{ 'setup.firstStep' | t }}</p>
-        <h2>{{ 'setup.adminTitle' | t }}</h2>
-        <p>{{ 'setup.adminCopy' | t }}</p>
-      </div>
-
-      @if (!auth.setupAvailable()) {
-        <div class="unavailable" role="alert">
-          <strong>{{ 'setup.unavailable' | t }}</strong>
-          <p>{{ 'setup.unavailableCopy' | t }}</p>
+      @if (step() === 'admin') {
+        <div class="form-heading">
+          <p class="eyebrow">{{ 'setup.firstStep' | t }}</p>
+          <h2>{{ 'setup.adminTitle' | t }}</h2>
+          <p>{{ 'setup.adminCopy' | t }}</p>
         </div>
+
+        @if (!auth.setupAvailable()) {
+          <div class="unavailable" role="alert">
+            <strong>{{ 'setup.unavailable' | t }}</strong>
+            <p>{{ 'setup.unavailableCopy' | t }}</p>
+          </div>
+        } @else {
+          <form (submit)="submit($event)">
+            <label for="setup-secret">{{ 'setup.secret' | t }}</label>
+            <input
+              id="setup-secret"
+              type="password"
+              autocomplete="off"
+              [value]="setupSecret()"
+              [attr.aria-describedby]="'setup-secret-hint'"
+              (input)="setupSecret.set(inputValue($event))"
+              required
+            />
+            <p class="field-hint" id="setup-secret-hint">{{ 'setup.secretHint' | t }}</p>
+
+            <label for="setup-username">{{ 'setup.username' | t }}</label>
+            <input
+              id="setup-username"
+              type="text"
+              autocomplete="username"
+              [value]="username()"
+              (input)="username.set(inputValue($event))"
+              required
+            />
+
+            <label for="setup-password">{{ 'setup.password' | t }}</label>
+            <input
+              id="setup-password"
+              type="password"
+              autocomplete="new-password"
+              minlength="12"
+              [value]="password()"
+              [attr.aria-describedby]="'setup-password-hint'"
+              (input)="password.set(inputValue($event))"
+              required
+            />
+            <p class="field-hint" id="setup-password-hint">{{ 'setup.passwordHint' | t }}</p>
+
+            <label for="setup-confirmation">{{ 'setup.confirm' | t }}</label>
+            <input
+              id="setup-confirmation"
+              type="password"
+              autocomplete="new-password"
+              minlength="12"
+              [value]="confirmation()"
+              (input)="confirmation.set(inputValue($event))"
+              required
+            />
+
+            @if (validationError(); as error) {
+              <p class="error" role="alert">{{ error }}</p>
+            }
+            @if (auth.error(); as error) {
+              <p class="error" role="alert">{{ error }}</p>
+            }
+
+            <button type="submit" [disabled]="auth.submitting()">
+              {{ auth.submitting() ? ('setup.creating' | t) : ('setup.create' | t) }}
+            </button>
+          </form>
+        }
       } @else {
-        <form (submit)="submit($event)">
-          <label for="setup-secret">{{ 'setup.secret' | t }}</label>
-          <input
-            id="setup-secret"
-            type="password"
-            autocomplete="off"
-            [value]="setupSecret()"
-            [attr.aria-describedby]="'setup-secret-hint'"
-            (input)="setupSecret.set(inputValue($event))"
-            required
-          />
-          <p class="field-hint" id="setup-secret-hint">{{ 'setup.secretHint' | t }}</p>
+        <div class="form-heading">
+          <p class="eyebrow">{{ 'setup.secondStep' | t }}</p>
+          <h2>{{ 'setup.aiTitle' | t }}</h2>
+          <p>{{ 'setup.aiCopy' | t }}</p>
+        </div>
 
-          <label for="setup-username">{{ 'setup.username' | t }}</label>
-          <input
-            id="setup-username"
-            type="text"
-            autocomplete="username"
-            [value]="username()"
-            (input)="username.set(inputValue($event))"
-            required
-          />
+        <div class="ai-note" role="note">
+          <strong>{{ 'setup.aiPrivacyTitle' | t }}</strong>
+          <p>{{ 'setup.aiPrivacyCopy' | t }}</p>
+        </div>
 
-          <label for="setup-password">{{ 'setup.password' | t }}</label>
-          <input
-            id="setup-password"
-            type="password"
-            autocomplete="new-password"
-            minlength="12"
-            [value]="password()"
-            [attr.aria-describedby]="'setup-password-hint'"
-            (input)="password.set(inputValue($event))"
-            required
-          />
-          <p class="field-hint" id="setup-password-hint">{{ 'setup.passwordHint' | t }}</p>
+        <div class="onboarding-provider-manager">
+          <binder-ai-provider-manager />
+        </div>
 
-          <label for="setup-confirmation">{{ 'setup.confirm' | t }}</label>
-          <input
-            id="setup-confirmation"
-            type="password"
-            autocomplete="new-password"
-            minlength="12"
-            [value]="confirmation()"
-            (input)="confirmation.set(inputValue($event))"
-            required
-          />
-
-          @if (validationError(); as error) {
-            <p class="error" role="alert">{{ error }}</p>
-          }
-          @if (auth.error(); as error) {
-            <p class="error" role="alert">{{ error }}</p>
-          }
-
-          <button type="submit" [disabled]="auth.submitting()">
-            {{ auth.submitting() ? ('setup.creating' | t) : ('setup.create' | t) }}
+        <div class="onboarding-actions">
+          <button type="button" class="secondary-button" (click)="skipAi()">
+            {{ 'setup.skipAi' | t }}
           </button>
-        </form>
+          <button type="button" (click)="finishOnboarding()">
+            {{ 'setup.finish' | t }}
+          </button>
+        </div>
       }
     </div>
   </section>

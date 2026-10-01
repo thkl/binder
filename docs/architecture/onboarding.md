@@ -11,9 +11,12 @@ The assistant should be deterministic and form-driven. It is not an LLM chat
 agent and must not make security or infrastructure decisions autonomously.
 
 The first implementation slice creates the administrator account and starts a
-normal Express session. It is exposed through `/api/v1/setup/status` and
-`/api/v1/setup/admin`; the remaining storage, processing, AI, OIDC, backup,
-and review steps are subsequent onboarding increments.
+normal Express session. After that account is created, the client presents an
+optional AI provider step using the authenticated provider-profile endpoints.
+The administrator can configure assistant and embedding providers or skip the
+step and return to the workspace. It is exposed through `/api/v1/setup/status`
+and `/api/v1/setup/admin`; storage, processing, OIDC, backup, and review steps
+remain subsequent onboarding increments.
 
 ## Setup access
 
@@ -58,7 +61,9 @@ optional steps:
    the configured processing queue.
 5. **Optional AI** — configure or skip hosted assistant and embedding
    providers. Explain that document content may leave the server when an
-   external provider is enabled.
+   external provider is enabled. The current client implements this step after
+   administrator creation and keeps the same provider manager available later
+   under Settings.
 6. **Optional OIDC** — configure or skip OIDC and validate issuer discovery,
    client configuration, and internal-user mapping behavior.
 7. **Backups** — enable the scheduled backup and retention settings and run a

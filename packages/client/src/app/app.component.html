@@ -3,7 +3,7 @@
     <div class="loading-mark">B</div>
     <p>{{ 'app.loading' | t }}</p>
   </main>
-} @else if (auth.setupRequired()) {
+} @else if (auth.setupRequired() || auth.onboardingActive()) {
   <binder-onboarding />
 } @else if (!auth.user()) {
   <binder-login />

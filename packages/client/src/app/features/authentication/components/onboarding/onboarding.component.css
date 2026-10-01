@@ -136,12 +136,59 @@ h2 {
   border-color: var(--cyan);
   background: var(--cyan);
 }
+.step-list .complete {
+  color: #a8c9bb;
+}
+.step-list .complete span {
+  color: #061326;
+  border-color: #67e0ac;
+  background: #67e0ac;
+}
 
 .form-panel {
   background: rgba(4, 16, 31, 0.42);
 }
 .form-heading p {
   margin: 0;
+}
+.ai-note {
+  margin-top: 1.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(97, 215, 244, 0.18);
+  border-radius: 0.75rem;
+  background: rgba(97, 215, 244, 0.06);
+}
+.ai-note strong {
+  color: #dceaff;
+  font-size: 0.85rem;
+}
+.ai-note p {
+  margin: 0.35rem 0 0;
+  color: #9ab0c9;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.onboarding-provider-manager {
+  margin-top: 1.5rem;
+}
+.onboarding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.onboarding-actions button {
+  margin-top: 0;
+}
+.onboarding-actions .secondary-button {
+  border: 1px solid rgba(157, 190, 232, 0.25);
+  color: #b9c9dc;
+  background: rgba(157, 190, 232, 0.08);
+}
+.onboarding-actions .secondary-button:hover:not(:disabled) {
+  color: #e5f7ff;
+  background: rgba(157, 190, 232, 0.16);
 }
 form {
   display: grid;
@@ -218,6 +265,12 @@ button:disabled {
   }
   .step-list {
     padding-top: 2rem;
+  }
+  .onboarding-actions {
+    justify-content: stretch;
+  }
+  .onboarding-actions button {
+    flex: 1 1 100%;
   }
 }
 

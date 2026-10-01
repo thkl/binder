@@ -19,12 +19,15 @@ import {
   DocumentExportSelectionInputSchema,
   DocumentListQuerySchema,
   DocumentSearchQuerySchema,
+  DocumentAnalysisFollowUpSchema,
+  DocumentAnalysisPromptSchema,
   SetDocumentMetadataInputSchema,
   SetDocumentTitleInputSchema,
 } from '@binder/common';
 import type { Response } from 'express';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
+import { DocumentAnalysisService } from '../service/document-analysis.service';
 import { DocumentService, UploadedDocumentFile } from '../service/document.service';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { Throttle } from '@nestjs/throttler';
@@ -36,7 +39,10 @@ const HARD_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024;
 export class DocumentController {
   private readonly logger = new BinderLogger(DocumentController.name);
 
-  constructor(private readonly documents: DocumentService) {}
+  constructor(
+    private readonly documents: DocumentService,
+    private readonly analysis: DocumentAnalysisService,
+  ) {}
 
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
@@ -156,6 +162,30 @@ export class DocumentController {
         uuid,
         SetDocumentTitleInputSchema.parse(body),
       ),
+    };
+  }
+
+  @Post(':uuid/analysis')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async startAnalysis(
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    const input = DocumentAnalysisPromptSchema.parse(body);
+    return { data: await this.analysis.start(user.userId, uuid, input.prompt) };
+  }
+
+  @Post(':uuid/analysis/messages')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  async continueAnalysis(
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    const input = DocumentAnalysisFollowUpSchema.parse(body);
+    return {
+      data: await this.analysis.continue(user.userId, uuid, input.sessionUuid, input.prompt),
     };
   }
 

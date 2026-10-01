@@ -800,6 +800,9 @@ export const AiProviderProfileSchema = z.object({
   providerType: AiProviderTypeSchema,
   assistantEndpoint: z.string().trim().max(500).nullable(),
   assistantModel: z.string().trim().max(150).nullable(),
+  fileUploadEndpoint: z.string().trim().max(500).nullable(),
+  fileAnalysisEndpoint: z.string().trim().max(500).nullable(),
+  fileAnalysisModel: z.string().trim().max(150).nullable(),
   embeddingEndpoint: z.string().trim().max(500).nullable(),
   embeddingModel: z.string().trim().max(150).nullable(),
   apiKeyConfigured: z.boolean(),
@@ -817,6 +820,9 @@ export const CreateAiProviderProfileInputSchema = z.object({
   providerType: AiProviderTypeSchema.default('openai-compatible'),
   assistantEndpoint: AiProviderEndpointSchema,
   assistantModel: AiProviderModelSchema,
+  fileUploadEndpoint: AiProviderEndpointSchema,
+  fileAnalysisEndpoint: AiProviderEndpointSchema,
+  fileAnalysisModel: AiProviderModelSchema,
   embeddingEndpoint: AiProviderEndpointSchema,
   embeddingModel: AiProviderModelSchema,
   apiKey: z.string().max(100_000).optional(),
@@ -853,6 +859,36 @@ export const AiProviderTestResponseSchema = z.object({
   message: z.string().max(500),
 });
 export type AiProviderTestResponse = z.infer<typeof AiProviderTestResponseSchema>;
+
+export const DocumentAnalysisMessageRoleSchema = z.enum(['user', 'assistant']);
+export type DocumentAnalysisMessageRole = z.infer<typeof DocumentAnalysisMessageRoleSchema>;
+
+export const DocumentAnalysisMessageSchema = z.object({
+  role: DocumentAnalysisMessageRoleSchema,
+  text: z.string().min(1).max(50_000),
+  createdAt: z.iso.datetime(),
+});
+export type DocumentAnalysisMessage = z.infer<typeof DocumentAnalysisMessageSchema>;
+
+export const DocumentAnalysisPromptSchema = z.object({
+  prompt: z.string().trim().min(1).max(10_000),
+});
+export type DocumentAnalysisPrompt = z.infer<typeof DocumentAnalysisPromptSchema>;
+
+export const DocumentAnalysisFollowUpSchema = DocumentAnalysisPromptSchema.extend({
+  sessionUuid: z.uuid(),
+});
+export type DocumentAnalysisFollowUp = z.infer<typeof DocumentAnalysisFollowUpSchema>;
+
+export const DocumentAnalysisResponseSchema = z.object({
+  sessionUuid: z.uuid(),
+  documentUuid: z.uuid(),
+  providerName: z.string().min(1).max(100),
+  userMessage: DocumentAnalysisMessageSchema,
+  assistantMessage: DocumentAnalysisMessageSchema,
+  fileExpiresAt: z.iso.datetime().nullable(),
+});
+export type DocumentAnalysisResponse = z.infer<typeof DocumentAnalysisResponseSchema>;
 
 export type ApiResponse<T> = { data: T };
 

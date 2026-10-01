@@ -27,15 +27,27 @@ provider settings remain a compatibility fallback until a profile is selected.
 ## P3 file-aware PDF analysis
 
 File-aware PDF analysis is a manual, user-confirmed workflow. The client first
-shows the document preview and prompt field only after the normal owner-scoped
-document access check succeeds. The original PDF is uploaded to the selected
-provider and supplied to the model as an input file; extracted text is not a
-substitute for this workflow. The user must explicitly start the analysis, and
-the response remains a suggestion until the user saves any resulting metadata
-or notes.
+opens the document in Binder's document workspace and shows the PDF in the
+upper pane with the analysis conversation below it. The metadata editor remains
+available as a separate tab. The normal owner-scoped document access check is
+performed before the PDF can be uploaded.
+
+The original PDF is uploaded only after the user submits the first prompt. It
+is sent as an input file to the selected assistant provider; extracted text is
+not a substitute for this workflow. The UI discloses that the original file
+will leave Binder before the prompt is submitted. The result is a chat response
+and is never applied to document metadata automatically.
+
+The API stores the remote file ID and response-chain ID in
+`document_analysis_sessions`, scoped to the authenticated owner and document.
+The client receives only a local session UUID and the messages. Follow-up
+messages reuse the provider upload and response chain, so the PDF is not
+uploaded again for every question.
 
 Provider uploads must use the provider's automatic expiration controls. The
-initial default should be short-lived, for example one hour after creation,
-and the expiration duration should be configurable through application
-settings. The API should still attempt explicit cleanup when supported, but
-expiration remains the safety net if the request fails or the process stops.
+default is one hour after creation, and the duration plus request timeout are
+configurable through application settings. The API attempts explicit cleanup
+when a first request fails, but provider-side expiration remains the safety net
+if the request fails or the process stops. The provider profile therefore needs
+file-upload and file-analysis endpoints plus a file-analysis model in addition
+to its normal assistant and embedding settings.

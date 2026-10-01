@@ -11,6 +11,9 @@ interface AiProviderDraft {
   name: string;
   assistantEndpoint: string;
   assistantModel: string;
+  fileUploadEndpoint: string;
+  fileAnalysisEndpoint: string;
+  fileAnalysisModel: string;
   embeddingEndpoint: string;
   embeddingModel: string;
   apiKey: string;
@@ -21,6 +24,9 @@ const EMPTY_DRAFT: AiProviderDraft = {
   name: '',
   assistantEndpoint: 'https://api.openai.com/v1/chat/completions',
   assistantModel: 'gpt-4o-mini',
+  fileUploadEndpoint: 'https://api.openai.com/v1/files',
+  fileAnalysisEndpoint: 'https://api.openai.com/v1/responses',
+  fileAnalysisModel: 'gpt-4o-mini',
   embeddingEndpoint: 'https://api.openai.com/v1/embeddings',
   embeddingModel: 'text-embedding-3-small',
   apiKey: '',
@@ -104,6 +110,9 @@ export class AiProviderManagerComponent implements OnInit {
       name: provider.name,
       assistantEndpoint: provider.assistantEndpoint ?? '',
       assistantModel: provider.assistantModel ?? '',
+      fileUploadEndpoint: provider.fileUploadEndpoint ?? '',
+      fileAnalysisEndpoint: provider.fileAnalysisEndpoint ?? '',
+      fileAnalysisModel: provider.fileAnalysisModel ?? '',
       embeddingEndpoint: provider.embeddingEndpoint ?? '',
       embeddingModel: provider.embeddingModel ?? '',
       apiKey: '',
