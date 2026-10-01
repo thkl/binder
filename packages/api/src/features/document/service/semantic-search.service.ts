@@ -6,6 +6,7 @@ import { DocumentEmbedding } from '../models/document-embedding.entity';
 import { Document } from '../models/document.entity';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import type { DocumentSearchQuery } from '@binder/common';
+import { AiProviderService } from '../../ai-provider/service/ai-provider.service';
 
 export interface SemanticHit {
   document: Document;
@@ -18,7 +19,10 @@ export interface SemanticHit {
 export class SemanticSearchService {
   private readonly logger = new BinderLogger(SemanticSearchService.name);
 
-  constructor(private readonly settings: ApplicationSettingsService) {}
+  constructor(
+    private readonly settings: ApplicationSettingsService,
+    private readonly aiProviders: AiProviderService,
+  ) {}
 
   async search(
     ownerUuid: string,
@@ -29,19 +33,18 @@ export class SemanticSearchService {
     const semanticThreshold = filters.semanticThreshold ?? 0.35;
     const enabled =
       (await this.settings.get('embeddings.enabled', 'false'))?.toLowerCase() === 'true';
-    const apiKey = await this.settings.get('ai.apiKey', '');
-    const provider = await this.settings.get('ai.provider', 'openai-compatible');
+    const provider = await this.aiProviders.resolve('embedding');
     this.logger.debug('Semantic search configuration checked', {
       enabled,
-      provider,
-      hasApiKey: Boolean(apiKey),
+      provider: provider?.name ?? null,
+      hasApiKey: Boolean(provider?.apiKey),
       queryLength: query.length,
       limit,
       semanticThreshold,
     });
-    if (!enabled || !apiKey || provider !== 'openai-compatible') {
+    if (!enabled || !provider) {
       this.logger.debug('Semantic search skipped', {
-        reason: !enabled ? 'disabled' : !apiKey ? 'missing-api-key' : 'unsupported-provider',
+        reason: !enabled ? 'disabled' : 'missing-provider',
       });
       return [];
     }
@@ -54,20 +57,20 @@ export class SemanticSearchService {
       return [];
     }
 
-    const endpoint = await this.settings.get(
-      'embeddings.endpoint',
-      'https://api.openai.com/v1/embeddings',
-    );
-    const model = await this.settings.get('embeddings.model', 'text-embedding-3-small');
+    const endpoint = provider.embeddingEndpoint;
+    const model = provider.embeddingModel;
     this.logger.info('Requesting semantic query embedding', {
-      provider,
+      provider: provider.name,
       model,
       endpoint,
       queryLength: query.length,
     });
-    const response = await fetch(endpoint!, {
+    const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      headers: {
+        'content-type': 'application/json',
+        ...(provider.apiKey ? { authorization: `Bearer ${provider.apiKey}` } : {}),
+      },
       body: JSON.stringify({ model, input: [query] }),
     });
     if (!response.ok) throw new Error(`Embedding provider returned HTTP ${response.status}`);

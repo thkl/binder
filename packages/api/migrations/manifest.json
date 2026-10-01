@@ -269,6 +269,14 @@
                     "pipeline_jobs",
                     "settings"
                ]
+          },
+          "41": {
+               "created": [
+                    "ai_provider_profiles"
+               ],
+               "required": [
+                    "settings"
+               ]
           }
      }
 }

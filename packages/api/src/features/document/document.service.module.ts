@@ -10,12 +10,14 @@ import { TitleSuggestionService } from './service/title-suggestion.service';
 import { IssuerServiceModule } from '../issuer/issuer.service.module';
 import { FolderStoreModule } from '../folder/folder.store.module';
 import { InboxStoreModule } from '../inbox/inbox.store.module';
+import { AiProviderServiceModule } from '../ai-provider/ai-provider.service.module';
 
 @Module({
   imports: [
     DocumentStoreModule,
     FolderStoreModule,
     InboxStoreModule,
+    AiProviderServiceModule,
     PipelineServiceModule,
     MetadataServiceModule,
     IssuerServiceModule,

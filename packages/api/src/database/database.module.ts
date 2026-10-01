@@ -30,6 +30,7 @@ import { DocumentFolder } from '../features/folder/models/document-folder.entity
 import { SavedSearch } from '../features/saved-search/models/saved-search.entity';
 import { DocumentStorageIssue } from '../features/document/models/document-storage-issue.entity';
 import { SetupState } from '../features/setup/models/setup-state.entity';
+import { AiProviderProfile } from '../features/ai-provider/models/ai-provider.entity';
 
 @Global()
 @Module({
@@ -101,6 +102,7 @@ import { SetupState } from '../features/setup/models/setup-state.entity';
       SavedSearch,
       DocumentStorageIssue,
       SetupState,
+      AiProviderProfile,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],

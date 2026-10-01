@@ -19,6 +19,7 @@ import { MaintenanceModule } from './features/maintenance/maintenance.module';
 import { FolderModule } from './features/folder/folder.module';
 import { SavedSearchModule } from './features/saved-search/saved-search.module';
 import { SetupModule } from './features/setup/setup.module';
+import { AiProviderModule } from './features/ai-provider/ai-provider.module';
 
 @Module({
   controllers: [HealthController],
@@ -39,6 +40,7 @@ import { SetupModule } from './features/setup/setup.module';
     FolderModule,
     SavedSearchModule,
     SetupModule,
+    AiProviderModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

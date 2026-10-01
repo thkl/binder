@@ -1,0 +1,223 @@
+<section class="provider-manager glass-card">
+  <header class="provider-heading">
+    <div>
+      <p class="section-kicker">{{ 'aiProviders.kicker' | t }}</p>
+      <h3>{{ 'aiProviders.title' | t }}</h3>
+      <p class="provider-copy">{{ 'aiProviders.copy' | t }}</p>
+    </div>
+    <span class="provider-type">OpenAI-compatible</span>
+  </header>
+
+  @if (aiProviders.loading()) {
+    <p class="provider-status">{{ 'aiProviders.loading' | t }}</p>
+  } @else {
+    <div class="provider-selection">
+      <div class="selection-heading">
+        <strong>{{ 'aiProviders.selectionTitle' | t }}</strong>
+        <span>{{ 'aiProviders.selectionCopy' | t }}</span>
+      </div>
+      <label class="provider-field">
+        <span>{{ 'aiProviders.assistantProvider' | t }}</span>
+        <select
+          [value]="selection('assistant')"
+          (change)="select('assistant', $event)"
+          [disabled]="aiProviders.saving()"
+        >
+          <option value="">{{ 'aiProviders.legacyConfiguration' | t }}</option>
+          @for (provider of providers(); track provider.uuid) {
+            @if (provider.enabled && provider.assistantEndpoint && provider.assistantModel) {
+              <option [value]="provider.uuid">{{ provider.name }}</option>
+            }
+          }
+        </select>
+      </label>
+      <label class="provider-field">
+        <span>{{ 'aiProviders.embeddingProvider' | t }}</span>
+        <select
+          [value]="selection('embedding')"
+          (change)="select('embedding', $event)"
+          [disabled]="aiProviders.saving()"
+        >
+          <option value="">{{ 'aiProviders.legacyConfiguration' | t }}</option>
+          @for (provider of providers(); track provider.uuid) {
+            @if (provider.enabled && provider.embeddingEndpoint && provider.embeddingModel) {
+              <option [value]="provider.uuid">{{ provider.name }}</option>
+            }
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (aiProviders.error(); as error) {
+      <p class="provider-message error" role="alert">{{ error }}</p>
+    }
+    @if (aiProviders.testResult(); as result) {
+      <p class="provider-message" [class.error]="!result.success" role="status">
+        {{ result.success ? ('aiProviders.testSuccess' | t) : result.message }}
+      </p>
+    }
+
+    <div class="provider-list">
+      <div class="list-heading">
+        <strong>{{ 'aiProviders.configured' | t }}</strong>
+        <span>{{ providers().length }}</span>
+      </div>
+      @if (providers().length === 0) {
+        <p class="provider-empty">{{ 'aiProviders.empty' | t }}</p>
+      } @else {
+        @for (provider of providers(); track provider.uuid) {
+          <article class="provider-card">
+            <div class="provider-card-heading">
+              <div>
+                <h4>{{ provider.name }}</h4>
+                <span>{{
+                  provider.enabled ? ('aiProviders.enabled' | t) : ('aiProviders.disabled' | t)
+                }}</span>
+              </div>
+              @if (provider.apiKeyConfigured) {
+                <span class="key-badge">{{ 'aiProviders.keyConfigured' | t }}</span>
+              }
+            </div>
+            <div class="capabilities">
+              @if (provider.assistantEndpoint && provider.assistantModel) {
+                <span>{{ 'aiProviders.assistant' | t }} · {{ provider.assistantModel }}</span>
+              }
+              @if (provider.embeddingEndpoint && provider.embeddingModel) {
+                <span>{{ 'aiProviders.embeddings' | t }} · {{ provider.embeddingModel }}</span>
+              }
+            </div>
+            <div class="provider-actions">
+              @if (provider.assistantEndpoint && provider.assistantModel) {
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="aiProviders.testing() !== null"
+                  (click)="test(provider, 'assistant')"
+                >
+                  {{
+                    aiProviders.testing() === testKey(provider, 'assistant')
+                      ? ('aiProviders.testing' | t)
+                      : ('aiProviders.testAssistant' | t)
+                  }}
+                </button>
+              }
+              @if (provider.embeddingEndpoint && provider.embeddingModel) {
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="aiProviders.testing() !== null"
+                  (click)="test(provider, 'embedding')"
+                >
+                  {{
+                    aiProviders.testing() === testKey(provider, 'embedding')
+                      ? ('aiProviders.testing' | t)
+                      : ('aiProviders.testEmbeddings' | t)
+                  }}
+                </button>
+              }
+              <button type="button" class="text-button" (click)="edit(provider)">
+                {{ 'aiProviders.edit' | t }}
+              </button>
+              <button type="button" class="danger-button" (click)="remove(provider)">
+                {{ 'aiProviders.delete' | t }}
+              </button>
+            </div>
+          </article>
+        }
+      }
+    </div>
+
+    <form class="provider-form" (submit)="$event.preventDefault(); save()">
+      <div class="form-heading">
+        <div>
+          <strong>{{
+            editingUuid() ? ('aiProviders.editTitle' | t) : ('aiProviders.addTitle' | t)
+          }}</strong>
+          <span>{{ 'aiProviders.formCopy' | t }}</span>
+        </div>
+        @if (editingUuid()) {
+          <button type="button" class="text-button" (click)="resetForm()">
+            {{ 'aiProviders.cancel' | t }}
+          </button>
+        }
+      </div>
+      <div class="form-grid">
+        <label class="provider-field full-width">
+          <span>{{ 'aiProviders.name' | t }}</span>
+          <input
+            type="text"
+            [value]="draft().name"
+            [placeholder]="'aiProviders.namePlaceholder' | t"
+            required
+            maxlength="100"
+            (input)="updateText('name', $event)"
+          />
+        </label>
+        <label class="provider-field">
+          <span>{{ 'aiProviders.assistantEndpoint' | t }}</span>
+          <input
+            type="url"
+            [value]="draft().assistantEndpoint"
+            placeholder="https://…/chat/completions"
+            (input)="updateText('assistantEndpoint', $event)"
+          />
+        </label>
+        <label class="provider-field">
+          <span>{{ 'aiProviders.assistantModel' | t }}</span>
+          <input
+            type="text"
+            [value]="draft().assistantModel"
+            (input)="updateText('assistantModel', $event)"
+          />
+        </label>
+        <label class="provider-field">
+          <span>{{ 'aiProviders.embeddingEndpoint' | t }}</span>
+          <input
+            type="url"
+            [value]="draft().embeddingEndpoint"
+            placeholder="https://…/embeddings"
+            (input)="updateText('embeddingEndpoint', $event)"
+          />
+        </label>
+        <label class="provider-field">
+          <span>{{ 'aiProviders.embeddingModel' | t }}</span>
+          <input
+            type="text"
+            [value]="draft().embeddingModel"
+            (input)="updateText('embeddingModel', $event)"
+          />
+        </label>
+        <label class="provider-field full-width">
+          <span>{{ 'aiProviders.apiKey' | t }}</span>
+          <input
+            type="password"
+            [value]="draft().apiKey"
+            [placeholder]="
+              editingUuid() ? ('aiProviders.keyKeep' | t) : ('aiProviders.keyPlaceholder' | t)
+            "
+            autocomplete="new-password"
+            (input)="updateText('apiKey', $event)"
+          />
+        </label>
+        <label class="enabled-field full-width">
+          <input type="checkbox" [checked]="draft().enabled" (change)="updateEnabled($event)" />
+          <span>{{ 'aiProviders.enabledLabel' | t }}</span>
+        </label>
+      </div>
+      @if (formError(); as error) {
+        <p class="provider-message error" role="alert">{{ error }}</p>
+      }
+      <footer class="form-footer">
+        <button type="submit" class="primary-button" [disabled]="aiProviders.saving()">
+          {{
+            aiProviders.saving()
+              ? ('aiProviders.saving' | t)
+              : editingUuid()
+                ? ('aiProviders.saveChanges' | t)
+                : ('aiProviders.add' | t)
+          }}
+        </button>
+      </footer>
+    </form>
+  }
+</section>

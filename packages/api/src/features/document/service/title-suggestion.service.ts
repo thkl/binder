@@ -7,6 +7,7 @@ import { DocumentStore } from '../store/document.store';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { MetadataService } from '../../metadata/service/metadata.service';
 import { IssuerService } from '../../issuer/service/issuer.service';
+import { AiProviderService } from '../../ai-provider/service/ai-provider.service';
 
 const ProviderResponseSchema = z.object({
   choices: z.array(z.object({ message: z.object({ content: z.string() }) })).min(1),
@@ -25,6 +26,7 @@ export class TitleSuggestionService {
     private readonly settings: ApplicationSettingsService,
     private readonly metadata: MetadataService,
     private readonly issuers: IssuerService,
+    private readonly aiProviders: AiProviderService,
   ) {}
 
   async suggest(ownerUuid: string, documentUuid: string): Promise<DocumentTitleSuggestion> {
@@ -36,17 +38,15 @@ export class TitleSuggestionService {
     const automaticClassification =
       (await this.settings.get('ai.automaticClassification.enabled', 'false'))?.toLowerCase() ===
       'true';
-    const provider = await this.settings.get('ai.provider', 'openai-compatible');
-    const apiKey = await this.settings.get('ai.apiKey', '');
-    if ((!enabled && !automaticClassification) || !apiKey || provider !== 'openai-compatible') {
+    const provider = await this.aiProviders.resolve('assistant');
+    if ((!enabled && !automaticClassification) || !provider) {
       throw new BadRequestException('AI title suggestions are not configured');
     }
-
-    const endpoint = await this.settings.get(
-      'ai.endpoint',
-      'https://api.openai.com/v1/chat/completions',
-    );
-    const model = await this.settings.get('ai.model', 'gpt-4o-mini');
+    const { endpoint, model, apiKey } = {
+      endpoint: provider.assistantEndpoint,
+      model: provider.assistantModel,
+      apiKey: provider.apiKey,
+    };
     const analysisPrompt = await this.settings.get(
       'ai.documentAnalysis.prompt',
       'Classify the document and create a concise human-readable title. Use only the supplied document types, categories, tags, and metadata keys. Never invent UUIDs, tags, types, categories, or custom keys. Use null or [] when uncertain. Return only the requested JSON object; never include markdown.',
@@ -75,11 +75,12 @@ export class TitleSuggestionService {
     this.logger.info('Requesting document metadata suggestion', {
       documentUuid,
       model,
+      provider: provider.name,
       textLength: extractedText.length,
       issuerCount: allowedIssuers.length,
     });
 
-    const response = await fetch(endpoint!, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({

@@ -14,11 +14,12 @@ import {
 } from '@binder/common';
 import { SettingsService } from '../../services/settings.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { AiProviderManagerComponent } from '../ai-provider-manager/ai-provider-manager.component';
 
 @Component({
   selector: 'binder-settings',
   standalone: true,
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, AiProviderManagerComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

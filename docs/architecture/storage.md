@@ -127,6 +127,10 @@ Paths should be stored relative to `DOCUMENT_STORAGE_ROOT`, not as machine-speci
 - An uploaded original is immutable.
 - Reprocessing updates derived artifacts and search indexes only.
 - Replacing a document creates a new version rather than overwriting the original.
+- Future document versioning will group immutable document records into explicit
+  version families. A user may manually link a newly imported document to an
+  existing family and choose the current version; filename-based matching may
+  suggest a link but must never apply it without confirmation.
 - Deletion must remove the database record and managed files as one explicit operation, with cleanup failures recorded for retry.
 
 ## Backup expectations

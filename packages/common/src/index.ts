@@ -788,6 +788,72 @@ export type SetApplicationSettingInput = z.infer<typeof SetApplicationSettingInp
 export const SaveAllApplicationSettingsInputSchema = z.array(SetApplicationSettingInputSchema);
 export type SaveAllApplicationSettingsInput = z.infer<typeof SaveAllApplicationSettingsInputSchema>;
 
+export const AiProviderTypeSchema = z.literal('openai-compatible');
+export type AiProviderType = z.infer<typeof AiProviderTypeSchema>;
+
+export const AiProviderTaskSchema = z.enum(['assistant', 'embedding']);
+export type AiProviderTask = z.infer<typeof AiProviderTaskSchema>;
+
+export const AiProviderProfileSchema = z.object({
+  uuid: z.uuid(),
+  name: z.string().trim().min(1).max(100),
+  providerType: AiProviderTypeSchema,
+  assistantEndpoint: z.string().trim().max(500).nullable(),
+  assistantModel: z.string().trim().max(150).nullable(),
+  embeddingEndpoint: z.string().trim().max(500).nullable(),
+  embeddingModel: z.string().trim().max(150).nullable(),
+  apiKeyConfigured: z.boolean(),
+  enabled: z.boolean(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export type AiProviderProfile = z.infer<typeof AiProviderProfileSchema>;
+
+const AiProviderEndpointSchema = z.string().trim().max(500).default('');
+const AiProviderModelSchema = z.string().trim().max(150).default('');
+
+export const CreateAiProviderProfileInputSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  providerType: AiProviderTypeSchema.default('openai-compatible'),
+  assistantEndpoint: AiProviderEndpointSchema,
+  assistantModel: AiProviderModelSchema,
+  embeddingEndpoint: AiProviderEndpointSchema,
+  embeddingModel: AiProviderModelSchema,
+  apiKey: z.string().max(100_000).optional(),
+  enabled: z.boolean().default(true),
+});
+export type CreateAiProviderProfileInput = z.infer<typeof CreateAiProviderProfileInputSchema>;
+
+export const UpdateAiProviderProfileInputSchema = CreateAiProviderProfileInputSchema.partial();
+export type UpdateAiProviderProfileInput = z.infer<typeof UpdateAiProviderProfileInputSchema>;
+
+export const AiProviderSelectionSchema = z.object({
+  assistantProviderUuid: z.uuid().nullable(),
+  embeddingProviderUuid: z.uuid().nullable(),
+});
+export type AiProviderSelection = z.infer<typeof AiProviderSelectionSchema>;
+
+export const SetAiProviderSelectionInputSchema = AiProviderSelectionSchema;
+export type SetAiProviderSelectionInput = z.infer<typeof SetAiProviderSelectionInputSchema>;
+
+export const AiProviderConfigurationSchema = z.object({
+  items: z.array(AiProviderProfileSchema),
+  selection: AiProviderSelectionSchema,
+});
+export type AiProviderConfiguration = z.infer<typeof AiProviderConfigurationSchema>;
+
+export const AiProviderTestInputSchema = z.object({
+  task: AiProviderTaskSchema,
+});
+export type AiProviderTestInput = z.infer<typeof AiProviderTestInputSchema>;
+
+export const AiProviderTestResponseSchema = z.object({
+  success: z.boolean(),
+  status: z.number().int().nonnegative(),
+  message: z.string().max(500),
+});
+export type AiProviderTestResponse = z.infer<typeof AiProviderTestResponseSchema>;
+
 export type ApiResponse<T> = { data: T };
 
 export const VocabularyScopeSchema = z.enum(['system', 'personal']);

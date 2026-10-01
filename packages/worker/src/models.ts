@@ -37,6 +37,43 @@ export class ApplicationSetting extends Model {
   declare valueIv: string | null;
 }
 
+@Table({ tableName: 'ai_provider_profiles', underscored: true, timestamps: true })
+export class AiProviderProfile extends Model {
+  @PrimaryKey
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ type: DataType.STRING(100) })
+  declare name: string;
+
+  @Column({ field: 'provider_type', type: DataType.STRING(64) })
+  declare providerType: 'openai-compatible';
+
+  @Column({ field: 'assistant_endpoint', type: DataType.STRING(500), allowNull: true })
+  declare assistantEndpoint: string | null;
+
+  @Column({ field: 'assistant_model', type: DataType.STRING(150), allowNull: true })
+  declare assistantModel: string | null;
+
+  @Column({ field: 'embedding_endpoint', type: DataType.STRING(500), allowNull: true })
+  declare embeddingEndpoint: string | null;
+
+  @Column({ field: 'embedding_model', type: DataType.STRING(150), allowNull: true })
+  declare embeddingModel: string | null;
+
+  @Column({ field: 'api_key', type: DataType.TEXT })
+  declare apiKey: string;
+
+  @Column({ field: 'api_key_iv', type: DataType.STRING(32), allowNull: true })
+  declare apiKeyIv: string | null;
+
+  @Column({ type: DataType.BOOLEAN })
+  declare enabled: boolean;
+
+  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
+  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
+}
+
 @Table({ tableName: 'maintenance_runs', underscored: true, timestamps: true })
 export class MaintenanceRun extends Model {
   @PrimaryKey

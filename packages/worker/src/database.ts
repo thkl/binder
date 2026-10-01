@@ -1,6 +1,7 @@
 import { Sequelize } from 'sequelize-typescript';
 import {
   ApplicationSetting,
+  AiProviderProfile,
   Document,
   DocumentEmbedding,
   DocumentFolder,
@@ -28,6 +29,7 @@ export const sequelize = new Sequelize({
 });
 sequelize.addModels([
   ApplicationSetting,
+  AiProviderProfile,
   User,
   Issuer,
   Document,

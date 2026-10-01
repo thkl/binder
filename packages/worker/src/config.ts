@@ -2,7 +2,7 @@ import { createDecipheriv } from 'node:crypto';
 import { hostname } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
 import { Op } from 'sequelize';
-import { ApplicationSetting } from './models.js';
+import { AiProviderProfile, ApplicationSetting } from './models.js';
 import { logger } from './logger.js';
 
 export interface WorkerConfig {
@@ -85,6 +85,7 @@ export async function loadRuntimeConfiguration(): Promise<void> {
     'embeddings.chunkOverlap',
     'ai.provider',
     'ai.apiKey',
+    'ai.embeddingProviderUuid',
     'embeddings.provider',
     'embeddings.apiKey',
   ];
@@ -156,11 +157,26 @@ export async function loadRuntimeConfiguration(): Promise<void> {
     readSettingInteger(values, 'embeddings.chunkOverlap', config.embeddings.chunkOverlap),
     config.embeddings.chunkSize - 1,
   );
-  const key = values.get('ai.apiKey')?.value
-    ? values.get('ai.apiKey')
-    : values.get('embeddings.apiKey');
-  config.embeddings.apiKey =
-    key?.isEncrypted && key.valueIv ? decryptSecret(key.value, key.valueIv) : (key?.value ?? '');
+  const selectedEmbeddingProviderUuid = values.get('ai.embeddingProviderUuid')?.value?.trim();
+  const selectedEmbeddingProvider = selectedEmbeddingProviderUuid
+    ? await AiProviderProfile.findByPk(selectedEmbeddingProviderUuid)
+    : null;
+
+  if (selectedEmbeddingProvider?.enabled) {
+    config.embeddings.provider = selectedEmbeddingProvider.providerType;
+    config.embeddings.endpoint = selectedEmbeddingProvider.embeddingEndpoint ?? '';
+    config.embeddings.model = selectedEmbeddingProvider.embeddingModel ?? '';
+    config.embeddings.apiKey =
+      selectedEmbeddingProvider.apiKey && selectedEmbeddingProvider.apiKeyIv
+        ? decryptSecret(selectedEmbeddingProvider.apiKey, selectedEmbeddingProvider.apiKeyIv)
+        : '';
+  } else {
+    const key = values.get('ai.apiKey')?.value
+      ? values.get('ai.apiKey')
+      : values.get('embeddings.apiKey');
+    config.embeddings.apiKey =
+      key?.isEncrypted && key.valueIv ? decryptSecret(key.value, key.valueIv) : (key?.value ?? '');
+  }
   if (config.embeddings.enabled && !config.embeddings.apiKey)
     logger.warn('Embeddings enabled but no API key is configured');
   if (config.malwareScan.required && !config.malwareScan.command)

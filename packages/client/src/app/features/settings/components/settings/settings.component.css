@@ -48,6 +48,12 @@ h2 {
   align-items: start;
 }
 
+.settings-content {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
 .glass-card {
   border: 1px solid var(--glass-border);
   border-radius: 1.1rem;

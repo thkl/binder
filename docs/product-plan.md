@@ -90,6 +90,29 @@ verification.
 
 ### P3 — connect Binder to the rest of life
 
+- Configurable AI provider profiles ✅ Implemented:
+  - Maintain multiple named providers with encrypted credentials.
+  - Let administrators test and manage each provider independently.
+  - Select the provider separately for document assistance and embeddings.
+  - Keep provider-specific endpoints and models while sharing the existing
+    server-side safety and response validation.
+- Add optional, user-triggered PDF file analysis with a custom prompt:
+  - Make the complete workflow manual: the user opens a document they are
+    authorized to access, sees the PDF in the client, enters a prompt below the
+    preview, and explicitly starts the analysis.
+  - Send the original PDF to a provider that supports file-aware analysis and
+    pass it to the model as an input file instead of using extracted text only.
+  - Show clearly that the original document is sent to the configured external
+    provider and require the normal owner-scoped access check before upload.
+  - Enforce file-size, MIME-type, timeout, and response limits; clean up
+    provider-side uploads where the provider supports deletion.
+  - Configure automatic expiration for provider uploads using the provider's
+    file-lifetime controls, with a short default such as one hour.
+  - Keep the result as an explicit analysis response until the user chooses to
+    save any metadata or notes.
+- Expand homepage document ingestion so the complete home content background is
+  the PDF drop zone, with a clear drag-over state and the file-picker fallback
+  retained.
 - Add extensions and integrations without changing the core document workflow
 - Turn invoice due dates into calendar entries
 - Import documents from email
@@ -101,9 +124,20 @@ verification.
 - Record an owner-visible audit history for every document
 - Add a secure first-run onboarding assistant that creates the administrator and validates the basic runtime settings
 - Let administrators inspect API and worker activity
-- Choose different AI providers for embeddings and document assistance
-- Test providers and choose privacy-appropriate services for each task
 - Add bulk metadata editing for selected documents, including type, category, issuer, tags, custom fields, and virtual-folder assignments
+
+### P4 — document history
+
+- Add document version families so a newly imported document can be linked to
+  an existing document as a new version without overwriting either original.
+- Provide a manual version-link action from the document list, inbox, and
+  metadata view, with a visible version timeline and access to every stored
+  file.
+- Suggest possible version links using normalized original filenames and other
+  non-destructive signals, but never link or merge documents automatically
+  without user confirmation.
+- Define how version metadata, folders, search results, and the current/latest
+  version are represented while retaining owner-scoped access checks.
 
 ### Later
 
