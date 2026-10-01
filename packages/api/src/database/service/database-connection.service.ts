@@ -33,6 +33,7 @@ import { DocumentFolder } from '../../features/folder/models/document-folder.ent
 import { SavedSearch } from '../../features/saved-search/models/saved-search.entity';
 import { DocumentStorageIssue } from '../../features/document/models/document-storage-issue.entity';
 import { SetupState } from '../../features/setup/models/setup-state.entity';
+import { AiProviderProfile } from '../../features/ai-provider/models/ai-provider.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -82,6 +83,7 @@ export class DatabaseConnectionService {
       SavedSearch,
       DocumentStorageIssue,
       SetupState,
+      AiProviderProfile,
     ]);
     await this.initialize();
   }
