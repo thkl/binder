@@ -104,6 +104,26 @@
   opacity: 0.55;
 }
 
+.drawer-delete-link {
+  border: 1px solid rgba(255, 133, 133, 0.35);
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.55rem;
+  color: #ffb0b0;
+  background: rgba(255, 102, 102, 0.06);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.drawer-delete-link:hover,
+.drawer-delete-link:focus-visible {
+  border-color: #ff8585;
+  color: #ffd1d1;
+  background: rgba(255, 102, 102, 0.12);
+  outline: none;
+}
+
 .drawer-close {
   display: grid;
   width: 2.5rem;

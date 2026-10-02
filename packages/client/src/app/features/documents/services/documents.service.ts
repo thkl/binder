@@ -28,6 +28,7 @@ import {
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
   ClearDocumentSuggestionResponseSchema,
+  DocumentDeleteResponseSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -413,6 +414,25 @@ export class DocumentsService {
       return false;
     } finally {
       this.uploading.set(false);
+    }
+  }
+
+  async remove(uuid: string): Promise<boolean> {
+    this.error.set(null);
+
+    try {
+      const response = await firstValueFrom(
+        this.http.delete<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/${uuid}`),
+          { withCredentials: true },
+        ),
+      );
+      const result = DocumentDeleteResponseSchema.parse(response.data);
+      await this.load();
+      return result.deleted;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
     }
   }
 

@@ -76,12 +76,17 @@
       </button>
       @if (uploadInProgress()) {
         <p class="home-upload-status progress" role="status">
-          {{ 'home.uploadProgress' | t }} {{ uploadQueueCompleted() }}/{{ uploadQueueTotal() }}
+          <span class="upload-status-spinner" aria-hidden="true"></span>
+          <span>
+            {{ 'home.uploadProgress' | t }} {{ uploadQueueCompleted() }}/{{ uploadQueueTotal() }}
+          </span>
+          <a routerLink="/inbox" class="home-upload-link">{{ 'home.openInbox' | t }} →</a>
         </p>
       }
       @if (uploadMessage() === 'success') {
         <p class="home-upload-status success" role="status">
-          {{ uploadedCount() }} {{ 'home.uploadedDocuments' | t }}
+          <span>{{ uploadedCount() }} {{ 'home.uploadedDocuments' | t }}</span>
+          <a routerLink="/inbox" class="home-upload-link">{{ 'home.openInbox' | t }} →</a>
         </p>
       }
       @if (uploadError(); as error) {
@@ -304,6 +309,7 @@
       (suggestionDismissed)="reloadSearch()"
       (suggestionAccepted)="titleSuggestionAccepted()"
       (archiveRequested)="generateArchive(drawerUuid)"
+      (deleteRequested)="deleteDocument(drawerUuid)"
     />
   }
 }

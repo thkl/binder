@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectConnection } from '@nestjs/sequelize';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ZipArchive } from 'archiver';
@@ -15,6 +21,7 @@ import {
   DocumentListResponse,
   DocumentListResponseSchema,
   DocumentStorageIssueListResponseSchema,
+  DocumentDeleteResponseSchema,
 } from '@binder/common';
 import {
   ClearDocumentSuggestionResponseSchema,
@@ -41,6 +48,23 @@ import { FolderStore } from '../../folder/store/folder.store';
 import { DocumentStorageIssueStore } from '../store/document-storage-issue.store';
 import { InboxItemStore } from '../../inbox/store/inbox-item.store';
 import { DocumentAuditService } from './document-audit.service';
+import { Sequelize } from 'sequelize-typescript';
+import { Op } from 'sequelize';
+import { Document } from '../models/document.entity';
+import { DocumentPage } from '../models/document-page.entity';
+import { DocumentEmbedding } from '../models/document-embedding.entity';
+import { DocumentAnalysisSession } from '../models/document-analysis-session.entity';
+import { DocumentAuditEventEntity } from '../models/document-audit-event.entity';
+import { DocumentMetadataChangeSet } from '../models/document-metadata-change-set.entity';
+import { DocumentStorageIssue } from '../models/document-storage-issue.entity';
+import { DocumentFolder } from '../../folder/models/document-folder.entity';
+import {
+  DocumentMetadataValue,
+  DocumentTagAssignment,
+} from '../../metadata/models/vocabulary.entity';
+import { InboxItem } from '../../inbox/models/inbox-item.entity';
+import { PipelineJob } from '../../pipeline/models/pipeline-job.entity';
+import { PipelineJobEvent } from '../../pipeline/models/pipeline-job-event.entity';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -54,6 +78,7 @@ export class DocumentService {
   private readonly thumbnailGeneration = new Map<string, Promise<string>>();
 
   constructor(
+    @InjectConnection() private readonly sequelize: Sequelize,
     private readonly documents: DocumentStore,
     private readonly storage: DocumentStorageService,
     private readonly pipeline: PipelineService,
@@ -79,6 +104,11 @@ export class DocumentService {
     const stored = await this.storage.storePdf(file.buffer, uuid, file.originalname);
 
     try {
+      const duplicate = await this.documents.findByChecksum(stored.checksumSha256);
+      if (duplicate) {
+        throw new ConflictException('A document with identical content already exists.');
+      }
+
       const input = CreateDocumentInputSchema.parse({
         originalFilename: file.originalname,
         mimeType: 'application/pdf',
@@ -525,6 +555,99 @@ export class DocumentService {
       throw new NotFoundException('Document not found');
     }
     return this.toDocumentResponse(document);
+  }
+
+  async remove(ownerUuid: string, uuid: string) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+
+    await this.sequelize.transaction(async (transaction) => {
+      const jobs = await PipelineJob.findAll({
+        attributes: ['uuid'],
+        where: { documentUuid: uuid },
+        transaction,
+      });
+      const jobUuids = jobs.map((job) => job.uuid);
+
+      if (jobUuids.length > 0) {
+        await PipelineJobEvent.destroy({
+          where: { jobUuid: { [Op.in]: jobUuids } },
+          transaction,
+        });
+      }
+
+      await PipelineJob.destroy({ where: { documentUuid: uuid }, transaction });
+      await DocumentTagAssignment.destroy({ where: { documentUuid: uuid }, transaction });
+      await DocumentMetadataValue.destroy({ where: { documentUuid: uuid }, transaction });
+      await DocumentFolder.destroy({ where: { documentUuid: uuid }, transaction });
+      await InboxItem.destroy({ where: { documentUuid: uuid }, transaction });
+      await DocumentPage.destroy({ where: { documentUuid: uuid }, transaction });
+      await DocumentEmbedding.destroy({ where: { documentUuid: uuid }, transaction });
+      await DocumentAnalysisSession.destroy({ where: { documentUuid: uuid }, transaction });
+      await DocumentStorageIssue.destroy({ where: { documentUuid: uuid }, transaction });
+      await DocumentAuditEventEntity.destroy({ where: { documentUuid: uuid }, transaction });
+      await this.removeDocumentFromChangeSets(ownerUuid, uuid, transaction);
+      await document.destroy({ transaction });
+    });
+
+    this.thumbnailGeneration.delete(uuid);
+    const filesToRemove = [document.storageKey, document.thumbnailKey, document.archiveKey].filter(
+      (key): key is string => Boolean(key),
+    );
+    await Promise.all(
+      filesToRemove.map((key) =>
+        this.storage
+          .remove(key)
+          .catch((error: unknown) =>
+            this.logger.warn(
+              `Unable to remove deleted document file ${key}: ${error instanceof Error ? error.message : String(error)}`,
+            ),
+          ),
+      ),
+    );
+    await this.storage
+      .removeDerived(uuid)
+      .catch((error: unknown) =>
+        this.logger.warn(
+          `Unable to remove derived files for deleted document ${uuid}: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      );
+    this.eventEmitter.emit('inbox.changed', { reason: 'document-deleted' });
+
+    return DocumentDeleteResponseSchema.parse({ deleted: true, uuid });
+  }
+
+  private async removeDocumentFromChangeSets(
+    ownerUuid: string,
+    documentUuid: string,
+    transaction: import('sequelize').Transaction,
+  ): Promise<void> {
+    const changeSets = await DocumentMetadataChangeSet.findAll({
+      where: { ownerUuid },
+      transaction,
+    });
+
+    for (const changeSet of changeSets) {
+      const changes = changeSet.changes.filter(
+        (change) => (change as { documentUuid?: unknown }).documentUuid !== documentUuid,
+      );
+      if (changes.length === changeSet.changes.length) continue;
+
+      if (changes.length === 0) {
+        await changeSet.destroy({ transaction });
+        continue;
+      }
+
+      await changeSet.update(
+        {
+          documentCount: changes.length,
+          changes,
+        },
+        { transaction },
+      );
+    }
   }
 
   async updateTitle(ownerUuid: string, uuid: string, input: SetDocumentTitleInput) {

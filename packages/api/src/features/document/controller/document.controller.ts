@@ -177,6 +177,12 @@ export class DocumentController {
     return new StreamableFile(result.stream, { type: result.document.mimeType });
   }
 
+  @Delete(':uuid')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async remove(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.remove(user.userId, uuid) };
+  }
+
   @Get(':uuid/audit')
   async auditHistory(
     @Param('uuid') uuid: string,

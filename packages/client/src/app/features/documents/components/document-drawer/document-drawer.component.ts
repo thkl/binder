@@ -51,6 +51,7 @@ export class DocumentDrawerComponent {
   readonly keepEditingRequest = output<void>();
   readonly discardRequest = output<void>();
   readonly archiveRequested = output<void>();
+  readonly deleteRequested = output<void>();
 
   readonly activeTab = signal<DocumentDrawerTab>('preview');
   readonly dirty = signal(false);

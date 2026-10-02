@@ -501,6 +501,16 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     await this.documents.generateArchive(uuid);
   }
 
+  async deleteDocument(uuid: string): Promise<void> {
+    if (!window.confirm(this.i18n.t('documents.deleteConfirm'))) return;
+
+    const deleted = await this.documents.remove(uuid);
+    if (deleted && this.drawerDocumentUuid() === uuid) {
+      this.finishCloseMetadata();
+    }
+    if (deleted) this.clearSelection();
+  }
+
   requestCloseMetadata(): void {
     if (!this.drawerDocumentUuid()) return;
     if (this.metadataDirty()) {

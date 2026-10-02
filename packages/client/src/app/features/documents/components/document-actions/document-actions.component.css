@@ -41,6 +41,17 @@
   opacity: 0.55;
 }
 
+.document-action.danger {
+  color: #ffb0b0;
+}
+
+.document-action.danger:hover,
+.document-action.danger:focus-visible {
+  border-color: #ff8585;
+  color: #ffd1d1;
+  background: rgba(255, 102, 102, 0.12);
+}
+
 .document-action svg {
   width: 1rem;
   height: 1rem;

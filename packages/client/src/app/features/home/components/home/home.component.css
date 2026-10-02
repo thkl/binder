@@ -299,11 +299,44 @@ h2 {
 }
 
 .home-upload-status.success {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   color: #a8e8ca;
 }
 
+.home-upload-link {
+  color: var(--cyan);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.home-upload-link:hover,
+.home-upload-link:focus-visible {
+  color: #dff8ff;
+  text-decoration: underline;
+}
+
 .home-upload-status.progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   color: #a9dfee;
+}
+
+.upload-status-spinner {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid rgba(169, 223, 238, 0.3);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: upload-status-spin 0.8s linear infinite;
+}
+
+@keyframes upload-status-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .home-upload-status.error {

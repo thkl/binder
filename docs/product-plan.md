@@ -88,6 +88,12 @@ originals against their database size and SHA-256 checksum and surface
 owner-scoped issues. A real restore drill remains recommended as deployment
 verification.
 
+The homepage upload flow now reports progress and links to the inbox, rejects
+duplicate content by SHA-256 before creating a second document, supports
+owner-scoped complete deletion, and can optionally run inbox AI analysis
+automatically after text extraction. Hosted embeddings remain an independent
+worker setting and run automatically after text extraction when enabled.
+
 ### P3 — connect Binder to the rest of life
 
 - Configurable AI provider profiles ✅ Implemented:

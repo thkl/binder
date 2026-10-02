@@ -146,6 +146,7 @@ const EN: TranslationMap = {
   'home.uploaded': 'Document uploaded. Processing continues in the background.',
   'home.uploadOnlyPdf': 'Only PDF documents are supported.',
   'home.uploadFailed': 'The document could not be uploaded. Please try again.',
+  'home.openInbox': 'Open inbox',
   'home.placeholder': 'Find the document about my car inspection last summer',
   'home.search': 'Search',
   'home.searching': 'Searching…',
@@ -249,12 +250,13 @@ const EN: TranslationMap = {
   'setting.pipeline.lockTimeoutMs': 'Worker lock timeout (ms)',
   'setting.pipeline.reconcileIntervalMs': 'Reconciliation interval (ms)',
   'setting.pipeline.ocrLanguages': 'OCR languages',
-  'setting.embeddings.enabled': 'Enable hosted semantic embeddings',
+  'setting.embeddings.enabled': 'Automatically create semantic embeddings',
   'setting.embeddings.endpoint': 'Embedding endpoint',
   'setting.embeddings.model': 'Embedding model',
   'setting.embeddings.chunkSize': 'Embedding chunk size (characters)',
   'setting.embeddings.chunkOverlap': 'Embedding chunk overlap (characters)',
   'setting.ai.titleSuggestions.enabled': 'Enable AI title suggestions',
+  'setting.ai.automaticAnalysis.enabled': 'Automatically analyze imported documents with AI',
   'setting.ai.provider': 'AI provider (shared)',
   'setting.ai.endpoint': 'Assistant endpoint',
   'setting.ai.model': 'Assistant model',
@@ -595,6 +597,7 @@ const DE: TranslationMap = {
   'home.uploadOnlyPdf': 'Es werden nur PDF-Dokumente unterstützt.',
   'home.uploadFailed':
     'Das Dokument konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.',
+  'home.openInbox': 'Posteingang öffnen',
   'home.placeholder':
     'Finden Sie das Dokument über die Hauptuntersuchung meines Autos letzten Sommer',
   'home.search': 'Suchen',
@@ -702,12 +705,13 @@ const DE: TranslationMap = {
   'setting.pipeline.lockTimeoutMs': 'Worker-Sperrzeit (ms)',
   'setting.pipeline.reconcileIntervalMs': 'Abgleichsintervall (ms)',
   'setting.pipeline.ocrLanguages': 'OCR-Sprachen',
-  'setting.embeddings.enabled': 'Gehostete semantische Embeddings aktivieren',
+  'setting.embeddings.enabled': 'Semantische Embeddings automatisch erstellen',
   'setting.embeddings.endpoint': 'Embedding-Endpunkt',
   'setting.embeddings.model': 'Embedding-Modell',
   'setting.embeddings.chunkSize': 'Größe der Embedding-Abschnitte (Zeichen)',
   'setting.embeddings.chunkOverlap': 'Überlappung der Embedding-Abschnitte (Zeichen)',
   'setting.ai.titleSuggestions.enabled': 'KI-Titelvorschläge aktivieren',
+  'setting.ai.automaticAnalysis.enabled': 'Importierte Dokumente automatisch mit KI analysieren',
   'setting.ai.provider': 'KI-Anbieter (gemeinsam)',
   'setting.ai.endpoint': 'Assistant-Endpunkt',
   'setting.ai.model': 'Assistant-Modell',
@@ -1286,6 +1290,8 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'documents.pdfaAvailable': 'PDF/A available',
     'documents.suggest': 'Suggest metadata',
     'documents.requeue': 'Requeue processing',
+    'documents.delete': 'Delete document',
+    'documents.deleteConfirm': 'Delete this document and all derived files?',
     'documents.exportSelected': 'Export selected documents',
     'documents.exportFiltered': 'Export filtered documents',
     'documents.exportFolder': 'Export folder',
@@ -1334,6 +1340,7 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'documents.closeFilter': 'Close filter',
     'setting.ai.automaticClassification.enabled':
       'Automatically apply high-confidence AI classification',
+    'setting.ai.automaticAnalysis.enabled': 'Automatically analyze imported documents with AI',
     'setting.ai.automaticClassification.confidence':
       'Automatic classification confidence threshold (0–1)',
     'setting.ai.automaticClassification.confidence.hint':
@@ -1514,6 +1521,8 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'documents.pdfaAvailable': 'PDF/A verfügbar',
     'documents.suggest': 'Metadaten vorschlagen',
     'documents.requeue': 'Verarbeitung erneut starten',
+    'documents.delete': 'Dokument löschen',
+    'documents.deleteConfirm': 'Dieses Dokument und alle abgeleiteten Dateien löschen?',
     'documents.exportSelected': 'Ausgewählte Dokumente exportieren',
     'documents.exportFiltered': 'Gefilterte Dokumente exportieren',
     'documents.exportFolder': 'Ordner exportieren',
@@ -1562,6 +1571,7 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'documents.closeFilter': 'Filter schließen',
     'setting.ai.automaticClassification.enabled':
       'KI-Klassifizierung bei hoher Sicherheit automatisch übernehmen',
+    'setting.ai.automaticAnalysis.enabled': 'Importierte Dokumente automatisch mit KI analysieren',
     'setting.ai.automaticClassification.confidence':
       'Schwellwert für automatische KI-Klassifizierung (0–1)',
     'setting.ai.automaticClassification.confidence.hint':

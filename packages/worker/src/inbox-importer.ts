@@ -274,6 +274,9 @@ async function importFile(
 }
 
 async function getCompletionStage(): Promise<'import' | 'ai-analysis'> {
+  const automaticAnalysis = await ApplicationSetting.findByPk('ai.automaticAnalysis.enabled');
+  if (automaticAnalysis?.value.toLowerCase() === 'true') return 'ai-analysis';
+
   const setting = await ApplicationSetting.findByPk('inbox.completionStage');
   return setting?.value === 'import'
     ? 'import'

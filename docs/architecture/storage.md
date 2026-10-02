@@ -142,6 +142,8 @@ A usable backup must include:
 
 The `derived/` directory is rebuildable, although retaining it reduces recovery time. The worker now provides a scheduled consistency check for the immutable originals. It compares every database document with the configured filesystem, including existence, regular-file status, size, and SHA-256 checksum. Open issues are assigned to the document owner in `document_storage_issues` and are automatically resolved when a later check finds the original healthy.
 
+Deleting a document is an owner-scoped operation. The API removes its dependent database records in a Sequelize transaction and then removes the original file and the complete `derived/<document-uuid>/` directory. A failed filesystem cleanup is logged for operational follow-up; it never exposes another user's document or allows a user to delete outside their ownership scope.
+
 ## Future storage abstraction
 
 Application services should depend on a storage interface rather than directly on filesystem APIs. The first implementation will provide a filesystem adapter. An object-storage adapter can be added later without changing the document or pipeline APIs.

@@ -38,6 +38,13 @@ export class DocumentStore extends BaseCrudStore<Document> {
     return this.model.findAll({ where: { ownerUuid, uuid: { [Op.in]: uuids } } });
   }
 
+  async findByChecksum(checksumSha256: string): Promise<Document | null> {
+    return this.model.findOne({
+      where: { checksumSha256 },
+      order: [['createdAt', 'ASC']],
+    });
+  }
+
   async findOwnedAll(ownerUuid: string, query: DocumentListQuery): Promise<Document[]> {
     const where = await this.createOwnedWhere(ownerUuid, query);
     const sortDirection = query.direction.toUpperCase() as 'ASC' | 'DESC';

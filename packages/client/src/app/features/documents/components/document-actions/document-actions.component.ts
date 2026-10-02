@@ -30,6 +30,7 @@ export class DocumentActionsComponent {
   readonly metadata = output<void>();
   readonly suggest = output<void>();
   readonly requeue = output<void>();
+  readonly deleteRequested = output<void>();
 
   private readonly application = inject(ApplicationService);
   private readonly elementRef = inject(ElementRef<HTMLElement>);

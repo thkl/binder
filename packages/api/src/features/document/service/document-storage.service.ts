@@ -122,6 +122,13 @@ export class DocumentStorageService {
     await fs.rm(await this.resolveStoragePath(storageKey), { force: true });
   }
 
+  async removeDerived(uuid: string): Promise<void> {
+    await fs.rm(await this.resolveStoragePath(`derived/${uuid}`), {
+      recursive: true,
+      force: true,
+    });
+  }
+
   async exists(storageKey: string): Promise<boolean> {
     try {
       await fs.access(await this.resolveStoragePath(storageKey));

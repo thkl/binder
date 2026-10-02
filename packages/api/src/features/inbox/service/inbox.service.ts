@@ -63,6 +63,21 @@ export class InboxService {
           continue;
         }
 
+        const document = await this.documents.get(item.ownerUuid, item.documentUuid);
+        if (!['processing', 'ready'].includes(document.status)) {
+          skipped += 1;
+          continue;
+        }
+
+        const extractedText = await this.documents.getExtractedText(
+          item.ownerUuid,
+          item.documentUuid,
+        );
+        if (!extractedText.text.trim()) {
+          skipped += 1;
+          continue;
+        }
+
         await this.items.update(item.uuid, {
           aiStatus: 'processing',
           aiError: null,
@@ -227,6 +242,9 @@ export class InboxService {
 
   private async getCompletionStage(): Promise<'import' | 'ai-analysis'> {
     const value = (await this.settings.get('inbox.completionStage', 'ai-analysis'))?.trim();
+    const automaticAnalysis =
+      (await this.settings.get('ai.automaticAnalysis.enabled', 'false'))?.toLowerCase() === 'true';
+    if (automaticAnalysis) return 'ai-analysis';
     return value === 'import' ? 'import' : 'ai-analysis';
   }
 

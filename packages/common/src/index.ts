@@ -147,6 +147,12 @@ export const DocumentSchema = z.object({
 
 export type Document = z.infer<typeof DocumentSchema>;
 
+export const DocumentDeleteResponseSchema = z.object({
+  deleted: z.literal(true),
+  uuid: z.uuid(),
+});
+export type DocumentDeleteResponse = z.infer<typeof DocumentDeleteResponseSchema>;
+
 export const FolderNodeSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid(),

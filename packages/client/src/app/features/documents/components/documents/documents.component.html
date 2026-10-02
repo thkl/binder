@@ -501,6 +501,7 @@
                     (metadata)="toggleMetadata(document.uuid)"
                     (suggest)="suggestTitle(document.uuid)"
                     (requeue)="requeueDocument(document.uuid)"
+                    (deleteRequested)="deleteDocument(document.uuid)"
                   />
                 </article>
               }
@@ -650,6 +651,7 @@
                     (metadata)="toggleMetadata(document.uuid)"
                     (suggest)="suggestTitle(document.uuid)"
                     (requeue)="requeueDocument(document.uuid)"
+                    (deleteRequested)="deleteDocument(document.uuid)"
                   />
                 </article>
               }
@@ -691,6 +693,7 @@
         (suggestionDismissed)="dismissLocalTitleSuggestion(drawerUuid)"
         (suggestionAccepted)="acceptSuggestedMetadata(drawerUuid, $event)"
         (archiveRequested)="generateArchive(drawerUuid)"
+        (deleteRequested)="deleteDocument(drawerUuid)"
       />
     }
   }

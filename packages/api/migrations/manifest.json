@@ -329,6 +329,11 @@
                     "documents",
                     "settings"
                ]
+          },
+          "49": {
+               "required": [
+                    "settings"
+               ]
           }
      }
 }

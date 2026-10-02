@@ -12,11 +12,18 @@ import { SavedSearchService } from '../../../documents/services/saved-search.ser
 import type { Document } from '@binder/common';
 import { DocumentSearchQuerySchema } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'binder-home',
   standalone: true,
-  imports: [CommonModule, DocumentDrawerComponent, SavedSearchMenuComponent, TranslatePipe],
+  imports: [
+    CommonModule,
+    DocumentDrawerComponent,
+    SavedSearchMenuComponent,
+    RouterLink,
+    TranslatePipe,
+  ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -303,6 +310,16 @@ export class HomeComponent {
   async generateArchive(uuid: string): Promise<void> {
     await this.documents.generateArchive(uuid);
     await this.reloadSearch();
+  }
+
+  async deleteDocument(uuid: string): Promise<void> {
+    if (!window.confirm(this.i18n.t('documents.deleteConfirm'))) return;
+
+    const deleted = await this.documents.remove(uuid);
+    if (deleted && this.drawerDocumentUuid() === uuid) {
+      this.closeDrawer();
+      await this.reloadSearch();
+    }
   }
 
   private closeDrawer(): void {

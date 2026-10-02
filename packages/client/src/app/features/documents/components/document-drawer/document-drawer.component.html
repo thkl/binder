@@ -49,6 +49,9 @@
             </button>
           }
         </div>
+        <button type="button" class="drawer-delete-link" (click)="deleteRequested.emit()">
+          {{ 'documents.delete' | t }}
+        </button>
       </div>
       <button
         type="button"
