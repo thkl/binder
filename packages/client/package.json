@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "build": "ng build",
+    "test": "ng test --watch=false",
+    "coverage": "ng test --watch=false --coverage",
     "dev": "pnpm --filter @binder/common build && ng serve",
     "start": "pnpm --filter @binder/common build && ng serve",
     "typecheck": "ngc -p tsconfig.app.json --noEmit"
@@ -20,9 +22,12 @@
     "zone.js": "^0.15.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^22.0.0",
+    "@angular/build": "^22.0.0",
     "@angular/cli": "^22.0.0",
     "@angular/compiler-cli": "^22.0.0",
-    "typescript": "^6.0.0"
+    "@vitest/coverage-v8": "^4.1.11",
+    "jsdom": "^26.1.0",
+    "typescript": "^6.0.0",
+    "vitest": "^4.1.11"
   }
 }

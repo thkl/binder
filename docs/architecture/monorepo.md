@@ -162,6 +162,29 @@ api     client
 
 The workspace should provide one command to build and test all packages, while allowing package-level tests to run independently.
 
+### Test and coverage commands
+
+Run the complete test suite with:
+
+```bash
+pnpm test
+```
+
+Coverage is available for every package that currently has tests:
+
+```bash
+pnpm coverage
+```
+
+The common, API, and worker packages use Node's built-in test runner and
+coverage reporting. The Angular client uses Angular's `@angular/build:unit-test`
+builder with Vitest and jsdom. Its HTML and LCOV reports are written below
+`packages/client/coverage/`; generated coverage artifacts are ignored by Git.
+
+Coverage thresholds are intentionally not enforced yet. The first step is to
+establish a baseline and add focused tests for security, ownership, pipeline,
+contract, and critical client flows before raising thresholds incrementally.
+
 ## First contract slice
 
 Before implementing the upload endpoint, define these shared schemas:

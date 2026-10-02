@@ -53,5 +53,8 @@ jobs:
       - name: Run API security tests
         run: pnpm --filter @binder/api test
 
+      - name: Run workspace tests with coverage
+        run: pnpm coverage
+
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level=high

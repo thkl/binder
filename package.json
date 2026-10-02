@@ -16,6 +16,7 @@
     "format:check": "prettier --check \"packages/*/src/**/*.{ts,html,css}\" \"scripts/**/*.mjs\"",
     "check:settings-i18n": "node scripts/check-settings-i18n.mjs",
     "test": "pnpm -r --if-present run test",
+    "coverage": "pnpm -r --if-present run coverage",
     "typecheck": "pnpm -r --workspace-concurrency=1 --if-present run typecheck",
     "start:debug": "pnpm -r --workspace-concurrency=1 --if-present run start:debug",
     "start:client": "pnpm --filter @binder/client start"
