@@ -17,6 +17,7 @@ import { ApplicationService } from '../../../../common/application.service';
 import { DocumentAnalysisComponent } from '../document-analysis/document-analysis.component';
 import { DocumentAuditHistoryComponent } from '../document-audit-history/document-audit-history.component';
 import { CalendarService } from '../../services/calendar.service';
+import { ResizableSplitComponent } from '../../../../common/components/resizable-split/resizable-split.component';
 
 export type DocumentDrawerTab = 'preview' | 'metadata' | 'history';
 export type DocumentDrawerMode = 'analysis' | 'metadata';
@@ -28,6 +29,7 @@ export type DocumentDrawerMode = 'analysis' | 'metadata';
     DocumentAnalysisComponent,
     DocumentAuditHistoryComponent,
     DocumentMetadataEditorComponent,
+    ResizableSplitComponent,
     TranslatePipe,
   ],
   templateUrl: './document-drawer.component.html',

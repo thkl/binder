@@ -215,9 +215,11 @@
   gap: 0.8rem;
 }
 
+.document-workspace,
 .document-workspace.analysis-enabled {
-  grid-template-rows: minmax(0, 2fr) minmax(15rem, 1fr);
+  grid-template-rows: minmax(0, 1fr);
 }
+
 
 .pdf-pane,
 .analysis-pane {

@@ -1,0 +1,147 @@
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+:host(.resizable-split-host--height-resizable) {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 6px;
+  gap: 3px;
+}
+
+.resizable-split {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  gap: 3px;
+}
+
+:host(.resizable-split-host--dragging) .resizable-split__pane,
+:host(.resizable-split-host--height-dragging) .resizable-split__pane {
+  pointer-events: none;
+  user-select: none;
+}
+
+:host(.resizable-split-host--dragging),
+:host(.resizable-split-host--height-dragging) {
+  user-select: none;
+}
+
+.resizable-split__pane {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+:host ::ng-deep .resizable-split__pane > [splitPaneFirst],
+:host ::ng-deep .resizable-split__pane > [splitPaneSecond] {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.resizable-split__divider {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  touch-action: none;
+  appearance: none;
+}
+
+.resizable-split__divider::before {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  transition: background-color 120ms ease;
+}
+
+.resizable-split__divider:hover::before,
+.resizable-split__divider:focus-visible::before,
+.resizable-split--dragging > .resizable-split__divider::before {
+  background: color-mix(in srgb, currentColor 36%, transparent);
+}
+
+.resizable-split__divider:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.resizable-split__divider:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.resizable-split--vertical > .resizable-split__divider {
+  width: 6px;
+  min-width: 6px;
+  cursor: col-resize;
+}
+
+.resizable-split--vertical > .resizable-split__divider::before {
+  left: 2px;
+  right: 2px;
+}
+
+.resizable-split--horizontal > .resizable-split__divider {
+  height: 6px;
+  min-height: 6px;
+  cursor: row-resize;
+}
+
+.resizable-split--horizontal > .resizable-split__divider::before {
+  top: 2px;
+  bottom: 2px;
+}
+
+.resizable-split__height-divider {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  min-height: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: row-resize;
+  touch-action: none;
+  appearance: none;
+}
+
+.resizable-split__height-divider::before {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  content: '';
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  transition: background-color 120ms ease;
+}
+
+.resizable-split__height-divider:hover::before,
+.resizable-split__height-divider:focus-visible::before,
+:host(.resizable-split-host--height-dragging) .resizable-split__height-divider::before {
+  background: color-mix(in srgb, currentColor 36%, transparent);
+}
+
+.resizable-split__height-divider:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.resizable-split__height-divider:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

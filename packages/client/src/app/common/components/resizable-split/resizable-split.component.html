@@ -1,0 +1,47 @@
+<div
+    #container
+    class="resizable-split"
+    [class.resizable-split--vertical]="isVertical()"
+    [class.resizable-split--horizontal]="!isVertical()"
+    [class.resizable-split--dragging]="dragging()"
+    [style.grid-template-columns]="gridTemplateColumns()"
+    [style.grid-template-rows]="gridTemplateRows()"
+>
+    <div class="resizable-split__pane resizable-split__pane--first">
+        <ng-content select="[splitPaneFirst]"></ng-content>
+    </div>
+
+    <button
+        type="button"
+        class="resizable-split__divider"
+        aria-label="Resize panes"
+        role="separator"
+        [attr.aria-orientation]="ariaOrientation()"
+        [attr.aria-valuemin]="ariaValueMin()"
+        [attr.aria-valuemax]="ariaValueMax()"
+        [attr.aria-valuenow]="ariaValueNow()"
+        [disabled]="disabled()"
+        (pointerdown)="startDragging($event)"
+        (keydown)="handleKeydown($event)"
+    ></button>
+
+    <div class="resizable-split__pane resizable-split__pane--second">
+        <ng-content select="[splitPaneSecond]"></ng-content>
+    </div>
+</div>
+
+@if (heightResizable()) {
+    <button
+        type="button"
+        class="resizable-split__height-divider"
+        aria-label="Resize split view height"
+        role="separator"
+        aria-orientation="horizontal"
+        [attr.aria-valuemin]="ariaHeightValueMin()"
+        [attr.aria-valuemax]="ariaHeightValueMax()"
+        [attr.aria-valuenow]="ariaHeightValueNow()"
+        [disabled]="disabled()"
+        (pointerdown)="startHeightDragging($event)"
+        (keydown)="handleHeightKeydown($event)"
+    ></button>
+}

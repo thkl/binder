@@ -1,16 +1,6 @@
-<div
-  class="drawer-backdrop"
-  [class.metadata-mode]="mode() === 'metadata'"
-  role="presentation"
-  (click)="requestClose()"
->
-  <aside
-    class="drawer-panel"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="document-drawer-title"
-    (click)="$event.stopPropagation()"
-  >
+<div class="drawer-backdrop" [class.metadata-mode]="mode() === 'metadata'" role="presentation" (click)="requestClose()">
+  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="document-drawer-title"
+    (click)="$event.stopPropagation()">
     <header class="drawer-header">
       <div class="drawer-heading">
         <p class="section-kicker">{{ 'viewer.kicker' | t }}</p>
@@ -18,172 +8,118 @@
           {{ documentData().title || documentData().originalFilename }}
         </h3>
         @if (documentData().archiveStatus === 'ready') {
-          <span class="archive-indicator">{{ 'documents.pdfaAvailable' | t }}</span>
+        <span class="archive-indicator">{{ 'documents.pdfaAvailable' | t }}</span>
         }
         <div class="drawer-downloads">
-          <a
-            class="drawer-download-link"
-            [href]="fileUrl()"
-            [attr.download]="documentData().originalFilename"
-          >
+          <a class="drawer-download-link" [href]="fileUrl()" [attr.download]="documentData().originalFilename">
             {{ 'documents.download' | t }}
           </a>
           @if (archiveReady() && archiveUrl(); as archiveUrl) {
-            <a
-              class="drawer-download-link"
-              [href]="archiveUrl"
-              [attr.download]="(documentData().title || documentData().originalFilename) + '.pdf'"
-            >
-              {{ 'documents.downloadArchive' | t }}
-            </a>
+          <a class="drawer-download-link" [href]="archiveUrl"
+            [attr.download]="(documentData().title || documentData().originalFilename) + '.pdf'">
+            {{ 'documents.downloadArchive' | t }}
+          </a>
           } @else {
-            <button
-              type="button"
-              class="drawer-download-link"
-              (click)="archiveRequested.emit()"
-              [disabled]="archiveBusy()"
-            >
-              {{
-                archiveBusy() ? ('documents.archiveQueued' | t) : ('documents.createArchive' | t)
-              }}
-            </button>
+          <button type="button" class="drawer-download-link" (click)="archiveRequested.emit()"
+            [disabled]="archiveBusy()">
+            {{
+            archiveBusy() ? ('documents.archiveQueued' | t) : ('documents.createArchive' | t)
+            }}
+          </button>
           }
           @if (documentData().calendarEventUrl; as calendarEventUrl) {
-            <a
-              class="drawer-download-link"
-              [href]="calendarEventUrl"
-              [attr.download]="(documentData().title || documentData().originalFilename) + '.ics'"
-            >
-              {{ 'documents.calendarEvent' | t }}
-            </a>
+          <a class="drawer-download-link" [href]="calendarEventUrl"
+            [attr.download]="(documentData().title || documentData().originalFilename) + '.ics'">
+            {{ 'documents.calendarEvent' | t }}
+          </a>
           } @else {
-            <button
-              type="button"
-              class="drawer-download-link"
-              (click)="addCalendarEvent()"
-              [disabled]="calendarSyncing()"
-            >
-              {{
-                calendarSyncing()
-                  ? ('documents.calendarEventCreating' | t)
-                  : ('documents.addCalendarEvent' | t)
-              }}
-            </button>
+          <button type="button" class="drawer-download-link" (click)="addCalendarEvent()"
+            [disabled]="calendarSyncing()">
+            {{
+            calendarSyncing()
+            ? ('documents.calendarEventCreating' | t)
+            : ('documents.addCalendarEvent' | t)
+            }}
+          </button>
           }
           @if (calendarError(); as calendarError) {
-            <span class="calendar-error" role="status">{{ calendarError }}</span>
+          <span class="calendar-error" role="status">{{ calendarError }}</span>
           }
         </div>
         <button type="button" class="drawer-delete-link" (click)="deleteRequested.emit()">
           {{ 'documents.delete' | t }}
         </button>
       </div>
-      <button
-        type="button"
-        class="drawer-close"
-        (click)="requestClose()"
-        [attr.aria-label]="'viewer.close' | t"
-      >
+      <button type="button" class="drawer-close" (click)="requestClose()" [attr.aria-label]="'viewer.close' | t">
         ×
       </button>
     </header>
 
     <nav class="drawer-tabs" role="tablist" [attr.aria-label]="'viewer.preview' | t">
-      <button
-        type="button"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'preview'"
-        [class.active]="activeTab() === 'preview'"
-        aria-controls="document-drawer-preview"
-        (click)="selectTab('preview')"
-      >
+      <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'preview'"
+        [class.active]="activeTab() === 'preview'" aria-controls="document-drawer-preview"
+        (click)="selectTab('preview')">
         {{ 'viewer.document' | t }}
       </button>
-      <button
-        type="button"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'metadata'"
-        [class.active]="activeTab() === 'metadata'"
-        aria-controls="document-drawer-metadata"
-        (click)="selectTab('metadata')"
-      >
+      <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'metadata'"
+        [class.active]="activeTab() === 'metadata'" aria-controls="document-drawer-metadata"
+        (click)="selectTab('metadata')">
         {{ 'documents.metadata' | t }}
       </button>
-      <button
-        type="button"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'history'"
-        [class.active]="activeTab() === 'history'"
-        aria-controls="document-drawer-history"
-        (click)="selectTab('history')"
-      >
+      <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'history'"
+        [class.active]="activeTab() === 'history'" aria-controls="document-drawer-history"
+        (click)="selectTab('history')">
         {{ 'documents.history' | t }}
       </button>
     </nav>
 
     <main class="drawer-content">
-      <section
-        id="document-drawer-preview"
-        class="preview-panel"
-        role="tabpanel"
-        [hidden]="activeTab() !== 'preview'"
-      >
+      <section id="document-drawer-preview" class="preview-panel" role="tabpanel" [hidden]="activeTab() !== 'preview'">
         <div class="document-workspace" [class.analysis-enabled]="showAnalysis()">
-          <div class="pdf-pane">
-            <iframe
-              class="document-frame"
-              [src]="fileUrl()"
-              [title]="'viewer.preview' | t"
-            ></iframe>
-          </div>
-          @if (showAnalysis()) {
-            <div class="analysis-pane">
-              <binder-document-analysis
-                [documentUuid]="documentUuid()"
-                [documentData]="documentData()"
-              />
+          <resizable-split id="document-panel" orientation="horizontal" style="height: 100%;" [initialFirstSize]="80" sizeUnit="percent"
+            [firstMinSize]="35" [firstMaxSize]="90" [secondMinSize]="20">
+
+            <div class="pdf-pane" splitPaneFirst>
+              <iframe class="document-frame" style="height: 100%;" [src]="fileUrl()" [title]="'viewer.preview' | t"></iframe>
             </div>
-          }
+            @if (showAnalysis()) {
+            <div class="analysis-pane" splitPaneSecond>
+              <binder-document-analysis [documentUuid]="documentUuid()" [documentData]="documentData()" />
+            </div>
+            }
+          </resizable-split>
         </div>
+
       </section>
+
       @if (activeTab() === 'metadata') {
-        <section id="document-drawer-metadata" class="metadata-panel" role="tabpanel">
-          <binder-document-metadata-editor
-            [documentUuid]="documentUuid()"
-            [documentData]="documentData()"
-            [suggestion]="suggestion()"
-            (dirtyChange)="handleDirtyChange($event)"
-            (manuallySaved)="manuallySaved.emit()"
-            (closeRequest)="requestClose()"
-            (suggestionTitleAccepted)="suggestionTitleAccepted.emit($event)"
-            (suggestionDismissed)="suggestionDismissed.emit()"
-            (suggestionAccepted)="suggestionAccepted.emit($event)"
-          />
-        </section>
+      <section id="document-drawer-metadata" class="metadata-panel" role="tabpanel">
+        <binder-document-metadata-editor [documentUuid]="documentUuid()" [documentData]="documentData()"
+          [suggestion]="suggestion()" (dirtyChange)="handleDirtyChange($event)" (manuallySaved)="manuallySaved.emit()"
+          (closeRequest)="requestClose()" (suggestionTitleAccepted)="suggestionTitleAccepted.emit($event)"
+          (suggestionDismissed)="suggestionDismissed.emit()" (suggestionAccepted)="suggestionAccepted.emit($event)" />
+      </section>
       }
       @if (activeTab() === 'history') {
-        <section id="document-drawer-history" class="history-panel" role="tabpanel">
-          <binder-document-audit-history
-            [documentUuid]="documentUuid()"
-            [refreshKey]="documentData().updatedAt"
-          />
-        </section>
+      <section id="document-drawer-history" class="history-panel" role="tabpanel">
+        <binder-document-audit-history [documentUuid]="documentUuid()" [refreshKey]="documentData().updatedAt" />
+      </section>
       }
     </main>
 
     @if (showClosePrompt()) {
-      <div class="unsaved-warning" role="alertdialog" aria-labelledby="drawer-unsaved-title">
-        <strong id="drawer-unsaved-title">{{ 'documents.unsavedTitle' | t }}</strong>
-        <p>{{ 'documents.unsavedCopy' | t }}</p>
-        <div class="unsaved-actions">
-          <button type="button" class="secondary-button" (click)="keepEditing()">
-            {{ 'documents.keepEditing' | t }}
-          </button>
-          <button type="button" class="danger-button" (click)="discardChanges()">
-            {{ 'documents.discardChanges' | t }}
-          </button>
-        </div>
+    <div class="unsaved-warning" role="alertdialog" aria-labelledby="drawer-unsaved-title">
+      <strong id="drawer-unsaved-title">{{ 'documents.unsavedTitle' | t }}</strong>
+      <p>{{ 'documents.unsavedCopy' | t }}</p>
+      <div class="unsaved-actions">
+        <button type="button" class="secondary-button" (click)="keepEditing()">
+          {{ 'documents.keepEditing' | t }}
+        </button>
+        <button type="button" class="danger-button" (click)="discardChanges()">
+          {{ 'documents.discardChanges' | t }}
+        </button>
       </div>
+    </div>
     }
   </aside>
 </div>
