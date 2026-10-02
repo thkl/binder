@@ -1,4 +1,16 @@
-#!/usr/bin/env bash
+#!/bin/sh
+
+# The setup script uses Bash features below, but this small POSIX wrapper also
+# makes `sh scripts/setup.sh` fail gracefully instead of producing a confusing
+# `pipefail` error on systems whose /bin/sh is dash.
+if [ -z "${BASH_VERSION:-}" ]; then
+  if command -v bash >/dev/null 2>&1; then
+    exec bash "$0" "$@"
+  fi
+
+  printf '%s\n' 'error: Bash is required to run scripts/setup.sh' >&2
+  exit 1
+fi
 
 set -Eeuo pipefail
 
