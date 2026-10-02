@@ -54,7 +54,7 @@ services:
     ports:
       - "${BINDER_HOST_PORT:-3000}:3000"
     volumes:
-      - binder-document-storage:/app/storage
+      - "${BINDER_DOCUMENTS_PATH:-binder-document-storage}:/app/storage"
       - binder-logs:/app/logs
 
   worker:
@@ -79,7 +79,7 @@ services:
       clamav:
         condition: service_healthy
     volumes:
-      - binder-document-storage:/app/storage
+      - "${BINDER_DOCUMENTS_PATH:-binder-document-storage}:/app/storage"
       - binder-logs:/app/logs
       - binder-backup-data:/app/backup
 

@@ -226,6 +226,13 @@ prints the URL to use for the onboarding screen instead of defaulting to
 the browser URL. A custom non-local `ROOT_URI`, such as a reverse-proxy URL,
 is preserved.
 
+On a fresh installation, the script asks where document storage should live.
+The default is the named Docker volume `binder-document-storage`. The host/NAS
+option accepts an absolute path such as `/mnt/documents` and bind-mounts it at
+`/app/storage` for both the API and worker. The selection is written to
+`BINDER_DOCUMENTS_PATH` in `.env` and is preserved on later runs. The document
+storage path is separate from the PostgreSQL and backup volumes.
+
 Configured values in an existing `.env` are preserved. Keep this file safe
 and do not delete it while the PostgreSQL volume exists: PostgreSQL only uses
 `POSTGRES_PASSWORD` when initializing a new data directory, so generating a

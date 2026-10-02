@@ -20,6 +20,7 @@ ENV_FILE="${BINDER_ENV_FILE:-$PROJECT_ROOT/.env}"
 COMPOSE_FILE="${COMPOSE_FILE:-$PROJECT_ROOT/docker-compose.yml}"
 BINDER_VERSION="${BINDER_VERSION:-$(awk -F'"' '/"version":/ { print $4; exit }' "$PROJECT_ROOT/packages/api/package.json")}"
 BINDER_VERSION="${BINDER_VERSION:-unknown}"
+environment_created=0
 
 printf '\n========================================\n'
 printf ' Installing Binder Docker version %s\n' "$BINDER_VERSION"
@@ -72,6 +73,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
   fi
 
   cp "$PROJECT_ROOT/.env.example" "$ENV_FILE"
+  environment_created=1
   printf 'Created %s from .env.example\n' "$ENV_FILE"
 else
   printf 'Using existing environment file %s\n' "$ENV_FILE"
@@ -109,6 +111,69 @@ set_env_value() {
     }
   ' "$ENV_FILE" > "$temporary_path"
   mv "$temporary_path" "$ENV_FILE"
+}
+
+env_key_exists() {
+  local key="$1"
+
+  awk -F= -v key="$key" '$1 == key { found = 1; exit } END { exit found ? 0 : 1 }' "$ENV_FILE"
+}
+
+configure_document_storage() {
+  if [[ "$environment_created" -ne 1 ]] && env_key_exists BINDER_DOCUMENTS_PATH; then
+    return
+  fi
+
+  printf '\nWhere should Binder store documents?\n'
+  printf '  1) Docker-managed volume (recommended for a quick setup)\n'
+  printf '  2) Host/NAS directory (for example /mnt/documents)\n'
+
+  if [[ ! -t 0 ]]; then
+    printf 'No interactive terminal detected; using a Docker-managed volume.\n'
+    set_env_value BINDER_DOCUMENTS_PATH ''
+    return
+  fi
+
+  while true; do
+    printf 'Choose storage [1/2, default: 1]: '
+    IFS= read -r storage_choice
+    storage_choice="${storage_choice:-1}"
+
+    case "$storage_choice" in
+      1)
+        set_env_value BINDER_DOCUMENTS_PATH ''
+        printf 'Using the Docker-managed document storage volume.\n'
+        return
+        ;;
+      2)
+        printf 'Enter an absolute host/NAS directory path: '
+        IFS= read -r storage_path
+        if [[ "$storage_path" != /* || "$storage_path" == "/" ]]; then
+          printf 'Please enter an absolute path other than /.\n' >&2
+          continue
+        fi
+
+        if ! mkdir -p -- "$storage_path"; then
+          printf 'Could not create %s. Check the path and permissions.\n' "$storage_path" >&2
+          continue
+        fi
+
+        local probe_path
+        if ! probe_path="$(mktemp "$storage_path/.binder-write-test.XXXXXX" 2>/dev/null)"; then
+          printf 'Binder cannot write to %s. Check the path and permissions.\n' "$storage_path" >&2
+          continue
+        fi
+        rm -f -- "$probe_path"
+
+        set_env_value BINDER_DOCUMENTS_PATH "$storage_path"
+        printf 'Using host/NAS document storage at %s.\n' "$storage_path"
+        return
+        ;;
+      *)
+        printf 'Please choose 1 or 2.\n' >&2
+        ;;
+    esac
+  done
 }
 
 discover_host_ip() {
@@ -200,6 +265,8 @@ ensure_secret SETUP_SECRET "$(openssl rand -hex 48)"
 
 chmod 600 "$ENV_FILE"
 printf 'Protected %s with mode 600\n' "$ENV_FILE"
+
+configure_document_storage
 
 compose=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
 
