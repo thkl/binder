@@ -19,60 +19,76 @@
   </button>
 
   @if (contentAvailable()) {
-    <a
-      class="document-action"
-      [href]="fileUrl()"
-      [attr.download]="document().originalFilename"
-      [attr.aria-label]="'documents.download' | t"
-      [title]="'documents.download' | t"
-    >
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 3v11" />
-        <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
-        <path d="M5 20h14" />
-      </svg>
-      @if (!compact()) {
-        <span>{{ 'documents.download' | t }}</span>
-      }
-    </a>
+    @if (archiveAvailable()) {
+      <div class="download-control">
+        <button
+          type="button"
+          class="document-action"
+          (click)="toggleDownloadMenu($event)"
+          [attr.aria-label]="'documents.downloadVersions' | t"
+          [title]="'documents.downloadVersions' | t"
+          aria-haspopup="menu"
+          [attr.aria-expanded]="downloadMenuOpen()"
+          [attr.aria-controls]="'document-download-menu-' + document().uuid"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v11" />
+            <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+            <path d="M5 20h14" />
+            <path d="M19 6v4M17 8h4" />
+          </svg>
+          @if (!compact()) {
+            <span>{{ 'documents.download' | t }}</span>
+          }
+        </button>
 
-    @if (archiveReady() && archiveUrl(); as archiveUrl) {
+        @if (downloadMenuOpen()) {
+          <div
+            class="download-version-menu"
+            [id]="'document-download-menu-' + document().uuid"
+            role="menu"
+            [attr.aria-label]="'documents.downloadVersions' | t"
+          >
+            <a
+              class="download-version-option"
+              [href]="fileUrl()"
+              [attr.download]="document().originalFilename"
+              role="menuitem"
+              (click)="closeDownloadMenu()"
+            >
+              <span>{{ 'documents.originalVersion' | t }}</span>
+              <small>{{ document().originalFilename }}</small>
+            </a>
+            <a
+              class="download-version-option"
+              [href]="archiveUrl()"
+              [attr.download]="(document().title || document().originalFilename) + '.pdf'"
+              role="menuitem"
+              (click)="closeDownloadMenu()"
+            >
+              <span>{{ 'documents.downloadArchive' | t }}</span>
+              <small>{{ 'documents.pdfaAvailable' | t }}</small>
+            </a>
+          </div>
+        }
+      </div>
+    } @else {
       <a
         class="document-action"
-        [href]="archiveUrl"
-        [attr.download]="(document().title || document().originalFilename) + '.pdf'"
-        [attr.aria-label]="'documents.downloadArchive' | t"
-        [title]="'documents.downloadArchive' | t"
+        [href]="fileUrl()"
+        [attr.download]="document().originalFilename"
+        [attr.aria-label]="'documents.download' | t"
+        [title]="'documents.download' | t"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 3v11" />
           <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
           <path d="M5 20h14" />
-          <path d="M7 5h10" />
         </svg>
         @if (!compact()) {
-          <span>{{ 'documents.downloadArchive' | t }}</span>
+          <span>{{ 'documents.download' | t }}</span>
         }
       </a>
-    } @else {
-      <button
-        type="button"
-        class="document-action"
-        (click)="archive.emit()"
-        [disabled]="archiveBusy()"
-        [attr.aria-label]="'documents.createArchive' | t"
-        [title]="'documents.createArchive' | t"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 4h14v16H5z" />
-          <path d="M8 8h8M8 12h6M8 16h5" />
-        </svg>
-        @if (!compact()) {
-          <span>
-            {{ archiveBusy() ? ('documents.archiveQueued' | t) : ('documents.createArchive' | t) }}
-          </span>
-        }
-      </button>
     }
   }
 
