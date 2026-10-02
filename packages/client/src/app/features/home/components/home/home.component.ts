@@ -50,6 +50,7 @@ export class HomeComponent {
   readonly selectedIssuer = signal('');
   readonly onlySemantic = signal(true);
   readonly semanticThreshold = signal(0.35);
+  readonly searchOptionsOpen = signal(false);
   readonly selectedSavedSearchUuid = signal<string | null>(null);
   readonly uploadDragActive = signal(false);
   readonly uploadMessage = signal<'success' | null>(null);
@@ -58,6 +59,17 @@ export class HomeComponent {
   readonly uploadQueueTotal = signal(0);
   readonly uploadQueueCompleted = signal(0);
   readonly uploadedCount = signal(0);
+
+  readonly activeSearchOptionCount = computed(() => {
+    let count = 0;
+    if (this.selectedType()) count += 1;
+    if (this.selectedCategory()) count += 1;
+    if (this.selectedTag()) count += 1;
+    if (this.selectedIssuer()) count += 1;
+    if (!this.onlySemantic()) count += 1;
+    if (this.semanticThreshold() !== 0.35) count += 1;
+    return count;
+  });
 
   constructor() {
     void this.savedSearches.load();
@@ -109,6 +121,24 @@ export class HomeComponent {
     event.preventDefault();
     this.selectedSavedSearchUuid.set(null);
     await this.runSearch();
+  }
+
+  async applySearchOptions(): Promise<void> {
+    this.selectedSavedSearchUuid.set(null);
+    await this.runSearch();
+  }
+
+  async clearSearchOptions(): Promise<void> {
+    this.selectedType.set('');
+    this.selectedCategory.set('');
+    this.selectedTag.set('');
+    this.selectedIssuer.set('');
+    this.onlySemantic.set(true);
+    this.semanticThreshold.set(0.35);
+    this.selectedSavedSearchUuid.set(null);
+    if (this.searchQuery().trim()) {
+      await this.runSearch();
+    }
   }
 
   onSearchInput(event: Event): void {

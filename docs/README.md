@@ -28,6 +28,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Saved searches](./architecture/saved-searches.md) — owner-scoped reusable list and semantic searches
 - [Backup and scheduled maintenance](./architecture/backup-and-scheduling.md) — PostgreSQL backup/restore, retention, and recurring jobs
 - [Extensions and plugins](./architecture/extensions.md) — versioned extension points, calendar automation, and email import
+- [Calendar integration](./architecture/calendar.md) — owner-scoped iCalendar events from due-date metadata
 - [iOS companion](./architecture/ios-companion.md) — Share Sheet ingestion, web UI hosting, and offline upload queueing
 - [AI assistance](./architecture/ai-assistance.md) — user-confirmed hosted title suggestions
 - [Localization](./architecture/localization.md) — extensible UI and vocabulary translations
@@ -46,4 +47,4 @@ This folder contains the living documentation for the lightweight document manag
 
 ## Current status
 
-P0, P1, and P2 are implemented. The inbox slice, bulk document actions, virtual folders, recursive ZIP exports, saved searches, backup scheduling, retention cleanup, visible status, manual backup requests, restore instructions, scheduled document-storage consistency checks, and administrator onboarding are in place. A real restore drill remains recommended as operational verification. P3 has started with administrator-managed AI provider profiles, independent assistant/embedding provider selection, file-aware PDF analysis, PostgreSQL-backed per-document audit history, bulk metadata editing with preview, overwrite confirmation, immutable change sets, guarded rollback, PDF/A-2b archive derivatives, and the resumable first-run onboarding assistant. Email, scanner ingestion, password reset, and the Swift iOS companion remain in P3.
+P0, P1, and P2 are implemented. The inbox slice, bulk document actions, virtual folders, recursive ZIP exports, saved searches, backup scheduling, retention cleanup, visible status, manual backup requests, restore instructions, scheduled document-storage consistency checks, and administrator onboarding are in place. A real restore drill remains recommended as operational verification. P3 has started with administrator-managed AI provider profiles, independent assistant/embedding provider selection, file-aware PDF analysis, PostgreSQL-backed per-document audit history, bulk metadata editing with preview, overwrite confirmation, immutable change sets, guarded rollback, PDF/A-2b archive derivatives, the resumable first-run onboarding assistant, and the first owner-scoped iCalendar integration. Email, scanner ingestion, password reset, external calendar providers, and the Swift iOS companion remain in P3.

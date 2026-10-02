@@ -65,6 +65,7 @@ import {
 import { InboxItem } from '../../inbox/models/inbox-item.entity';
 import { PipelineJob } from '../../pipeline/models/pipeline-job.entity';
 import { PipelineJobEvent } from '../../pipeline/models/pipeline-job-event.entity';
+import { CalendarEventStore } from '../../calendar/store/calendar-event.store';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -91,6 +92,7 @@ export class DocumentService {
     private readonly inboxItems: InboxItemStore,
     private readonly eventEmitter: EventEmitter2,
     private readonly audit: DocumentAuditService,
+    private readonly calendarEvents: CalendarEventStore,
   ) {}
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -200,11 +202,19 @@ export class DocumentService {
   async list(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListResponse> {
     const result = await this.documents.findOwnedPage(ownerUuid, query);
     const summaries = await this.metadata.getDocumentMetadataSummaries(ownerUuid, result.items);
+    const calendarDocuments = await this.calendarEvents.findOwnedDocumentUuids(
+      ownerUuid,
+      result.items.map((document) => document.uuid),
+    );
     return DocumentListResponseSchema.parse({
       ...result,
       groupBy: query.groupBy,
       items: result.items.map((document) =>
-        this.toDocumentResponse(document, summaries.get(document.uuid)),
+        this.toDocumentResponse(
+          document,
+          summaries.get(document.uuid),
+          calendarDocuments.has(document.uuid) ? this.calendarUrl(document.uuid) : null,
+        ),
       ),
     });
   }
@@ -351,11 +361,19 @@ export class DocumentService {
     const result = this.mergeSearchResults(keywordResult, semanticResult, query.limit);
     const documents = [...new Map(result.map((hit) => [hit.document.uuid, hit.document])).values()];
     const summaries = await this.metadata.getDocumentMetadataSummaries(ownerUuid, documents);
+    const calendarDocuments = await this.calendarEvents.findOwnedDocumentUuids(
+      ownerUuid,
+      documents.map((document) => document.uuid),
+    );
     return DocumentSearchResponseSchema.parse({
       query: query.q,
       total: result.length,
       items: result.map((hit) => ({
-        document: this.toDocumentResponse(hit.document, summaries.get(hit.document.uuid)),
+        document: this.toDocumentResponse(
+          hit.document,
+          summaries.get(hit.document.uuid),
+          calendarDocuments.has(hit.document.uuid) ? this.calendarUrl(hit.document.uuid) : null,
+        ),
         pageNumber: hit.pageNumber,
         snippet: this.createSnippet(hit.text, query.q),
         matchType: hit.matchType,
@@ -567,7 +585,12 @@ export class DocumentService {
     if (!document) {
       throw new NotFoundException('Document not found');
     }
-    return this.toDocumentResponse(document);
+    const calendarEvent = await this.calendarEvents.findOwnedByDocument(ownerUuid, uuid);
+    return this.toDocumentResponse(
+      document,
+      undefined,
+      calendarEvent ? this.calendarUrl(uuid) : null,
+    );
   }
 
   async remove(ownerUuid: string, uuid: string) {
@@ -1071,6 +1094,7 @@ export class DocumentService {
   private toDocumentResponse(
     document: import('../models/document.entity').Document,
     metadataSummary?: DocumentMetadataSummary,
+    calendarEventUrl: string | null = null,
   ): DocumentResponse {
     return {
       uuid: document.uuid,
@@ -1090,6 +1114,7 @@ export class DocumentService {
           : null,
       archiveStatus: document.archiveStatus,
       archiveError: document.archiveError,
+      calendarEventUrl,
       pageCount: document.pageCount || 1,
       issuerUuid: document.issuerUuid,
       isNew: document.isNew,
@@ -1114,6 +1139,11 @@ export class DocumentService {
   private archiveUrl(uuid: string): string {
     const apiPrefix = this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
     return `/${apiPrefix}/documents/${uuid}/archive`;
+  }
+
+  private calendarUrl(uuid: string): string {
+    const apiPrefix = this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
+    return `/${apiPrefix}/calendar/documents/${uuid}/ics`;
   }
 
   private createSnippet(text: string, query: string): string {

@@ -40,6 +40,165 @@
       </button>
     </form>
 
+    <section class="search-options" aria-labelledby="search-options-title">
+      <header class="search-options-header">
+        <div>
+          <p class="section-kicker">{{ 'home.searchOptionsKicker' | t }}</p>
+          <h3 id="search-options-title">{{ 'home.searchOptions' | t }}</h3>
+          @if (activeSearchOptionCount() > 0) {
+            <span class="active-options-badge">
+              {{ activeSearchOptionCount() }} {{ 'home.activeOptions' | t }}
+            </span>
+          } @else {
+            <p class="search-options-summary">{{ 'home.searchOptionsSummary' | t }}</p>
+          }
+        </div>
+        <div class="search-options-actions">
+          @if (activeSearchOptionCount() > 0) {
+            <button type="button" class="text-button" (click)="clearSearchOptions()">
+              {{ 'home.clearOptions' | t }}
+            </button>
+          }
+          <button
+            type="button"
+            class="secondary-button"
+            [attr.aria-expanded]="searchOptionsOpen()"
+            aria-controls="home-search-options"
+            (click)="searchOptionsOpen.update((open) => !open)"
+          >
+            {{ (searchOptionsOpen() ? 'home.hideOptions' : 'home.showOptions') | t }}
+          </button>
+        </div>
+      </header>
+
+      @if (searchOptionsOpen()) {
+        <div id="home-search-options" class="search-options-content">
+          @if (search.vocabulary(); as vocabulary) {
+            <div class="search-filter-grid">
+              <label class="search-filter-field">
+                <span>{{ 'home.type' | t }}</span>
+                <select
+                  [value]="selectedType()"
+                  (change)="selectedType.set($any($event.target).value)"
+                >
+                  <option value="">{{ 'home.anyType' | t }}</option>
+                  @for (item of vocabulary.documentTypes; track item.uuid) {
+                    <option [value]="item.uuid">{{ itemName(item) }}</option>
+                  }
+                </select>
+              </label>
+              <label class="search-filter-field">
+                <span>{{ 'home.category' | t }}</span>
+                <select
+                  [value]="selectedCategory()"
+                  (change)="selectedCategory.set($any($event.target).value)"
+                >
+                  <option value="">{{ 'home.anyCategory' | t }}</option>
+                  @for (item of vocabulary.categories; track item.uuid) {
+                    <option [value]="item.uuid">{{ itemName(item) }}</option>
+                  }
+                </select>
+              </label>
+              <label class="search-filter-field">
+                <span>{{ 'home.tag' | t }}</span>
+                <select
+                  [value]="selectedTag()"
+                  (change)="selectedTag.set($any($event.target).value)"
+                >
+                  <option value="">{{ 'home.anyTag' | t }}</option>
+                  @for (item of vocabulary.tags; track item.uuid) {
+                    <option [value]="item.uuid">{{ itemName(item) }}</option>
+                  }
+                </select>
+              </label>
+              <label class="search-filter-field">
+                <span>{{ 'home.issuer' | t }}</span>
+                <select
+                  [value]="selectedIssuer()"
+                  (change)="selectedIssuer.set($any($event.target).value)"
+                >
+                  <option value="">{{ 'home.anyIssuer' | t }}</option>
+                  @for (issuer of search.issuers(); track issuer.uuid) {
+                    <option [value]="issuer.uuid">{{ issuer.name }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+          }
+
+          <div class="search-preference-grid">
+            <fieldset class="result-mode-field">
+              <legend>{{ 'home.results' | t }}</legend>
+              <div class="segmented-control" role="group" [attr.aria-label]="'home.results' | t">
+                <button
+                  type="button"
+                  [class.active]="onlySemantic()"
+                  [attr.aria-pressed]="onlySemantic()"
+                  (click)="onlySemantic.set(true)"
+                >
+                  {{ 'home.resultSemantic' | t }}
+                </button>
+                <button
+                  type="button"
+                  [class.active]="!onlySemantic()"
+                  [attr.aria-pressed]="!onlySemantic()"
+                  (click)="onlySemantic.set(false)"
+                >
+                  {{ 'home.resultAll' | t }}
+                </button>
+              </div>
+            </fieldset>
+            <label class="threshold-field">
+              <span>{{ 'home.semanticThreshold' | t }}</span>
+              <span class="threshold-description">{{ 'home.semanticThresholdHint' | t }}</span>
+              <div class="threshold-input">
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  [value]="semanticThreshold()"
+                  [attr.aria-label]="'home.semanticThreshold' | t"
+                  (input)="semanticThreshold.set(+$any($event.target).value)"
+                />
+                <output>{{ semanticThreshold() | percent: '1.0-0' }}</output>
+              </div>
+            </label>
+          </div>
+
+          <div class="search-options-footer">
+            <p>{{ 'home.searchOptionsApplyHint' | t }}</p>
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="search.loading() || !searchQuery().trim()"
+              (click)="applySearchOptions()"
+            >
+              {{ 'home.applyOptions' | t }}
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+
+    <div class="home-saved-searches">
+      <binder-saved-search-menu
+        kind="semantic"
+        [searches]="savedSearches.items()"
+        [selectedUuid]="selectedSavedSearchUuid()"
+        [busy]="savedSearches.saving()"
+        [removing]="savedSearches.deleting()"
+        (searchSelected)="loadSavedSearch($event)"
+        (saveRequested)="saveCurrentSearch($event)"
+        (renameRequested)="renameSavedSearch($event)"
+        (removeRequested)="removeSavedSearch($event)"
+      />
+    </div>
+    @if (savedSearches.error(); as savedSearchError) {
+      <div class="notice error" role="alert">{{ savedSearchError }}</div>
+    }
+    <p class="search-hint">{{ 'home.hint' | t }}</p>
+
     <section
       class="home-upload-card"
       [class.drag-active]="uploadDragActive()"
@@ -118,93 +277,6 @@
         }
       </aside>
     }
-
-    @if (search.vocabulary(); as vocabulary) {
-      <div class="search-filters" aria-label="Search filters">
-        <label
-          >{{ 'home.type' | t }}
-          <select [value]="selectedType()" (change)="selectedType.set($any($event.target).value)">
-            <option value="">{{ 'home.anyType' | t }}</option>
-            @for (item of vocabulary.documentTypes; track item.uuid) {
-              <option [value]="item.uuid">{{ itemName(item) }}</option>
-            }
-          </select>
-        </label>
-        <label
-          >{{ 'home.category' | t }}
-          <select
-            [value]="selectedCategory()"
-            (change)="selectedCategory.set($any($event.target).value)"
-          >
-            <option value="">{{ 'home.anyCategory' | t }}</option>
-            @for (item of vocabulary.categories; track item.uuid) {
-              <option [value]="item.uuid">{{ itemName(item) }}</option>
-            }
-          </select>
-        </label>
-        <label
-          >{{ 'home.tag' | t }}
-          <select [value]="selectedTag()" (change)="selectedTag.set($any($event.target).value)">
-            <option value="">{{ 'home.anyTag' | t }}</option>
-            @for (item of vocabulary.tags; track item.uuid) {
-              <option [value]="item.uuid">{{ itemName(item) }}</option>
-            }
-          </select>
-        </label>
-        <label
-          >{{ 'home.issuer' | t }}
-          <select
-            [value]="selectedIssuer()"
-            (change)="selectedIssuer.set($any($event.target).value)"
-          >
-            <option value="">{{ 'home.anyIssuer' | t }}</option>
-            @for (issuer of search.issuers(); track issuer.uuid) {
-              <option [value]="issuer.uuid">{{ issuer.name }}</option>
-            }
-          </select>
-        </label>
-        <label
-          >{{ 'home.results' | t }}
-          <select (change)="onlySemantic.set($any($event.target).value === 'true')">
-            <option value="true" [selected]="onlySemantic() ? 'selected' : undefined">
-              {{ 'home.resultSemantic' | t }}
-            </option>
-            <option value="false" [selected]="onlySemantic() ? undefined : 'selected'">
-              {{ 'home.resultAll' | t }}
-            </option>
-          </select>
-        </label>
-        <label class="threshold-control">
-          {{ 'home.semanticThreshold' | t }}
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            [value]="semanticThreshold()"
-            (input)="semanticThreshold.set(+$any($event.target).value)"
-          />
-          <output>{{ semanticThreshold() | percent: '1.0-0' }}</output>
-        </label>
-      </div>
-    }
-    <div class="home-saved-searches">
-      <binder-saved-search-menu
-        kind="semantic"
-        [searches]="savedSearches.items()"
-        [selectedUuid]="selectedSavedSearchUuid()"
-        [busy]="savedSearches.saving()"
-        [removing]="savedSearches.deleting()"
-        (searchSelected)="loadSavedSearch($event)"
-        (saveRequested)="saveCurrentSearch($event)"
-        (renameRequested)="renameSavedSearch($event)"
-        (removeRequested)="removeSavedSearch($event)"
-      />
-    </div>
-    @if (savedSearches.error(); as savedSearchError) {
-      <div class="notice error" role="alert">{{ savedSearchError }}</div>
-    }
-    <p class="search-hint">{{ 'home.hint' | t }}</p>
   </div>
 
   @if (search.error(); as error) {

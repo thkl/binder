@@ -48,6 +48,31 @@
               }}
             </button>
           }
+          @if (documentData().calendarEventUrl; as calendarEventUrl) {
+            <a
+              class="drawer-download-link"
+              [href]="calendarEventUrl"
+              [attr.download]="(documentData().title || documentData().originalFilename) + '.ics'"
+            >
+              {{ 'documents.calendarEvent' | t }}
+            </a>
+          } @else {
+            <button
+              type="button"
+              class="drawer-download-link"
+              (click)="addCalendarEvent()"
+              [disabled]="calendarSyncing()"
+            >
+              {{
+                calendarSyncing()
+                  ? ('documents.calendarEventCreating' | t)
+                  : ('documents.addCalendarEvent' | t)
+              }}
+            </button>
+          }
+          @if (calendarError(); as calendarError) {
+            <span class="calendar-error" role="status">{{ calendarError }}</span>
+          }
         </div>
         <button type="button" class="drawer-delete-link" (click)="deleteRequested.emit()">
           {{ 'documents.delete' | t }}

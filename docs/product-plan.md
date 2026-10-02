@@ -153,7 +153,12 @@ worker setting and run automatically after text extraction when enabled.
     core document transaction when a plugin fails.
   - Runtime code loading and database-configured module paths are intentionally
     excluded from the security boundary.
-- Turn invoice due dates into calendar entries
+- Turn invoice due dates into calendar entries ✅ First slice implemented:
+  - A reviewed built-in calendar plugin listens to metadata, title, and accepted AI suggestion events.
+  - It creates one owner-scoped iCalendar event per document from a configurable custom due-date field.
+  - Existing documents can be synchronized manually from the document drawer.
+  - The API exposes authenticated `.ics` downloads and adds the event URL to document responses.
+  - External Google/CalDAV providers and two-way synchronization remain future work.
 - Import documents from email
 - Add secure email-based password reset for local accounts
 - Connect scanners and other external sources

@@ -15,6 +15,7 @@ import { DocumentAnalysisService } from './service/document-analysis.service';
 import { DocumentAuditServiceModule } from './document-audit.service.module';
 import { DocumentChangeSetStoreModule } from './document-change-set.store.module';
 import { DocumentBulkMetadataService } from './service/document-bulk-metadata.service';
+import { CalendarStoreModule } from '../calendar/calendar.store.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DocumentBulkMetadataService } from './service/document-bulk-metadata.se
     MetadataServiceModule,
     IssuerServiceModule,
     SharedModule,
+    CalendarStoreModule,
   ],
   providers: [
     DocumentService,

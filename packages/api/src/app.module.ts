@@ -21,6 +21,7 @@ import { SavedSearchModule } from './features/saved-search/saved-search.module';
 import { SetupModule } from './features/setup/setup.module';
 import { AiProviderModule } from './features/ai-provider/ai-provider.module';
 import { PluginModule } from './features/plugin/plugin.module';
+import { CalendarModule } from './features/calendar/calendar.module';
 
 @Module({
   controllers: [HealthController],
@@ -43,6 +44,7 @@ import { PluginModule } from './features/plugin/plugin.module';
     SetupModule,
     AiProviderModule,
     PluginModule,
+    CalendarModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

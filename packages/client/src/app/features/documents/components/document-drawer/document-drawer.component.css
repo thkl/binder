@@ -104,6 +104,12 @@
   opacity: 0.55;
 }
 
+.calendar-error {
+  flex-basis: 100%;
+  color: #ffb0b0;
+  font-size: 0.7rem;
+}
+
 .drawer-delete-link {
   border: 1px solid rgba(255, 133, 133, 0.35);
   border-radius: 0.45rem;

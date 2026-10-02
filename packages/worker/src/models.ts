@@ -84,6 +84,34 @@ export class PipelineWorkerHeartbeat extends Model {
   declare capabilities: Record<string, unknown>;
 }
 
+@Table({ tableName: 'calendar_events', underscored: true, timestamps: true })
+export class CalendarEvent extends Model {
+  @PrimaryKey
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ field: 'document_id', type: DataType.UUID })
+  declare documentUuid: string;
+
+  @Column({ field: 'owner_id', type: DataType.UUID })
+  declare ownerUuid: string;
+
+  @Column({ field: 'event_uid', type: DataType.STRING(255) })
+  declare eventUid: string;
+
+  @Column({ field: 'due_date', type: DataType.DATEONLY })
+  declare dueDate: string;
+
+  @Column({ type: DataType.STRING(255) })
+  declare title: string;
+
+  @Column({ type: DataType.STRING(2000) })
+  declare description: string;
+
+  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
+  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
+}
+
 @Table({ tableName: 'ai_provider_profiles', underscored: true, timestamps: true })
 export class AiProviderProfile extends Model {
   @PrimaryKey

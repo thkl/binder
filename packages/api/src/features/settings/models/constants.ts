@@ -33,9 +33,32 @@ export const settingsSections: SettingsSection[] = [
     key: 'security',
     label: 'Security',
   },
+  {
+    key: 'calendar',
+    label: 'Calendar integration',
+  },
 ];
 
 export const settingsMap: SettingsMapItem[] = [
+  {
+    key: 'calendar.enabled',
+    valueFrom: 'calendar.enabled',
+    encrypted: false,
+    default: false,
+    label: 'Enable calendar integration',
+    type: 'checkbox',
+    section: 'calendar',
+  },
+  {
+    key: 'calendar.dueDateField',
+    valueFrom: 'calendar.dueDateField',
+    encrypted: false,
+    default: 'dueDate',
+    label: 'Due-date metadata key',
+    type: 'text',
+    required: true,
+    section: 'calendar',
+  },
   {
     key: 'backup.root',
     valueFrom: 'backup.root',

@@ -121,6 +121,23 @@ export const DocumentMetadataSummarySchema = z.object({
 });
 export type DocumentMetadataSummary = z.infer<typeof DocumentMetadataSummarySchema>;
 
+export const CalendarEventSchema = z.object({
+  uuid: z.uuid(),
+  documentUuid: z.uuid(),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  title: z.string().trim().min(1).max(255),
+  description: z.string().max(2000),
+  downloadUrl: z.string().min(1),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export type CalendarEvent = z.infer<typeof CalendarEventSchema>;
+
+export const CalendarEventListResponseSchema = z.object({
+  items: z.array(CalendarEventSchema),
+});
+export type CalendarEventListResponse = z.infer<typeof CalendarEventListResponseSchema>;
+
 export const DocumentSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid(),
@@ -136,6 +153,7 @@ export const DocumentSchema = z.object({
   archiveUrl: z.string().min(1).nullable(),
   archiveStatus: DocumentArchiveStatusSchema,
   archiveError: z.string().max(2000).nullable(),
+  calendarEventUrl: z.string().min(1).nullable().optional(),
   pageCount: z.number().int().min(1),
   issuerUuid: z.uuid().nullable(),
   isNew: z.boolean(),

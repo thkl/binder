@@ -14,6 +14,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - binder-network
 
   clamav:
     image: clamav/clamav:stable
@@ -25,6 +27,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 10
+    networks:
+      - binder-network
 
   api:
     build:
@@ -56,6 +60,8 @@ services:
     volumes:
       - "${BINDER_DOCUMENTS_PATH:-binder-document-storage}:/app/storage"
       - binder-logs:/app/logs
+    networks:
+      - binder-network
 
   worker:
     build:
@@ -82,6 +88,8 @@ services:
       - "${BINDER_DOCUMENTS_PATH:-binder-document-storage}:/app/storage"
       - binder-logs:/app/logs
       - binder-backup-data:/app/backup
+    networks:
+      - binder-network
 
 volumes:
   binder-postgres-data:
@@ -89,3 +97,7 @@ volumes:
   binder-logs:
   binder-backup-data:
   binder-clamav-data:
+
+networks:
+  binder-network:
+    driver: bridge

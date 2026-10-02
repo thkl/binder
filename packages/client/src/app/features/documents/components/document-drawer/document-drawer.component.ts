@@ -11,11 +11,12 @@ import {
 } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import type { Document, DocumentTitleSuggestion } from '@binder/common';
-import { TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { DocumentMetadataEditorComponent } from '../../../metadata/components/document-metadata-editor/document-metadata-editor.component';
 import { ApplicationService } from '../../../../common/application.service';
 import { DocumentAnalysisComponent } from '../document-analysis/document-analysis.component';
 import { DocumentAuditHistoryComponent } from '../document-audit-history/document-audit-history.component';
+import { CalendarService } from '../../services/calendar.service';
 
 export type DocumentDrawerTab = 'preview' | 'metadata' | 'history';
 export type DocumentDrawerMode = 'analysis' | 'metadata';
@@ -56,6 +57,8 @@ export class DocumentDrawerComponent {
   readonly activeTab = signal<DocumentDrawerTab>('preview');
   readonly dirty = signal(false);
   readonly closePrompt = signal(false);
+  readonly calendarSyncing = signal(false);
+  readonly calendarError = signal<string | null>(null);
   readonly showClosePrompt = computed(() => this.closePrompt() || this.externalClosePrompt());
   readonly showAnalysis = computed(() => this.mode() === 'analysis');
   readonly fileUrl = computed<SafeResourceUrl>(() => {
@@ -70,6 +73,8 @@ export class DocumentDrawerComponent {
 
   private readonly sanitizer = inject(DomSanitizer);
   private readonly application = inject(ApplicationService);
+  private readonly calendar = inject(CalendarService);
+  private readonly i18n = inject(I18nService);
   private readonly initialTabEffect = effect(() => {
     this.activeTab.set(this.initialTab());
   });
@@ -111,6 +116,36 @@ export class DocumentDrawerComponent {
     this.dirty.set(false);
     this.dirtyChange.emit(false);
     this.closeRequest.emit();
+  }
+
+  async addCalendarEvent(): Promise<void> {
+    this.calendarSyncing.set(true);
+    this.calendarError.set(null);
+
+    try {
+      const event = await this.calendar.synchronize(this.documentUuid());
+
+      if (!event) {
+        this.calendarError.set(this.i18n.t('documents.calendarNoDueDate'));
+        return;
+      }
+
+      this.downloadCalendarEvent(event.downloadUrl, event.title);
+    } catch (error) {
+      const errorMessage = this.calendar.errorMessage(error);
+      this.calendarError.set(
+        errorMessage.startsWith('documents.') ? this.i18n.t(errorMessage) : errorMessage,
+      );
+    } finally {
+      this.calendarSyncing.set(false);
+    }
+  }
+
+  private downloadCalendarEvent(url: string, title: string): void {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${title}.ics`;
+    anchor.click();
   }
 
   @HostListener('document:keydown.escape')

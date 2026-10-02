@@ -35,11 +35,12 @@ structured logging, and a way to disable it without uninstalling the app.
 
 ### Calendar plugin
 
-The plugin can inspect due-date metadata, or request a controlled extraction
-step, and create or update a calendar event through a configured provider. It
-must be idempotent: the same document and due date must not create duplicate
-events. Calendar credentials and event identifiers must be stored separately
-from document content and never logged.
+The first built-in implementation inspects a configured custom due-date field
+and creates an owner-scoped iCalendar event. It is idempotent: one document has
+one event record, which is updated when the due date or title changes. The
+current implementation provides an authenticated `.ics` download rather than
+connecting directly to a calendar provider. External provider credentials,
+two-way synchronization, and calendar subscriptions remain future work.
 
 ### Email import plugin
 

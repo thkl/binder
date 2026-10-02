@@ -38,6 +38,7 @@ import { DocumentAnalysisSession } from '../../features/document/models/document
 import { DocumentAuditEventEntity } from '../../features/document/models/document-audit-event.entity';
 import { DocumentMetadataChangeSet } from '../../features/document/models/document-metadata-change-set.entity';
 import { PipelineWorkerHeartbeat } from '../../features/pipeline/models/pipeline-worker-heartbeat.entity';
+import { CalendarEvent } from '../../features/calendar/models/calendar-event.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -92,6 +93,7 @@ export class DatabaseConnectionService {
       DocumentAuditEventEntity,
       DocumentMetadataChangeSet,
       PipelineWorkerHeartbeat,
+      CalendarEvent,
     ]);
     await this.initialize();
   }

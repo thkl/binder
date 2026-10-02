@@ -342,6 +342,22 @@
                "required": [
                     "setup_state"
                ]
+          },
+          "51": {
+               "created": [
+                    "calendar_events"
+               ],
+               "required": [
+                    "documents",
+                    "users",
+                    "settings"
+               ]
+          },
+          "52": {
+               "required": [
+                    "settings",
+                    "calendar_events"
+               ]
           }
      }
 }

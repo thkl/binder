@@ -2,6 +2,7 @@ import { Sequelize } from 'sequelize-typescript';
 import {
   ApplicationSetting,
   AiProviderProfile,
+  CalendarEvent,
   Document,
   DocumentAuditEvent,
   DocumentEmbedding,
@@ -32,6 +33,7 @@ export const sequelize = new Sequelize({
 sequelize.addModels([
   ApplicationSetting,
   AiProviderProfile,
+  CalendarEvent,
   User,
   Issuer,
   Document,

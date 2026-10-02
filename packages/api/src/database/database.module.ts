@@ -35,6 +35,7 @@ import { DocumentAnalysisSession } from '../features/document/models/document-an
 import { DocumentAuditEventEntity } from '../features/document/models/document-audit-event.entity';
 import { DocumentMetadataChangeSet } from '../features/document/models/document-metadata-change-set.entity';
 import { PipelineWorkerHeartbeat } from '../features/pipeline/models/pipeline-worker-heartbeat.entity';
+import { CalendarEvent } from '../features/calendar/models/calendar-event.entity';
 
 @Global()
 @Module({
@@ -111,6 +112,7 @@ import { PipelineWorkerHeartbeat } from '../features/pipeline/models/pipeline-wo
       DocumentAuditEventEntity,
       DocumentMetadataChangeSet,
       PipelineWorkerHeartbeat,
+      CalendarEvent,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],
