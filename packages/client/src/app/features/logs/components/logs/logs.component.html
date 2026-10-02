@@ -17,53 +17,17 @@
     <div class="notice error" role="alert">{{ error }}</div>
   }
 
-  <section class="explorer-shell glass-card" aria-label="{{ 'logs.explorer' | t }}">
-    <aside class="explorer-sidebar">
-      <div class="sidebar-heading">
-        <p class="section-kicker">{{ 'logs.sources' | t }}</p>
-        <span class="sidebar-count">{{ filteredFiles().length }}</span>
-      </div>
-
-      <nav class="source-nav" [attr.aria-label]="'logs.sources' | t">
-        @for (source of sourceOptions; track source) {
-          <button
-            type="button"
-            [class.active]="sourceFilter() === source"
-            (click)="sourceFilter.set(source)"
-          >
-            <span class="source-symbol" aria-hidden="true">{{ source === 'all' ? '◈' : '▣' }}</span>
-            <span>{{ sourceFilterLabel(source) }}</span>
-            <strong>{{ sourceCount(source) }}</strong>
-          </button>
-        }
-      </nav>
-
-      <div class="sidebar-section">
-        <p class="section-kicker">{{ 'logs.fileType' | t }}</p>
-        @for (kind of kindOptions; track kind) {
-          <button
-            class="sidebar-filter"
-            type="button"
-            [class.active]="kindFilter() === kind"
-            (click)="kindFilter.set(kind)"
-          >
-            <span class="filter-dot" [class.error-dot]="kind === 'error'"></span>
-            {{ kindFilterLabel(kind) }}
-          </button>
-        }
-      </div>
-
-      <button class="clear-button" type="button" (click)="clearFilters()">
-        {{ 'logs.clearFilters' | t }}
-      </button>
-    </aside>
-
-    <div class="explorer-main">
-      <header class="explorer-toolbar">
-        <div class="toolbar-title">
+  <section class="explorer-shell glass-card" [attr.aria-label]="'logs.explorer' | t">
+    <aside class="file-pane">
+      <header class="file-pane-header">
+        <div>
           <p class="section-kicker">{{ 'logs.available' | t }}</p>
           <h3>{{ filteredFiles().length }} {{ 'logs.files' | t }}</h3>
         </div>
+        <span class="sidebar-count">{{ filteredFiles().length }}</span>
+      </header>
+
+      <div class="file-filters">
         <label class="search-field">
           <span class="sr-only">{{ 'logs.search' | t }}</span>
           <span aria-hidden="true">⌕</span>
@@ -74,134 +38,149 @@
             [placeholder]="'logs.searchPlaceholder' | t"
           />
         </label>
-      </header>
 
-      <div class="date-filters">
-        <label>
-          <span>{{ 'logs.from' | t }}</span>
-          <input type="date" [value]="fromDate()" (change)="fromDate.set($any($event.target).value)" />
-        </label>
-        <label>
-          <span>{{ 'logs.to' | t }}</span>
-          <input type="date" [value]="toDate()" (change)="toDate.set($any($event.target).value)" />
-        </label>
-        <span class="filter-hint">{{ 'logs.dateHint' | t }}</span>
+        <div class="filter-row">
+          <label>
+            <span>{{ 'logs.fileType' | t }}</span>
+            <select [value]="kindFilter()" (change)="kindFilter.set($any($event.target).value)">
+              @for (kind of kindOptions; track kind) {
+                <option [value]="kind">{{ kindFilterLabel(kind) }}</option>
+              }
+            </select>
+          </label>
+          <button class="clear-button" type="button" (click)="clearFilters()">
+            {{ 'logs.clearFilters' | t }}
+          </button>
+        </div>
+
+        <div class="date-filters">
+          <label>
+            <span>{{ 'logs.from' | t }}</span>
+            <input type="date" [value]="fromDate()" (change)="fromDate.set($any($event.target).value)" />
+          </label>
+          <label>
+            <span>{{ 'logs.to' | t }}</span>
+            <input type="date" [value]="toDate()" (change)="toDate.set($any($event.target).value)" />
+          </label>
+        </div>
       </div>
 
       @if (logs.loading() && logs.files().length === 0) {
-        <div class="logs-state">
+        <div class="logs-state compact-state">
           <span class="spinner"></span>
           <p>{{ 'logs.loading' | t }}</p>
         </div>
       } @else if (filteredFiles().length === 0) {
-        <div class="logs-state">
+        <div class="logs-state compact-state">
           <span class="empty-icon">⌁</span>
           <p>{{ logs.files().length === 0 ? ('logs.empty' | t) : ('logs.noMatches' | t) }}</p>
         </div>
       } @else {
-        <div class="log-list" role="list">
-          @for (file of filteredFiles(); track file.name) {
-            <article
-              class="log-row"
-              [class.selected]="logs.previewFilename() === file.name"
-              role="listitem"
-              tabindex="0"
-              (click)="selectFile(file.name)"
-              (keydown.enter)="selectFile(file.name)"
-              (keydown.space)="selectFile(file.name); $event.preventDefault()"
-            >
-              <div class="log-icon" [class.error-log]="file.isError" aria-hidden="true">
-                {{ file.isError ? '!' : '≡' }}
-              </div>
-              <div class="log-copy">
-                <strong>{{ file.name }}</strong>
-                <small>
-                  {{ sourceLabel(file) }} · {{ kindLabel(file) }} ·
-                  {{ file.compressed ? ('logs.compressed' | t) : ('logs.plainText' | t) }}
-                </small>
-              </div>
-              <time [attr.datetime]="file.modifiedAt">{{ file.modifiedAt | date: 'medium' }}</time>
-              <span class="file-size">{{ fileSize(file.sizeBytes) }}</span>
-              <div class="log-actions" (click)="$event.stopPropagation()">
-                <button
-                  class="view-button"
-                  type="button"
-                  (click)="selectFile(file.name)"
-                  [attr.aria-expanded]="logs.previewFilename() === file.name"
-                >
-                  {{ 'logs.view' | t }}
-                </button>
-                <a
-                  class="download-link"
-                  [href]="logs.downloadUrl(file.name)"
-                  [attr.download]="file.name"
-                >{{ 'logs.download' | t }}</a>
-              </div>
-            </article>
+        <div class="log-tree" role="tree" [attr.aria-label]="'logs.sources' | t">
+          @for (source of treeSources(); track source) {
+            <div class="tree-branch" role="treeitem" [attr.aria-expanded]="isSourceExpanded(source)">
+              <button class="tree-branch-label" type="button" (click)="toggleSource(source)">
+                <span class="tree-chevron" [class.expanded]="isSourceExpanded(source)" aria-hidden="true">›</span>
+                <span class="source-symbol" aria-hidden="true">▣</span>
+                <span>{{ sourceFilterLabel(source) }}</span>
+                <strong>{{ filesForSource(source).length }}</strong>
+              </button>
+
+              @if (isSourceExpanded(source)) {
+                <div class="tree-branch-files" role="group">
+                  @for (file of filesForSource(source); track file.name) {
+                    <button
+                      class="tree-file"
+                      [class.selected]="logs.previewFilename() === file.name"
+                      type="button"
+                      role="treeitem"
+                      [attr.aria-selected]="logs.previewFilename() === file.name"
+                      (click)="selectFile(file.name)"
+                    >
+                      <span class="tree-file-icon" [class.error-log]="file.isError" aria-hidden="true">
+                        {{ file.isError ? '!' : '≡' }}
+                      </span>
+                      <span class="tree-file-copy">
+                        <strong>{{ file.name }}</strong>
+                        <small>{{ file.modifiedAt | date: 'mediumDate' }} · {{ fileSize(file.sizeBytes) }}</small>
+                      </span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
           }
         </div>
       }
-    </div>
-  </section>
+    </aside>
 
-  @if (logs.previewFilename(); as filename) {
-    <section class="preview-card glass-card" aria-labelledby="log-preview-title">
-      <header class="preview-header">
-        <div class="preview-title">
-          <p class="section-kicker">{{ 'logs.preview' | t }}</p>
-          <h3 id="log-preview-title">{{ filename }}</h3>
-          @if (selectedFile(); as file) {
-            <small>{{ sourceLabel(file) }} · {{ file.modifiedAt | date: 'medium' }}</small>
-          }
-        </div>
-        <div class="preview-actions">
-          <button
-            class="copy-button"
-            type="button"
-            (click)="copyPreview()"
-            [disabled]="filteredPreviewText() === null"
-          >
-            {{ copied() ? ('logs.copied' | t) : ('logs.copyFile' | t) }}
-          </button>
-          <a class="download-link" [href]="logs.downloadUrl(filename)" [attr.download]="filename">
-            {{ 'logs.download' | t }}
-          </a>
-          <button class="close-button" type="button" (click)="logs.closePreview()">
-            {{ 'logs.close' | t }}
-          </button>
-        </div>
-      </header>
-
-      <div class="preview-toolbar">
-        <label>
-          <span>{{ 'logs.level' | t }}</span>
-          <select [value]="previewLevel()" (change)="previewLevel.set($any($event.target).value)">
-            @for (level of levelOptions; track level) {
-              <option [value]="level">{{ levelLabel(level) }}</option>
+    <main class="reader-pane" aria-labelledby="log-reader-title">
+      @if (logs.previewFilename(); as filename) {
+        <header class="preview-header">
+          <div class="preview-title">
+            <p class="section-kicker">{{ 'logs.preview' | t }}</p>
+            <h3 id="log-reader-title">{{ filename }}</h3>
+            @if (selectedFile(); as file) {
+              <small>
+                {{ sourceLabel(file) }} · {{ kindLabel(file) }} · {{ file.modifiedAt | date: 'medium' }}
+              </small>
             }
-          </select>
-        </label>
-        <label class="preview-search">
-          <span>{{ 'logs.findInFile' | t }}</span>
-          <input
-            type="search"
-            [value]="previewSearch()"
-            (input)="previewSearch.set($any($event.target).value)"
-            [placeholder]="'logs.findInFilePlaceholder' | t"
-          />
-        </label>
-      </div>
+          </div>
+          <div class="preview-actions">
+            <button
+              class="copy-button"
+              type="button"
+              (click)="copyPreview()"
+              [disabled]="filteredPreviewText() === null"
+            >
+              {{ copied() ? ('logs.copied' | t) : ('logs.copyFile' | t) }}
+            </button>
+            <a class="download-link" [href]="logs.downloadUrl(filename)" [attr.download]="filename">
+              {{ 'logs.download' | t }}
+            </a>
+            <button class="close-button" type="button" (click)="logs.closePreview()">
+              {{ 'logs.close' | t }}
+            </button>
+          </div>
+        </header>
 
-      @if (logs.previewLoading()) {
-        <div class="logs-state">
-          <span class="spinner"></span>
-          <p>{{ 'logs.previewLoading' | t }}</p>
+        <div class="preview-toolbar">
+          <label>
+            <span>{{ 'logs.level' | t }}</span>
+            <select [value]="previewLevel()" (change)="previewLevel.set($any($event.target).value)">
+              @for (level of levelOptions; track level) {
+                <option [value]="level">{{ levelLabel(level) }}</option>
+              }
+            </select>
+          </label>
+          <label class="preview-search">
+            <span>{{ 'logs.findInFile' | t }}</span>
+            <input
+              type="search"
+              [value]="previewSearch()"
+              (input)="previewSearch.set($any($event.target).value)"
+              [placeholder]="'logs.findInFilePlaceholder' | t"
+            />
+          </label>
         </div>
-      } @else if (logs.previewError(); as error) {
-        <div class="notice error" role="alert">{{ error }}</div>
-      } @else if (filteredPreviewText() !== null) {
-        <pre class="log-content" tabindex="0">{{ filteredPreviewText() }}</pre>
+
+        @if (logs.previewLoading()) {
+          <div class="logs-state">
+            <span class="spinner"></span>
+            <p>{{ 'logs.previewLoading' | t }}</p>
+          </div>
+        } @else if (logs.previewError(); as error) {
+          <div class="notice error" role="alert">{{ error }}</div>
+        } @else if (filteredPreviewText() !== null) {
+          <pre class="log-content" tabindex="0">{{ filteredPreviewText() }}</pre>
+        }
+      } @else {
+        <div class="reader-empty">
+          <span class="empty-icon">⌁</span>
+          <h3 id="log-reader-title">{{ 'logs.selectTitle' | t }}</h3>
+          <p>{{ 'logs.selectCopy' | t }}</p>
+        </div>
       }
-    </section>
-  }
+    </main>
+  </section>
 </section>

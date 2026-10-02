@@ -1003,6 +1003,8 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'logs.level.debug': 'Debug',
     'logs.findInFile': 'Find in file',
     'logs.findInFilePlaceholder': 'Filter log lines…',
+    'logs.selectTitle': 'Select a log file',
+    'logs.selectCopy': 'Choose a file from the log tree to inspect its contents here.',
   },
   de: {
     'app.loading': 'Arbeitsbereich wird geladen…',
@@ -1106,6 +1108,8 @@ const CALMER_COPY: Record<string, TranslationMap> = {
     'logs.level.debug': 'Debug',
     'logs.findInFile': 'In Datei suchen',
     'logs.findInFilePlaceholder': 'Protokollzeilen filtern…',
+    'logs.selectTitle': 'Protokolldatei auswählen',
+    'logs.selectCopy': 'Wählen Sie links eine Datei aus, um ihren Inhalt hier zu prüfen.',
   },
 };
 

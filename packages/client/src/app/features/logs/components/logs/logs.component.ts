@@ -30,6 +30,10 @@ export class LogsComponent implements OnInit {
   readonly sourceOptions: LogSourceFilter[] = ['all', 'application', 'worker'];
   readonly kindOptions: LogKindFilter[] = ['all', 'error', 'standard'];
   readonly levelOptions: LogLevelFilter[] = ['all', 'error', 'warn', 'info', 'debug'];
+  readonly expandedSources = signal<Record<LogFileSource, boolean>>({
+    application: true,
+    worker: true,
+  });
 
   readonly filteredFiles = computed(() => {
     const search = this.fileSearch().trim().toLowerCase();
@@ -58,6 +62,10 @@ export class LogsComponent implements OnInit {
     const filename = this.logs.previewFilename();
     return this.logs.files().find((file) => file.name === filename) ?? null;
   });
+
+  readonly treeSources = computed(() =>
+    (['application', 'worker'] as const).filter((source) => this.filesForSource(source).length > 0),
+  );
 
   readonly filteredPreviewText = computed(() => {
     const text = this.logs.previewText();
@@ -109,6 +117,21 @@ export class LogsComponent implements OnInit {
     void this.logs.preview(filename);
   }
 
+  filesForSource(source: LogFileSource): LogFile[] {
+    return this.filteredFiles().filter((file) => file.source === source);
+  }
+
+  isSourceExpanded(source: LogFileSource): boolean {
+    return this.expandedSources()[source];
+  }
+
+  toggleSource(source: LogFileSource): void {
+    this.expandedSources.update((expanded) => ({
+      ...expanded,
+      [source]: !expanded[source],
+    }));
+  }
+
   clearFilters(): void {
     this.sourceFilter.set('all');
     this.kindFilter.set('all');
@@ -119,11 +142,15 @@ export class LogsComponent implements OnInit {
 
   async copyPreview(): Promise<void> {
     const text = this.filteredPreviewText();
-    if (!text) return;
+    if (!text || !navigator.clipboard) return;
 
-    await navigator.clipboard.writeText(text);
-    this.copied.set(true);
-    window.setTimeout(() => this.copied.set(false), 1_500);
+    try {
+      await navigator.clipboard.writeText(text);
+      this.copied.set(true);
+      window.setTimeout(() => this.copied.set(false), 1_500);
+    } catch {
+      this.copied.set(false);
+    }
   }
 
   private lineLevel(line: string): Exclude<LogLevelFilter, 'all'> {
