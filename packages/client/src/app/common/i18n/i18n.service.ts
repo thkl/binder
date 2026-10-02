@@ -1292,6 +1292,13 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'documents.requeue': 'Requeue processing',
     'documents.delete': 'Delete document',
     'documents.deleteConfirm': 'Delete this document and all derived files?',
+    'documents.deleteDialogTitle': 'Delete document?',
+    'documents.deleteDialogMessage':
+      'This permanently removes the original file, derived files, metadata, and processing history. Document:',
+    'documents.duplicateUploadTitle': 'This document is already in Binder',
+    'documents.duplicateUploadCopy':
+      'The upload was not added again because its content matches an existing document.',
+    'documents.openArchive': 'Open documents',
     'documents.exportSelected': 'Export selected documents',
     'documents.exportFiltered': 'Export filtered documents',
     'documents.exportFolder': 'Export folder',
@@ -1523,6 +1530,13 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'documents.requeue': 'Verarbeitung erneut starten',
     'documents.delete': 'Dokument löschen',
     'documents.deleteConfirm': 'Dieses Dokument und alle abgeleiteten Dateien löschen?',
+    'documents.deleteDialogTitle': 'Dokument löschen?',
+    'documents.deleteDialogMessage':
+      'Originaldatei, abgeleitete Dateien, Metadaten und Verarbeitungshistorie werden endgültig gelöscht. Dokument:',
+    'documents.duplicateUploadTitle': 'Dieses Dokument ist bereits in Binder vorhanden',
+    'documents.duplicateUploadCopy':
+      'Der Upload wurde nicht erneut hinzugefügt, weil der Inhalt einem vorhandenen Dokument entspricht.',
+    'documents.openArchive': 'Dokumente öffnen',
     'documents.exportSelected': 'Ausgewählte Dokumente exportieren',
     'documents.exportFiltered': 'Gefilterte Dokumente exportieren',
     'documents.exportFolder': 'Ordner exportieren',

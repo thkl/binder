@@ -1,0 +1,138 @@
+:host {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+}
+
+.confirm-backdrop {
+  display: grid;
+  min-height: 100%;
+  padding: 1rem;
+  place-items: center;
+  background: rgba(2, 10, 22, 0.76);
+  backdrop-filter: blur(0.5rem);
+}
+
+.confirm-dialog {
+  display: grid;
+  width: min(31rem, 100%);
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  border: 1px solid rgba(255, 133, 133, 0.3);
+  border-radius: 1rem;
+  padding: 1.35rem;
+  color: #e7f3ff;
+  background: linear-gradient(145deg, #17304e 0%, #08182e 78%);
+  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.45);
+  animation: confirm-dialog-in 0.16s ease-out;
+}
+
+.confirm-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid rgba(255, 133, 133, 0.35);
+  border-radius: 50%;
+  color: #ffd1d1;
+  background: rgba(255, 102, 102, 0.14);
+  font-size: 1.35rem;
+  font-weight: 850;
+}
+
+h2,
+p {
+  margin: 0;
+}
+
+h2 {
+  color: #f0f8ff;
+  font-size: 1.08rem;
+  letter-spacing: -0.02em;
+}
+
+.confirm-content p {
+  margin-top: 0.45rem;
+  color: #b8cde2;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.confirm-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.confirm-actions button {
+  min-width: 7rem;
+  min-height: 2.75rem;
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.confirm-cancel {
+  border: 1px solid rgba(157, 190, 232, 0.25);
+  color: #d5e5f5;
+  background: rgba(157, 190, 232, 0.07);
+}
+
+.confirm-primary {
+  border: 1px solid #ff8585;
+  color: #250d13;
+  background: #ffaaa8;
+}
+
+.confirm-cancel:hover,
+.confirm-cancel:focus-visible,
+.confirm-primary:hover,
+.confirm-primary:focus-visible {
+  outline: 2px solid rgba(223, 248, 255, 0.85);
+  outline-offset: 2px;
+}
+
+.confirm-cancel:hover {
+  background: rgba(157, 190, 232, 0.14);
+}
+
+.confirm-primary:hover {
+  background: #ffc4c1;
+}
+
+@keyframes confirm-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-dialog {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .confirm-dialog {
+    grid-template-columns: 1fr;
+  }
+
+  .confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .confirm-actions button {
+    width: 100%;
+  }
+}

@@ -36,6 +36,7 @@ import type {
 } from '@binder/common';
 import { DocumentListQuerySchema } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
 
 type DocumentViewMode = 'list' | 'icons';
 type DocumentGroupMode = DocumentGroupBy;
@@ -62,6 +63,7 @@ type DocumentFilterValues = {
     FolderTreeComponent,
     SavedSearchMenuComponent,
     BulkMetadataDialogComponent,
+    ConfirmDialogComponent,
     TranslatePipe,
   ],
   templateUrl: './documents.component.html',
@@ -90,6 +92,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly editingTitleUuid = signal<string | null>(null);
   readonly metadataDirty = signal(false);
   readonly metadataClosePrompt = signal(false);
+  readonly deleteDialogUuid = signal<string | null>(null);
   readonly selectedDocumentUuids = signal<Set<string>>(new Set());
   readonly bulkActionInProgress = signal<DocumentBulkAction | null>(null);
   readonly bulkActionResult = signal<DocumentBulkActionResponse | null>(null);
@@ -328,6 +331,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
+    this.documents.clearUploadNotice();
     if (!file) {
       return;
     }
@@ -501,14 +505,30 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     await this.documents.generateArchive(uuid);
   }
 
-  async deleteDocument(uuid: string): Promise<void> {
-    if (!window.confirm(this.i18n.t('documents.deleteConfirm'))) return;
+  requestDeleteDocument(uuid: string): void {
+    if (!this.canLeaveMetadata()) return;
+    this.deleteDialogUuid.set(uuid);
+  }
+
+  cancelDeleteDocument(): void {
+    this.deleteDialogUuid.set(null);
+  }
+
+  async confirmDeleteDocument(): Promise<void> {
+    const uuid = this.deleteDialogUuid();
+    this.deleteDialogUuid.set(null);
+    if (!uuid) return;
 
     const deleted = await this.documents.remove(uuid);
     if (deleted && this.drawerDocumentUuid() === uuid) {
       this.finishCloseMetadata();
     }
     if (deleted) this.clearSelection();
+  }
+
+  documentLabel(uuid: string): string {
+    const document = this.documents.page()?.items.find((item) => item.uuid === uuid);
+    return document?.title || document?.originalFilename || uuid;
   }
 
   requestCloseMetadata(): void {

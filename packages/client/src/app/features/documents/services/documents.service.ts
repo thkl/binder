@@ -42,11 +42,16 @@ export class DocumentsService {
   readonly uploading = signal(false);
   readonly exporting = signal(false);
   readonly error = signal<string | null>(null);
+  readonly duplicateUpload = signal(false);
   readonly appService = inject(ApplicationService);
   private readonly document = inject(DOCUMENT);
   private currentQuery = DocumentListQuerySchema.parse({});
 
   constructor(private readonly http: HttpClient) {}
+
+  clearUploadNotice(): void {
+    this.duplicateUpload.set(false);
+  }
 
   getCurrentQuery(): DocumentListQuery {
     return this.currentQuery;
@@ -410,11 +415,23 @@ export class DocumentsService {
       await this.load();
       return true;
     } catch (error) {
+      if (this.isDuplicateUploadError(error)) {
+        this.duplicateUpload.set(true);
+        return false;
+      }
       this.error.set(this.getErrorMessage(error));
       return false;
     } finally {
       this.uploading.set(false);
     }
+  }
+
+  private isDuplicateUploadError(error: unknown): boolean {
+    return (
+      error instanceof HttpErrorResponse &&
+      error.status === 409 &&
+      error.error?.code === 'DOCUMENT_DUPLICATE'
+    );
   }
 
   async remove(uuid: string): Promise<boolean> {

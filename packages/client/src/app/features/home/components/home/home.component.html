@@ -94,6 +94,17 @@
       }
     </section>
 
+    @if (documents.duplicateUpload()) {
+      <aside class="duplicate-upload-notice" role="alert">
+        <span class="duplicate-upload-icon" aria-hidden="true">!</span>
+        <div>
+          <strong>{{ 'documents.duplicateUploadTitle' | t }}</strong>
+          <p>{{ 'documents.duplicateUploadCopy' | t }}</p>
+        </div>
+        <a routerLink="/documents">{{ 'documents.openArchive' | t }} →</a>
+      </aside>
+    }
+
     @if (search.vocabulary(); as vocabulary) {
       <div class="search-filters" aria-label="Search filters">
         <label
@@ -309,7 +320,18 @@
       (suggestionDismissed)="reloadSearch()"
       (suggestionAccepted)="titleSuggestionAccepted()"
       (archiveRequested)="generateArchive(drawerUuid)"
-      (deleteRequested)="deleteDocument(drawerUuid)"
+      (deleteRequested)="requestDeleteDocument(drawerUuid)"
     />
   }
+}
+
+@if (deleteDialogUuid(); as deleteUuid) {
+  <binder-confirm-dialog
+    [title]="'documents.deleteDialogTitle' | t"
+    [message]="('documents.deleteDialogMessage' | t) + ' ' + documentLabel(deleteUuid)"
+    [confirmLabel]="'documents.delete' | t"
+    [cancelLabel]="'common.cancel' | t"
+    (confirmed)="confirmDeleteDocument()"
+    (cancelled)="cancelDeleteDocument()"
+  />
 }

@@ -13,6 +13,7 @@ import type { Document } from '@binder/common';
 import { DocumentSearchQuerySchema } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { RouterLink } from '@angular/router';
+import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'binder-home',
@@ -22,6 +23,7 @@ import { RouterLink } from '@angular/router';
     DocumentDrawerComponent,
     SavedSearchMenuComponent,
     RouterLink,
+    ConfirmDialogComponent,
     TranslatePipe,
   ],
   templateUrl: './home.component.html',
@@ -40,6 +42,7 @@ export class HomeComponent {
   readonly drawerDocumentSnapshot = signal<Document | null>(null);
   readonly metadataDirty = signal(false);
   readonly metadataClosePrompt = signal(false);
+  readonly deleteDialogUuid = signal<string | null>(null);
   readonly selectedType = signal('');
   readonly selectedCategory = signal('');
   readonly selectedTag = signal('');
@@ -143,6 +146,7 @@ export class HomeComponent {
   private async uploadFiles(files: File[]): Promise<void> {
     this.uploadMessage.set(null);
     this.uploadError.set(null);
+    this.documents.clearUploadNotice();
     this.uploadedCount.set(0);
     this.uploadQueueCompleted.set(0);
     this.uploadQueueTotal.set(files.length);
@@ -182,7 +186,7 @@ export class HomeComponent {
       this.uploadMessage.set('success');
     }
 
-    if (failedCount > 0 && !this.uploadError()) {
+    if (failedCount > 0 && !this.uploadError() && !this.documents.duplicateUpload()) {
       this.uploadError.set(this.documents.error() ?? this.i18n.t('home.uploadFailed'));
     }
   }
@@ -312,14 +316,30 @@ export class HomeComponent {
     await this.reloadSearch();
   }
 
-  async deleteDocument(uuid: string): Promise<void> {
-    if (!window.confirm(this.i18n.t('documents.deleteConfirm'))) return;
+  requestDeleteDocument(uuid: string): void {
+    if (!this.canLeaveMetadata()) return;
+    this.deleteDialogUuid.set(uuid);
+  }
+
+  cancelDeleteDocument(): void {
+    this.deleteDialogUuid.set(null);
+  }
+
+  async confirmDeleteDocument(): Promise<void> {
+    const uuid = this.deleteDialogUuid();
+    this.deleteDialogUuid.set(null);
+    if (!uuid) return;
 
     const deleted = await this.documents.remove(uuid);
     if (deleted && this.drawerDocumentUuid() === uuid) {
       this.closeDrawer();
       await this.reloadSearch();
     }
+  }
+
+  documentLabel(uuid: string): string {
+    const document = this.findDocument(uuid);
+    return document?.title || document?.originalFilename || uuid;
   }
 
   private closeDrawer(): void {

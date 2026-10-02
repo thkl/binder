@@ -22,6 +22,16 @@
     <div class="notice error" role="alert">{{ error }}</div>
   }
 
+  @if (documents.duplicateUpload()) {
+    <aside class="duplicate-upload-notice" role="alert">
+      <span class="duplicate-upload-icon" aria-hidden="true">!</span>
+      <div>
+        <strong>{{ 'documents.duplicateUploadTitle' | t }}</strong>
+        <p>{{ 'documents.duplicateUploadCopy' | t }}</p>
+      </div>
+    </aside>
+  }
+
   @if (documents.storageIssues(); as storageIssues) {
     @if (storageIssues.length > 0) {
       <aside class="storage-issue-notice" aria-labelledby="storage-issues-title">
@@ -501,7 +511,7 @@
                     (metadata)="toggleMetadata(document.uuid)"
                     (suggest)="suggestTitle(document.uuid)"
                     (requeue)="requeueDocument(document.uuid)"
-                    (deleteRequested)="deleteDocument(document.uuid)"
+                    (deleteRequested)="requestDeleteDocument(document.uuid)"
                   />
                 </article>
               }
@@ -651,7 +661,7 @@
                     (metadata)="toggleMetadata(document.uuid)"
                     (suggest)="suggestTitle(document.uuid)"
                     (requeue)="requeueDocument(document.uuid)"
-                    (deleteRequested)="deleteDocument(document.uuid)"
+                    (deleteRequested)="requestDeleteDocument(document.uuid)"
                   />
                 </article>
               }
@@ -693,7 +703,7 @@
         (suggestionDismissed)="dismissLocalTitleSuggestion(drawerUuid)"
         (suggestionAccepted)="acceptSuggestedMetadata(drawerUuid, $event)"
         (archiveRequested)="generateArchive(drawerUuid)"
-        (deleteRequested)="deleteDocument(drawerUuid)"
+        (deleteRequested)="requestDeleteDocument(drawerUuid)"
       />
     }
   }
@@ -709,6 +719,17 @@
       [definitions]="metadata.definitions()"
       (closed)="bulkMetadataDialogOpen.set(false)"
       (applied)="bulkMetadataApplied($event)"
+    />
+  }
+
+  @if (deleteDialogUuid(); as deleteUuid) {
+    <binder-confirm-dialog
+      [title]="'documents.deleteDialogTitle' | t"
+      [message]="('documents.deleteDialogMessage' | t) + ' ' + documentLabel(deleteUuid)"
+      [confirmLabel]="'documents.delete' | t"
+      [cancelLabel]="'common.cancel' | t"
+      (confirmed)="confirmDeleteDocument()"
+      (cancelled)="cancelDeleteDocument()"
     />
   }
 </section>

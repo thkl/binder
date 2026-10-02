@@ -146,6 +146,52 @@ h2 {
   background: rgba(255, 120, 120, 0.1);
 }
 
+.duplicate-upload-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  margin: 1rem 0;
+  border: 1px solid rgba(255, 190, 120, 0.4);
+  border-radius: 0.85rem;
+  padding: 1rem 1.1rem;
+  color: #ffe2bd;
+  background: linear-gradient(135deg, rgba(129, 74, 31, 0.38), rgba(66, 37, 28, 0.28));
+  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.12);
+}
+
+.duplicate-upload-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 190, 120, 0.45);
+  border-radius: 50%;
+  color: #ffe0b7;
+  background: rgba(255, 180, 100, 0.14);
+  font-size: 1.05rem;
+  font-weight: 850;
+}
+
+.duplicate-upload-notice strong {
+  display: block;
+  color: #fff0d9;
+  font-size: 0.9rem;
+}
+
+.duplicate-upload-notice p {
+  margin: 0.3rem 0 0;
+  color: #eac69c;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .duplicate-upload-notice {
+    flex-wrap: wrap;
+  }
+}
+
 .documents-layout {
   display: grid;
   grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
