@@ -129,7 +129,10 @@ verification.
   - Refresh the monitor automatically while it is open.
   - Keep job and document access owner-scoped and redact common secret patterns in failure details.
 - Replace the basic log viewer with an explorer-style log view that supports browsing log files,
-  filtering by level and date, and readable inspection of structured entries.
+  filtering by level and date, and readable inspection of structured entries. ✅ Implemented:
+  - Browse application and worker logs from a source sidebar.
+  - Filter files by source, file type, name, and date range.
+  - Filter the selected log content by level or text and copy the filtered view.
 - Expand homepage document ingestion so the complete home content background is
   the PDF drop zone, with a clear drag-over state and the file-picker fallback
   retained.
