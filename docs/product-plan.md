@@ -140,7 +140,13 @@ verification.
     results workflow available underneath the drop state.
   - File-picker and drag-and-drop uploads support multiple PDFs through a
     sequential upload queue with progress and clear validation feedback.
-- Add extensions and integrations without changing the core document workflow
+- Add extensions and integrations without changing the core document workflow.
+  ✅ Foundation implemented:
+  - Packaged plugins register typed manifests at API startup.
+  - Owner-scoped document audit events can be consumed without blocking the
+    core document transaction when a plugin fails.
+  - Runtime code loading and database-configured module paths are intentionally
+    excluded from the security boundary.
 - Turn invoice due dates into calendar entries
 - Import documents from email
 - Add secure email-based password reset for local accounts

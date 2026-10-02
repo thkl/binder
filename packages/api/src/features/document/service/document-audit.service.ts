@@ -9,6 +9,7 @@ import { DocumentStore } from '../store/document.store';
 import { DocumentAuditEventStore } from '../store/document-audit-event.store';
 import { DocumentMetadataChangeSet } from '../models/document-metadata-change-set.entity';
 import { Op } from 'sequelize';
+import { PluginRegistryService } from '../../plugin/service/plugin-registry.service';
 
 export interface RecordDocumentAuditInput {
   documentUuid: string;
@@ -26,6 +27,7 @@ export class DocumentAuditService {
   constructor(
     private readonly events: DocumentAuditEventStore,
     private readonly documents: DocumentStore,
+    private readonly plugins: PluginRegistryService,
   ) {}
 
   async record(input: RecordDocumentAuditInput): Promise<DocumentAuditEvent> {
@@ -39,6 +41,19 @@ export class DocumentAuditService {
       summary: input.summary.slice(0, 500),
       details: this.safeDetails(input.details),
       changeSetUuid: input.changeSetUuid ?? null,
+    });
+
+    this.plugins.publishDocumentEvent({
+      name: `document.${event.eventType}`,
+      documentUuid: event.documentUuid,
+      ownerUuid: event.ownerUuid,
+      actorUuid: event.actorUuid,
+      actorType: event.actorType,
+      payload: {
+        summary: event.summary,
+        details: this.safeDetails(input.details),
+      },
+      occurredAt: event.createdAt.toISOString(),
     });
 
     return this.toResponse(event);

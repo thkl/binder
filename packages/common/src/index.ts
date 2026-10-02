@@ -291,6 +291,54 @@ export const DocumentAuditResponseSchema = z.object({
 });
 export type DocumentAuditResponse = z.infer<typeof DocumentAuditResponseSchema>;
 
+export const PluginIdSchema = z
+  .string()
+  .trim()
+  .regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/, 'Plugin ids must use kebab-case')
+  .max(64);
+export type PluginId = z.infer<typeof PluginIdSchema>;
+
+export const PluginCapabilitySchema = z.enum([
+  'document-events',
+  'document-import',
+  'document-analysis',
+  'calendar',
+]);
+export type PluginCapability = z.infer<typeof PluginCapabilitySchema>;
+
+export const PluginManifestSchema = z.object({
+  id: PluginIdSchema,
+  name: z.string().trim().min(1).max(120),
+  version: z
+    .string()
+    .trim()
+    .regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/),
+  description: z.string().trim().min(1).max(500),
+  capabilities: z.array(PluginCapabilitySchema).min(1).max(20),
+  enabled: z.boolean(),
+});
+export type PluginManifest = z.infer<typeof PluginManifestSchema>;
+
+export const PluginDocumentEventSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .regex(/^document\.[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .max(120),
+  documentUuid: z.uuid(),
+  ownerUuid: z.uuid(),
+  actorUuid: z.uuid().nullable(),
+  actorType: DocumentAuditActorTypeSchema,
+  payload: z.record(z.string(), z.unknown()).default({}),
+  occurredAt: z.iso.datetime(),
+});
+export type PluginDocumentEvent = z.infer<typeof PluginDocumentEventSchema>;
+
+export const PluginListResponseSchema = z.object({
+  items: z.array(PluginManifestSchema),
+});
+export type PluginListResponse = z.infer<typeof PluginListResponseSchema>;
+
 export const IssuerSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid(),

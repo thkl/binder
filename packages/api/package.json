@@ -5,8 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "pnpm build && node --test dist/shared/guards/csrf.guard.spec.js dist/features/authentication/guards/authentication.guard.spec.js dist/features/document/service/document-storage.service.spec.js dist/shared/util/encryption.service.spec.js dist/database/service/database.migrator.spec.js dist/features/pipeline/service/pipeline.service.spec.js",
-    "coverage": "pnpm build && node --experimental-test-coverage --test dist/shared/guards/csrf.guard.spec.js dist/features/authentication/guards/authentication.guard.spec.js dist/features/document/service/document-storage.service.spec.js dist/shared/util/encryption.service.spec.js dist/database/service/database.migrator.spec.js dist/features/pipeline/service/pipeline.service.spec.js",
+    "test": "pnpm build && node --test dist/shared/guards/csrf.guard.spec.js dist/features/authentication/guards/authentication.guard.spec.js dist/features/document/service/document-storage.service.spec.js dist/shared/util/encryption.service.spec.js dist/database/service/database.migrator.spec.js dist/features/pipeline/service/pipeline.service.spec.js dist/features/plugin/service/plugin-registry.service.spec.js",
+    "coverage": "pnpm build && node --experimental-test-coverage --test dist/shared/guards/csrf.guard.spec.js dist/features/authentication/guards/authentication.guard.spec.js dist/features/document/service/document-storage.service.spec.js dist/shared/util/encryption.service.spec.js dist/database/service/database.migrator.spec.js dist/features/pipeline/service/pipeline.service.spec.js dist/features/plugin/service/plugin-registry.service.spec.js",
     "dev": "dotenv run -f ../../.env -- node --watch dist/main.js",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
