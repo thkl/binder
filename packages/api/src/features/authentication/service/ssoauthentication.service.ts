@@ -48,6 +48,20 @@ export class SSOAuthenticationService {
     return this.config !== undefined;
   }
 
+  async validateConfiguration(): Promise<boolean> {
+    const issuerUrl = await this.settingsService.get('oidc.ISSUER_URL');
+    const clientId = await this.settingsService.get('oidc.CLIENT_ID');
+    const clientSecret = await this.settingsService.get('oidc.CLIENT_SECRET');
+
+    if (!issuerUrl || !clientId || !clientSecret) {
+      return false;
+    }
+
+    const issuer = new URL(issuerUrl);
+    this.config = await discovery(issuer, clientId, clientSecret);
+    return true;
+  }
+
   // 1. Build redirect authorization URL with PKCE + state checks
   async getAuthorizationUrl() {
     if (!(await this.initialize())) {

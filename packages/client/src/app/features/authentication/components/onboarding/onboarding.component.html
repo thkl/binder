@@ -19,16 +19,35 @@
         </div>
       </div>
 
-      <ol class="step-list" aria-label="Onboarding steps">
-        <li [class.active]="step() === 'admin'" [class.complete]="step() === 'ai'">
+      <ol class="step-list" [attr.aria-label]="'setup.steps' | t">
+        <li [class.active]="step() === 'admin'" [class.complete]="stepNumber() > 1">
           <span>1</span>{{ 'setup.stepAdmin' | t }}
         </li>
-        <li [class.active]="step() === 'ai'"><span>2</span>{{ 'setup.stepAi' | t }}</li>
-        <li><span>3</span>{{ 'setup.stepWorkspace' | t }}</li>
+        <li [class.active]="step() === 'storage'" [class.complete]="stepNumber() > 2">
+          <span>2</span>{{ 'setup.stepStorage' | t }}
+        </li>
+        <li [class.active]="step() === 'processing'" [class.complete]="stepNumber() > 3">
+          <span>3</span>{{ 'setup.stepProcessing' | t }}
+        </li>
+        <li [class.active]="step() === 'ai'" [class.complete]="stepNumber() > 4">
+          <span>4</span>{{ 'setup.stepAi' | t }}
+        </li>
+        <li [class.active]="step() === 'oidc'" [class.complete]="stepNumber() > 5">
+          <span>5</span>{{ 'setup.stepOidc' | t }}
+        </li>
+        <li [class.active]="step() === 'backup'" [class.complete]="stepNumber() > 6">
+          <span>6</span>{{ 'setup.stepBackup' | t }}
+        </li>
+        <li [class.active]="step() === 'review'"><span>7</span>{{ 'setup.stepReview' | t }}</li>
       </ol>
     </div>
 
     <div class="form-panel">
+      <div class="progress-row">
+        <span>{{ 'setup.stepProgress' | t }}</span>
+        <strong>{{ stepNumber() }} / 7</strong>
+      </div>
+
       @if (step() === 'admin') {
         <div class="form-heading">
           <p class="eyebrow">{{ 'setup.firstStep' | t }}</p>
@@ -101,9 +120,143 @@
             </button>
           </form>
         }
-      } @else {
+      } @else if (!settingsLoaded()) {
+        <div class="loading-state" role="status">
+          <span class="spinner" aria-hidden="true"></span>
+          <p>{{ 'setup.loadingSettings' | t }}</p>
+        </div>
+      } @else if (step() === 'storage') {
         <div class="form-heading">
-          <p class="eyebrow">{{ 'setup.secondStep' | t }}</p>
+          <p class="eyebrow">{{ 'setup.stepProgressStorage' | t }}</p>
+          <h2>{{ 'setup.storageTitle' | t }}</h2>
+          <p>{{ 'setup.storageCopy' | t }}</p>
+        </div>
+
+        <form (submit)="$event.preventDefault(); continueStorage()">
+          <label for="storage-root">{{ 'setting.documents.storageRoot' | t }}</label>
+          <input
+            id="storage-root"
+            type="text"
+            [value]="value('documents.storageRoot')"
+            (input)="setText('documents.storageRoot', $event)"
+            autocomplete="off"
+          />
+          <p class="field-hint">{{ 'setup.storageRootHint' | t }}</p>
+
+          <label class="checkbox-field">
+            <input
+              type="checkbox"
+              [checked]="booleanValue('inbox.enabled')"
+              (change)="setCheckbox('inbox.enabled', $event)"
+            />
+            <span>{{ 'setting.inbox.enabled' | t }}</span>
+          </label>
+
+          <label for="inbox-path">{{ 'setting.inbox.path' | t }}</label>
+          <input
+            id="inbox-path"
+            type="text"
+            [value]="value('inbox.path')"
+            (input)="setText('inbox.path', $event)"
+            autocomplete="off"
+          />
+
+          <label for="inbox-owner">{{ 'setting.inbox.importOwnerUuid' | t }}</label>
+          <input
+            id="inbox-owner"
+            type="text"
+            [value]="value('inbox.importOwnerUuid')"
+            readonly
+            [attr.aria-describedby]="'inbox-owner-hint'"
+          />
+          <p class="field-hint" id="inbox-owner-hint">{{ 'setup.ownerHint' | t }}</p>
+
+          @if (validation('storage'); as result) {
+            <div class="check-list" aria-live="polite">
+              @for (check of result.checks; track check.key) {
+                <div class="check-row" [class]="'check-' + check.status">
+                  <span aria-hidden="true">{{ check.status === 'ok' ? '✓' : '!' }}</span>
+                  <p>{{ checkMessage(check) }}</p>
+                </div>
+              }
+            </div>
+          }
+          @if (stepError(); as error) {
+            <p class="error" role="alert">{{ error }}</p>
+          }
+
+          <div class="onboarding-actions">
+            <button
+              type="submit"
+              [disabled]="setup.validating() === 'storage' || settings.saving()"
+            >
+              {{
+                setup.validating() === 'storage' ? ('setup.checking' | t) : ('setup.continue' | t)
+              }}
+            </button>
+          </div>
+        </form>
+      } @else if (step() === 'processing') {
+        <div class="form-heading">
+          <p class="eyebrow">{{ 'setup.stepProgressProcessing' | t }}</p>
+          <h2>{{ 'setup.processingTitle' | t }}</h2>
+          <p>{{ 'setup.processingCopy' | t }}</p>
+        </div>
+
+        <form (submit)="$event.preventDefault(); continueProcessing()">
+          <label for="ocr-languages">{{ 'setting.pipeline.ocrLanguages' | t }}</label>
+          <input
+            id="ocr-languages"
+            type="text"
+            [value]="value('pipeline.ocrLanguages')"
+            (input)="setText('pipeline.ocrLanguages', $event)"
+          />
+          <p class="field-hint">{{ 'setup.ocrHint' | t }}</p>
+
+          <div class="setting-summary">
+            <span>{{ 'setting.security.malwareScan.required' | t }}</span>
+            <strong>{{
+              booleanValue('security.malwareScan.required') ? ('common.yes' | t) : ('common.no' | t)
+            }}</strong>
+          </div>
+          <div class="setting-summary">
+            <span>{{ 'setting.security.malwareScan.command' | t }}</span>
+            <strong>{{ value('security.malwareScan.command') }}</strong>
+          </div>
+
+          @if (validation('processing'); as result) {
+            <div class="check-list" aria-live="polite">
+              @for (check of result.checks; track check.key) {
+                <div class="check-row" [class]="'check-' + check.status">
+                  <span aria-hidden="true">{{ check.status === 'ok' ? '✓' : '!' }}</span>
+                  <p>{{ checkMessage(check) }}</p>
+                </div>
+              }
+            </div>
+          }
+          @if (stepError(); as error) {
+            <p class="error" role="alert">{{ error }}</p>
+          }
+
+          <div class="onboarding-actions">
+            <button type="button" class="secondary-button" (click)="goBack()">
+              {{ 'setup.back' | t }}
+            </button>
+            <button
+              type="submit"
+              [disabled]="setup.validating() === 'processing' || settings.saving()"
+            >
+              {{
+                setup.validating() === 'processing'
+                  ? ('setup.checking' | t)
+                  : ('setup.continue' | t)
+              }}
+            </button>
+          </div>
+        </form>
+      } @else if (step() === 'ai') {
+        <div class="form-heading">
+          <p class="eyebrow">{{ 'setup.stepProgressAi' | t }}</p>
           <h2>{{ 'setup.aiTitle' | t }}</h2>
           <p>{{ 'setup.aiCopy' | t }}</p>
         </div>
@@ -118,11 +271,200 @@
         </div>
 
         <div class="onboarding-actions">
-          <button type="button" class="secondary-button" (click)="skipAi()">
+          <button type="button" class="secondary-button" (click)="goBack()">
+            {{ 'setup.back' | t }}
+          </button>
+          <button type="button" class="secondary-button" (click)="continueAi()">
             {{ 'setup.skipAi' | t }}
           </button>
-          <button type="button" (click)="finishOnboarding()">
-            {{ 'setup.finish' | t }}
+          <button type="button" (click)="continueAi()">{{ 'setup.continue' | t }}</button>
+        </div>
+      } @else if (step() === 'oidc') {
+        <div class="form-heading">
+          <p class="eyebrow">{{ 'setup.stepProgressOidc' | t }}</p>
+          <h2>{{ 'setup.oidcTitle' | t }}</h2>
+          <p>{{ 'setup.oidcCopy' | t }}</p>
+        </div>
+
+        <form (submit)="$event.preventDefault(); continueOidc()">
+          <label for="oidc-issuer">{{ 'setting.oidc.ISSUER_URL' | t }}</label>
+          <input
+            id="oidc-issuer"
+            type="url"
+            [value]="value('oidc.ISSUER_URL')"
+            (input)="setText('oidc.ISSUER_URL', $event)"
+            autocomplete="url"
+          />
+
+          <label for="oidc-client-id">{{ 'setting.oidc.CLIENT_ID' | t }}</label>
+          <input
+            id="oidc-client-id"
+            type="text"
+            [value]="value('oidc.CLIENT_ID')"
+            (input)="setText('oidc.CLIENT_ID', $event)"
+            autocomplete="off"
+          />
+
+          <label for="oidc-client-secret">{{ 'setting.oidc.CLIENT_SECRET' | t }}</label>
+          <input
+            id="oidc-client-secret"
+            type="password"
+            [value]="secretValue()"
+            (input)="setText('oidc.CLIENT_SECRET', $event)"
+            autocomplete="new-password"
+          />
+          <p class="field-hint">{{ 'setup.secretKeepHint' | t }}</p>
+
+          <label class="checkbox-field">
+            <input
+              type="checkbox"
+              [checked]="booleanValue('oidc.email_verified')"
+              (change)="setCheckbox('oidc.email_verified', $event)"
+            />
+            <span>{{ 'setting.oidc.email_verified' | t }}</span>
+          </label>
+
+          @if (validation('oidc'); as result) {
+            <div class="check-list" aria-live="polite">
+              @for (check of result.checks; track check.key) {
+                <div class="check-row" [class]="'check-' + check.status">
+                  <span aria-hidden="true">{{ check.status === 'ok' ? '✓' : '!' }}</span>
+                  <p>{{ checkMessage(check) }}</p>
+                </div>
+              }
+            </div>
+          }
+          @if (stepError(); as error) {
+            <p class="error" role="alert">{{ error }}</p>
+          }
+
+          <div class="onboarding-actions">
+            <button type="button" class="secondary-button" (click)="goBack()">
+              {{ 'setup.back' | t }}
+            </button>
+            <button type="button" class="secondary-button" (click)="skipOidc()">
+              {{ 'setup.skipOptional' | t }}
+            </button>
+            <button type="submit" [disabled]="setup.validating() === 'oidc' || settings.saving()">
+              {{ setup.validating() === 'oidc' ? ('setup.checking' | t) : ('setup.continue' | t) }}
+            </button>
+          </div>
+        </form>
+      } @else if (step() === 'backup') {
+        <div class="form-heading">
+          <p class="eyebrow">{{ 'setup.stepProgressBackup' | t }}</p>
+          <h2>{{ 'setup.backupTitle' | t }}</h2>
+          <p>{{ 'setup.backupCopy' | t }}</p>
+        </div>
+
+        <form (submit)="$event.preventDefault(); continueBackup()">
+          <label for="backup-root">{{ 'setting.backup.root' | t }}</label>
+          <input
+            id="backup-root"
+            type="text"
+            [value]="value('backup.root')"
+            (input)="setText('backup.root', $event)"
+            autocomplete="off"
+          />
+
+          <label class="checkbox-field">
+            <input
+              type="checkbox"
+              [checked]="booleanValue('backup.enabled')"
+              (change)="setCheckbox('backup.enabled', $event)"
+            />
+            <span>{{ 'setting.backup.enabled' | t }}</span>
+          </label>
+
+          <label for="backup-schedule">{{ 'setting.backup.schedule' | t }}</label>
+          <input
+            id="backup-schedule"
+            type="text"
+            [value]="value('backup.schedule')"
+            (input)="setText('backup.schedule', $event)"
+          />
+
+          <label for="backup-retention">{{ 'setting.backup.retentionDays' | t }}</label>
+          <input
+            id="backup-retention"
+            type="number"
+            min="1"
+            [value]="value('backup.retentionDays')"
+            (input)="setText('backup.retentionDays', $event)"
+          />
+
+          @if (validation('backup'); as result) {
+            <div class="check-list" aria-live="polite">
+              @for (check of result.checks; track check.key) {
+                <div class="check-row" [class]="'check-' + check.status">
+                  <span aria-hidden="true">{{ check.status === 'ok' ? '✓' : '!' }}</span>
+                  <p>{{ checkMessage(check) }}</p>
+                </div>
+              }
+            </div>
+          }
+          @if (stepError(); as error) {
+            <p class="error" role="alert">{{ error }}</p>
+          }
+
+          <div class="onboarding-actions">
+            <button type="button" class="secondary-button" (click)="goBack()">
+              {{ 'setup.back' | t }}
+            </button>
+            <button type="submit" [disabled]="setup.validating() === 'backup' || settings.saving()">
+              {{
+                setup.validating() === 'backup' ? ('setup.checking' | t) : ('setup.continue' | t)
+              }}
+            </button>
+          </div>
+        </form>
+      } @else {
+        <div class="form-heading">
+          <p class="eyebrow">{{ 'setup.stepProgressReview' | t }}</p>
+          <h2>{{ 'setup.reviewTitle' | t }}</h2>
+          <p>{{ 'setup.reviewCopy' | t }}</p>
+        </div>
+
+        <div class="review-list">
+          @for (
+            item of [
+              { key: 'storage', label: 'setup.storageTitle' },
+              { key: 'processing', label: 'setup.processingTitle' },
+              { key: 'oidc', label: 'setup.oidcTitle' },
+              { key: 'backup', label: 'setup.backupTitle' },
+            ];
+            track item.key
+          ) {
+            <div class="review-row">
+              <div>
+                <strong>{{ item.label | t }}</strong>
+                @if (item.key === 'oidc' && oidcSkipped()) {
+                  <small>{{ 'setup.skipped' | t }}</small>
+                } @else {
+                  <small>{{ 'setup.checked' | t }}</small>
+                }
+              </div>
+              <span
+                class="review-status"
+                [class.review-ok]="!hasErrors($any(item.key))"
+                [class.review-error]="hasErrors($any(item.key))"
+              >
+                {{ hasErrors($any(item.key)) ? ('setup.needsAttention' | t) : ('setup.ready' | t) }}
+              </span>
+            </div>
+          }
+        </div>
+
+        @if (setup.error(); as error) {
+          <p class="error" role="alert">{{ error }}</p>
+        }
+
+        <div class="onboarding-actions review-actions">
+          <button type="button" class="secondary-button" (click)="goBack()">
+            {{ 'setup.back' | t }}
+          </button>
+          <button type="button" (click)="completeOnboarding()" [disabled]="setup.completing()">
+            {{ setup.completing() ? ('setup.finishing' | t) : ('setup.finish' | t) }}
           </button>
         </div>
       }

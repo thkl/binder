@@ -7,6 +7,7 @@ import {
   ChangePasswordInputSchema,
   LoginInputSchema,
   SetupAdminInputSchema,
+  SetupStatus,
   SetupStatusSchema,
   CsrfTokenSchema,
 } from '@binder/common';
@@ -23,6 +24,7 @@ export class AuthService {
   readonly setupRequired = signal(false);
   readonly setupAvailable = signal(false);
   readonly onboardingActive = signal(false);
+  readonly setupStatus = signal<SetupStatus | null>(null);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
   readonly appService = inject(ApplicationService);
@@ -42,6 +44,7 @@ export class AuthService {
           this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1', 'setup/status')),
         );
         const setup = SetupStatusSchema.parse(setupResponse.data);
+        this.setupStatus.set(setup);
         this.setupRequired.set(setup.required);
         this.setupAvailable.set(setup.available);
         if (setup.required) {
@@ -59,7 +62,9 @@ export class AuthService {
         }),
       );
       this.setCsrfToken(response);
-      this.user.set(response.data === null ? null : AuthenticatedUserSchema.parse(response.data));
+      const user = response.data === null ? null : AuthenticatedUserSchema.parse(response.data);
+      this.user.set(user);
+      this.onboardingActive.set(Boolean(user?.isAdmin && this.setupStatus()?.onboardingRequired));
     } catch (error) {
       this.user.set(null);
       this.error.set(this.getErrorMessage(error));
@@ -96,6 +101,12 @@ export class AuthService {
       this.setupRequired.set(false);
       this.setupAvailable.set(false);
       this.onboardingActive.set(true);
+      this.setupStatus.set({
+        required: false,
+        available: false,
+        onboardingRequired: true,
+        onboardingCompleted: false,
+      });
       return true;
     } catch (error) {
       this.error.set(
@@ -185,6 +196,9 @@ export class AuthService {
 
   finishOnboarding(): void {
     this.onboardingActive.set(false);
+    this.setupStatus.update((status) =>
+      status ? { ...status, onboardingRequired: false, onboardingCompleted: true } : status,
+    );
     this.error.set(null);
   }
 

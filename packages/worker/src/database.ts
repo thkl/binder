@@ -13,6 +13,7 @@ import {
   MaintenanceRun,
   PipelineJob,
   PipelineJobEvent,
+  PipelineWorkerHeartbeat,
   User,
 } from './models.js';
 import { DocumentPage } from './document-page.model.js';
@@ -42,6 +43,7 @@ sequelize.addModels([
   DocumentEmbedding,
   PipelineJob,
   PipelineJobEvent,
+  PipelineWorkerHeartbeat,
   MaintenanceRun,
   MaintenanceRequest,
 ]);

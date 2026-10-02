@@ -891,9 +891,34 @@ export type LoginInput = z.infer<typeof LoginInputSchema>;
 export const SetupStatusSchema = z.object({
   required: z.boolean(),
   available: z.boolean(),
+  onboardingRequired: z.boolean().default(false),
+  onboardingCompleted: z.boolean().default(false),
 });
 
 export type SetupStatus = z.infer<typeof SetupStatusSchema>;
+
+export const SetupCheckStatusSchema = z.enum(['ok', 'warning', 'error']);
+export type SetupCheckStatus = z.infer<typeof SetupCheckStatusSchema>;
+
+export const SetupCheckSchema = z.object({
+  key: z.string().min(1),
+  status: SetupCheckStatusSchema,
+  message: z.string().min(1),
+});
+export type SetupCheck = z.infer<typeof SetupCheckSchema>;
+
+export const SetupValidationResponseSchema = z.object({
+  valid: z.boolean(),
+  checks: z.array(SetupCheckSchema),
+  checkedAt: z.iso.datetime(),
+});
+export type SetupValidationResponse = z.infer<typeof SetupValidationResponseSchema>;
+
+export const SetupCompletionResponseSchema = z.object({
+  completed: z.literal(true),
+  completedAt: z.iso.datetime(),
+});
+export type SetupCompletionResponse = z.infer<typeof SetupCompletionResponseSchema>;
 
 export const SetupAdminInputSchema = z.object({
   setupSecret: z.string().min(1).max(512),

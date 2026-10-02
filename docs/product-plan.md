@@ -160,7 +160,11 @@ worker setting and run automatically after text extraction when enabled.
 - Add a Swift iOS companion app with Share Sheet document ingestion
 - Queue shared documents locally when offline and upload them automatically when the backend is reachable again
 - ✅ Record an owner-visible audit history for every document, persisted in PostgreSQL and separate from operational logs
-- Add a secure first-run onboarding assistant that creates the administrator and validates the basic runtime settings
+- Add a secure first-run onboarding assistant that creates the administrator and validates the basic runtime settings ✅ Implemented:
+  - Resumable administrator, storage, processing, optional AI, optional OIDC, backup, and review steps.
+  - Server-side writable-path checks for storage, derived files, temporary files, inbox, and backup destinations.
+  - Worker heartbeat validation for processing readiness.
+  - Separate persisted onboarding completion state from administrator creation.
 - Let administrators inspect API and worker activity
 - ✅ Add bulk metadata editing for selected documents, including type, category, issuer, tags, custom fields, and virtual-folder assignments:
   - Preview empty values, existing values, conflicts, and the affected documents before applying changes.

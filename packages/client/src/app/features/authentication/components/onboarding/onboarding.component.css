@@ -148,6 +148,20 @@ h2 {
 .form-panel {
   background: rgba(4, 16, 31, 0.42);
 }
+.progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  color: #7891ad;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.progress-row strong {
+  color: #dceaff;
+  font-variant-numeric: tabular-nums;
+}
 .form-heading p {
   margin: 0;
 }
@@ -215,6 +229,109 @@ input:focus {
   border-color: var(--cyan);
   box-shadow: 0 0 0 3px rgba(97, 215, 244, 0.13);
 }
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 2.75rem;
+  margin-top: 0.7rem;
+  cursor: pointer;
+}
+.checkbox-field input {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  accent-color: var(--cyan);
+}
+.checkbox-field span {
+  color: #b9c9dc;
+  font-size: 0.88rem;
+}
+.setting-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.7rem;
+  border: 1px solid rgba(157, 190, 232, 0.12);
+  border-radius: 0.65rem;
+  padding: 0.7rem 0.8rem;
+  color: #91a8c2;
+  background: rgba(5, 18, 35, 0.42);
+  font-size: 0.8rem;
+}
+.setting-summary strong {
+  color: #dceaff;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.check-list {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  border: 1px solid rgba(157, 190, 232, 0.12);
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  background: rgba(5, 18, 35, 0.42);
+}
+.check-row > span {
+  display: grid;
+  width: 1.2rem;
+  height: 1.2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+.check-row p {
+  margin: 0;
+  color: #b9c9dc;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.check-ok > span {
+  color: #061326;
+  background: #67e0ac;
+}
+.check-warning > span {
+  color: #061326;
+  background: #f6c56f;
+}
+.check-error > span {
+  color: #2c0b12;
+  background: #ff9eaa;
+}
+.loading-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.8rem;
+  margin: 5rem 0;
+  color: #9ab0c9;
+}
+.loading-state p {
+  margin: 0;
+}
+.spinner {
+  width: 1.45rem;
+  height: 1.45rem;
+  border: 2px solid rgba(169, 223, 238, 0.3);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: onboarding-spin 0.8s linear infinite;
+}
+@keyframes onboarding-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .field-hint {
   margin: 0;
   color: #7891ad;
@@ -235,6 +352,11 @@ button {
 button:hover:not(:disabled) {
   background: #8be7fa;
 }
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
 button:disabled {
   cursor: wait;
   opacity: 0.6;
@@ -251,6 +373,53 @@ button:disabled {
 }
 .unavailable p {
   margin: 0.35rem 0 0;
+}
+.review-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 2rem;
+}
+.review-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid rgba(157, 190, 232, 0.14);
+  border-radius: 0.75rem;
+  padding: 0.85rem 0.9rem;
+  background: rgba(5, 18, 35, 0.45);
+}
+.review-row strong,
+.review-row small {
+  display: block;
+}
+.review-row strong {
+  color: #dceaff;
+  font-size: 0.85rem;
+}
+.review-row small {
+  margin-top: 0.25rem;
+  color: #7891ad;
+  font-size: 0.74rem;
+}
+.review-status {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.review-ok {
+  color: #b8f2d8;
+  background: rgba(103, 224, 172, 0.12);
+}
+.review-error {
+  color: #ffc3cb;
+  background: rgba(255, 120, 120, 0.12);
+}
+.review-actions {
+  margin-top: 2rem;
 }
 
 @media (max-width: 720px) {
@@ -271,6 +440,17 @@ button:disabled {
   }
   .onboarding-actions button {
     flex: 1 1 100%;
+  }
+  .setting-summary,
+  .review-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .setting-summary strong {
+    text-align: left;
+  }
+  .review-status {
+    align-self: flex-start;
   }
 }
 

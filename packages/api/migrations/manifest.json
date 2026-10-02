@@ -334,6 +334,14 @@
                "required": [
                     "settings"
                ]
+          },
+          "50": {
+               "created": [
+                    "pipeline_worker_heartbeats"
+               ],
+               "required": [
+                    "setup_state"
+               ]
           }
      }
 }

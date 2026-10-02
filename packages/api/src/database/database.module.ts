@@ -34,6 +34,7 @@ import { AiProviderProfile } from '../features/ai-provider/models/ai-provider.en
 import { DocumentAnalysisSession } from '../features/document/models/document-analysis-session.entity';
 import { DocumentAuditEventEntity } from '../features/document/models/document-audit-event.entity';
 import { DocumentMetadataChangeSet } from '../features/document/models/document-metadata-change-set.entity';
+import { PipelineWorkerHeartbeat } from '../features/pipeline/models/pipeline-worker-heartbeat.entity';
 
 @Global()
 @Module({
@@ -109,6 +110,7 @@ import { DocumentMetadataChangeSet } from '../features/document/models/document-
       DocumentAnalysisSession,
       DocumentAuditEventEntity,
       DocumentMetadataChangeSet,
+      PipelineWorkerHeartbeat,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],

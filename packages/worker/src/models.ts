@@ -65,6 +65,25 @@ export class ApplicationSetting extends Model {
   declare valueIv: string | null;
 }
 
+@Table({ tableName: 'pipeline_worker_heartbeats', underscored: true, timestamps: false })
+export class PipelineWorkerHeartbeat extends Model {
+  @PrimaryKey
+  @Column({ field: 'worker_id', type: DataType.STRING(255) })
+  declare workerId: string;
+
+  @Column({ field: 'last_seen_at', type: DataType.DATE })
+  declare lastSeenAt: Date;
+
+  @Column({ field: 'started_at', type: DataType.DATE })
+  declare startedAt: Date;
+
+  @Column({ type: DataType.STRING(100) })
+  declare version: string;
+
+  @Column({ type: DataType.JSONB })
+  declare capabilities: Record<string, unknown>;
+}
+
 @Table({ tableName: 'ai_provider_profiles', underscored: true, timestamps: true })
 export class AiProviderProfile extends Model {
   @PrimaryKey

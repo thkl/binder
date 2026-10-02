@@ -19,12 +19,39 @@ export class SetupStateStore {
   constructor(@InjectConnection() private readonly sequelize: Sequelize) {}
 
   async isRequired(): Promise<boolean> {
-    const [state, userCount] = await Promise.all([
-      SetupState.findByPk(this.singletonId),
-      User.count(),
-    ]);
-
+    const state = await this.getState();
+    const userCount = await User.count();
     return !state?.completedAt && userCount === 0;
+  }
+
+  async getState(): Promise<SetupState | null> {
+    return SetupState.findByPk(this.singletonId);
+  }
+
+  async isOnboardingRequired(): Promise<boolean> {
+    const [state, userCount] = await Promise.all([this.getState(), User.count()]);
+    return userCount > 0 && !state?.onboardingCompletedAt;
+  }
+
+  async completeOnboarding(): Promise<Date> {
+    return this.sequelize.transaction(async (transaction) => {
+      const state = await SetupState.findByPk(this.singletonId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+
+      if (!state || !state.completedAt || (await User.count({ transaction })) === 0) {
+        throw new SetupAlreadyCompletedError();
+      }
+
+      if (state.onboardingCompletedAt) {
+        return state.onboardingCompletedAt;
+      }
+
+      const completedAt = new Date();
+      await state.update({ onboardingCompletedAt: completedAt }, { transaction });
+      return completedAt;
+    });
   }
 
   async createInitialAdministrator(attributes: {

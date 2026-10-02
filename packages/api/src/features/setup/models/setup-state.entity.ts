@@ -9,4 +9,8 @@ export class SetupState extends Model {
   @AllowNull
   @Column({ field: 'completed_at', type: DataType.DATE })
   declare completedAt: Date | null;
+
+  @AllowNull
+  @Column({ field: 'onboarding_completed_at', type: DataType.DATE })
+  declare onboardingCompletedAt: Date | null;
 }

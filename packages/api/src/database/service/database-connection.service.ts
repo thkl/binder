@@ -37,6 +37,7 @@ import { AiProviderProfile } from '../../features/ai-provider/models/ai-provider
 import { DocumentAnalysisSession } from '../../features/document/models/document-analysis-session.entity';
 import { DocumentAuditEventEntity } from '../../features/document/models/document-audit-event.entity';
 import { DocumentMetadataChangeSet } from '../../features/document/models/document-metadata-change-set.entity';
+import { PipelineWorkerHeartbeat } from '../../features/pipeline/models/pipeline-worker-heartbeat.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -90,6 +91,7 @@ export class DatabaseConnectionService {
       DocumentAnalysisSession,
       DocumentAuditEventEntity,
       DocumentMetadataChangeSet,
+      PipelineWorkerHeartbeat,
     ]);
     await this.initialize();
   }

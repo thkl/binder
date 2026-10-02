@@ -3,9 +3,12 @@ import { DatabaseModule } from '../../database/database.module';
 import { SetupController } from './controller/setup.controller';
 import { SetupService } from './service/setup.service';
 import { SetupStateStore } from './store/setup-state.store';
+import { SharedModule } from '../../shared/shared.service.module';
+import { AuthenticationServiceModule } from '../authentication/authentication.service.module';
+import { PipelineStoreModule } from '../pipeline/pipeline.store.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, SharedModule, AuthenticationServiceModule, PipelineStoreModule],
   controllers: [SetupController],
   providers: [SetupService, SetupStateStore],
 })

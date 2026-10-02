@@ -10,13 +10,11 @@ does not weaken the existing server-side authentication and ownership rules.
 The assistant should be deterministic and form-driven. It is not an LLM chat
 agent and must not make security or infrastructure decisions autonomously.
 
-The first implementation slice creates the administrator account and starts a
-normal Express session. After that account is created, the client presents an
-optional AI provider step using the authenticated provider-profile endpoints.
-The administrator can configure assistant and embedding providers or skip the
-step and return to the workspace. It is exposed through `/api/v1/setup/status`
-and `/api/v1/setup/admin`; storage, processing, OIDC, backup, and review steps
-remain subsequent onboarding increments.
+The flow creates the administrator account and starts a normal Express
+session. It then continues through storage, processing, optional AI, optional
+OIDC, backup, and review steps. The administrator can leave optional AI and
+OIDC configuration for later, while required storage and configuration checks
+must pass before completion.
 
 ## Setup access
 
@@ -61,9 +59,8 @@ optional steps:
    the configured processing queue.
 5. **Optional AI** — configure or skip hosted assistant and embedding
    providers. Explain that document content may leave the server when an
-   external provider is enabled. The current client implements this step after
-   administrator creation and keeps the same provider manager available later
-   under Settings.
+   external provider is enabled. The same provider manager remains available
+   later under Settings.
 6. **Optional OIDC** — configure or skip OIDC and validate issuer discovery,
    client configuration, and internal-user mapping behavior.
 7. **Backups** — enable the scheduled backup and retention settings and run a
@@ -77,14 +74,15 @@ skipped and revisited from Application Settings.
 
 ## API shape
 
-The exact route names remain to be finalized, but the contract should include
-the following capabilities:
+The setup contract includes the following routes:
 
 ```text
 GET  /api/v1/setup/status
 POST /api/v1/setup/admin
 POST /api/v1/setup/validate-storage
 POST /api/v1/setup/validate-processing
+POST /api/v1/setup/validate-oidc
+POST /api/v1/setup/validate-backup
 POST /api/v1/setup/complete
 ```
 
@@ -93,10 +91,17 @@ validated with Zod. Setup responses must not include password material,
 setup-proof values, decrypted API keys, session identifiers, or filesystem
 secrets.
 
-After successful administrator creation, the API should establish the normal
-Express session and return the client to the regular password/session flow.
-The setup routes must continue to be guarded server-side even if the client
-hides the onboarding screen after completion.
+After successful administrator creation, the API establishes the normal
+Express session and returns the client to the regular password/session flow.
+The validation and completion routes require the authenticated administrator,
+the web scope, and a valid CSRF token. The setup state stores administrator
+creation and onboarding completion separately, so an interrupted flow can be
+resumed after a new login.
+
+Processing validation uses a short-lived database heartbeat written by the
+worker. A missing heartbeat is shown as a warning so an administrator can
+finish the installation while starting the worker separately, but the issue
+is visible before documents are uploaded.
 
 ## Runtime settings
 
