@@ -119,12 +119,15 @@ verification.
   - Keep the original immutable and write `derived/<document-uuid>/archive.pdf`.
   - Run conversion through the existing worker with retryable `pdfa` jobs.
   - Expose archive state in document responses and let users request or download the derivative.
-- Simplify document-list archive actions:
+- Simplify document-list archive actions ✅ Implemented:
   - Keep “Create archive” in the document drawer instead of repeating it on every list row.
   - Make the list download control direct when only one file version exists.
   - Offer a compact version picker when both the original and PDF/A archive are available.
 - Add an owner-scoped pipeline job monitor showing queued, running, failed, and completed jobs,
-  with safe failure details and retry actions for recoverable jobs.
+  with safe failure details and retry actions for recoverable jobs. ✅ Implemented:
+  - Filter and paginate jobs by status and task kind.
+  - Refresh the monitor automatically while it is open.
+  - Keep job and document access owner-scoped and redact common secret patterns in failure details.
 - Replace the basic log viewer with an explorer-style log view that supports browsing log files,
   filtering by level and date, and readable inspection of structured entries.
 - Expand homepage document ingestion so the complete home content background is

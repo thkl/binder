@@ -1,0 +1,124 @@
+<section class="pipeline-card glass-card" aria-labelledby="pipeline-jobs-title">
+  <header class="pipeline-header">
+    <div>
+      <p class="section-kicker">{{ 'maintenance.pipeline.kicker' | t }}</p>
+      <h3 id="pipeline-jobs-title">{{ 'maintenance.pipeline.title' | t }}</h3>
+      <p class="pipeline-copy">{{ 'maintenance.pipeline.copy' | t }}</p>
+    </div>
+    <span class="live-badge"
+      ><span class="live-dot" aria-hidden="true"></span>{{ 'maintenance.pipeline.live' | t }}</span
+    >
+  </header>
+
+  <div class="pipeline-filters" role="group" [attr.aria-label]="'maintenance.pipeline.filters' | t">
+    <label>
+      <span>{{ 'maintenance.pipeline.status' | t }}</span>
+      <select [value]="statusFilter()" (change)="updateStatusFilter($any($event.target).value)">
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ filterStatusLabel(status) }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>{{ 'maintenance.pipeline.kind' | t }}</span>
+      <select [value]="kindFilter()" (change)="updateKindFilter($any($event.target).value)">
+        @for (kind of kinds; track kind) {
+          <option [value]="kind">{{ filterKindLabel(kind) }}</option>
+        }
+      </select>
+    </label>
+    <button class="refresh-button" type="button" (click)="load()" [disabled]="pipeline.loading()">
+      {{ pipeline.loading() ? ('maintenance.loading' | t) : ('maintenance.refresh' | t) }}
+    </button>
+  </div>
+
+  @if (pipeline.error(); as error) {
+    <div class="pipeline-error" role="alert">{{ error }}</div>
+  }
+
+  @if (pipeline.loading() && !pipeline.response()) {
+    <div class="pipeline-empty">{{ 'maintenance.pipeline.loading' | t }}</div>
+  } @else if (jobs().length === 0) {
+    <div class="pipeline-empty">
+      <span aria-hidden="true">⌁</span>
+      <p>{{ 'maintenance.pipeline.empty' | t }}</p>
+    </div>
+  } @else {
+    <div class="job-list" role="list">
+      @for (job of jobs(); track job.uuid) {
+        <article class="job-row" role="listitem">
+          <div class="job-status" [class]="'status-' + job.status" aria-hidden="true">
+            @switch (job.status) {
+              @case ('succeeded') {
+                ✓
+              }
+              @case ('failed') {
+                !
+              }
+              @case ('cancelled') {
+                ×
+              }
+              @default {
+                …
+              }
+            }
+          </div>
+          <div class="job-main">
+            <div class="job-title-line">
+              <strong>{{ displayName(job.documentTitle, job.originalFilename) }}</strong>
+              <span class="job-kind">{{ kindLabel(job.kind) }}</span>
+            </div>
+            <small>
+              {{ statusLabel(job.status) }} · {{ job.createdAt | date: 'medium' }} ·
+              {{ 'maintenance.pipeline.attempts' | t }} {{ job.attempts }}/{{ job.maxAttempts }}
+            </small>
+            @if (job.lastError) {
+              <details class="failure-details">
+                <summary>{{ 'maintenance.pipeline.failureDetails' | t }}</summary>
+                <pre>{{ job.lastError }}</pre>
+              </details>
+            }
+          </div>
+          <div class="job-actions">
+            @if (canRetry(job.status)) {
+              <button
+                class="retry-button"
+                type="button"
+                (click)="retry(job.uuid)"
+                [disabled]="isRetrying(job.uuid)"
+              >
+                {{
+                  isRetrying(job.uuid)
+                    ? ('maintenance.pipeline.retrying' | t)
+                    : ('maintenance.pipeline.retry' | t)
+                }}
+              </button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+
+    @if (meta(); as pageMeta) {
+      <footer class="pagination">
+        <button
+          type="button"
+          (click)="changePage(page() - 1)"
+          [disabled]="page() <= 1 || pipeline.loading()"
+        >
+          {{ 'maintenance.pipeline.previous' | t }}
+        </button>
+        <span>{{ page() }} / {{ pageMeta.totalPages || 1 }}</span>
+        <button
+          type="button"
+          (click)="changePage(page() + 1)"
+          [disabled]="
+            pageMeta.totalPages === 0 || page() >= pageMeta.totalPages || pipeline.loading()
+          "
+        >
+          {{ 'maintenance.pipeline.next' | t }}
+        </button>
+      </footer>
+    }
+  }
+</section>

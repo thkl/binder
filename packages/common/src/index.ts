@@ -775,6 +775,27 @@ export const DocumentPipelineResponseSchema = z.object({
 });
 export type DocumentPipelineResponse = z.infer<typeof DocumentPipelineResponseSchema>;
 
+export const PipelineJobMonitorQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(25),
+  status: PipelineJobStatusSchema.optional(),
+  kind: PipelineJobKindSchema.optional(),
+});
+export type PipelineJobMonitorQuery = z.infer<typeof PipelineJobMonitorQuerySchema>;
+
+export const PipelineJobMonitorItemSchema = PipelineJobSchema.extend({
+  documentTitle: z.string().nullable(),
+  originalFilename: z.string().min(1),
+  events: z.array(PipelineJobEventSchema),
+});
+export type PipelineJobMonitorItem = z.infer<typeof PipelineJobMonitorItemSchema>;
+
+export const PipelineJobRetryResponseSchema = z.object({
+  job: PipelineJobSchema,
+  requeued: z.literal(true),
+});
+export type PipelineJobRetryResponse = z.infer<typeof PipelineJobRetryResponseSchema>;
+
 export const PaginationMetaSchema = z.object({
   page: z.number().int().min(1),
   pageSize: z.number().int().min(1),
@@ -783,6 +804,12 @@ export const PaginationMetaSchema = z.object({
 });
 
 export type PaginationMeta = z.infer<typeof PaginationMetaSchema>;
+
+export const PipelineJobMonitorResponseSchema = z.object({
+  items: z.array(PipelineJobMonitorItemSchema),
+  meta: PaginationMetaSchema,
+});
+export type PipelineJobMonitorResponse = z.infer<typeof PipelineJobMonitorResponseSchema>;
 
 export const HealthResponseSchema = z.object({
   status: z.literal('ok'),

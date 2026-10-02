@@ -9,12 +9,13 @@ import {
 import { CommonModule, DatePipe } from '@angular/common';
 import type { MaintenanceRun } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { PipelineJobsComponent } from '../pipeline-jobs/pipeline-jobs.component';
 import { MaintenanceService } from '../../services/maintenance.service';
 
 @Component({
   selector: 'binder-maintenance',
   standalone: true,
-  imports: [CommonModule, DatePipe, TranslatePipe],
+  imports: [CommonModule, DatePipe, TranslatePipe, PipelineJobsComponent],
   templateUrl: './maintenance.component.html',
   styleUrl: './maintenance.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
