@@ -733,7 +733,7 @@ h2 {
 .preview-card {
   display: grid;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   grid-template-rows: auto 1fr auto;
   border: 1px solid rgba(157, 190, 232, 0.14);
   border-radius: 0.9rem;
@@ -745,6 +745,7 @@ h2 {
 }
 
 .preview-card:hover {
+  z-index: 10;
   border-color: rgba(97, 215, 244, 0.35);
   background: rgba(5, 18, 35, 0.42);
   transform: translateY(-2px);
@@ -756,7 +757,9 @@ h2 {
   height: 15rem;
   place-items: center;
   border: 0;
+  overflow: hidden;
   border-bottom: 1px solid rgba(157, 190, 232, 0.12);
+  border-radius: 0.9rem 0.9rem 0 0;
   padding: 1rem;
   background: rgba(5, 18, 35, 0.35);
   cursor: pointer;
@@ -825,6 +828,7 @@ h2 {
 .preview-card-actions {
   padding: 0.75rem 1rem 1rem;
   border-top: 1px solid rgba(157, 190, 232, 0.1);
+  border-radius: 0 0 0.9rem 0.9rem;
 }
 
 .empty-state {
