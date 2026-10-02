@@ -52,7 +52,7 @@ services:
       timeout: 5s
       retries: 12
     ports:
-      - "3000:3000"
+      - "${BINDER_HOST_PORT:-3000}:3000"
     volumes:
       - binder-document-storage:/app/storage
       - binder-logs:/app/logs

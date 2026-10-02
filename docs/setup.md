@@ -195,9 +195,9 @@ result. A detected threat or unavailable required scanner moves the document
 to `quarantined`; the original is not downloadable, previewable, searchable,
 exportable, or available to AI processing in that state.
 
-The API is served on `http://localhost:3000` unless the Compose port mapping
-is changed. PostgreSQL is intentionally not published to the host by the
-default Compose file. Inspect it from inside the container when needed:
+The API is served on the Docker host port configured by `BINDER_HOST_PORT`
+(`3000` by default). PostgreSQL is intentionally not published to the host by
+the default Compose file. Inspect it from inside the container when needed:
 
 ```bash
 docker compose exec postgres sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
@@ -217,6 +217,14 @@ values for `DATABASE_PASSWORD`, `ENCRYPTION_KEY`, `SESSION_SECRET`, and
 configuration, builds the images, and starts the stack. Compose interpolation
 then supplies the same database name, role, and generated password to the
 PostgreSQL, API, and worker containers.
+
+Before starting the stack, it checks that `BINDER_HOST_PORT` is available and
+detects the Docker host's primary local network address. The final message
+prints the URL to use for the onboarding screen instead of defaulting to
+`localhost`. For a fresh local setup, the script also updates a default local
+`ROOT_URI` to the detected address so the API's CORS and CSRF checks accept
+the browser URL. A custom non-local `ROOT_URI`, such as a reverse-proxy URL,
+is preserved.
 
 Configured values in an existing `.env` are preserved. Keep this file safe
 and do not delete it while the PostgreSQL volume exists: PostgreSQL only uses

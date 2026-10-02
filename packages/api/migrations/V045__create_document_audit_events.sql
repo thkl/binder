@@ -29,7 +29,7 @@ INSERT INTO document_audit_events (
     created_at
 )
 SELECT
-    md5(document.id::text || ':audit-history-migration')::uuid,
+    md5(d.id::text || ':audit-history-migration')::uuid,
     d.id,
     d.owner_id,
     NULL,

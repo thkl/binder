@@ -28,4 +28,6 @@ secrets, protect `.env`, validate the Compose configuration, build the images,
 and start the stack. See the [setup guide](../setup.md) for the credential
 initialization behavior and existing-volume warning.
 
-The API is available at `http://localhost:3000`. Set production secrets, `ROOT_URI`, and database credentials through `.env`; do not bake `.env` into the image.
+The API is available on the Docker host at the port configured by
+`BINDER_HOST_PORT` (`3000` by default). Set production secrets, `ROOT_URI`, and
+database credentials through `.env`; do not bake `.env` into the image.
