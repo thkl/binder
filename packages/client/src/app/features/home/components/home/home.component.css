@@ -3,9 +3,89 @@
 }
 
 .home-page {
-  max-width: 58rem;
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - 5.5rem);
+  max-width: 72rem;
   margin: 0 auto;
-  padding: clamp(2rem, 8vh, 6rem) 0 3rem;
+  padding: clamp(2rem, 8vh, 6rem) clamp(1rem, 4vw, 3rem) 3rem;
+  border: 1px solid transparent;
+  border-radius: 1.5rem;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.home-page.drop-active {
+  border-color: rgba(97, 215, 244, 0.72);
+  background:
+    radial-gradient(circle at 50% 12%, rgba(56, 146, 185, 0.2), transparent 38%),
+    rgba(9, 31, 57, 0.34);
+  box-shadow:
+    inset 0 0 0 1px rgba(97, 215, 244, 0.08),
+    0 0 3rem rgba(48, 175, 218, 0.12);
+}
+
+.home-page.uploading {
+  cursor: wait;
+}
+
+.home-drop-overlay {
+  display: grid;
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  place-items: center;
+  border-radius: inherit;
+  background: rgba(7, 23, 43, 0.45);
+  pointer-events: none;
+}
+
+.home-drop-overlay-content {
+  display: grid;
+  justify-items: center;
+  gap: 0.55rem;
+  max-width: 22rem;
+  padding: 2rem;
+  border: 1px solid rgba(97, 215, 244, 0.5);
+  border-radius: 1rem;
+  color: #dceaff;
+  background: rgba(10, 35, 63, 0.9);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.28);
+  text-align: center;
+}
+
+.home-drop-overlay-content strong {
+  color: #e5f8ff;
+  font-size: 1rem;
+}
+
+.home-drop-overlay-content > span:last-child {
+  color: #a9bad0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.home-drop-overlay-icon {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border: 1px solid rgba(97, 215, 244, 0.35);
+  border-radius: 0.9rem;
+  color: var(--cyan);
+  background: rgba(97, 215, 244, 0.1);
+}
+
+.home-drop-overlay-icon svg {
+  width: 1.6rem;
+  height: 1.6rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
 .home-hero {
@@ -220,6 +300,10 @@ h2 {
 
 .home-upload-status.success {
   color: #a8e8ca;
+}
+
+.home-upload-status.progress {
+  color: #a9dfee;
 }
 
 .home-upload-status.error {
@@ -545,6 +629,7 @@ h2 {
 @media (max-width: 720px) {
   .home-page {
     padding-top: 2rem;
+    border-radius: 1rem;
   }
 
   .search-form {

@@ -135,7 +135,11 @@ verification.
   - Filter the selected log content by level or text and copy the filtered view.
 - Expand homepage document ingestion so the complete home content background is
   the PDF drop zone, with a clear drag-over state and the file-picker fallback
-  retained.
+  retained. ✅ Implemented:
+  - The full home content area accepts dropped PDFs and keeps the search and
+    results workflow available underneath the drop state.
+  - File-picker and drag-and-drop uploads support multiple PDFs through a
+    sequential upload queue with progress and clear validation feedback.
 - Add extensions and integrations without changing the core document workflow
 - Turn invoice due dates into calendar entries
 - Import documents from email

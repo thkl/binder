@@ -43,6 +43,10 @@ export class HomeComponent {
   readonly uploadDragActive = signal(false);
   readonly uploadMessage = signal<'success' | null>(null);
   readonly uploadError = signal<string | null>(null);
+  readonly uploadingFiles = signal(false);
+  readonly uploadQueueTotal = signal(0);
+  readonly uploadQueueCompleted = signal(0);
+  readonly uploadedCount = signal(0);
 
   constructor() {
     void this.savedSearches.load();
@@ -55,6 +59,8 @@ export class HomeComponent {
       ?.items.find((item) => item.document.uuid === uuid)?.document;
     return current ?? this.drawerDocumentSnapshot();
   });
+
+  readonly uploadInProgress = computed(() => this.uploadingFiles() || this.documents.uploading());
 
   searchResult = computed(() => {
     const result = this.search.result();
@@ -101,7 +107,7 @@ export class HomeComponent {
 
   onUploadDragOver(event: DragEvent): void {
     event.preventDefault();
-    if (this.documents.uploading()) return;
+    if (this.uploadInProgress()) return;
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
     this.uploadDragActive.set(true);
   }
@@ -116,35 +122,66 @@ export class HomeComponent {
   async onUploadDrop(event: DragEvent): Promise<void> {
     event.preventDefault();
     this.uploadDragActive.set(false);
-    if (this.documents.uploading()) return;
-    await this.uploadFile(event.dataTransfer?.files.item(0) ?? null);
+    if (this.uploadInProgress()) return;
+    await this.uploadFiles(Array.from(event.dataTransfer?.files ?? []));
   }
 
   async onUploadSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.item(0) ?? null;
+    const files = Array.from(input.files ?? []);
     input.value = '';
-    await this.uploadFile(file);
+    await this.uploadFiles(files);
   }
 
-  private async uploadFile(file: File | null): Promise<void> {
+  private async uploadFiles(files: File[]): Promise<void> {
     this.uploadMessage.set(null);
     this.uploadError.set(null);
-    if (!file) return;
+    this.uploadedCount.set(0);
+    this.uploadQueueCompleted.set(0);
+    this.uploadQueueTotal.set(files.length);
 
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    if (!isPdf) {
+    if (files.length === 0) return;
+
+    const pdfFiles = files.filter((file) => this.isPdf(file));
+    const invalidFileCount = files.length - pdfFiles.length;
+    this.uploadQueueTotal.set(pdfFiles.length);
+
+    if (invalidFileCount > 0) {
       this.uploadError.set(this.i18n.t('home.uploadOnlyPdf'));
-      return;
     }
 
-    const uploaded = await this.documents.upload(file);
-    if (uploaded) {
+    if (pdfFiles.length === 0) return;
+
+    this.uploadingFiles.set(true);
+    let failedCount = 0;
+
+    try {
+      for (const file of pdfFiles) {
+        const uploaded = await this.documents.upload(file);
+
+        if (uploaded) {
+          this.uploadedCount.update((count) => count + 1);
+        } else {
+          failedCount += 1;
+        }
+
+        this.uploadQueueCompleted.update((count) => count + 1);
+      }
+    } finally {
+      this.uploadingFiles.set(false);
+    }
+
+    if (this.uploadedCount() > 0) {
       this.uploadMessage.set('success');
-      return;
     }
 
-    this.uploadError.set(this.documents.error() ?? this.i18n.t('home.uploadFailed'));
+    if (failedCount > 0 && !this.uploadError()) {
+      this.uploadError.set(this.documents.error() ?? this.i18n.t('home.uploadFailed'));
+    }
+  }
+
+  private isPdf(file: File): boolean {
+    return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
   }
 
   async saveCurrentSearch(name: string): Promise<void> {
