@@ -9,7 +9,7 @@
 .onboarding-shell {
   display: grid;
   grid-template-columns: minmax(18rem, 0.9fr) minmax(22rem, 1.1fr);
-  width: min(100%, 60rem);
+  width: 90vw;
   overflow: hidden;
   border: 1px solid rgba(157, 190, 232, 0.18);
   border-radius: 1.5rem;

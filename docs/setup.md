@@ -238,8 +238,10 @@ Use the normal Compose commands through the script when needed:
 ```
 
 The script creates the database container and starts migrations; it does not
-create the Binder administrator. Complete that step through the onboarding
-screen using the generated `SETUP_SECRET` from `.env`.
+create the Binder administrator. At the end of the default installation flow,
+it prints the generated one-time `SETUP_SECRET` so it can be entered in the
+onboarding screen. Treat this value as sensitive and do not share or commit
+it. It is not written to the application log.
 
 If the PostgreSQL volume was created before this init script was added, apply
 the runtime hardening once as a PostgreSQL administrator in the Binder

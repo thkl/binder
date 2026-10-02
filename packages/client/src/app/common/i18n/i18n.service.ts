@@ -38,7 +38,7 @@ const EN: TranslationMap = {
   'setup.kicker': 'FIRST-RUN SETUP',
   'setup.title': 'Set up your workspace.',
   'setup.copy':
-    'Create the administrator account before you start organizing documents. The setup secret comes from your deployment configuration.',
+    'Create the administrator account before you start organizing documents. The one-time setup code comes from your deployment configuration.',
   'setup.securityTitle': 'Kept on your server',
   'setup.securityCopy':
     'The password you choose is hashed immediately and is never written to the application log.',
@@ -62,8 +62,8 @@ const EN: TranslationMap = {
   'setup.secondStep': 'STEP 2 OF 3 · OPTIONAL',
   'setup.adminTitle': 'Create administrator',
   'setup.adminCopy': 'Use a strong password you can keep in your password manager.',
-  'setup.secret': 'Setup secret',
-  'setup.secretHint': 'Enter the one-time setup secret configured by the operator.',
+  'setup.secret': 'One-time setup code',
+  'setup.secretHint': 'Enter the one-time code from the deployment environment (SETUP_SECRET).',
   'setup.username': 'Administrator username',
   'setup.password': 'Password',
   'setup.passwordHint': 'Use at least 12 characters.',
@@ -569,7 +569,7 @@ const DE: TranslationMap = {
   'setup.kicker': 'ERSTEINRICHTUNG',
   'setup.title': 'Arbeitsbereich einrichten.',
   'setup.copy':
-    'Erstellen Sie zuerst das Administratorkonto. Das Einrichtungspasswort stammt aus der Deployment-Konfiguration.',
+    'Erstellen Sie zuerst das Administratorkonto. Den einmaligen Einrichtungscode finden Sie in der Deployment-Konfiguration.',
   'setup.securityTitle': 'Bleibt auf Ihrem Server',
   'setup.securityCopy':
     'Das gewählte Passwort wird sofort gehasht und nie ins Anwendungsprotokoll geschrieben.',
@@ -594,8 +594,9 @@ const DE: TranslationMap = {
   'setup.adminTitle': 'Administrator erstellen',
   'setup.adminCopy':
     'Verwenden Sie ein starkes Passwort und speichern Sie es in Ihrem Passwortmanager.',
-  'setup.secret': 'Einrichtungsgeheimnis',
-  'setup.secretHint': 'Geben Sie das vom Betreiber konfigurierte Einrichtungsgeheimnis ein.',
+  'setup.secret': 'Einmaliger Einrichtungscode',
+  'setup.secretHint':
+    'Geben Sie den einmaligen Code aus der Deployment-Umgebung ein (SETUP_SECRET).',
   'setup.username': 'Administrator-Benutzername',
   'setup.password': 'Passwort',
   'setup.passwordHint': 'Mindestens 12 Zeichen verwenden.',

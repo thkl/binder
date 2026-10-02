@@ -217,8 +217,11 @@ if [[ "$#" -eq 0 ]]; then
     setup_url="http://${host_ip}:${host_port}"
   fi
 
+  setup_secret="$(read_env_value SETUP_SECRET || true)"
   printf '\nBinder is running.\n'
   printf 'Open %s to complete the initial setup.\n' "$setup_url"
+  printf 'One-time setup code: %s\n' "$setup_secret"
+  printf 'Keep this code private. It is only required to create the first administrator.\n'
 else
   run_compose "$@"
 fi
