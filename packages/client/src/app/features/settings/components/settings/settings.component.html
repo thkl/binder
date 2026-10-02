@@ -83,6 +83,38 @@
                           </option>
                         }
                       </select>
+                    } @else if (item.type === 'metadata') {
+                      <select
+                        [value]="stringValue(item)"
+                        [required]="item.required ?? false"
+                        (change)="updateText(item, $event)"
+                      >
+                        @if (metadataValueIsMissing(item)) {
+                          <option [value]="stringValue(item)">
+                            {{ stringValue(item) }} · {{ 'settings.metadataMissing' | t }}
+                          </option>
+                        }
+                        <option value="">{{ 'settings.selectMetadata' | t }}</option>
+                        @for (definition of metadataOptions(item); track definition.uuid) {
+                          <option [value]="definition.key">
+                            {{ definition.label }} · {{ definition.key }}
+                          </option>
+                        }
+                      </select>
+                      @if (metadataDefinition(item); as definition) {
+                        <span class="metadata-setting-summary">
+                          <strong>{{ 'settings.configuredMetadata' | t }}</strong>
+                          <span>{{ definition.label }}</span>
+                          <code>{{ definition.key }}</code>
+                          <small>{{ metadataTypeLabel(definition.type) }}</small>
+                        </span>
+                      } @else if (metadataValueIsMissing(item)) {
+                        <span class="field-hint warning">{{
+                          'settings.metadataMissingCopy' | t
+                        }}</span>
+                      } @else {
+                        <span class="field-hint">{{ 'settings.metadataPickerHint' | t }}</span>
+                      }
                     } @else if (item.type === 'select') {
                       <select [value]="stringValue(item)" (change)="updateText(item, $event)">
                         @for (option of item.options ?? []; track option) {

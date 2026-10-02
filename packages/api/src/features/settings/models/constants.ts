@@ -55,7 +55,7 @@ export const settingsMap: SettingsMapItem[] = [
     encrypted: false,
     default: 'dueDate',
     label: 'Due-date metadata key',
-    type: 'text',
+    type: 'metadata',
     required: true,
     section: 'calendar',
   },

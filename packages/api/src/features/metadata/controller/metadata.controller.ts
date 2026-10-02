@@ -12,6 +12,7 @@ import {
 import {
   CreateMetadataDefinitionSchema,
   CreateVocabularyItemSchema,
+  UpdateMetadataDefinitionSchema,
   UpdateVocabularyItemSchema,
 } from '@binder/common';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
@@ -41,6 +42,29 @@ export class MetadataController {
         CreateMetadataDefinitionSchema.parse(body),
         user.isAdmin,
       ),
+    };
+  }
+
+  @Patch('definitions/:uuid')
+  async updateDefinition(
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    return {
+      data: await this.metadata.updateDefinition(
+        user.userId,
+        uuid,
+        UpdateMetadataDefinitionSchema.parse(body),
+        user.isAdmin,
+      ),
+    };
+  }
+
+  @Delete('definitions/:uuid')
+  async deleteDefinition(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return {
+      data: await this.metadata.removeDefinition(user.userId, uuid, user.isAdmin),
     };
   }
 

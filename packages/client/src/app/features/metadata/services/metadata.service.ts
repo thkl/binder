@@ -14,9 +14,13 @@ import {
   DocumentMetadataSchema,
   SetDocumentMetadataInput,
   SetDocumentMetadataInputSchema,
+  UpdateMetadataDefinition,
+  UpdateMetadataDefinitionSchema,
   VocabularyResponse,
   VocabularyResponseSchema,
   MetadataDefinition,
+  MetadataDefinitionDeleteResponseSchema,
+  MetadataDefinitionSchema,
   MetadataDefinitionsResponseSchema,
   Issuer,
   IssuerListResponseSchema,
@@ -154,6 +158,48 @@ export class MetadataService {
           },
         ),
       );
+      await this.loadDefinitions();
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async updateDefinition(uuid: string, input: UpdateMetadataDefinition): Promise<boolean> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.patch<ApiResponse<unknown>>(
+          `${this.apiUrl}/definitions/${uuid}`,
+          UpdateMetadataDefinitionSchema.parse(input),
+          { withCredentials: true },
+        ),
+      );
+      MetadataDefinitionSchema.parse(response.data);
+      await this.loadDefinitions();
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async deleteDefinition(uuid: string): Promise<boolean> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.delete<ApiResponse<unknown>>(`${this.apiUrl}/definitions/${uuid}`, {
+          withCredentials: true,
+        }),
+      );
+      MetadataDefinitionDeleteResponseSchema.parse(response.data);
       await this.loadDefinitions();
       return true;
     } catch (error) {

@@ -239,6 +239,36 @@ h3 {
   font-size: 0.68rem;
 }
 
+.field-hint.warning {
+  color: #f1c995;
+}
+
+.metadata-setting-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  border: 1px solid rgba(103, 224, 172, 0.2);
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  color: #a8e8ca;
+  background: rgba(103, 224, 172, 0.06);
+  font-size: 0.72rem;
+}
+
+.metadata-setting-summary strong {
+  color: #dceaff;
+  font-size: 0.68rem;
+}
+
+.metadata-setting-summary code {
+  color: #79c9d8;
+}
+
+.metadata-setting-summary small {
+  color: #8fa8c3;
+}
+
 .checkbox-field {
   display: grid;
   grid-template-columns: auto 1fr auto;

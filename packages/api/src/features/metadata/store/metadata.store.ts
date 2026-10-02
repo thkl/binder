@@ -220,6 +220,26 @@ export class MetadataStore {
     });
   }
 
+  findDefinitionByUuid(uuid: string) {
+    return MetadataDefinition.findByPk(uuid);
+  }
+
+  async updateDefinition(uuid: string, values: { label: string }) {
+    const definition = await MetadataDefinition.findByPk(uuid);
+    if (!definition) return null;
+
+    await definition.update(values);
+    return definition;
+  }
+
+  async removeDefinition(uuid: string) {
+    const definition = await MetadataDefinition.findByPk(uuid);
+    if (!definition) return null;
+
+    await definition.update({ active: false });
+    return definition;
+  }
+
   async createDefinition(
     ownerUuid: string | null,
     input: {

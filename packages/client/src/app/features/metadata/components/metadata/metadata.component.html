@@ -315,6 +315,7 @@
       >
     </header>
     <p class="definition-intro">{{ 'metadata.customCopy' | t }}</p>
+    <p class="definition-lifecycle">{{ 'metadata.definitionLifecycle' | t }}</p>
     <form class="definition-form" (submit)="$event.preventDefault(); createDefinition()">
       <label
         ><span>{{ 'metadata.key' | t }}</span
@@ -371,6 +372,19 @@
           (change)="definitionMandatory.set($any($event.target).checked)"
         /><span>{{ 'metadata.required' | t }}</span></label
       >
+      @if (auth.user()?.isAdmin) {
+        <label class="definition-check">
+          <input
+            type="checkbox"
+            [checked]="definitionSystemScope()"
+            (change)="definitionSystemScope.set($any($event.target).checked)"
+          />
+          <span>
+            <strong>{{ 'metadata.workspaceField' | t }}</strong>
+            <small>{{ 'metadata.workspaceFieldCopy' | t }}</small>
+          </span>
+        </label>
+      }
       <button
         class="primary-button"
         type="submit"
@@ -383,12 +397,74 @@
       <div class="definition-list">
         @for (definition of metadata.definitions(); track definition.uuid) {
           <div class="definition-row">
-            <strong>{{ definition.label }}</strong
-            ><code>{{ definition.key }}</code
-            ><span>{{ definition.type }}{{ definition.mandatory ? ' · required' : '' }}</span>
+            @if (editingDefinitionUuid() === definition.uuid) {
+              <input
+                class="definition-label-input"
+                [value]="editingDefinitionLabel()"
+                [attr.aria-label]="'metadata.label' | t"
+                maxlength="150"
+                (input)="editingDefinitionLabel.set($any($event.target).value)"
+              />
+              <code>{{ definition.key }}</code>
+              <span>{{ definitionTypeLabel(definition.type) }}</span>
+              <div class="definition-actions">
+                <button type="button" class="row-action" (click)="cancelDefinitionEdit()">
+                  {{ 'metadata.cancel' | t }}
+                </button>
+                <button
+                  type="button"
+                  class="row-action"
+                  [disabled]="metadata.saving() || !editingDefinitionLabel().trim()"
+                  (click)="saveDefinition(definition.uuid)"
+                >
+                  {{ 'metadata.save' | t }}
+                </button>
+              </div>
+            } @else {
+              <strong>{{ definition.label }}</strong>
+              <code>{{ definition.key }}</code>
+              <span
+                >{{ definitionTypeLabel(definition.type)
+                }}{{ definition.mandatory ? ' · ' + ('metadata.requiredShort' | t) : '' }}</span
+              >
+              @if (canManageDefinition(definition)) {
+                <div class="definition-actions">
+                  <button
+                    type="button"
+                    class="row-action"
+                    (click)="startDefinitionEdit(definition.uuid, definition.label)"
+                  >
+                    {{ 'metadata.edit' | t }}
+                  </button>
+                  <button
+                    type="button"
+                    class="row-action danger-action"
+                    [disabled]="metadata.saving()"
+                    (click)="requestDeleteDefinition(definition.uuid)"
+                  >
+                    {{ 'metadata.delete' | t }}
+                  </button>
+                </div>
+              } @else {
+                <span class="definition-scope">{{ 'metadata.workspace' | t }}</span>
+              }
+            }
           </div>
         }
       </div>
     }
   </section>
 </section>
+
+@if (deleteDefinitionUuid(); as definitionUuid) {
+  <binder-confirm-dialog
+    [title]="'metadata.deleteDefinitionTitle' | t"
+    [message]="
+      ('metadata.deleteDefinitionMessage' | t) + ' ' + definitionLabelByUuid(definitionUuid)
+    "
+    [confirmLabel]="'metadata.delete' | t"
+    [cancelLabel]="'metadata.cancel' | t"
+    (confirmed)="confirmDeleteDefinition()"
+    (cancelled)="cancelDeleteDefinition()"
+  />
+}

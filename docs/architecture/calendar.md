@@ -13,6 +13,11 @@ The integration is controlled by database-backed settings:
 - `calendar.dueDateField` — the custom metadata key containing the due date,
   defaulting to `dueDate`.
 
+The settings UI selects the field from active workspace metadata definitions
+with type `date` or `datetime` and shows the configured label, key, and type.
+It does not accept an arbitrary key, which prevents a typo from silently
+disabling calendar synchronization for every user.
+
 The due date must be an ISO calendar date in `YYYY-MM-DD` form. Invalid or
 empty values remove the existing event for that document.
 

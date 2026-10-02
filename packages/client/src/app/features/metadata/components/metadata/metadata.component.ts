@@ -17,6 +17,7 @@ import { AuthService } from '../../../authentication/services/auth.service';
 import { MetadataService } from '../../services/metadata.service';
 import { FoldersService } from '../../../documents/services/folders.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
 
 type VocabularyKind = 'documentTypes' | 'categories' | 'tags';
 type Scopes = 'system' | 'personal';
@@ -24,7 +25,7 @@ type Scopes = 'system' | 'personal';
 @Component({
   selector: 'binder-metadata',
   standalone: true,
-  imports: [TranslatePipe],
+  imports: [ConfirmDialogComponent, TranslatePipe],
   templateUrl: './metadata.component.html',
   styleUrl: './metadata.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,7 +55,11 @@ export class MetadataComponent implements OnInit {
   readonly definitionType = signal<MetadataFieldType>('text');
   readonly definitionOptions = signal('');
   readonly definitionMandatory = signal(false);
+  readonly definitionSystemScope = signal(false);
   readonly currentScope = signal<Scopes>('system');
+  readonly editingDefinitionUuid = signal<string | null>(null);
+  readonly editingDefinitionLabel = signal('');
+  readonly deleteDefinitionUuid = signal<string | null>(null);
 
   readonly activeItems = computed(() => {
     const scope = this.currentScope();
@@ -261,11 +266,74 @@ export class MetadataComponent implements OnInit {
       unique: false,
       scope: 'personal',
     };
+    input.scope = this.definitionSystemScope() && this.auth.user()?.isAdmin ? 'system' : 'personal';
     if (await this.metadata.createDefinition(input)) {
       this.definitionKey.set('');
       this.definitionLabel.set('');
       this.definitionOptions.set('');
       this.definitionMandatory.set(false);
+      this.definitionSystemScope.set(false);
     }
+  }
+
+  startDefinitionEdit(uuid: string, label: string): void {
+    this.editingDefinitionUuid.set(uuid);
+    this.editingDefinitionLabel.set(label);
+  }
+
+  cancelDefinitionEdit(): void {
+    this.editingDefinitionUuid.set(null);
+    this.editingDefinitionLabel.set('');
+  }
+
+  async saveDefinition(uuid: string): Promise<void> {
+    const label = this.editingDefinitionLabel().trim();
+    if (!label) return;
+
+    if (await this.metadata.updateDefinition(uuid, { label })) {
+      this.cancelDefinitionEdit();
+    }
+  }
+
+  requestDeleteDefinition(uuid: string): void {
+    this.deleteDefinitionUuid.set(uuid);
+  }
+
+  cancelDeleteDefinition(): void {
+    this.deleteDefinitionUuid.set(null);
+  }
+
+  async confirmDeleteDefinition(): Promise<void> {
+    const uuid = this.deleteDefinitionUuid();
+    this.deleteDefinitionUuid.set(null);
+    if (!uuid) return;
+
+    await this.metadata.deleteDefinition(uuid);
+  }
+
+  definitionLabelByUuid(uuid: string): string {
+    return (
+      this.metadata.definitions().find((definition) => definition.uuid === uuid)?.label ?? uuid
+    );
+  }
+
+  definitionTypeLabel(type: MetadataFieldType): string {
+    const translationKey =
+      type === 'date'
+        ? 'metadata.date'
+        : type === 'datetime'
+          ? 'metadata.dateTime'
+          : type === 'boolean'
+            ? 'metadata.yesNo'
+            : type === 'select'
+              ? 'metadata.select'
+              : type === 'multi-select'
+                ? 'metadata.multiSelect'
+                : 'metadata.text';
+    return this.i18n.t(translationKey);
+  }
+
+  canManageDefinition(definition: { scope: Scopes }): boolean {
+    return definition.scope === 'personal' || this.auth.user()?.isAdmin === true;
   }
 }

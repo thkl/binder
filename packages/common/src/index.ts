@@ -991,6 +991,7 @@ export const SettingControlTypeSchema = z.enum([
   'textarea',
   'checkbox',
   'select',
+  'metadata',
 ]);
 export type SettingControlType = z.infer<typeof SettingControlTypeSchema>;
 
@@ -1275,6 +1276,19 @@ export const CreateMetadataDefinitionSchema = z.object({
   scope: VocabularyScopeSchema.optional().default('personal'),
 });
 export type CreateMetadataDefinition = z.infer<typeof CreateMetadataDefinitionSchema>;
+
+export const UpdateMetadataDefinitionSchema = z.object({
+  label: z.string().trim().min(1).max(150),
+});
+export type UpdateMetadataDefinition = z.infer<typeof UpdateMetadataDefinitionSchema>;
+
+export const MetadataDefinitionDeleteResponseSchema = z.object({
+  deleted: z.literal(true),
+  uuid: z.uuid(),
+});
+export type MetadataDefinitionDeleteResponse = z.infer<
+  typeof MetadataDefinitionDeleteResponseSchema
+>;
 
 export const SetDocumentMetadataInputSchema = z.object({
   issuerUuid: z.uuid().nullable().optional(),

@@ -3,11 +3,13 @@ import { Op } from 'sequelize';
 import {
   CreateVocabularyItem,
   CreateMetadataDefinition,
+  MetadataDefinitionDeleteResponseSchema,
   MetadataDefinitionsResponseSchema,
   DocumentMetadataSchema,
   DocumentMetadataSummarySchema,
   DocumentTitleSuggestionSchema,
   SetDocumentMetadataInput,
+  UpdateMetadataDefinition,
   UpdateVocabularyItem,
   VocabularyItem,
   VocabularyDeleteResponseSchema,
@@ -212,20 +214,30 @@ export class MetadataService {
       input.scope === 'system' ? null : ownerUuid,
       input,
     );
-    return {
-      uuid: definition.uuid,
-      ownerUuid: definition.ownerUuid,
-      key: definition.key,
-      label: definition.label,
-      type: definition.type,
-      options: definition.options,
-      unique: definition.unique,
-      mandatory: definition.mandatory,
-      active: definition.active,
-      scope: definition.ownerUuid === null ? 'system' : 'personal',
-      createdAt: definition.createdAt.toISOString(),
-      updatedAt: definition.updatedAt.toISOString(),
-    };
+    return this.toDefinitionResponse(definition);
+  }
+
+  async updateDefinition(
+    ownerUuid: string,
+    uuid: string,
+    input: UpdateMetadataDefinition,
+    isAdmin: boolean,
+  ) {
+    const existing = await this.store.findDefinitionByUuid(uuid);
+    this.assertDefinitionAccess(existing, ownerUuid, isAdmin);
+
+    const updated = await this.store.updateDefinition(uuid, { label: input.label });
+    if (!updated) throw new NotFoundException('Metadata definition not found');
+    return this.toDefinitionResponse(updated);
+  }
+
+  async removeDefinition(ownerUuid: string, uuid: string, isAdmin: boolean) {
+    const existing = await this.store.findDefinitionByUuid(uuid);
+    this.assertDefinitionAccess(existing, ownerUuid, isAdmin);
+
+    const removed = await this.store.removeDefinition(uuid);
+    if (!removed) throw new NotFoundException('Metadata definition not found');
+    return MetadataDefinitionDeleteResponseSchema.parse({ deleted: true, uuid });
   }
 
   async getDocumentMetadata(ownerUuid: string, documentUuid: string) {
@@ -372,6 +384,41 @@ export class MetadataService {
       scope: item.ownerUuid === null ? 'system' : 'personal',
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
+    };
+  }
+
+  private assertDefinitionAccess(
+    definition: Awaited<ReturnType<MetadataStore['findDefinitionByUuid']>>,
+    ownerUuid: string,
+    isAdmin: boolean,
+  ): asserts definition is NonNullable<typeof definition> {
+    if (!definition || !definition.active) {
+      throw new NotFoundException('Metadata definition not found');
+    }
+    if (definition.ownerUuid === null && !isAdmin) {
+      throw new BadRequestException('Only administrators can manage workspace metadata fields');
+    }
+    if (definition.ownerUuid !== null && definition.ownerUuid !== ownerUuid) {
+      throw new NotFoundException('Metadata definition not found');
+    }
+  }
+
+  private toDefinitionResponse(
+    definition: import('../models/vocabulary.entity').MetadataDefinition,
+  ) {
+    return {
+      uuid: definition.uuid,
+      ownerUuid: definition.ownerUuid,
+      key: definition.key,
+      label: definition.label,
+      type: definition.type,
+      options: definition.options,
+      unique: definition.unique,
+      mandatory: definition.mandatory,
+      active: definition.active,
+      scope: definition.ownerUuid === null ? 'system' : 'personal',
+      createdAt: definition.createdAt.toISOString(),
+      updatedAt: definition.updatedAt.toISOString(),
     };
   }
 }

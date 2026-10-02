@@ -20,6 +20,8 @@ POST /api/v1/metadata/vocabulary/tags
 PATCH /api/v1/metadata/vocabulary/:kind/:uuid
 GET  /api/v1/metadata/definitions
 POST /api/v1/metadata/definitions
+PATCH /api/v1/metadata/definitions/:uuid
+DELETE /api/v1/metadata/definitions/:uuid
 
 GET  /api/v1/documents/:uuid/metadata
 POST /api/v1/documents/:uuid/metadata
@@ -34,6 +36,12 @@ The extracted text endpoint is ownership-protected and returns the combined text
 The document metadata endpoint accepts document type, category, tag UUIDs, and a `custom` object. Every vocabulary UUID and custom field key is checked against the active system or personal metadata available to the authenticated owner.
 
 Custom metadata definitions have a stable `key`, display `label`, `type`, optional `options`, and `unique`/`mandatory` flags. Supported types are `text`, `number`, `date`, `datetime`, `boolean`, `select`, and `multi-select`. Values are stored as JSON per document, so new fields do not require a table migration. The client exposes personal definitions and renders the corresponding controls in the document editor.
+
+Definition keys and field types are immutable after creation because changing
+either would make existing document values ambiguous. The label can be edited
+by the owning user or an administrator. Deletion is a soft delete: the
+definition is hidden from future editing and selection, while existing values
+remain in the database as intentionally orphaned historical data.
 
 Tags remain controlled vocabulary values, but the document editor provides search and inline creation of a personal tag. This keeps AI classification bounded to known UUIDs while allowing users to extend their own vocabulary at the point of use.
 

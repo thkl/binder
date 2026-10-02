@@ -148,6 +148,13 @@ h3 {
   line-height: 1.5;
 }
 
+.definition-lifecycle {
+  margin: 0.45rem 1.6rem 0;
+  color: #8fa8c3;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
 .definition-form {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -205,8 +212,9 @@ h3 {
 
 .definition-row {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
+  grid-template-columns: 1.2fr 1fr 1fr auto;
   gap: 1rem;
+  align-items: center;
   padding: 0.8rem 1.6rem;
   border-bottom: 1px solid rgba(157, 190, 232, 0.08);
   color: #a9bad0;
@@ -223,6 +231,29 @@ h3 {
 
 .definition-row span {
   color: #7188a5;
+}
+
+.definition-label-input {
+  min-width: 0;
+  border: 1px solid rgba(97, 215, 244, 0.45);
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  color: #dceaff;
+  background: rgba(5, 18, 35, 0.55);
+  font: inherit;
+}
+
+.definition-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.definition-scope {
+  justify-self: end;
+  color: #7188a5;
+  font-size: 0.66rem;
 }
 
 .content-heading {

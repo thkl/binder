@@ -8,11 +8,13 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
+  MetadataDefinition,
   ApplicationSettingsResponse,
   SettingsMapItem,
   SetApplicationSettingInput,
 } from '@binder/common';
 import { SettingsService } from '../../services/settings.service';
+import { MetadataService } from '../../../metadata/services/metadata.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { AiProviderManagerComponent } from '../ai-provider-manager/ai-provider-manager.component';
 
@@ -28,6 +30,7 @@ export class SettingsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly settingsService = inject(SettingsService);
+  readonly metadataService = inject(MetadataService);
   readonly i18n = inject(I18nService);
 
   readonly activeSection = signal('');
@@ -56,6 +59,7 @@ export class SettingsComponent implements OnInit {
     const [response] = await Promise.all([
       this.settingsService.load(),
       this.settingsService.loadUsers(),
+      this.metadataService.loadDefinitions(),
     ]);
     if (!response) {
       return;
@@ -116,6 +120,50 @@ export class SettingsComponent implements OnInit {
   settingOptionLabel(key: string, option: string): string {
     const translated = this.i18n.t(`setting.${key}.${option}`);
     return translated === `setting.${key}.${option}` ? option : translated;
+  }
+
+  metadataOptions(item: SettingsMapItem): MetadataDefinition[] {
+    if (item.key === 'calendar.dueDateField') {
+      return this.metadataService
+        .definitions()
+        .filter(
+          (definition) =>
+            definition.scope === 'system' &&
+            (definition.type === 'date' || definition.type === 'datetime'),
+        );
+    }
+
+    return this.metadataService.definitions();
+  }
+
+  metadataDefinition(item: SettingsMapItem): MetadataDefinition | null {
+    const value = this.stringValue(item);
+    return (
+      this.metadataOptions(item).find((definition) => definition.key === value) ??
+      this.metadataService.definitions().find((definition) => definition.key === value) ??
+      null
+    );
+  }
+
+  metadataValueIsMissing(item: SettingsMapItem): boolean {
+    const value = this.stringValue(item);
+    return value.length > 0 && this.metadataDefinition(item) === null;
+  }
+
+  metadataTypeLabel(type: MetadataDefinition['type']): string {
+    const key =
+      type === 'date'
+        ? 'metadata.date'
+        : type === 'datetime'
+          ? 'metadata.dateTime'
+          : type === 'boolean'
+            ? 'metadata.yesNo'
+            : type === 'select'
+              ? 'metadata.select'
+              : type === 'multi-select'
+                ? 'metadata.multiSelect'
+                : 'metadata.text';
+    return this.i18n.t(key);
   }
 
   updateText(item: SettingsMapItem, event: Event): void {
