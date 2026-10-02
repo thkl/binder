@@ -97,7 +97,12 @@
                         <option value="">{{ 'settings.selectMetadata' | t }}</option>
                         @for (definition of metadataOptions(item); track definition.uuid) {
                           <option [value]="definition.key">
-                            {{ definition.label }} · {{ definition.key }}
+                            {{ definition.label }} · {{ definition.key }} ·
+                            {{
+                              definition.scope === 'system'
+                                ? ('metadata.workspace' | t)
+                                : ('metadata.personal' | t)
+                            }}
                           </option>
                         }
                       </select>

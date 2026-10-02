@@ -126,11 +126,7 @@ export class SettingsComponent implements OnInit {
     if (item.key === 'calendar.dueDateField') {
       return this.metadataService
         .definitions()
-        .filter(
-          (definition) =>
-            definition.scope === 'system' &&
-            (definition.type === 'date' || definition.type === 'datetime'),
-        );
+        .filter((definition) => definition.type === 'date' || definition.type === 'datetime');
     }
 
     return this.metadataService.definitions();
