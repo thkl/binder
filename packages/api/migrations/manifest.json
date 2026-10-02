@@ -358,6 +358,11 @@
                     "settings",
                     "calendar_events"
                ]
+          },
+          "53": {
+               "required": [
+                    "settings"
+               ]
           }
      }
 }

@@ -159,25 +159,27 @@ worker setting and run automatically after text extraction when enabled.
   - Existing documents can be synchronized manually from the document drawer.
   - The API exposes authenticated `.ics` downloads and adds the event URL to document responses.
   - External Google/CalDAV providers and two-way synchronization remain future work.
+- Start email integration ✅ Configuration slice implemented:
+  - Add encrypted SMTP credentials for password reset and outbound notifications.
+  - Add IMAP mailbox settings, import owner, polling interval, and post-import handling.
+  - Keep the actual mailbox adapter on the existing inbox/import pipeline and process it next.
 - Import documents from email
 - Add secure email-based password reset for local accounts
 - Connect scanners and other external sources
-- Add a Swift iOS companion app with Share Sheet document ingestion
-- Queue shared documents locally when offline and upload them automatically when the backend is reachable again
 - ✅ Record an owner-visible audit history for every document, persisted in PostgreSQL and separate from operational logs
 - Add a secure first-run onboarding assistant that creates the administrator and validates the basic runtime settings ✅ Implemented:
   - Resumable administrator, storage, processing, optional AI, optional OIDC, backup, and review steps.
   - Server-side writable-path checks for storage, derived files, temporary files, inbox, and backup destinations.
   - Worker heartbeat validation for processing readiness.
   - Separate persisted onboarding completion state from administrator creation.
-- Let administrators inspect API and worker activity
+- Let administrators inspect API and worker activity ✅ Implemented through the API and worker log explorer
 - ✅ Add bulk metadata editing for selected documents, including type, category, issuer, tags, custom fields, and virtual-folder assignments:
   - Preview empty values, existing values, conflicts, and the affected documents before applying changes.
   - Require explicit confirmation before overwriting existing metadata or folder assignments.
   - Offer fill-empty, skip-existing, and replace-selected policies.
   - Store each successful operation as an immutable metadata change set so it can be rolled back safely.
 
-### P4 — document history
+### P4 — document history and companion clients
 
 - Add document version families so a newly imported document can be linked to
   an existing document as a new version without overwriting either original.
@@ -191,6 +193,9 @@ worker setting and run automatically after text extraction when enabled.
   version are represented while retaining owner-scoped access checks.
 - Link reversible metadata change sets into the document history timeline while
   keeping metadata rollback separate from binary PDF version families.
+- Add a Swift iOS companion app with Share Sheet document ingestion.
+- Queue shared documents locally when offline and upload them automatically when
+  the backend is reachable again.
 
 ### Later
 

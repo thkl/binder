@@ -705,6 +705,8 @@
         [initialTab]="drawerTab()"
         [mode]="drawerMode()"
         [suggestion]="titleSuggestions()[drawerUuid] || null"
+        [suggestionLoading]="titleSuggestionLoading()[drawerUuid] === true"
+        [requeueLoading]="requeueLoading()[drawerUuid] === true"
         [externalClosePrompt]="metadataClosePrompt()"
         (tabChange)="drawerTab.set($event)"
         (dirtyChange)="metadataDirtyChanged($event)"
@@ -715,6 +717,8 @@
         (suggestionTitleAccepted)="acceptSuggestedTitleValue(drawerUuid, $event)"
         (suggestionDismissed)="dismissLocalTitleSuggestion(drawerUuid)"
         (suggestionAccepted)="acceptSuggestedMetadata(drawerUuid, $event)"
+        (suggestionRequested)="suggestTitle(drawerUuid)"
+        (requeueRequested)="requeueDocument(drawerUuid)"
         (archiveRequested)="generateArchive(drawerUuid)"
         (deleteRequested)="requestDeleteDocument(drawerUuid)"
       />

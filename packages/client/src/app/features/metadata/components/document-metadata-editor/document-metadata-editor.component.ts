@@ -119,7 +119,7 @@ export class DocumentMetadataEditorComponent {
     if (uuid !== this.documentUuid()) return;
     if (current) this.applyMetadata(current);
     else this.markClean();
-    this.folderOptions.set(allFolders);
+    this.folderOptions.set(allFolders.sort((fa,fb)=>fa.name.localeCompare(fb.name)));
     this.applyFolderSelection(currentFolders);
     this.loaded.set(true);
   }

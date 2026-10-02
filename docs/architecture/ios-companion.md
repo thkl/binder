@@ -2,7 +2,7 @@
 
 ## Goal
 
-The iOS companion is a P3 ingestion client for users who receive documents on
+The iOS companion is a P4 ingestion client for users who receive documents on
 their phone. It should make sending a PDF or image to Binder as simple as
 choosing Binder from the iOS Share Sheet. The existing Angular application
 remains the primary document-management UI.

@@ -89,6 +89,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly unassignedFolderSelected = signal(false);
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
+  readonly requeueLoading = signal<Record<string, boolean>>({});
   readonly editingTitleUuid = signal<string | null>(null);
   readonly metadataDirty = signal(false);
   readonly metadataClosePrompt = signal(false);
@@ -498,8 +499,13 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     await this.documents.load();
   }
 
-  async requeueDocument(uuid: string) {
-    await this.documents.requeueDocument(uuid);
+  async requeueDocument(uuid: string): Promise<void> {
+    this.requeueLoading.update((current) => ({ ...current, [uuid]: true }));
+    try {
+      await this.documents.requeueDocument(uuid);
+    } finally {
+      this.requeueLoading.update((current) => ({ ...current, [uuid]: false }));
+    }
   }
 
   async generateArchive(uuid: string): Promise<void> {

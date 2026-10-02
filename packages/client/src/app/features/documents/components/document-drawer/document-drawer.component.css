@@ -45,10 +45,12 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1.1rem 1.4rem 0.8rem;
+  width: 100%;
 }
 
 .drawer-heading {
   min-width: 0;
+  width: 100%;
 }
 
 .section-kicker {
@@ -76,7 +78,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  margin-top: 0.65rem;
+  margin-top: 1rem;
 }
 
 .drawer-download-link {

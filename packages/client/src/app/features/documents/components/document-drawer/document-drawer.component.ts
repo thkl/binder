@@ -42,6 +42,8 @@ export class DocumentDrawerComponent {
   readonly initialTab = input<DocumentDrawerTab>('preview');
   readonly mode = input<DocumentDrawerMode>('analysis');
   readonly suggestion = input<DocumentTitleSuggestion | null>(null);
+  readonly suggestionLoading = input(false);
+  readonly requeueLoading = input(false);
   readonly externalClosePrompt = input(false);
 
   readonly closeRequest = output<void>();
@@ -55,6 +57,8 @@ export class DocumentDrawerComponent {
   readonly discardRequest = output<void>();
   readonly archiveRequested = output<void>();
   readonly deleteRequested = output<void>();
+  readonly suggestionRequested = output<void>();
+  readonly requeueRequested = output<void>();
 
   readonly activeTab = signal<DocumentDrawerTab>('preview');
   readonly dirty = signal(false);
@@ -71,6 +75,12 @@ export class DocumentDrawerComponent {
   readonly archiveReady = computed(() => this.documentData().archiveStatus === 'ready');
   readonly archiveBusy = computed(() =>
     ['queued', 'processing'].includes(this.documentData().archiveStatus),
+  );
+  readonly contentAvailable = computed(
+    () => !['uploaded', 'scanning', 'quarantined'].includes(this.documentData().status),
+  );
+  readonly canRequeue = computed(() =>
+    ['failed', 'ready', 'quarantined'].includes(this.documentData().status),
   );
 
   private readonly sanitizer = inject(DomSanitizer);

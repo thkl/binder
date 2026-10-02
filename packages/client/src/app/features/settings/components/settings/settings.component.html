@@ -73,7 +73,10 @@
                       }
                     </span>
                     <small>{{ description(item) }}</small>
-                    @if (item.key === 'inbox.importOwnerUuid') {
+                    @if (
+                      item.key === 'inbox.importOwnerUuid' ||
+                      item.key === 'mailer.imap.importOwnerUuid'
+                    ) {
                       <select [value]="stringValue(item)" (change)="updateText(item, $event)">
                         <option value="">{{ 'settings.noOwner' | t }}</option>
                         @for (user of settingsService.users(); track user.uuid) {
