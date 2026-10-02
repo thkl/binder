@@ -186,9 +186,43 @@ h2 {
   line-height: 1.5;
 }
 
+.duplicate-upload-link {
+  margin-left: auto;
+  align-self: center;
+  min-height: 2.5rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 190, 120, 0.35);
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.65rem;
+  color: #ffd39e;
+  background: rgba(255, 180, 100, 0.08);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.duplicate-upload-link:hover:not(:disabled),
+.duplicate-upload-link:focus-visible {
+  color: #fff0d9;
+  background: rgba(255, 180, 100, 0.18);
+  outline: 2px solid rgba(255, 211, 158, 0.7);
+  outline-offset: 2px;
+}
+
+.duplicate-upload-link:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 @media (max-width: 640px) {
   .duplicate-upload-notice {
     flex-wrap: wrap;
+  }
+
+  .duplicate-upload-link {
+    width: 100%;
+    margin-left: 2.8rem;
   }
 }
 

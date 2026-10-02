@@ -1298,7 +1298,8 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'documents.duplicateUploadTitle': 'This document is already in Binder',
     'documents.duplicateUploadCopy':
       'The upload was not added again because its content matches an existing document.',
-    'documents.openArchive': 'Open documents',
+    'documents.openDuplicate': 'Open existing document',
+    'documents.opening': 'Opening…',
     'documents.exportSelected': 'Export selected documents',
     'documents.exportFiltered': 'Export filtered documents',
     'documents.exportFolder': 'Export folder',
@@ -1536,7 +1537,8 @@ const EXTENDED_COPY: Record<string, TranslationMap> = {
     'documents.duplicateUploadTitle': 'Dieses Dokument ist bereits in Binder vorhanden',
     'documents.duplicateUploadCopy':
       'Der Upload wurde nicht erneut hinzugefügt, weil der Inhalt einem vorhandenen Dokument entspricht.',
-    'documents.openArchive': 'Dokumente öffnen',
+    'documents.openDuplicate': 'Vorhandenes Dokument öffnen',
+    'documents.opening': 'Wird geöffnet…',
     'documents.exportSelected': 'Ausgewählte Dokumente exportieren',
     'documents.exportFiltered': 'Gefilterte Dokumente exportieren',
     'documents.exportFolder': 'Ordner exportieren',

@@ -43,6 +43,7 @@ export class HomeComponent {
   readonly metadataDirty = signal(false);
   readonly metadataClosePrompt = signal(false);
   readonly deleteDialogUuid = signal<string | null>(null);
+  readonly duplicateDocumentLoading = signal(false);
   readonly selectedType = signal('');
   readonly selectedCategory = signal('');
   readonly selectedTag = signal('');
@@ -319,6 +320,27 @@ export class HomeComponent {
   requestDeleteDocument(uuid: string): void {
     if (!this.canLeaveMetadata()) return;
     this.deleteDialogUuid.set(uuid);
+  }
+
+  async openDuplicateDocument(): Promise<void> {
+    const uuid = this.documents.duplicateUploadUuid();
+    if (!uuid || this.duplicateDocumentLoading()) return;
+    if (!this.canLeaveMetadata()) return;
+
+    this.duplicateDocumentLoading.set(true);
+    try {
+      const document = await this.documents.loadDocument(uuid);
+      if (!document) return;
+
+      this.metadataClosePrompt.set(false);
+      this.metadataDirty.set(false);
+      this.drawerTab.set('preview');
+      this.drawerMode.set('analysis');
+      this.drawerDocumentSnapshot.set(document);
+      this.drawerDocumentUuid.set(document.uuid);
+    } finally {
+      this.duplicateDocumentLoading.set(false);
+    }
   }
 
   cancelDeleteDocument(): void {

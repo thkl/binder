@@ -101,7 +101,21 @@
           <strong>{{ 'documents.duplicateUploadTitle' | t }}</strong>
           <p>{{ 'documents.duplicateUploadCopy' | t }}</p>
         </div>
-        <a routerLink="/documents">{{ 'documents.openArchive' | t }} →</a>
+        @if (documents.duplicateUploadUuid()) {
+          <button
+            type="button"
+            class="duplicate-upload-link"
+            [disabled]="duplicateDocumentLoading()"
+            (click)="openDuplicateDocument()"
+          >
+            {{
+              duplicateDocumentLoading()
+                ? ('documents.opening' | t)
+                : ('documents.openDuplicate' | t)
+            }}
+            →
+          </button>
+        }
       </aside>
     }
 

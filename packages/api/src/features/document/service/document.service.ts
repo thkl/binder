@@ -106,10 +106,20 @@ export class DocumentService {
     try {
       const duplicate = await this.documents.findByChecksum(stored.checksumSha256);
       if (duplicate) {
-        throw new ConflictException({
+        const duplicateDetails: {
+          code: string;
+          message: string;
+          documentUuid?: string;
+        } = {
           code: 'DOCUMENT_DUPLICATE',
           message: 'A document with identical content already exists.',
-        });
+        };
+
+        if (duplicate.ownerUuid === ownerUuid) {
+          duplicateDetails.documentUuid = duplicate.uuid;
+        }
+
+        throw new ConflictException(duplicateDetails);
       }
 
       const input = CreateDocumentInputSchema.parse({

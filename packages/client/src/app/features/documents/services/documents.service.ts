@@ -43,6 +43,7 @@ export class DocumentsService {
   readonly exporting = signal(false);
   readonly error = signal<string | null>(null);
   readonly duplicateUpload = signal(false);
+  readonly duplicateUploadUuid = signal<string | null>(null);
   readonly appService = inject(ApplicationService);
   private readonly document = inject(DOCUMENT);
   private currentQuery = DocumentListQuerySchema.parse({});
@@ -51,6 +52,7 @@ export class DocumentsService {
 
   clearUploadNotice(): void {
     this.duplicateUpload.set(false);
+    this.duplicateUploadUuid.set(null);
   }
 
   getCurrentQuery(): DocumentListQuery {
@@ -203,6 +205,15 @@ export class DocumentsService {
       }),
     );
     return DocumentSchema.parse(response.data);
+  }
+
+  async loadDocument(uuid: string): Promise<BinderDocument | null> {
+    try {
+      return await this.getDocument(uuid);
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
   }
 
   private updateDocumentInPage(document: BinderDocument): void {
@@ -417,6 +428,9 @@ export class DocumentsService {
     } catch (error) {
       if (this.isDuplicateUploadError(error)) {
         this.duplicateUpload.set(true);
+        this.duplicateUploadUuid.set(
+          typeof error.error?.documentUuid === 'string' ? error.error.documentUuid : null,
+        );
         return false;
       }
       this.error.set(this.getErrorMessage(error));
@@ -426,7 +440,7 @@ export class DocumentsService {
     }
   }
 
-  private isDuplicateUploadError(error: unknown): boolean {
+  private isDuplicateUploadError(error: unknown): error is HttpErrorResponse {
     return (
       error instanceof HttpErrorResponse &&
       error.status === 409 &&
