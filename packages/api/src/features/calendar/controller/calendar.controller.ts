@@ -3,6 +3,7 @@ import type { Response } from 'express';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
 import { CalendarService } from '../service/calendar.service';
+import { createContentDisposition } from '../../../shared/http/content-disposition';
 
 @Controller('calendar')
 @UseGuards(AuthenticationGuard)
@@ -32,7 +33,10 @@ export class CalendarController {
   ) {
     const result = await this.calendar.download(user.userId, uuid);
     response.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-    response.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    response.setHeader(
+      'Content-Disposition',
+      createContentDisposition('attachment', result.filename),
+    );
     return new StreamableFile(Buffer.from(result.content, 'utf8'));
   }
 }

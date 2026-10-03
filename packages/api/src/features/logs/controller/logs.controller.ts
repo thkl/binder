@@ -6,6 +6,7 @@ import { AuthenticationGuard } from '../../authentication/guards/authentication.
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { LogsService } from '../service/logs.service';
+import { createContentDisposition } from '../../../shared/http/content-disposition';
 
 @Controller('logs')
 @UseGuards(AuthenticationGuard, RolesGuard)
@@ -32,7 +33,10 @@ export class LogsController {
         : createReadStream(file.path);
 
       response.setHeader('Cache-Control', 'private, no-store');
-      response.setHeader('Content-Disposition', `inline; filename="${file.name.replace(/\.gz$/, '')}"`);
+      response.setHeader(
+        'Content-Disposition',
+        createContentDisposition('inline', file.name.replace(/\.gz$/, '')),
+      );
 
       return new StreamableFile(stream, {
         type: 'text/plain; charset=utf-8'
@@ -40,7 +44,10 @@ export class LogsController {
     }
 
     response.setHeader('Cache-Control', 'private, no-store');
-    response.setHeader('Content-Disposition', `attachment; filename="${file.name}"`);
+    response.setHeader(
+      'Content-Disposition',
+      createContentDisposition('attachment', file.name),
+    );
     return new StreamableFile(createReadStream(file.path), {
       type: file.compressed ? 'application/gzip' : 'text/plain; charset=utf-8'
     });

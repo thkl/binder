@@ -22,6 +22,7 @@ import { AuthenticationGuard } from '../../authentication/guards/authentication.
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
 import { FolderService } from '../service/folder.service';
 import { DocumentService } from '../../document/service/document.service';
+import { createContentDisposition } from '../../../shared/http/content-disposition';
 
 @Controller('folders')
 @UseGuards(AuthenticationGuard)
@@ -115,12 +116,8 @@ export class FolderController {
     response.setHeader('Cache-Control', 'private, no-store');
     response.setHeader(
       'Content-Disposition',
-      'attachment; filename="' + this.safeFilename(result.filename) + '"',
+      createContentDisposition('attachment', result.filename),
     );
     return new StreamableFile(result.stream, { type: 'application/zip' });
-  }
-
-  private safeFilename(filename: string): string {
-    return filename.replace(/[\\"\r\n]/g, '_');
   }
 }

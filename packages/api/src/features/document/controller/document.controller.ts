@@ -35,6 +35,7 @@ import { BinderLogger } from '../../../shared/service/logger.helper';
 import { Throttle } from '@nestjs/throttler';
 import { DocumentAuditService } from '../service/document-audit.service';
 import { DocumentBulkMetadataService } from '../service/document-bulk-metadata.service';
+import { createContentDisposition } from '../../../shared/http/content-disposition';
 
 const HARD_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024;
 
@@ -172,7 +173,7 @@ export class DocumentController {
     response.setHeader('Cache-Control', 'private, no-store');
     response.setHeader(
       'Content-Disposition',
-      `inline; filename="${this.safeFilename(result.document.originalFilename)}"`,
+      createContentDisposition('inline', result.document.originalFilename),
     );
     return new StreamableFile(result.stream, { type: result.document.mimeType });
   }
@@ -328,15 +329,8 @@ export class DocumentController {
     return { data: await this.documents.get(user.userId, uuid) };
   }
 
-  private safeFilename(filename: string): string {
-    return filename.replace(/[\\"\r\n]/g, '_');
-  }
-
   private setArchiveHeaders(response: Response, filename: string): void {
     response.setHeader('Cache-Control', 'private, no-store');
-    response.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${this.safeFilename(filename)}"`,
-    );
+    response.setHeader('Content-Disposition', createContentDisposition('attachment', filename));
   }
 }
