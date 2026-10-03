@@ -103,14 +103,31 @@ h1 {
   background: var(--cyan);
 }
 
-.user-identity {
+.account-menu {
+  position: relative;
+}
+
+.account-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  min-height: 3.65em;
+  padding: 0.35rem 0.55rem;
   max-width: 12rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 0.65rem;
   color: var(--muted);
+  background: #ffffff0a;
   font-size: 0.8rem;
   font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.account-toggle:hover,
+.account-menu.is-open .account-toggle {
+  color: var(--cyan);
+  background: rgba(97, 215, 244, 0.08);
 }
 
 .user-avatar {
@@ -137,6 +154,69 @@ h1 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.account-panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  min-width: 13rem;
+  padding: 0.55rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 0.8rem;
+  background: rgba(9, 27, 50, 0.97);
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+}
+
+.account-menu-section {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.35rem;
+}
+
+.account-menu-label {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-panel .language-switcher {
+  width: 100%;
+  height: auto;
+}
+
+.account-panel .language-switcher button {
+  min-height: 2.35rem;
+  flex: 1;
+}
+
+.account-menu-divider {
+  height: 1px;
+  margin: 0.45rem 0;
+  background: var(--glass-border);
+}
+
+.account-menu-action {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.7rem 0.8rem;
+  border: 0;
+  border-radius: 0.55rem;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.account-menu-action:hover {
+  color: var(--cyan);
+  background: rgba(97, 215, 244, 0.1);
 }
 
 .nav-link {
@@ -188,7 +268,9 @@ h1 {
 .nav-menu-toggle:focus-visible,
 .nav-menu-link:focus-visible,
 .language-switcher button:focus-visible,
-.secondary:focus-visible {
+.secondary:focus-visible,
+.account-toggle:focus-visible,
+.account-menu-action:focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
 }

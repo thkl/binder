@@ -15,7 +15,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { I18nService, TranslatePipe } from './common/i18n/i18n.service';
 import { InboxService } from './features/inbox/services/inbox.service';
 
-type NavigationMenu = 'documents' | 'settings';
+type NavigationMenu = 'documents' | 'settings' | 'account';
 
 @Component({
   selector: 'binder-root',
@@ -70,6 +70,7 @@ export class AppComponent implements OnInit {
   }
 
   async logout(): Promise<void> {
+    this.closeMenu();
     await this.auth.logout();
   }
 
@@ -94,8 +95,13 @@ export class AppComponent implements OnInit {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target;
-    if (target instanceof Element && !target.closest('.nav-menu')) {
+    if (target instanceof Element && !target.closest('.nav-menu, .account-menu')) {
       this.closeMenu();
     }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeMenu();
   }
 }

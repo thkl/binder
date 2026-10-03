@@ -133,46 +133,63 @@
             </nav>
           }
         </div>
-        <div class="language-switcher" aria-label="Language">
+        <div class="account-menu" [class.is-open]="openMenu() === 'account'">
           <button
+            class="account-toggle"
             type="button"
-            [class.active]="i18n.language() === 'en'"
-            (click)="setLanguage('en')"
+            aria-haspopup="true"
+            aria-controls="account-menu"
+            [attr.aria-expanded]="openMenu() === 'account'"
+            [attr.aria-label]="(auth.user()?.username ?? '') + ', ' + ('nav.account' | t)"
+            (click)="toggleMenu('account', $event)"
           >
-            EN
+            @if (gravatarUrl(); as avatarUrl) {
+              <img
+                class="user-avatar"
+                [src]="avatarUrl"
+                [alt]="auth.user()?.username ?? ''"
+                width="34"
+                height="34"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                (error)="avatarLoadFailed()"
+              />
+            } @else {
+              <span class="user-avatar user-avatar-fallback" aria-hidden="true">
+                {{ auth.user()?.username?.slice(0, 1)?.toUpperCase() }}
+              </span>
+            }
+            <span class="user-name">{{ auth.user()?.username }}</span>
+            <span class="menu-caret" aria-hidden="true">⌄</span>
           </button>
-          <button
-            type="button"
-            [class.active]="i18n.language() === 'de'"
-            (click)="setLanguage('de')"
-          >
-            DE
-          </button>
-        </div>
-        <div
-          class="user-identity"
-          [attr.title]="auth.user()?.username"
-          [attr.aria-label]="auth.user()?.username"
-        >
-          @if (gravatarUrl(); as avatarUrl) {
-            <img
-              class="user-avatar"
-              [src]="avatarUrl"
-              [alt]="auth.user()?.username ?? ''"
-              width="34"
-              height="34"
-              loading="lazy"
-              referrerpolicy="no-referrer"
-              (error)="avatarLoadFailed()"
-            />
-          } @else {
-            <span class="user-avatar user-avatar-fallback" aria-hidden="true">
-              {{ auth.user()?.username?.slice(0, 1)?.toUpperCase() }}
-            </span>
+          @if (openMenu() === 'account') {
+            <div class="account-panel" id="account-menu" [attr.aria-label]="'nav.account' | t">
+              <div class="account-menu-section">
+                <span class="account-menu-label">{{ 'nav.language' | t }}</span>
+                <div class="language-switcher" [attr.aria-label]="'nav.language' | t">
+                  <button
+                    type="button"
+                    [class.active]="i18n.language() === 'en'"
+                    (click)="setLanguage('en')"
+                  >
+                    EN
+                  </button>
+                  <button
+                    type="button"
+                    [class.active]="i18n.language() === 'de'"
+                    (click)="setLanguage('de')"
+                  >
+                    DE
+                  </button>
+                </div>
+              </div>
+              <div class="account-menu-divider" aria-hidden="true"></div>
+              <button class="account-menu-action" type="button" (click)="logout()">
+                {{ 'nav.signOut' | t }}
+              </button>
+            </div>
           }
-          <span class="user-name">{{ auth.user()?.username }}</span>
         </div>
-        <button class="secondary" type="button" (click)="logout()">{{ 'nav.signOut' | t }}</button>
       </div>
     </header>
     <router-outlet />
