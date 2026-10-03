@@ -29,6 +29,7 @@ import {
   DocumentTitleSuggestionSchema,
   ClearDocumentSuggestionResponseSchema,
   DocumentDeleteResponseSchema,
+  DocumentOpenResponseSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -226,6 +227,44 @@ export class DocumentsService {
 
   async refreshDocuments(uuids: string[]): Promise<void> {
     await Promise.all(uuids.map((uuid) => this.refreshDocument(uuid)));
+  }
+
+  async markOpened(uuid: string): Promise<boolean> {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/${uuid}/open`),
+          {},
+          { withCredentials: true },
+        ),
+      );
+      const state = DocumentOpenResponseSchema.parse(response.data);
+      this.page.update((page) =>
+        page
+          ? {
+              ...page,
+              items: page.items.map((item) =>
+                item.uuid === uuid
+                  ? { ...item, isNew: state.isNew, updatedAt: state.updatedAt }
+                  : item,
+              ),
+            }
+          : page,
+      );
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    }
+  }
+
+  async refreshCurrentPage(): Promise<void> {
+    await this.load();
+
+    const page = this.page();
+    if (!page || page.page <= page.totalPages) return;
+
+    await this.load({ page: page.totalPages || 1 });
   }
 
   private updateDocumentInPage(document: BinderDocument): void {

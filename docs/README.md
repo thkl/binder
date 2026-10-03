@@ -17,6 +17,7 @@ This folder contains the living documentation for the lightweight document manag
 - [OCR architecture](./architecture/ocr.md) — OCRmyPDF/Tesseract worker design
 - [PDF/A archives](./architecture/pdfa-archives.md) — validated archival derivatives and original-file preservation
 - [Document audit history](./architecture/document-audit.md) — owner-visible document change history
+- [Document versions and page splitting](./architecture/document-versions.md) — planned non-destructive version families and PDF page extraction
 - [First-run onboarding](./architecture/onboarding.md) — secure administrator creation and guided initial configuration
 - [Document pipeline](./architecture/pipeline.md) — durable jobs, retries, events, and worker boundaries
 - [Controlled document metadata](./architecture/document-metadata.md) — system and personal classification vocabularies

@@ -141,8 +141,8 @@ export class InboxService {
         ) {
           if (change.data.documentUuids.length > 0) {
             this.changedDocumentUuids.set(change.data.documentUuids);
-            this.documentChangeRevision.update((revision) => revision + 1);
           }
+          this.documentChangeRevision.update((revision) => revision + 1);
           void this.load();
         }
       } catch {

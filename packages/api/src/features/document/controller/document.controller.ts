@@ -177,6 +177,11 @@ export class DocumentController {
     return new StreamableFile(result.stream, { type: result.document.mimeType });
   }
 
+  @Post(':uuid/open')
+  async markOpened(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.markOpened(user.userId, uuid) };
+  }
+
   @Delete(':uuid')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async remove(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {

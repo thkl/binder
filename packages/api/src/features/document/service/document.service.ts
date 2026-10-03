@@ -716,12 +716,19 @@ export class DocumentService {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
     const changed = document.title !== input.title;
-    const updated = await this.documents.update(uuid, { title: input.title, isNew: false });
-    if (changed) {
+    const clearNewMarker = await this.shouldClearNewMarkerOnMetadataSave();
+    const reviewStateChanged = clearNewMarker && document.isNew;
+    const updated = await this.documents.update(uuid, {
+      title: input.title,
+      ...(clearNewMarker ? { isNew: false } : {}),
+    });
+    if (changed || reviewStateChanged) {
       this.eventEmitter.emit('inbox.changed', {
         reason: 'document-reviewed',
         documentUuids: [uuid],
       });
+    }
+    if (changed) {
       await this.recordAudit({
         documentUuid: uuid,
         ownerUuid,
@@ -729,7 +736,17 @@ export class DocumentService {
         actorType: 'user',
         eventType: 'title-changed',
         summary: 'Document title changed',
-        details: { fields: ['title'] },
+        details: { fields: reviewStateChanged ? ['title', 'reviewState'] : ['title'] },
+      });
+    } else if (reviewStateChanged) {
+      await this.recordAudit({
+        documentUuid: uuid,
+        ownerUuid,
+        actorUuid: ownerUuid,
+        actorType: 'user',
+        eventType: 'metadata-changed',
+        summary: 'Document marked as reviewed after title save',
+        details: { fields: ['reviewState'] },
       });
     }
     return this.toDocumentResponse(updated ?? document);
@@ -780,6 +797,38 @@ export class DocumentService {
       document: this.toDocumentResponse(document),
       stream: await this.storage.openReadStream(document.storageKey),
     };
+  }
+
+  async markOpened(ownerUuid: string, uuid: string): Promise<{ isNew: boolean; updatedAt: Date }> {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+
+    if (!document.isNew || !(await this.shouldClearNewMarkerOnOpen())) {
+      return { isNew: document.isNew, updatedAt: document.updatedAt };
+    }
+
+    const updated = await this.documents.update(uuid, { isNew: false });
+    if (!updated) {
+      throw new NotFoundException('Document not found');
+    }
+
+    this.eventEmitter.emit('inbox.changed', {
+      reason: 'document-reviewed',
+      documentUuids: [uuid],
+    });
+    await this.recordAudit({
+      documentUuid: uuid,
+      ownerUuid,
+      actorUuid: ownerUuid,
+      actorType: 'user',
+      eventType: 'metadata-changed',
+      summary: 'Document marked as reviewed after first opening',
+      details: { fields: ['reviewState'], reason: 'first-open' },
+    });
+
+    return { isNew: updated.isNew, updatedAt: updated.updatedAt };
   }
 
   async queueArchive(ownerUuid: string, uuid: string) {
@@ -996,14 +1045,24 @@ export class DocumentService {
   }
 
   async setMetadata(ownerUuid: string, uuid: string, input: SetDocumentMetadataInput) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+
     const metadata = await this.metadata.setDocumentMetadata(ownerUuid, uuid, input);
     if (metadata) {
-      await this.documents.update(uuid, { isNew: false });
+      const clearNewMarker = await this.shouldClearNewMarkerOnMetadataSave();
+      const reviewStateChanged = clearNewMarker && document.isNew;
+      if (reviewStateChanged) {
+        await this.documents.update(uuid, { isNew: false });
+      }
       this.eventEmitter.emit('inbox.changed', {
         reason: 'document-reviewed',
         documentUuids: [uuid],
       });
       const fields = this.metadataFields(input);
+      if (reviewStateChanged) fields.push('reviewState');
       if (fields.length > 0) {
         await this.recordAudit({
           documentUuid: uuid,
@@ -1017,6 +1076,28 @@ export class DocumentService {
       }
     }
     return metadata;
+  }
+
+  private async shouldClearNewMarkerOnMetadataSave(): Promise<boolean> {
+    return (await this.reviewStateClearPolicy()) === 'metadata';
+  }
+
+  private async shouldClearNewMarkerOnOpen(): Promise<boolean> {
+    return (await this.reviewStateClearPolicy()) === 'open';
+  }
+
+  private async reviewStateClearPolicy(): Promise<'metadata' | 'open'> {
+    try {
+      const value = await this.settings.get('documents.reviewState.clearOn', 'metadata');
+      return value?.trim() === 'open' ? 'open' : 'metadata';
+    } catch (error) {
+      this.logger.warn(
+        `Unable to read new-document marker policy; defaulting to metadata save: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return 'metadata';
+    }
   }
 
   async applySuggestionToEmptyFields(

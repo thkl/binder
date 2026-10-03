@@ -127,11 +127,13 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   private processingRefreshRun = 0;
   private readonly processingRefreshIntervalMs = 2_000;
 
+  private lastDocumentChangeRevision = 0;
   private readonly documentChangeEffect = effect(() => {
-    const documentUuids = this.inbox.changedDocumentUuids();
-    if (documentUuids.length > 0) {
-      void this.documents.refreshDocuments(documentUuids);
-    }
+    const revision = this.inbox.documentChangeRevision();
+    if (revision === 0 || revision === this.lastDocumentChangeRevision) return;
+
+    this.lastDocumentChangeRevision = revision;
+    void this.refreshDocumentView();
   });
 
   readonly drawerDocument = computed(() => {
@@ -195,6 +197,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    this.lastDocumentChangeRevision = this.inbox.documentChangeRevision();
     this.unassignedFolderSelected.set(false);
     this.newDocumentsSelected.set(false);
     this.folders.select(null);
@@ -683,6 +686,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.drawerMode.set('analysis');
     this.drawerDocumentSnapshot.set(this.findDocument(uuid));
     this.drawerDocumentUuid.set(uuid);
+    void this.documents.markOpened(uuid);
   }
 
   toggleMetadata(uuid: string): void {
@@ -694,6 +698,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.drawerMode.set('analysis');
     this.drawerDocumentSnapshot.set(this.findDocument(uuid));
     this.drawerDocumentUuid.set(uuid);
+    void this.documents.markOpened(uuid);
   }
 
   private canLeaveMetadata(): boolean {
@@ -805,6 +810,11 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   private findDocument(uuid: string): Document | null {
     return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
+  }
+
+  private async refreshDocumentView(): Promise<void> {
+    await this.documents.refreshCurrentPage();
+    this.rememberCurrentFolderPage();
   }
 
   private async loadFolderPage(

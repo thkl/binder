@@ -171,6 +171,12 @@ export const DocumentDeleteResponseSchema = z.object({
 });
 export type DocumentDeleteResponse = z.infer<typeof DocumentDeleteResponseSchema>;
 
+export const DocumentOpenResponseSchema = z.object({
+  isNew: z.boolean(),
+  updatedAt: z.iso.datetime(),
+});
+export type DocumentOpenResponse = z.infer<typeof DocumentOpenResponseSchema>;
+
 export const FolderNodeSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid(),

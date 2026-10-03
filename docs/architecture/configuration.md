@@ -29,6 +29,7 @@ The following settings are seeded into the `settings` table and managed through 
 - `maintenance.storageConsistency.enabled`
 - `maintenance.storageConsistency.schedule`
 - `documents.maxUploadBytes`
+- `documents.reviewState.clearOn` (`metadata` or `open`)
 - `documents.pdfa.enabled`
 - `pipeline.pollIntervalMs`
 - `pipeline.lockTimeoutMs`

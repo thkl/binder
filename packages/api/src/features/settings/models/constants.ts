@@ -351,6 +351,17 @@ export const settingsMap: SettingsMapItem[] = [
     section: 'documents',
   },
   {
+    key: 'documents.reviewState.clearOn',
+    valueFrom: 'documents.reviewState.clearOn',
+    encrypted: false,
+    default: 'metadata',
+    label: 'Clear the new-document marker after',
+    type: 'select',
+    required: true,
+    options: ['metadata', 'open'],
+    section: 'documents',
+  },
+  {
     key: 'documents.pdfa.enabled',
     valueFrom: 'documents.pdfa.enabled',
     encrypted: false,

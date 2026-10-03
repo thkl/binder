@@ -31,6 +31,13 @@ GET  /api/v1/documents/:uuid/extracted-text
 
 Document titles are editable presentation metadata; the original filename remains immutable for audit and storage purposes.
 
+The new-document marker is controlled by the database setting
+`documents.reviewState.clearOn`. The default `metadata` clears it when a user
+saves metadata or a title. The `open` option clears it when the user opens the
+document for the first time. Explicitly marking a document as reviewed always
+clears the marker, regardless of this setting. Opening is an explicit,
+ownership-protected API action so downloading a file does not mark it as read.
+
 The extracted text endpoint is ownership-protected and returns the combined text plus page boundaries. The metadata editor loads it lazily in a second tab next to the thumbnail so users can copy text such as issuer details without increasing the initial metadata-panel request cost.
 
 The document metadata endpoint accepts document type, category, tag UUIDs, and a `custom` object. Every vocabulary UUID and custom field key is checked against the active system or personal metadata available to the authenticated owner.

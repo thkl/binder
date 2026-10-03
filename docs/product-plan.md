@@ -179,13 +179,20 @@ worker setting and run automatically after text extraction when enabled.
   - Offer fill-empty, skip-existing, and replace-selected policies.
   - Store each successful operation as an immutable metadata change set so it can be rolled back safely.
 
-### P4 — document history and companion clients
+### P4 — document history, splitting, and companion clients
 
 - Add document version families so a newly imported document can be linked to
   an existing document as a new version without overwriting either original.
 - Provide a manual version-link action from the document list, inbox, and
   metadata view, with a visible version timeline and access to every stored
   file.
+- Split documents non-destructively by extracting a page range or all pages
+  from page X onward into a new document linked to the source's version
+  family. The original document remains unchanged until an explicit version
+  or replacement decision is made.
+- Define how split-document titles, metadata, folder links, AI suggestions,
+  audit events, and pipeline processing are copied or reset when a derived
+  document is created.
 - Suggest possible version links using normalized original filenames and other
   non-destructive signals, but never link or merge documents automatically
   without user confirmation.

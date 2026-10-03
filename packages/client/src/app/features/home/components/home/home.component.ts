@@ -320,6 +320,7 @@ export class HomeComponent {
     this.drawerMode.set('analysis');
     this.drawerDocumentSnapshot.set(this.findDocument(uuid));
     this.drawerDocumentUuid.set(uuid);
+    void this.documents.markOpened(uuid);
   }
 
   openMetadata(event: Event, uuid: string): void {
@@ -331,6 +332,7 @@ export class HomeComponent {
     this.drawerMode.set('analysis');
     this.drawerDocumentSnapshot.set(this.findDocument(uuid));
     this.drawerDocumentUuid.set(uuid);
+    void this.documents.markOpened(uuid);
   }
 
   requestCloseDrawer(): void {
@@ -389,6 +391,7 @@ export class HomeComponent {
       this.drawerMode.set('analysis');
       this.drawerDocumentSnapshot.set(document);
       this.drawerDocumentUuid.set(document.uuid);
+      void this.documents.markOpened(document.uuid);
     } finally {
       this.duplicateDocumentLoading.set(false);
     }

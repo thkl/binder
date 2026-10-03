@@ -368,6 +368,11 @@
                "required": [
                     "settings"
                ]
+          },
+          "55": {
+               "required": [
+                    "settings"
+               ]
           }
      }
 }
