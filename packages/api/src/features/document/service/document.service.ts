@@ -389,6 +389,14 @@ export class DocumentService {
     });
   }
 
+  async documentChangeToken(ownerUuid: string): Promise<{ token: string; updatedAt: Date | null }> {
+    return this.documents.changeToken(ownerUuid);
+  }
+
+  async changedDocumentUuidsSince(ownerUuid: string, since: Date): Promise<string[]> {
+    return this.documents.findChangedUuidsSince(ownerUuid, since);
+  }
+
   async bulkAction(ownerUuid: string, input: DocumentBulkActionInput) {
     const items = [];
 
@@ -928,7 +936,10 @@ export class DocumentService {
       checksumSha256: updated.checksumSha256,
       sizeBytes: Number(updated.sizeBytes),
     });
-    this.eventEmitter.emit('inbox.changed', { reason: 'document-requeued' });
+    this.eventEmitter.emit('inbox.changed', {
+      reason: 'document-requeued',
+      documentUuids: [updated.uuid],
+    });
     await this.recordAudit({
       documentUuid: uuid,
       ownerUuid,

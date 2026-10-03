@@ -216,6 +216,18 @@ export class DocumentsService {
     }
   }
 
+  async refreshDocument(uuid: string): Promise<BinderDocument | null> {
+    const document = await this.loadDocument(uuid);
+    if (document) {
+      this.updateDocumentInPage(document);
+    }
+    return document;
+  }
+
+  async refreshDocuments(uuids: string[]): Promise<void> {
+    await Promise.all(uuids.map((uuid) => this.refreshDocument(uuid)));
+  }
+
   private updateDocumentInPage(document: BinderDocument): void {
     this.page.update((page) =>
       page

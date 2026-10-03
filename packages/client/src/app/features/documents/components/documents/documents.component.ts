@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   OnDestroy,
   OnInit,
@@ -37,6 +38,7 @@ import type {
 import { DocumentListQuerySchema } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
+import { InboxService } from '../../../inbox/services/inbox.service';
 
 type DocumentViewMode = 'list' | 'icons';
 type DocumentGroupMode = DocumentGroupBy;
@@ -75,6 +77,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly folders = inject(FoldersService);
   readonly savedSearches = inject(SavedSearchService);
   readonly metadata = inject(MetadataService);
+  readonly inbox = inject(InboxService);
   private readonly i18n = inject(I18nService);
   private readonly document = inject(DOCUMENT);
   readonly thumbnailFailed = signal<Record<string, boolean>>({});
@@ -120,6 +123,16 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   private readonly unassignedFolderKey = '__unassigned-documents__';
   private readonly newDocumentsFolderKey = '__new-documents__';
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  private processingRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private processingRefreshRun = 0;
+  private readonly processingRefreshIntervalMs = 2_000;
+
+  private readonly documentChangeEffect = effect(() => {
+    const documentUuids = this.inbox.changedDocumentUuids();
+    if (documentUuids.length > 0) {
+      void this.documents.refreshDocuments(documentUuids);
+    }
+  });
 
   readonly drawerDocument = computed(() => {
     const uuid = this.drawerDocumentUuid();
@@ -198,6 +211,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.stopProcessingRefresh();
   }
 
   async selectFolder(folderUuid: string | null): Promise<void> {
@@ -426,16 +440,66 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   async runBulkAction(action: DocumentBulkAction): Promise<void> {
     if (this.selectedCount() === 0 || !this.canLeaveMetadata()) return;
 
+    const documentUuids = [...this.selectedDocumentUuids()];
     this.bulkActionInProgress.set(action);
     this.bulkActionResult.set(null);
     const result = await this.documents.bulkAction({
-      documentUuids: [...this.selectedDocumentUuids()],
+      documentUuids,
       action,
     });
     this.bulkActionInProgress.set(null);
     if (result) {
       this.selectedDocumentUuids.set(new Set());
       this.bulkActionResult.set(result);
+      this.startProcessingRefresh(documentUuids);
+    }
+  }
+
+  private startProcessingRefresh(documentUuids: string[]): void {
+    this.stopProcessingRefresh();
+
+    if (documentUuids.length === 0) return;
+
+    const run = this.processingRefreshRun;
+    void this.refreshDocumentsUntilComplete(new Set(documentUuids), run);
+  }
+
+  private async refreshDocumentsUntilComplete(
+    documentUuids: Set<string>,
+    run: number,
+  ): Promise<void> {
+    while (documentUuids.size > 0 && run === this.processingRefreshRun) {
+      const results = await Promise.all(
+        [...documentUuids].map(async (uuid) => ({
+          uuid,
+          document: await this.documents.refreshDocument(uuid),
+        })),
+      );
+
+      for (const result of results) {
+        if (result.document && this.isProcessingComplete(result.document.status)) {
+          documentUuids.delete(result.uuid);
+        }
+      }
+
+      if (documentUuids.size === 0 || run !== this.processingRefreshRun) return;
+
+      await new Promise<void>((resolve) => {
+        this.processingRefreshTimer = window.setTimeout(resolve, this.processingRefreshIntervalMs);
+      });
+      this.processingRefreshTimer = null;
+    }
+  }
+
+  private isProcessingComplete(status: DocumentStatus): boolean {
+    return status === 'ready' || status === 'failed' || status === 'quarantined';
+  }
+
+  private stopProcessingRefresh(): void {
+    this.processingRefreshRun += 1;
+    if (this.processingRefreshTimer) {
+      clearTimeout(this.processingRefreshTimer);
+      this.processingRefreshTimer = null;
     }
   }
 

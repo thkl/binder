@@ -15,6 +15,7 @@ import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { InboxService } from '../service/inbox.service';
 import { SkipThrottle } from '@nestjs/throttler';
+import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
 
 @Controller('inbox')
 @UseGuards(AuthenticationGuard, RolesGuard)
@@ -24,8 +25,8 @@ export class InboxController {
 
   @Sse('events')
   @SkipThrottle()
-  events(): Observable<MessageEvent> {
-    return this.inbox.events();
+  events(@CurrentUser() user: ScopedUser): Observable<MessageEvent> {
+    return this.inbox.events(user.userId);
   }
 
   @Get()

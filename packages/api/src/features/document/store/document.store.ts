@@ -45,6 +45,38 @@ export class DocumentStore extends BaseCrudStore<Document> {
     });
   }
 
+  async changeToken(ownerUuid: string): Promise<{ token: string; updatedAt: Date | null }> {
+    const latest = await this.model.findOne({
+      where: { ownerUuid },
+      attributes: ['uuid', 'updatedAt'],
+      order: [
+        ['updatedAt', 'DESC'],
+        ['uuid', 'DESC'],
+      ],
+    });
+
+    if (!latest) {
+      return { token: 'empty', updatedAt: null };
+    }
+
+    return {
+      token: `${latest.uuid}:${latest.updatedAt.toISOString()}`,
+      updatedAt: latest.updatedAt,
+    };
+  }
+
+  async findChangedUuidsSince(ownerUuid: string, since: Date): Promise<string[]> {
+    const changed = await this.model.findAll({
+      where: {
+        ownerUuid,
+        updatedAt: { [Op.gte]: since },
+      },
+      attributes: ['uuid'],
+    });
+
+    return changed.map((document) => document.uuid);
+  }
+
   async findOwnedAll(ownerUuid: string, query: DocumentListQuery): Promise<Document[]> {
     const where = await this.createOwnedWhere(ownerUuid, query);
     const sortDirection = query.direction.toUpperCase() as 'ASC' | 'DESC';

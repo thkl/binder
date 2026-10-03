@@ -585,6 +585,7 @@ export const InboxChangeEventSchema = z.object({
   type: z.literal('inbox.changed'),
   occurredAt: z.iso.datetime(),
   reason: z.string().max(100).optional(),
+  documentUuids: z.array(z.uuid()).default([]),
 });
 export type InboxChangeEvent = z.infer<typeof InboxChangeEventSchema>;
 

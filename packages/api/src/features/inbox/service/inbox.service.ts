@@ -182,35 +182,59 @@ export class InboxService {
     return { removed };
   }
 
-  events(): Observable<MessageEvent> {
+  events(ownerUuid: string): Observable<MessageEvent> {
     return new Observable<MessageEvent>((subscriber) => {
       let lastToken: string | null = null;
+      let lastDocumentToken: string | null = null;
+      let lastDocumentUpdatedAt: Date | null = null;
       let checking = false;
 
-      const emit = (reason: string): void => {
+      const emit = (reason: string, documentUuids: string[] = []): void => {
         subscriber.next({
           data: {
             type: 'inbox.changed',
             occurredAt: new Date().toISOString(),
             reason,
+            documentUuids: [...new Set(documentUuids)],
           },
         });
       };
-      const onApplicationChange = (event: { reason?: string } = {}): void =>
-        emit(event.reason ?? 'application-change');
+      const onApplicationChange = (
+        event: { reason?: string; documentUuids?: string[] } = {},
+      ): void => emit(event.reason ?? 'application-change', event.documentUuids);
       this.eventEmitter.on('inbox.changed', onApplicationChange);
 
       const checkDatabase = async (): Promise<void> => {
         if (checking) return;
         checking = true;
         try {
-          const token = await this.items.changeToken();
+          const [token, documentChange] = await Promise.all([
+            this.items.changeToken(),
+            this.documents.documentChangeToken(ownerUuid),
+          ]);
           if (lastToken === null) {
             lastToken = token;
+            lastDocumentToken = documentChange.token;
+            lastDocumentUpdatedAt = documentChange.updatedAt;
             emit('connected');
-          } else if (token !== lastToken) {
+            return;
+          }
+
+          const documentChanged = documentChange.token !== lastDocumentToken;
+          const inboxChanged = token !== lastToken;
+          if (documentChanged || inboxChanged) {
+            let changedDocumentUuids: string[] = [];
+            if (documentChanged && lastDocumentUpdatedAt) {
+              changedDocumentUuids = await this.documents.changedDocumentUuidsSince(
+                ownerUuid,
+                lastDocumentUpdatedAt,
+              );
+            }
+
             lastToken = token;
-            emit('database-change');
+            lastDocumentToken = documentChange.token;
+            lastDocumentUpdatedAt = documentChange.updatedAt;
+            emit(documentChanged ? 'document-change' : 'database-change', changedDocumentUuids);
           }
         } finally {
           checking = false;

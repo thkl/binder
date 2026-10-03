@@ -21,6 +21,7 @@ export class InboxService {
   readonly processing = signal(false);
   readonly error = signal<string | null>(null);
   readonly newDocumentCount = signal(0);
+  readonly changedDocumentUuids = signal<string[]>([]);
   private eventSource: EventSource | null = null;
 
   constructor(private readonly http: HttpClient) {}
@@ -137,6 +138,9 @@ export class InboxService {
           change.data.type === 'inbox.changed' &&
           change.data.reason !== 'connected'
         ) {
+          if (change.data.documentUuids.length > 0) {
+            this.changedDocumentUuids.set(change.data.documentUuids);
+          }
           void this.load();
         }
       } catch {
