@@ -12,7 +12,7 @@ Issuers are only visible to their owner. The document metadata editor can create
 
 ## Worker matching
 
-After text extraction and OCR, the worker compares normalized extracted text with the owner’s existing issuers. A match requires the issuer name and receives additional confidence for matching address fields and string-valued custom fields. The worker assigns an issuer only when the best candidate clears the confidence threshold and is clearly ahead of the runner-up; it never overwrites an existing issuer assignment.
+After text extraction and OCR, the worker compares normalized extracted text with the owner’s existing issuers. A match requires the issuer name and receives additional confidence for matching address fields and string-valued custom fields. Names found only in payment or banking context (`IBAN`, `BIC`, bank details, and similar footer text) are not enough to assign an issuer; the name must appear in the document identity area or be supported by an independently matched non-financial field. The worker assigns an issuer only when the best candidate clears the confidence threshold and is clearly ahead of the runner-up; it never overwrites an existing issuer assignment.
 
 This is intentionally deterministic and local. It does not create issuer records and does not use an LLM. Unmatched or ambiguous documents remain editable in the client.
 

@@ -13,7 +13,7 @@ import { ApplicationSettingStore } from '../features/settings/store/application-
     ThrottlerModule.forRoot({
       throttlers: [
         {
-          ttl: 60000,
+          ttl: 30000,
           limit: 60,
         },
       ],

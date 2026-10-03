@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SearchService } from '../../services/search.service';
 import { DocumentsService } from '../../../documents/services/documents.service';
@@ -14,6 +21,7 @@ import { DocumentSearchQuerySchema } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { RouterLink } from '@angular/router';
 import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
+import { InboxService } from '../../../inbox/services/inbox.service';
 
 @Component({
   selector: 'binder-home',
@@ -35,6 +43,7 @@ export class HomeComponent {
   readonly documents = inject(DocumentsService);
   readonly savedSearches = inject(SavedSearchService);
   readonly i18n = inject(I18nService);
+  readonly inbox = inject(InboxService);
   readonly searchQuery = signal('');
   readonly drawerDocumentUuid = signal<string | null>(null);
   readonly drawerTab = signal<DocumentDrawerTab>('preview');
@@ -59,6 +68,17 @@ export class HomeComponent {
   readonly uploadQueueTotal = signal(0);
   readonly uploadQueueCompleted = signal(0);
   readonly uploadedCount = signal(0);
+  private lastDocumentChangeRevision = 0;
+
+  private readonly documentChangeEffect = effect(() => {
+    const revision = this.inbox.documentChangeRevision();
+    if (revision === 0 || revision === this.lastDocumentChangeRevision) return;
+
+    this.lastDocumentChangeRevision = revision;
+    if (this.search.result()) {
+      void this.reloadSearch();
+    }
+  });
 
   readonly activeSearchOptionCount = computed(() => {
     let count = 0;

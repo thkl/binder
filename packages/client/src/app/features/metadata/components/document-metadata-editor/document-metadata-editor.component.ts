@@ -63,6 +63,7 @@ export class DocumentMetadataEditorComponent {
   private readonly inputSuggestion = signal<DocumentTitleSuggestion | null>(null);
   private readonly serverSuggestion = signal<DocumentTitleSuggestion | null>(null);
   private applyingAllSuggestion = false;
+  private loadedDocumentUuid: string | null = null;
   readonly activeSuggestion = computed(() => this.inputSuggestion() ?? this.serverSuggestion());
   readonly showIssuerForm = signal(false);
   readonly editingIssuerUuid = signal<string | null>(null);
@@ -91,14 +92,21 @@ export class DocumentMetadataEditorComponent {
 
   private readonly documentInputEffect = effect(() => {
     const uuid = this.documentUuid();
-    if (uuid) {
+    const updatedAt = this.documentData()?.updatedAt;
+    if (!uuid || this.dirty()) return;
+
+    const documentChanged = this.loadedDocumentUuid !== uuid;
+    this.loadedDocumentUuid = uuid;
+    if (documentChanged) {
       this.serverSuggestion.set(null);
       this.previewTab.set('thumbnail');
       this.extractedText.set(null);
       this.extractedTextLoaded.set(false);
       this.extractedTextError.set(null);
-      void this.load(uuid);
     }
+
+    void updatedAt;
+    void this.load(uuid);
   });
 
   private readonly suggestionInputEffect = effect(() => {
@@ -119,7 +127,7 @@ export class DocumentMetadataEditorComponent {
     if (uuid !== this.documentUuid()) return;
     if (current) this.applyMetadata(current);
     else this.markClean();
-    this.folderOptions.set(allFolders.sort((fa,fb)=>fa.name.localeCompare(fb.name)));
+    this.folderOptions.set(allFolders.sort((fa, fb) => fa.name.localeCompare(fb.name)));
     this.applyFolderSelection(currentFolders);
     this.loaded.set(true);
   }

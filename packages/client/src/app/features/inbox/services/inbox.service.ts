@@ -22,6 +22,7 @@ export class InboxService {
   readonly error = signal<string | null>(null);
   readonly newDocumentCount = signal(0);
   readonly changedDocumentUuids = signal<string[]>([]);
+  readonly documentChangeRevision = signal(0);
   private eventSource: EventSource | null = null;
 
   constructor(private readonly http: HttpClient) {}
@@ -140,6 +141,7 @@ export class InboxService {
         ) {
           if (change.data.documentUuids.length > 0) {
             this.changedDocumentUuids.set(change.data.documentUuids);
+            this.documentChangeRevision.update((revision) => revision + 1);
           }
           void this.load();
         }

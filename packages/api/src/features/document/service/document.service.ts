@@ -601,10 +601,14 @@ export class DocumentService {
     if (!document) {
       throw new NotFoundException('Document not found');
     }
-    const calendarEvent = await this.calendarEvents.findOwnedByDocument(ownerUuid, uuid);
+
+    const [summaries, calendarEvent] = await Promise.all([
+      this.metadata.getDocumentMetadataSummaries(ownerUuid, [document]),
+      this.calendarEvents.findOwnedByDocument(ownerUuid, uuid),
+    ]);
     return this.toDocumentResponse(
       document,
-      undefined,
+      summaries.get(uuid),
       calendarEvent ? this.calendarUrl(uuid) : null,
     );
   }
