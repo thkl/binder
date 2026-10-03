@@ -1010,6 +1010,7 @@ export const AuthenticatedUserSchema = z.object({
   username: z.string().min(1),
   isAdmin: z.boolean(),
   mustChangePassword: z.boolean(),
+  gravatarUrl: z.url().nullable().default(null),
 });
 
 export type AuthenticatedUser = z.infer<typeof AuthenticatedUserSchema>;

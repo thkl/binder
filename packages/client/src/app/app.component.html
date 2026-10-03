@@ -149,6 +149,29 @@
             DE
           </button>
         </div>
+        <div
+          class="user-identity"
+          [attr.title]="auth.user()?.username"
+          [attr.aria-label]="auth.user()?.username"
+        >
+          @if (gravatarUrl(); as avatarUrl) {
+            <img
+              class="user-avatar"
+              [src]="avatarUrl"
+              [alt]="auth.user()?.username ?? ''"
+              width="34"
+              height="34"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+              (error)="avatarLoadFailed()"
+            />
+          } @else {
+            <span class="user-avatar user-avatar-fallback" aria-hidden="true">
+              {{ auth.user()?.username?.slice(0, 1)?.toUpperCase() }}
+            </span>
+          }
+          <span class="user-name">{{ auth.user()?.username }}</span>
+        </div>
         <button class="secondary" type="button" (click)="logout()">{{ 'nav.signOut' | t }}</button>
       </div>
     </header>

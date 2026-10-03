@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   HostListener,
   OnInit,
@@ -34,6 +35,12 @@ type NavigationMenu = 'documents' | 'settings';
 })
 export class AppComponent implements OnInit {
   readonly openMenu = signal<NavigationMenu | null>(null);
+  private readonly avatarFailedFor = signal<string | null>(null);
+  readonly gravatarUrl = computed(() => {
+    const user = this.auth.user();
+    if (!user || this.avatarFailedFor() === user.uuid) return null;
+    return user.gravatarUrl;
+  });
 
   constructor(
     readonly auth: AuthService,
@@ -68,6 +75,11 @@ export class AppComponent implements OnInit {
 
   setLanguage(language: 'en' | 'de'): void {
     this.i18n.setLanguage(language);
+  }
+
+  avatarLoadFailed(): void {
+    const userUuid = this.auth.user()?.uuid;
+    if (userUuid) this.avatarFailedFor.set(userUuid);
   }
 
   toggleMenu(menu: NavigationMenu, event: Event): void {

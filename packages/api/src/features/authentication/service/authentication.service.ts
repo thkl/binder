@@ -12,6 +12,7 @@ import { UserStore } from '../stores/user.store';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { User } from '../models/user.entity';
 import { ScopedUser } from '../decorators/current-user.decorator';
+import { createGravatarUrl } from './gravatar';
 
 @Injectable()
 export class AuthenticationService {
@@ -96,6 +97,7 @@ export class AuthenticationService {
       username: user.username,
       isAdmin: user.isAdmin,
       mustChangePassword: user.mustChangePassword,
+      gravatarUrl: createGravatarUrl(user.email),
     };
   }
 

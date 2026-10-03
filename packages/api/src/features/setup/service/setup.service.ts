@@ -25,6 +25,7 @@ import { SetupAlreadyCompletedError, SetupStateStore } from '../store/setup-stat
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { SSOAuthenticationService } from '../../authentication/service/ssoauthentication.service';
 import { PipelineWorkerHeartbeatStore } from '../../pipeline/store/pipeline-worker-heartbeat.store';
+import { createGravatarUrl } from '../../authentication/service/gravatar';
 
 interface SetupPaths {
   appRoot: string;
@@ -78,6 +79,7 @@ export class SetupService {
         username: user.username,
         isAdmin: user.isAdmin,
         mustChangePassword: user.mustChangePassword,
+        gravatarUrl: createGravatarUrl(user.email),
       });
     } catch (error) {
       if (error instanceof SetupAlreadyCompletedError) {

@@ -103,6 +103,42 @@ h1 {
   background: var(--cyan);
 }
 
+.user-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 12rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.user-avatar {
+  display: block;
+  width: 2.15rem;
+  height: 2.15rem;
+  flex: 0 0 2.15rem;
+  border: 1px solid rgba(154, 226, 245, 0.45);
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(97, 215, 244, 0.12);
+}
+
+.user-avatar-fallback {
+  display: grid;
+  place-items: center;
+  color: #061326;
+  background: var(--cyan);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.user-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .nav-link {
   padding: 0.55rem 0.7rem;
   border-radius: 0.55rem;
