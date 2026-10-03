@@ -356,6 +356,7 @@ export class HomeComponent {
   async metadataSaved(): Promise<void> {
     this.metadataDirty.set(false);
     await this.reloadSearch();
+    await this.inbox.loadNewDocumentCount();
   }
 
   async titleSuggestionAccepted(): Promise<void> {

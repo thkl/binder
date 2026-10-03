@@ -197,7 +197,10 @@ export class DocumentService {
         lastError: null,
         aiError: null,
       });
-      this.eventEmitter.emit('inbox.changed', { reason: 'manual-upload' });
+      this.eventEmitter.emit('inbox.changed', {
+        reason: 'manual-upload',
+        documentUuids: [documentUuid],
+      });
     } catch (error) {
       this.logger.error(
         `Unable to add manually uploaded document ${documentUuid} to the inbox`,
@@ -414,7 +417,10 @@ export class DocumentService {
           const wasNew = document.isNew;
           const updated = await this.documents.update(uuid, { isNew: false });
           if (wasNew && updated?.isNew === false) {
-            this.eventEmitter.emit('inbox.changed', { reason: 'document-reviewed' });
+            this.eventEmitter.emit('inbox.changed', {
+              reason: 'document-reviewed',
+              documentUuids: [uuid],
+            });
             await this.recordAudit({
               documentUuid: uuid,
               ownerUuid,
@@ -712,7 +718,10 @@ export class DocumentService {
     const changed = document.title !== input.title;
     const updated = await this.documents.update(uuid, { title: input.title, isNew: false });
     if (changed) {
-      this.eventEmitter.emit('inbox.changed', { reason: 'document-reviewed' });
+      this.eventEmitter.emit('inbox.changed', {
+        reason: 'document-reviewed',
+        documentUuids: [uuid],
+      });
       await this.recordAudit({
         documentUuid: uuid,
         ownerUuid,
@@ -990,7 +999,10 @@ export class DocumentService {
     const metadata = await this.metadata.setDocumentMetadata(ownerUuid, uuid, input);
     if (metadata) {
       await this.documents.update(uuid, { isNew: false });
-      this.eventEmitter.emit('inbox.changed', { reason: 'document-reviewed' });
+      this.eventEmitter.emit('inbox.changed', {
+        reason: 'document-reviewed',
+        documentUuids: [uuid],
+      });
       const fields = this.metadataFields(input);
       if (fields.length > 0) {
         await this.recordAudit({

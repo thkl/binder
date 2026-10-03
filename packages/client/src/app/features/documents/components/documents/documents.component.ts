@@ -451,6 +451,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     if (result) {
       this.selectedDocumentUuids.set(new Set());
       this.bulkActionResult.set(result);
+      if (action === 'mark-reviewed') {
+        await this.inbox.loadNewDocumentCount();
+      }
       this.startProcessingRefresh(documentUuids);
     }
   }
@@ -582,6 +585,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   async metadataSaved(uuid: string): Promise<void> {
     this.markDocumentReviewed(uuid);
     await this.documents.load();
+    await this.inbox.loadNewDocumentCount();
   }
 
   async requeueDocument(uuid: string): Promise<void> {
@@ -700,7 +704,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   async renameDocument(uuid: string, event: Event): Promise<void> {
     const title = (event.target as HTMLInputElement).value.trim();
-    if (title) await this.documents.updateTitle(uuid, title);
+    if (title && (await this.documents.updateTitle(uuid, title))) {
+      await this.inbox.loadNewDocumentCount();
+    }
   }
 
   startInlineTitleEdit(uuid: string, event: Event): void {

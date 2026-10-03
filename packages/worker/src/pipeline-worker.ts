@@ -2,7 +2,14 @@ import { randomUUID } from 'node:crypto';
 import { Op, Transaction } from 'sequelize';
 import { config } from './config.js';
 import { sequelize } from './database.js';
-import { Document, DocumentAuditEvent, PipelineJob, PipelineJobEvent, JobKind } from './models.js';
+import {
+  Document,
+  DocumentAuditEvent,
+  InboxItem,
+  PipelineJob,
+  PipelineJobEvent,
+  JobKind,
+} from './models.js';
 import { logger } from './logger.js';
 import { createThumbnail, writeDerivedText } from './storage.js';
 import { extractPdfPages } from './extraction.js';
@@ -450,6 +457,7 @@ async function completeJob(job: ClaimedJob, needsOcr: boolean): Promise<void> {
       );
       await queueFollowup(transaction, job, 'ocr', 'No usable text layer found; queued OCR');
     } else if (job.kind === 'text-extraction' || job.kind === 'ocr') {
+      await resetInboxAnalysis(transaction, job);
       await Document.update(
         { status: 'processing' },
         { where: { uuid: job.documentUuid }, transaction },
@@ -481,6 +489,34 @@ async function completeJob(job: ClaimedJob, needsOcr: boolean): Promise<void> {
     kind: job.kind,
     needsOcr,
   });
+}
+
+async function resetInboxAnalysis(transaction: Transaction, job: ClaimedJob): Promise<void> {
+  const [updated] = await InboxItem.update(
+    {
+      status: 'imported',
+      aiStatus: 'pending',
+      aiSuggestion: null,
+      autoApplied: false,
+      aiError: null,
+      lastError: null,
+    },
+    {
+      where: {
+        documentUuid: job.documentUuid,
+        status: 'imported',
+      },
+      transaction,
+    },
+  );
+
+  if (updated > 0) {
+    logger.info('Reset automatic AI analysis after document text was refreshed', {
+      documentUuid: job.documentUuid,
+      jobUuid: job.jobUuid,
+      jobKind: job.kind,
+    });
+  }
 }
 
 async function completePdfaJob(job: ClaimedJob, archiveKey: string): Promise<void> {

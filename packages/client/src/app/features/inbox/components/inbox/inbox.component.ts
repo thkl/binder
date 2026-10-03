@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  OnDestroy,
-  OnInit,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { InboxAiStatus, InboxItemStatus, InboxQueueItem } from '@binder/common';
@@ -20,7 +13,7 @@ import { InboxService } from '../../services/inbox.service';
   styleUrl: './inbox.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InboxComponent implements OnDestroy, OnInit {
+export class InboxComponent implements OnInit {
   readonly inbox = inject(InboxService);
   readonly i18n = inject(I18nService);
   readonly newCount = computed(
@@ -41,11 +34,6 @@ export class InboxComponent implements OnDestroy, OnInit {
 
   ngOnInit(): void {
     void this.inbox.load();
-    this.inbox.startLiveUpdates();
-  }
-
-  ngOnDestroy(): void {
-    this.inbox.stopLiveUpdates();
   }
 
   async processAllWithAi(): Promise<void> {
