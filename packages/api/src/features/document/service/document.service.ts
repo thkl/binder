@@ -907,6 +907,14 @@ export class DocumentService {
     }
 
     const job = await this.pipeline.enqueue(updated.uuid, ownerUuid, 'malware-scan');
+    await this.inboxItems.queueDocumentForAnalysis({
+      ownerUuid,
+      documentUuid: updated.uuid,
+      originalFilename: updated.originalFilename,
+      checksumSha256: updated.checksumSha256,
+      sizeBytes: Number(updated.sizeBytes),
+    });
+    this.eventEmitter.emit('inbox.changed', { reason: 'document-requeued' });
     await this.recordAudit({
       documentUuid: uuid,
       ownerUuid,

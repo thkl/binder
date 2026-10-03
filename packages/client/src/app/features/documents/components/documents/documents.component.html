@@ -71,8 +71,10 @@
   <div class="documents-layout">
     <binder-folder-tree
       [unassignedSelected]="unassignedFolderSelected()"
+      [newDocumentsSelected]="newDocumentsSelected()"
       (folderSelected)="selectFolder($event)"
       (unassignedRequested)="selectUnassigned()"
+      (newDocumentsRequested)="selectNewDocuments()"
     />
 
     <section class="document-card glass-card">

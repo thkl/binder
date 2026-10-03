@@ -331,7 +331,7 @@
   background: rgba(157, 190, 232, 0.14);
 }
 
-.unassigned-folder-row {
+.virtual-folder-row {
   display: flex;
   width: 100%;
   min-height: 2.75rem;
@@ -348,9 +348,9 @@
   text-align: left;
 }
 
-.unassigned-folder-row:hover,
-.unassigned-folder-row:focus-visible,
-.unassigned-folder-row.selected {
+.virtual-folder-row:hover,
+.virtual-folder-row:focus-visible,
+.virtual-folder-row.selected {
   color: #e5f1ff;
   background: rgba(97, 215, 244, 0.13);
   outline: none;
@@ -365,7 +365,17 @@
   color: var(--cyan);
 }
 
-.folder-unassigned-icon svg {
+.folder-new-icon {
+  display: grid;
+  flex: 0 0 1.55rem;
+  width: 1.55rem;
+  height: 1.55rem;
+  place-items: center;
+  color: #f2ca78;
+}
+
+.folder-unassigned-icon svg,
+.folder-new-icon svg {
   width: 1.05rem;
   height: 1.05rem;
   fill: none;

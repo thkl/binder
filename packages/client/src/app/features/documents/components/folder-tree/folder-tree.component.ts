@@ -13,7 +13,9 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
 export class FolderTreeComponent {
   readonly folderSelected = output<string | null>();
   readonly unassignedRequested = output<void>();
+  readonly newDocumentsRequested = output<void>();
   readonly unassignedSelected = input(false);
+  readonly newDocumentsSelected = input(false);
   readonly i18n = inject(I18nService);
   readonly creatingParentUuid = signal<string | null | undefined>(undefined);
   readonly createName = signal('');
@@ -33,6 +35,10 @@ export class FolderTreeComponent {
 
   selectUnassigned(): void {
     this.unassignedRequested.emit();
+  }
+
+  selectNewDocuments(): void {
+    this.newDocumentsRequested.emit();
   }
 
   beginCreate(parentUuid: string | null): void {

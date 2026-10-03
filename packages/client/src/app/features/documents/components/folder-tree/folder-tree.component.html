@@ -64,7 +64,9 @@
         class="folder-root-row"
         type="button"
         role="treeitem"
-        [class.selected]="folders.selectedFolderUuid() === null"
+        [class.selected]="
+          folders.selectedFolderUuid() === null && !unassignedSelected() && !newDocumentsSelected()
+        "
         (click)="select(null)"
       >
         <span class="folder-disclosure empty" aria-hidden="true"></span>
@@ -157,7 +159,7 @@
 
     <div class="folder-tree-divider" aria-hidden="true"></div>
     <button
-      class="unassigned-folder-row"
+      class="virtual-folder-row"
       type="button"
       [class.selected]="unassignedSelected()"
       (click)="selectUnassigned()"
@@ -170,6 +172,23 @@
         </svg>
       </span>
       <span class="folder-label" [attr.lang]="i18n.language()">{{ 'folders.unassigned' | t }}</span>
+    </button>
+    <button
+      class="virtual-folder-row"
+      type="button"
+      [class.selected]="newDocumentsSelected()"
+      (click)="selectNewDocuments()"
+      [attr.aria-label]="'folders.newDocuments' | t"
+    >
+      <span class="folder-new-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
+          <path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7z" />
+        </svg>
+      </span>
+      <span class="folder-label" [attr.lang]="i18n.language()">{{
+        'folders.newDocuments' | t
+      }}</span>
     </button>
   </div>
 </aside>

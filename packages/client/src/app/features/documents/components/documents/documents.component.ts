@@ -87,6 +87,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly drawerMode = signal<DocumentDrawerMode>('analysis');
   readonly drawerDocumentSnapshot = signal<Document | null>(null);
   readonly unassignedFolderSelected = signal(false);
+  readonly newDocumentsSelected = signal(false);
   readonly titleSuggestions = signal<Record<string, DocumentTitleSuggestion>>({});
   readonly titleSuggestionLoading = signal<Record<string, boolean>>({});
   readonly requeueLoading = signal<Record<string, boolean>>({});
@@ -117,6 +118,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   private readonly folderPages = signal<Record<string, number>>({});
   private readonly allDocumentsFolderKey = '__all-documents__';
   private readonly unassignedFolderKey = '__unassigned-documents__';
+  private readonly newDocumentsFolderKey = '__new-documents__';
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly drawerDocument = computed(() => {
@@ -143,7 +145,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   );
   readonly exportScope = computed<'selected' | 'filtered' | 'folder' | null>(() => {
     if (this.selectedCount() > 0) return 'selected';
-    if (this.unassignedFolderSelected()) return 'filtered';
+    if (this.unassignedFolderSelected() || this.newDocumentsSelected()) return 'filtered';
     if (this.hasActiveFilters()) return 'filtered';
     return this.folders.selectedFolderUuid() ? 'folder' : null;
   });
@@ -181,6 +183,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.unassignedFolderSelected.set(false);
+    this.newDocumentsSelected.set(false);
     this.folders.select(null);
     void this.folders.loadChildren(null);
     void this.folders.listAll();
@@ -204,6 +207,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.selectedSavedSearchUuid.set(null);
     this.rememberCurrentFolderPage();
     this.unassignedFolderSelected.set(false);
+    this.newDocumentsSelected.set(false);
     this.folders.select(folderUuid);
     await this.loadFolderPage(folderUuid, false);
   }
@@ -215,8 +219,22 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.selectedSavedSearchUuid.set(null);
     this.rememberCurrentFolderPage();
     this.unassignedFolderSelected.set(true);
+    this.newDocumentsSelected.set(false);
     this.folders.select(null);
     await this.loadFolderPage(null, true);
+  }
+
+  async selectNewDocuments(): Promise<void> {
+    if (!this.canLeaveMetadata()) return;
+
+    this.activeFilterMenu.set(null);
+    this.selectedSavedSearchUuid.set(null);
+    this.rememberCurrentFolderPage();
+    this.unassignedFolderSelected.set(false);
+    this.newDocumentsSelected.set(true);
+    this.filterValues.update((current) => ({ ...current, reviewState: undefined }));
+    this.folders.select(null);
+    await this.loadFolderPage(null, false, true);
   }
 
   async exportCurrentScope(): Promise<void> {
@@ -262,6 +280,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   applyFilter(key: DocumentFilterKey, values: string[] | undefined): void {
     if (!this.canLeaveMetadata()) return;
 
+    if (key === 'reviewState') {
+      this.newDocumentsSelected.set(false);
+    }
     this.filterValues.update((current) => ({ ...current, [key]: values }));
     this.selectedSavedSearchUuid.set(null);
     this.applyListQuery(this.buildFilterQuery());
@@ -654,7 +675,13 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.titleSuggestionLoading.update((current) => ({ ...current, [uuid]: false }));
     if (suggestion) {
       this.titleSuggestions.update((current) => ({ ...current, [uuid]: suggestion }));
-      if (this.drawerDocumentUuid() !== uuid && !this.canLeaveMetadata()) return;
+
+      // When the document is already open in the analysis drawer, keep the
+      // current view. The updated suggestion is passed into the drawer and
+      // its metadata tab can be opened deliberately by the user.
+      if (this.drawerDocumentUuid() === uuid) return;
+      if (!this.canLeaveMetadata()) return;
+
       this.drawerTab.set('metadata');
       this.drawerMode.set('metadata');
       this.drawerDocumentSnapshot.set(this.findDocument(uuid));
@@ -710,13 +737,19 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     return this.documents.page()?.items.find((document) => document.uuid === uuid) ?? null;
   }
 
-  private async loadFolderPage(folderUuid: string | null, unassigned: boolean): Promise<void> {
-    const rememberedPage = this.folderPages()[this.folderPageKey(folderUuid, unassigned)] ?? 1;
+  private async loadFolderPage(
+    folderUuid: string | null,
+    unassigned: boolean,
+    newDocuments = false,
+  ): Promise<void> {
+    const rememberedPage =
+      this.folderPages()[this.folderPageKey(folderUuid, unassigned, newDocuments)] ?? 1;
 
     await this.documents.load({
       page: rememberedPage,
       folderUuid: folderUuid ?? undefined,
       unassigned,
+      reviewStates: newDocuments ? ['new'] : this.filterValues().reviewState,
     });
 
     if (this.documents.error()) return;
@@ -726,16 +759,17 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
     const fallbackPage = this.getFallbackPage(page.page, page.totalPages);
     if (fallbackPage !== null) {
-      this.rememberFolderPage(folderUuid, fallbackPage, unassigned);
+      this.rememberFolderPage(folderUuid, fallbackPage, unassigned, newDocuments);
       await this.documents.load({
         page: fallbackPage,
         folderUuid: folderUuid ?? undefined,
         unassigned,
+        reviewStates: newDocuments ? ['new'] : this.filterValues().reviewState,
       });
       return;
     }
 
-    this.rememberFolderPage(folderUuid, page.page, unassigned);
+    this.rememberFolderPage(folderUuid, page.page, unassigned, newDocuments);
   }
 
   private applyListQuery(query: Partial<DocumentListQuery>): void {
@@ -762,7 +796,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       issuerUuids: filters.issuer,
       tagUuids: filters.tag,
       statuses: filters.status,
-      reviewStates: filters.reviewState,
+      reviewStates: this.newDocumentsSelected() ? ['new'] : filters.reviewState,
     };
   }
 
@@ -803,6 +837,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     localStorage.setItem('binder.documents.groupDirection', this.groupDirection());
     localStorage.setItem('binder.documents.sortDirection', this.sortDirection());
     this.unassignedFolderSelected.set(query.unassigned === true);
+    this.newDocumentsSelected.set(
+      !query.folderUuid &&
+        query.unassigned !== true &&
+        query.reviewStates?.length === 1 &&
+        query.reviewStates[0] === 'new',
+    );
     this.folders.select(this.unassignedFolderSelected() ? null : (query.folderUuid ?? null));
     this.activeFilterMenu.set(null);
     this.folderPages.set({});
@@ -893,6 +933,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   private folderSelectionLabel(query: DocumentListQuery): string {
     if (query.unassigned) return this.i18n.t('folders.unassigned');
+    if (!query.folderUuid && query.reviewStates?.length === 1 && query.reviewStates[0] === 'new') {
+      return this.i18n.t('folders.newDocuments');
+    }
     const folderUuid = query.folderUuid;
     if (!folderUuid) return this.i18n.t('folders.allDocuments');
     return (
@@ -954,18 +997,29 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       this.folders.selectedFolderUuid(),
       page.page,
       this.unassignedFolderSelected(),
+      this.newDocumentsSelected(),
     );
   }
 
-  private rememberFolderPage(folderUuid: string | null, page: number, unassigned = false): void {
+  private rememberFolderPage(
+    folderUuid: string | null,
+    page: number,
+    unassigned = false,
+    newDocuments = false,
+  ): void {
     this.folderPages.update((pages) => ({
       ...pages,
-      [this.folderPageKey(folderUuid, unassigned)]: page,
+      [this.folderPageKey(folderUuid, unassigned, newDocuments)]: page,
     }));
   }
 
-  private folderPageKey(folderUuid: string | null, unassigned = false): string {
+  private folderPageKey(
+    folderUuid: string | null,
+    unassigned = false,
+    newDocuments = false,
+  ): string {
     if (unassigned) return this.unassignedFolderKey;
+    if (newDocuments) return this.newDocumentsFolderKey;
     return folderUuid ?? this.allDocumentsFolderKey;
   }
 
