@@ -17,11 +17,13 @@ import { SettingsService } from '../../services/settings.service';
 import { MetadataService } from '../../../metadata/services/metadata.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { AiProviderManagerComponent } from '../ai-provider-manager/ai-provider-manager.component';
+import { UserManagementComponent } from '../user-management/user-management.component';
+import { AuthService } from '../../../authentication/services/auth.service';
 
 @Component({
   selector: 'binder-settings',
   standalone: true,
-  imports: [TranslatePipe, AiProviderManagerComponent],
+  imports: [TranslatePipe, AiProviderManagerComponent, UserManagementComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,6 +34,7 @@ export class SettingsComponent implements OnInit {
   readonly settingsService = inject(SettingsService);
   readonly metadataService = inject(MetadataService);
   readonly i18n = inject(I18nService);
+  readonly auth = inject(AuthService);
 
   readonly activeSection = signal('');
   readonly saved = signal(false);
@@ -68,9 +71,9 @@ export class SettingsComponent implements OnInit {
     this.values.set(this.createInitialValues(response));
     const requestedSection = this.activeSection();
     const firstSection = response.template.sections[0]?.key;
-    const sectionExists = response.template.sections.some(
-      (section) => section.key === requestedSection,
-    );
+    const sectionExists =
+      requestedSection === 'users' ||
+      response.template.sections.some((section) => section.key === requestedSection);
 
     if (!sectionExists && firstSection) {
       this.activeSection.set(firstSection);
@@ -107,6 +110,7 @@ export class SettingsComponent implements OnInit {
   }
 
   sectionLabel(key: string): string {
+    if (key === 'users') return this.i18n.t('users.title');
     const section = this.sections().find((candidate) => candidate.key === key);
     return section ? this.i18n.t(`settings.${section.key}`) : this.i18n.t('settings.title');
   }

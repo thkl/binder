@@ -7,6 +7,7 @@ import {
   OnDestroy,
   OnInit,
   signal,
+  untracked,
 } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
@@ -39,6 +40,9 @@ import { DocumentListQuerySchema } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
 import { InboxService } from '../../../inbox/services/inbox.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { distinctUntilChanged, map } from 'rxjs';
 
 type DocumentViewMode = 'list' | 'icons';
 type DocumentGroupMode = DocumentGroupBy;
@@ -117,6 +121,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     status: undefined,
     reviewState: undefined,
   });
+  private readonly router = inject(Router);
+  private readonly activeRoute = inject(ActivatedRoute);
+
+  private selectedFolderID = toSignal(
+    this.activeRoute.paramMap.pipe(map(params => params.get('folderid')), distinctUntilChanged())
+  );
 
   private readonly folderPages = signal<Record<string, number>>({});
   private readonly allDocumentsFolderKey = '__all-documents__';
@@ -196,6 +206,55 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     return this.sortGroups([...groups.values()]);
   });
 
+  constructor() {
+    effect(async () => {
+      const folderUuid = this.selectedFolderID();
+      if (folderUuid) {
+        untracked(async () => {
+          switch (folderUuid) {
+            case 'unassigned':
+              console.log('Selecting unassigned');
+              this.activeFilterMenu.set(null);
+              this.selectedSavedSearchUuid.set(null);
+              this.rememberCurrentFolderPage();
+              this.unassignedFolderSelected.set(true);
+              this.newDocumentsSelected.set(false);
+              this.folders.select(null);
+              await this.loadFolderPage(null, true);
+              break;
+            case 'new':
+              console.log('Selecting new')
+              this.activeFilterMenu.set(null);
+              this.selectedSavedSearchUuid.set(null);
+              this.rememberCurrentFolderPage();
+              this.unassignedFolderSelected.set(false);
+              this.newDocumentsSelected.set(true);
+              this.filterValues.update((current) => ({ ...current, reviewState: undefined }));
+              this.folders.select(null);
+              await this.loadFolderPage(null, false, true);
+              break;
+            default:
+              console.log("Loading Folder Documents ", folderUuid)
+              this.activeFilterMenu.set(null);
+              this.selectedSavedSearchUuid.set(null);
+              this.rememberCurrentFolderPage();
+              this.unassignedFolderSelected.set(false);
+              this.newDocumentsSelected.set(false);
+              this.folders.select(folderUuid);
+              await this.loadFolderPage(folderUuid, false);
+          }
+        });
+      } else {
+        void this.documents.load({
+          groupBy: this.groupMode(),
+          folderUuid: undefined,
+          unassigned: false,
+        });
+      }
+    })
+  }
+
+
   ngOnInit(): void {
     this.lastDocumentChangeRevision = this.inbox.documentChangeRevision();
     this.unassignedFolderSelected.set(false);
@@ -205,11 +264,13 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     void this.folders.listAll();
     void this.metadata.loadVocabulary();
     void this.savedSearches.load();
+/*
     void this.documents.load({
       groupBy: this.groupMode(),
       folderUuid: undefined,
       unassigned: false,
     });
+    */
   }
 
   ngOnDestroy(): void {
@@ -219,39 +280,23 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   async selectFolder(folderUuid: string | null): Promise<void> {
     if (!this.canLeaveMetadata()) return;
-
-    this.activeFilterMenu.set(null);
-    this.selectedSavedSearchUuid.set(null);
-    this.rememberCurrentFolderPage();
-    this.unassignedFolderSelected.set(false);
-    this.newDocumentsSelected.set(false);
-    this.folders.select(folderUuid);
-    await this.loadFolderPage(folderUuid, false);
+    console.log("Select Folder", folderUuid)
+    if (folderUuid !== null) {
+      this.router.navigate(['documents', folderUuid]);
+    } else {
+      this.router.navigate(['documents']);
+    }
   }
 
   async selectUnassigned(): Promise<void> {
     if (!this.canLeaveMetadata()) return;
-
-    this.activeFilterMenu.set(null);
-    this.selectedSavedSearchUuid.set(null);
-    this.rememberCurrentFolderPage();
-    this.unassignedFolderSelected.set(true);
-    this.newDocumentsSelected.set(false);
-    this.folders.select(null);
-    await this.loadFolderPage(null, true);
+    this.router.navigate(['documents', 'unassigned']);
   }
 
   async selectNewDocuments(): Promise<void> {
     if (!this.canLeaveMetadata()) return;
+    this.router.navigate(['documents', 'new'])
 
-    this.activeFilterMenu.set(null);
-    this.selectedSavedSearchUuid.set(null);
-    this.rememberCurrentFolderPage();
-    this.unassignedFolderSelected.set(false);
-    this.newDocumentsSelected.set(true);
-    this.filterValues.update((current) => ({ ...current, reviewState: undefined }));
-    this.folders.select(null);
-    await this.loadFolderPage(null, false, true);
   }
 
   async exportCurrentScope(): Promise<void> {
@@ -576,11 +621,11 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.documents.page.update((page) =>
       page
         ? {
-            ...page,
-            items: page.items.map((document) =>
-              document.uuid === uuid ? { ...document, isNew: false } : document,
-            ),
-          }
+          ...page,
+          items: page.items.map((document) =>
+            document.uuid === uuid ? { ...document, isNew: false } : document,
+          ),
+        }
         : page,
     );
   }
@@ -919,9 +964,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.unassignedFolderSelected.set(query.unassigned === true);
     this.newDocumentsSelected.set(
       !query.folderUuid &&
-        query.unassigned !== true &&
-        query.reviewStates?.length === 1 &&
-        query.reviewStates[0] === 'new',
+      query.unassigned !== true &&
+      query.reviewStates?.length === 1 &&
+      query.reviewStates[0] === 'new',
     );
     this.folders.select(this.unassignedFolderSelected() ? null : (query.folderUuid ?? null));
     this.activeFilterMenu.set(null);
@@ -1156,29 +1201,29 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       case 'documentType':
         return document.metadataSummary.documentType
           ? [
-              {
-                key: document.metadataSummary.documentType.uuid,
-                label: document.metadataSummary.documentType.name,
-              },
-            ]
+            {
+              key: document.metadataSummary.documentType.uuid,
+              label: document.metadataSummary.documentType.name,
+            },
+          ]
           : [];
       case 'category':
         return document.metadataSummary.category
           ? [
-              {
-                key: document.metadataSummary.category.uuid,
-                label: document.metadataSummary.category.name,
-              },
-            ]
+            {
+              key: document.metadataSummary.category.uuid,
+              label: document.metadataSummary.category.name,
+            },
+          ]
           : [];
       case 'issuer':
         return document.metadataSummary.issuer
           ? [
-              {
-                key: document.metadataSummary.issuer.uuid,
-                label: document.metadataSummary.issuer.name,
-              },
-            ]
+            {
+              key: document.metadataSummary.issuer.uuid,
+              label: document.metadataSummary.issuer.name,
+            },
+          ]
           : [];
       case 'tag':
         return document.metadataSummary.tags.map((tag) => ({ key: tag.uuid, label: tag.name }));

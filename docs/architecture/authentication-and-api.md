@@ -105,6 +105,22 @@ POST /api/v1/auth/password
 POST /api/v1/auth/logout
 ```
 
+Administrators can manage local and OIDC-mapped internal accounts through the
+following owner-independent, administrator-only endpoints:
+
+```text
+GET   /api/v1/auth/users/managed
+POST  /api/v1/auth/users
+PATCH /api/v1/auth/users/:uuid
+POST  /api/v1/auth/users/:uuid/password
+```
+
+The managed-user response never contains password hashes. Creating a user with
+an email and no password creates an OIDC-only mapping candidate; creating one
+with a password enables local login and forces a password change on first
+login. Administrators cannot deactivate themselves, remove their own admin
+role, or remove the last active administrator.
+
 Login regenerates the session to reduce session-fixation risk. Password changes clear the forced-change state. The client still needs to enforce the forced-password-change route, while the API remains authoritative.
 
 ## API versioning

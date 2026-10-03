@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Op } from 'sequelize';
 import { IStoreUser, NamedQueryAddingOptions } from '../../../shared/datastore/query-options.type';
 import { User } from '../models/user.entity';
 import { BaseCrudStore } from '../../../shared/datastore/base-crud.store';
@@ -59,5 +60,44 @@ export class UserStore extends BaseCrudStore<User, IStoreUser, UserStoreQueries>
       },
       parameters: [{ name: 'username', type: 'string' }],
     });
+  }
+
+  async findManagedUsers(): Promise<User[]> {
+    return this.model.findAll({
+      attributes: [
+        'uuid',
+        'username',
+        'email',
+        'isAdmin',
+        'isActive',
+        'mustChangePassword',
+        'lastLoginAt',
+        'createdAt',
+        'updatedAt',
+      ],
+      order: [['username', 'ASC']],
+    });
+  }
+
+  async findByUsernameInsensitive(username: string, excludeUuid?: string): Promise<User | null> {
+    return this.model.findOne({
+      where: {
+        username: { [Op.iLike]: username },
+        ...(excludeUuid ? { uuid: { [Op.ne]: excludeUuid } } : {}),
+      },
+    });
+  }
+
+  async findByEmailInsensitive(email: string, excludeUuid?: string): Promise<User | null> {
+    return this.model.findOne({
+      where: {
+        email: { [Op.iLike]: email },
+        ...(excludeUuid ? { uuid: { [Op.ne]: excludeUuid } } : {}),
+      },
+    });
+  }
+
+  async countActiveAdmins(): Promise<number> {
+    return this.model.count({ where: { isAdmin: true, isActive: true } });
   }
 }

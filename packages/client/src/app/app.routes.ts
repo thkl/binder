@@ -30,6 +30,13 @@ export const appRoutes: Routes = [
       ),
   },
   {
+    path: 'documents/:folderid',
+    loadComponent: () =>
+      import('./features/documents/components/documents/documents.component').then(
+        ({ DocumentsComponent }) => DocumentsComponent,
+      ),
+  },
+  {
     path: 'metadata',
     loadComponent: () =>
       import('./features/metadata/components/metadata/metadata.component').then(

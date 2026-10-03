@@ -1,7 +1,20 @@
-import { Body, Controller, Get, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ChangePasswordInputSchema,
+  CreateManagedUserInputSchema,
   LoginInputSchema,
+  ResetManagedUserPasswordInputSchema,
+  UpdateManagedUserInputSchema,
   UserDirectoryResponseSchema,
 } from '@binder/common';
 import type { Request } from 'express';
@@ -12,16 +25,69 @@ import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { Throttle } from '@nestjs/throttler';
 import { ensureCsrfToken } from '../../../shared/security/csrf-token';
+import { CurrentUser, ScopedUser } from '../decorators/current-user.decorator';
+import { UserManagementService } from '../service/user-management.service';
 
 @Controller('auth')
 export class AuthenticationController {
-  constructor(private readonly authentication: AuthenticationService) {}
+  constructor(
+    private readonly authentication: AuthenticationService,
+    private readonly userManagement: UserManagementService,
+  ) {}
 
   @Get('users')
   @UseGuards(AuthenticationGuard, RolesGuard)
   @Roles('admin')
   async users() {
     return { data: UserDirectoryResponseSchema.parse(await this.authentication.listActiveUsers()) };
+  }
+
+  @Get('users/managed')
+  @UseGuards(AuthenticationGuard, RolesGuard)
+  @Roles('admin')
+  async managedUsers() {
+    return { data: await this.userManagement.list() };
+  }
+
+  @Post('users')
+  @UseGuards(AuthenticationGuard, RolesGuard)
+  @Roles('admin')
+  async createUser(@Body() body: unknown) {
+    return { data: await this.userManagement.create(CreateManagedUserInputSchema.parse(body)) };
+  }
+
+  @Patch('users/:uuid')
+  @UseGuards(AuthenticationGuard, RolesGuard)
+  @Roles('admin')
+  async updateUser(
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    return {
+      data: await this.userManagement.update(
+        user.userId,
+        uuid,
+        UpdateManagedUserInputSchema.parse(body),
+      ),
+    };
+  }
+
+  @Post('users/:uuid/password')
+  @UseGuards(AuthenticationGuard, RolesGuard)
+  @Roles('admin')
+  async resetUserPassword(
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    return {
+      data: await this.userManagement.resetPassword(
+        user.userId,
+        uuid,
+        ResetManagedUserPasswordInputSchema.parse(body),
+      ),
+    };
   }
 
   @Post('login')

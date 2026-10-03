@@ -1031,6 +1031,72 @@ export const UserDirectoryResponseSchema = z.object({
 });
 export type UserDirectoryResponse = z.infer<typeof UserDirectoryResponseSchema>;
 
+export const ManagedUserSchema = z.object({
+  uuid: z.uuid(),
+  username: z.string().min(1).max(100),
+  email: z.string().email().nullable(),
+  isAdmin: z.boolean(),
+  isActive: z.boolean(),
+  mustChangePassword: z.boolean(),
+  lastLoginAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export type ManagedUser = z.infer<typeof ManagedUserSchema>;
+
+export const ManagedUserListResponseSchema = z.object({
+  items: z.array(ManagedUserSchema),
+});
+export type ManagedUserListResponse = z.infer<typeof ManagedUserListResponseSchema>;
+
+export const CreateManagedUserInputSchema = z
+  .object({
+    username: z.string().trim().min(1).max(100),
+    email: z.string().trim().email().nullable().optional(),
+    password: z.string().max(512).nullable().optional(),
+    isAdmin: z.boolean().default(false),
+  })
+  .superRefine((input, context) => {
+    if (input.password && input.password.length < 12) {
+      context.addIssue({
+        code: 'too_small',
+        origin: 'string',
+        minimum: 12,
+        inclusive: true,
+        path: ['password'],
+        message: 'Password must contain at least 12 characters',
+      });
+    }
+    if (!input.password && !input.email) {
+      context.addIssue({
+        code: 'custom',
+        path: ['password'],
+        message: 'A password or an email address is required',
+      });
+    }
+  });
+export type CreateManagedUserInput = z.infer<typeof CreateManagedUserInputSchema>;
+
+export const UpdateManagedUserInputSchema = z
+  .object({
+    username: z.string().trim().min(1).max(100).optional(),
+    email: z.string().trim().email().nullable().optional(),
+    isAdmin: z.boolean().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((input) => Object.keys(input).length > 0, 'At least one user field is required');
+export type UpdateManagedUserInput = z.infer<typeof UpdateManagedUserInputSchema>;
+
+export const ResetManagedUserPasswordInputSchema = z.object({
+  newPassword: z.string().min(12).max(512),
+});
+export type ResetManagedUserPasswordInput = z.infer<typeof ResetManagedUserPasswordInputSchema>;
+
+export const ManagedUserResponseSchema = z.object({
+  user: ManagedUserSchema,
+});
+export type ManagedUserResponse = z.infer<typeof ManagedUserResponseSchema>;
+
 export const AppLanguageSchema = z.string().regex(/^[a-z]{2}(?:-[A-Z]{2})?$/);
 export type AppLanguage = z.infer<typeof AppLanguageSchema>;
 

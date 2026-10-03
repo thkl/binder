@@ -33,6 +33,7 @@ import {
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
+import { InboxService } from '../../inbox/services/inbox.service';
 
 @Injectable({ providedIn: 'root' })
 export class DocumentsService {
@@ -46,6 +47,7 @@ export class DocumentsService {
   readonly duplicateUpload = signal(false);
   readonly duplicateUploadUuid = signal<string | null>(null);
   readonly appService = inject(ApplicationService);
+  readonly inboxService = inject(InboxService);
   private readonly document = inject(DOCUMENT);
   private currentQuery = DocumentListQuerySchema.parse({});
 
@@ -76,6 +78,7 @@ export class DocumentsService {
       );
       const page = DocumentListResponseSchema.parse(response.data);
       this.page.set(page);
+      this.inboxService.setActiveDocumens(page.items.map(item=>item.uuid));
       await Promise.all([this.loadFacets(parsed), this.loadStorageIssues()]);
     } catch (error) {
       this.error.set(this.getErrorMessage(error));

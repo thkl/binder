@@ -184,6 +184,12 @@ worker setting and run automatically after text extraction when enabled.
   - Worker heartbeat validation for processing readiness.
   - Separate persisted onboarding completion state from administrator creation.
 - Let administrators inspect API and worker activity ✅ Implemented through the API and worker log explorer
+- Add administrator user management ✅ Implemented:
+  - List active and inactive internal accounts without exposing password hashes.
+  - Create local accounts or email-only accounts for the configured OIDC mapping.
+  - Edit usernames, email addresses, administrator access, and activation state.
+  - Reset a local password with a forced change on the next login.
+  - Prevent administrators from locking themselves out or removing the last active administrator.
 - ✅ Add bulk metadata editing for selected documents, including type, category, issuer, tags, custom fields, and virtual-folder assignments:
   - Preview empty values, existing values, conflicts, and the affected documents before applying changes.
   - Require explicit confirmation before overwriting existing metadata or folder assignments.

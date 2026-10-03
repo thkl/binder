@@ -1,0 +1,160 @@
+<section class="user-management">
+  <header class="management-heading">
+    <div>
+      <p class="section-kicker">{{ 'users.kicker' | t }}</p>
+      <h3>{{ 'users.title' | t }}</h3>
+      <p class="muted">{{ 'users.copy' | t }}</p>
+    </div>
+    <button class="primary-action" type="button" (click)="startCreate()">
+      {{ 'users.create' | t }}
+    </button>
+  </header>
+
+  @if (management.loading()) {
+    <div class="management-status glass-card">
+      <span class="spinner"></span>{{ 'users.loading' | t }}
+    </div>
+  } @else if (management.error(); as error) {
+    <div class="management-status glass-card error" role="alert">{{ error }}</div>
+  } @else {
+    <div class="management-layout">
+      <section class="user-list glass-card" aria-labelledby="user-list-title">
+        <header class="card-heading">
+          <div>
+            <p class="section-kicker">{{ 'users.directoryKicker' | t }}</p>
+            <h4 id="user-list-title">{{ 'users.directory' | t }}</h4>
+          </div>
+          <span class="count-badge">{{ management.users().length }}</span>
+        </header>
+
+        <div class="user-rows">
+          @for (user of management.users(); track user.uuid) {
+            <button
+              type="button"
+              class="user-row"
+              [class.selected]="editingUuid() === user.uuid"
+              (click)="edit(user)"
+            >
+              <span class="user-avatar">{{ user.username.slice(0, 1).toUpperCase() }}</span>
+              <span class="user-summary">
+                <strong>{{ user.username }}</strong>
+                <small>{{ user.email || ('users.oidcOnly' | t) }}</small>
+              </span>
+              <span class="user-badges">
+                @if (user.isAdmin) {
+                  <span class="status-badge admin">{{ 'users.admin' | t }}</span>
+                }
+                <span class="status-badge" [class.inactive]="!user.isActive">
+                  {{ user.isActive ? ('users.active' | t) : ('users.inactive' | t) }}
+                </span>
+              </span>
+            </button>
+          } @empty {
+            <p class="empty-list">{{ 'users.empty' | t }}</p>
+          }
+        </div>
+      </section>
+
+      <form class="user-editor glass-card" (submit)="$event.preventDefault(); save()">
+        <header class="card-heading">
+          <div>
+            <p class="section-kicker">
+              {{ editingUser() ? ('users.editKicker' | t) : ('users.createKicker' | t) }}
+            </p>
+            <h4>{{ editingUser() ? editingUser()?.username : ('users.newUser' | t) }}</h4>
+          </div>
+          @if (editingUser()) {
+            <span class="editor-note">{{ 'users.editHint' | t }}</span>
+          }
+        </header>
+
+        <div class="editor-fields">
+          <label>
+            <span>{{ 'users.username' | t }}</span>
+            <input
+              type="text"
+              autocomplete="off"
+              [value]="username()"
+              (input)="updateText('username', $event)"
+              required
+            />
+          </label>
+          <label>
+            <span>{{ 'users.email' | t }}</span>
+            <input
+              type="email"
+              autocomplete="email"
+              [value]="email()"
+              (input)="updateText('email', $event)"
+            />
+          </label>
+          <label>
+            <span>{{
+              editingUser() ? ('users.temporaryPassword' | t) : ('users.password' | t)
+            }}</span>
+            <input
+              type="password"
+              autocomplete="new-password"
+              [value]="password()"
+              (input)="updateText('password', $event)"
+              [required]="!editingUser() && !email()"
+            />
+            <small>{{
+              editingUser() ? ('users.passwordResetHint' | t) : ('users.passwordHint' | t)
+            }}</small>
+          </label>
+        </div>
+
+        <div class="editor-options">
+          <label class="checkbox-field">
+            <input
+              type="checkbox"
+              [checked]="isAdmin()"
+              [disabled]="editingUser()?.uuid === auth.user()?.uuid"
+              (change)="updateCheckbox('isAdmin', $event)"
+            />
+            <span>{{ 'users.administrator' | t }}</span>
+          </label>
+          @if (editingUser()) {
+            <label class="checkbox-field">
+              <input
+                type="checkbox"
+                [checked]="isActive()"
+                [disabled]="editingUser()?.uuid === auth.user()?.uuid"
+                (change)="updateCheckbox('isActive', $event)"
+              />
+              <span>{{ 'users.accountActive' | t }}</span>
+            </label>
+          }
+        </div>
+
+        @if (!editingUser()) {
+          <p class="editor-hint">{{ 'users.oidcHint' | t }}</p>
+        }
+
+        <footer class="editor-footer">
+          @if (saved()) {
+            <span class="saved-message">✓ {{ 'users.saved' | t }}</span>
+          }
+          <button class="secondary-button" type="button" (click)="startCreate()">
+            {{ editingUser() ? ('users.new' | t) : ('users.clear' | t) }}
+          </button>
+          <button class="primary-action" type="submit" [disabled]="management.saving()">
+            {{ management.saving() ? ('users.saving' | t) : ('users.save' | t) }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  }
+</section>
+
+@if (pendingDeactivateUuid()) {
+  <binder-confirm-dialog
+    [title]="'users.deactivateTitle' | t"
+    [message]="'users.deactivateMessage' | t"
+    [confirmLabel]="'users.deactivate' | t"
+    [cancelLabel]="'users.cancel' | t"
+    (confirmed)="confirmDeactivate()"
+    (cancelled)="cancelDeactivate()"
+  />
+}

@@ -25,6 +25,8 @@ export class InboxService {
   readonly documentChangeRevision = signal(0);
   private eventSource: EventSource | null = null;
 
+  readonly activeDocuments = signal<string[]>([]);
+
   constructor(private readonly http: HttpClient) {}
 
   async load(): Promise<void> {
@@ -58,6 +60,10 @@ export class InboxService {
     } catch {
       // Keep the last known value while a count refresh is temporarily unavailable.
     }
+  }
+
+  setActiveDocumens(uuidList:string[]) {
+    this.activeDocuments.set(uuidList);
   }
 
   async processAllWithAi(): Promise<InboxAiProcessResponse | null> {
@@ -143,7 +149,11 @@ export class InboxService {
             this.changedDocumentUuids.set(change.data.documentUuids);
           }
           this.documentChangeRevision.update((revision) => revision + 1);
-          void this.load();
+          const activeList = this.activeDocuments();
+          // only reload if the current document list contains at least one of the documens
+          if(change.data.documentUuids.some(id => activeList.includes(id))) {
+            void this.load();
+          }
         }
       } catch {
         // Ignore malformed event payloads; the next event or reconnect will recover the view.
