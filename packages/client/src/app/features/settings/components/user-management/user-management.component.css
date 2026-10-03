@@ -218,6 +218,18 @@
   color: #e9a1a1;
 }
 
+button {
+  border: 0;
+  border-radius: .65rem;
+  padding: .8rem 1rem;
+  color: #061326;
+  background: var(--cyan);
+  cursor: pointer;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 800;
+}
+
 @media (max-width: 900px) {
   .management-layout {
     grid-template-columns: 1fr;
@@ -225,6 +237,7 @@
 }
 
 @media (max-width: 560px) {
+
   .management-heading,
   .card-heading,
   .editor-footer {
