@@ -6,6 +6,7 @@ import {
   InboxAiProcessResponse,
   InboxAiProcessResponseSchema,
   InboxBulkRemoveResponseSchema,
+  DocumentListResponseSchema,
   InboxRemoveResponseSchema,
   InboxQueueItem,
   InboxQueueResponseSchema,
@@ -19,6 +20,7 @@ export class InboxService {
   readonly loading = signal(false);
   readonly processing = signal(false);
   readonly error = signal<string | null>(null);
+  readonly newDocumentCount = signal(0);
   private eventSource: EventSource | null = null;
 
   constructor(private readonly http: HttpClient) {}
@@ -33,10 +35,26 @@ export class InboxService {
       const queue = InboxQueueResponseSchema.parse(response.data);
       this.items.set(queue.items);
       this.aiCandidates.set(queue.aiCandidates);
+      await this.loadNewDocumentCount();
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async loadNewDocumentCount(): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(
+          '/api/v1/documents?page=1&pageSize=1&reviewStates=new',
+          { withCredentials: true },
+        ),
+      );
+      const page = DocumentListResponseSchema.parse(response.data);
+      this.newDocumentCount.set(page.total);
+    } catch {
+      // Keep the last known value while a count refresh is temporarily unavailable.
     }
   }
 

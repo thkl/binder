@@ -1,10 +1,18 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  HostListener,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { AuthService } from './features/authentication/services/auth.service';
 import { ChangePasswordComponent } from './features/authentication/components/change-password/change-password.component';
 import { LoginComponent } from './features/authentication/components/login/login.component';
 import { OnboardingComponent } from './features/authentication/components/onboarding/onboarding.component';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { I18nService, TranslatePipe } from './common/i18n/i18n.service';
+import { InboxService } from './features/inbox/services/inbox.service';
 
 type NavigationMenu = 'documents' | 'settings';
 
@@ -30,7 +38,25 @@ export class AppComponent implements OnInit {
   constructor(
     readonly auth: AuthService,
     readonly i18n: I18nService,
-  ) {}
+    readonly inbox: InboxService,
+  ) {
+    effect(() => {
+      const user = this.auth.user();
+      if (this.auth.loading()) return;
+
+      if (user) {
+        void this.inbox.loadNewDocumentCount();
+      } else {
+        this.inbox.newDocumentCount.set(0);
+      }
+
+      if (user?.isAdmin) {
+        this.inbox.startLiveUpdates();
+      } else {
+        this.inbox.stopLiveUpdates();
+      }
+    });
+  }
 
   ngOnInit(): void {
     void this.auth.restoreSession();

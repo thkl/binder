@@ -27,6 +27,9 @@ async function writeHeartbeat(): Promise<void> {
       version: process.env.APP_VERSION ?? 'unknown',
       capabilities: {
         ocrLanguages: config.ocrLanguages,
+        ocrJobs: config.ocrJobs,
+        ocrRotatePages: config.ocrRotatePages,
+        ocrDeskew: config.ocrDeskew,
         malwareScanner: config.malwareScan.command,
         malwareScanRequired: config.malwareScan.required,
         pdfa: config.pdfa.enabled,

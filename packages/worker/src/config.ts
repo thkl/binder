@@ -8,6 +8,9 @@ import { logger } from './logger.js';
 export interface WorkerConfig {
   storageRoot: string;
   ocrLanguages: string;
+  ocrJobs: number;
+  ocrRotatePages: boolean;
+  ocrDeskew: boolean;
   workerId: string;
   pollIntervalMs: number;
   lockTimeoutMs: number;
@@ -39,6 +42,9 @@ export interface WorkerConfig {
 export const config: WorkerConfig = {
   storageRoot: getDefaultStorageRoot(),
   ocrLanguages: 'deu+eng',
+  ocrJobs: 1,
+  ocrRotatePages: true,
+  ocrDeskew: false,
   workerId: process.env.PIPELINE_WORKER_ID ?? `${hostname()}-${process.pid}`,
   pollIntervalMs: 2_000,
   lockTimeoutMs: 15 * 60 * 1_000,
@@ -65,7 +71,12 @@ export const config: WorkerConfig = {
   malwareScan: { required: true, command: 'clamdscan', timeoutMs: 120_000 },
 };
 
-export async function loadRuntimeConfiguration(): Promise<void> {
+const RUNTIME_CONFIGURATION_POLL_INTERVAL_MS = 10_000;
+let runtimeConfigurationFingerprint: string | null = null;
+let runtimeConfigurationTimer: NodeJS.Timeout | undefined;
+let runtimeConfigurationReloading = false;
+
+export async function loadRuntimeConfiguration(): Promise<boolean> {
   const keys = [
     'documents.storageRoot',
     'documents.maxUploadBytes',
@@ -80,6 +91,9 @@ export async function loadRuntimeConfiguration(): Promise<void> {
     'inbox.pollIntervalMs',
     'inbox.stabilityMs',
     'inbox.completionStage',
+    'pipeline.ocrJobs',
+    'pipeline.ocrRotatePages',
+    'pipeline.ocrDeskew',
     'security.malwareScan.required',
     'security.malwareScan.command',
     'security.malwareScan.timeoutMs',
@@ -95,6 +109,12 @@ export async function loadRuntimeConfiguration(): Promise<void> {
     'embeddings.apiKey',
   ];
   const settings = await ApplicationSetting.findAll({ where: { key: { [Op.in]: keys } } });
+  const fingerprint = settings
+    .map((setting) => `${setting.key}:${setting.value}:${setting.valueIv ?? ''}`)
+    .sort()
+    .join('|');
+  if (runtimeConfigurationFingerprint === fingerprint) return false;
+
   const values = new Map(settings.map((setting) => [setting.key, setting]));
   const appRoot = process.env.APP_ROOT_PATH ?? process.cwd();
   const storage = values.get('documents.storageRoot')?.value ?? join(appRoot, 'storage');
@@ -107,6 +127,13 @@ export async function loadRuntimeConfiguration(): Promise<void> {
   config.pdfa.enabled = readSettingBoolean(values, 'documents.pdfa.enabled', config.pdfa.enabled);
   const languages = values.get('pipeline.ocrLanguages')?.value;
   if (languages && /^[a-z]{3}(?:\+[a-z]{3})*$/.test(languages)) config.ocrLanguages = languages;
+  config.ocrJobs = readSettingInteger(values, 'pipeline.ocrJobs', config.ocrJobs);
+  config.ocrRotatePages = readSettingBoolean(
+    values,
+    'pipeline.ocrRotatePages',
+    config.ocrRotatePages,
+  );
+  config.ocrDeskew = readSettingBoolean(values, 'pipeline.ocrDeskew', config.ocrDeskew);
   config.pollIntervalMs = readSettingInteger(
     values,
     'pipeline.pollIntervalMs',
@@ -187,6 +214,45 @@ export async function loadRuntimeConfiguration(): Promise<void> {
     logger.warn('Embeddings enabled but no API key is configured');
   if (config.malwareScan.required && !config.malwareScan.command)
     logger.warn('Malware scanning is required but no scanner command is configured');
+
+  runtimeConfigurationFingerprint = fingerprint;
+  return true;
+}
+
+export function startRuntimeConfigurationReload(): void {
+  if (runtimeConfigurationTimer) return;
+  runtimeConfigurationTimer = setInterval(() => {
+    if (runtimeConfigurationReloading) return;
+    runtimeConfigurationReloading = true;
+    void loadRuntimeConfiguration()
+      .then((changed) => {
+        if (changed) {
+          logger.info('Pipeline worker runtime configuration reloaded', {
+            ocrLanguages: config.ocrLanguages,
+            ocrJobs: config.ocrJobs,
+            ocrRotatePages: config.ocrRotatePages,
+            ocrDeskew: config.ocrDeskew,
+            malwareScanRequired: config.malwareScan.required,
+            embeddingsEnabled: config.embeddings.enabled,
+            pdfaEnabled: config.pdfa.enabled,
+          });
+        }
+      })
+      .catch((error: unknown) => {
+        logger.warn('Unable to reload pipeline worker runtime configuration', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      })
+      .finally(() => {
+        runtimeConfigurationReloading = false;
+      });
+  }, RUNTIME_CONFIGURATION_POLL_INTERVAL_MS);
+}
+
+export function stopRuntimeConfigurationReload(): void {
+  if (runtimeConfigurationTimer) clearInterval(runtimeConfigurationTimer);
+  runtimeConfigurationTimer = undefined;
+  runtimeConfigurationReloading = false;
 }
 
 function decryptSecret(value: string, ivHex: string): string {

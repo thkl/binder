@@ -30,9 +30,20 @@
             aria-haspopup="true"
             aria-controls="documents-menu"
             [attr.aria-expanded]="openMenu() === 'documents'"
+            [attr.aria-label]="
+              ('nav.documents' | t) +
+              (inbox.newDocumentCount() > 0
+                ? ': ' + inbox.newDocumentCount() + ' ' + ('nav.newDocuments' | t)
+                : '')
+            "
             (click)="toggleMenu('documents', $event)"
           >
             {{ 'nav.documents' | t }}
+            @if (inbox.newDocumentCount() > 0) {
+              <span class="nav-badge" aria-hidden="true">
+                {{ inbox.newDocumentCount() > 99 ? '99+' : inbox.newDocumentCount() }}
+              </span>
+            }
             <span class="menu-caret" aria-hidden="true">⌄</span>
           </button>
           @if (openMenu() === 'documents') {

@@ -58,6 +58,18 @@ Start with:
 
 The worker now invokes the `ocrmypdf` executable for queued OCR jobs. It uses German and English (`deu+eng`) by default, configurable through the `pipeline.ocrLanguages` database setting. OCR output is written to `derived/<document-uuid>/ocr.pdf`; MuPDF then extracts the searchable text into `derived/<document-uuid>/extracted.txt`. During extraction, the worker repairs conservative OCR spacing artefacts such as `0 1 . 0 1 . 2 0 2 2` to improve search, issuer matching, AI analysis, and embeddings. The original PDF is never replaced.
 
+Runtime worker settings are polled from PostgreSQL every 10 seconds, so changes to
+malware scanning, OCR, embeddings, and PDF/A processing apply to the next queued
+job without restarting the worker. A currently running job keeps the settings it
+started with.
+
+OCR uses one OCRmyPDF job by default (`pipeline.ocrJobs=1`). This keeps a small
+server from spawning one OCR process per CPU core. `pipeline.ocrRotatePages` remains
+enabled by default for scanned pages, while `pipeline.ocrDeskew` is disabled by
+default because deskewing is CPU-intensive and can be enabled when document quality
+requires it. Pages that already contain text are skipped instead of being forced
+through OCR again.
+
 The production worker image installs OCRmyPDF, Ghostscript, Tesseract, and the German/English language data. Local worker runs require the same tools to be installed on the host; if `ocrmypdf` is missing, the job fails visibly and follows the normal retry policy.
 
 Image-only input formats can be converted to PDF as part of a later pipeline step if the first vertical slice supports PDF uploads only.

@@ -15,31 +15,36 @@ export async function runOcr(storageKey: string, documentUuid: string): Promise<
   logger.info('Starting OCR', {
     documentUuid,
     languages: config.ocrLanguages,
+    jobs: config.ocrJobs,
+    rotatePages: config.ocrRotatePages,
+    deskew: config.ocrDeskew,
     input: storageKey,
     output: key,
   });
 
   try {
-    await runExternalCommand(
-      'ocrmypdf',
-      [
-        '--force-ocr',
-        '--rotate-pages',
-        '--deskew',
-        '--language',
-        config.ocrLanguages,
-        '--output-type',
-        'pdf',
-        input,
-        temporary,
-      ],
-      documentUuid,
-    );
+    await runExternalCommand('ocrmypdf', buildOcrArguments(input, temporary), documentUuid);
     await fs.rename(temporary, output);
     return key;
   } finally {
     await fs.rm(temporary, { force: true }).catch(() => undefined);
   }
+}
+
+export function buildOcrArguments(input: string, output: string): string[] {
+  return [
+    '--jobs',
+    String(config.ocrJobs),
+    '--skip-text',
+    ...(config.ocrRotatePages ? ['--rotate-pages'] : []),
+    ...(config.ocrDeskew ? ['--deskew'] : []),
+    '--language',
+    config.ocrLanguages,
+    '--output-type',
+    'pdf',
+    input,
+    output,
+  ];
 }
 
 export function runExternalCommand(

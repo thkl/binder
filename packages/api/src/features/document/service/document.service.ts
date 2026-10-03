@@ -399,6 +399,7 @@ export class DocumentService {
           const wasNew = document.isNew;
           const updated = await this.documents.update(uuid, { isNew: false });
           if (wasNew && updated?.isNew === false) {
+            this.eventEmitter.emit('inbox.changed', { reason: 'document-reviewed' });
             await this.recordAudit({
               documentUuid: uuid,
               ownerUuid,
@@ -692,6 +693,7 @@ export class DocumentService {
     const changed = document.title !== input.title;
     const updated = await this.documents.update(uuid, { title: input.title, isNew: false });
     if (changed) {
+      this.eventEmitter.emit('inbox.changed', { reason: 'document-reviewed' });
       await this.recordAudit({
         documentUuid: uuid,
         ownerUuid,
@@ -949,6 +951,7 @@ export class DocumentService {
     const metadata = await this.metadata.setDocumentMetadata(ownerUuid, uuid, input);
     if (metadata) {
       await this.documents.update(uuid, { isNew: false });
+      this.eventEmitter.emit('inbox.changed', { reason: 'document-reviewed' });
       const fields = this.metadataFields(input);
       if (fields.length > 0) {
         await this.recordAudit({
