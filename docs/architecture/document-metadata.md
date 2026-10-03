@@ -59,3 +59,11 @@ vocabulary entries cannot target a personal folder. Routing only adds links;
 manual memberships are not removed when metadata changes.
 
 AI classification will later receive this same allowed vocabulary and must return existing UUIDs. The API will reject unknown or inaccessible UUIDs; AI processing must never create vocabulary entries automatically.
+
+Feedback-based classification also uses this controlled vocabulary. An explicit
+user correction can teach Binder how to classify a recurring document template,
+such as monthly payment letters whose dates and amounts change. Feedback is
+owner-scoped, records the source document and the chosen vocabulary UUID, and
+is only applied automatically after a strong template match. It must never
+overwrite metadata that the user has already set and remains reviewable and
+removable from the metadata settings page.

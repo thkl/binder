@@ -166,6 +166,17 @@ worker setting and run automatically after text extraction when enabled.
 - Import documents from email
 - Add secure email-based password reset for local accounts
 - Connect scanners and other external sources
+- Learn from explicit user corrections to improve recurring-document classification ✅ Implemented:
+  - Record a user changing an AI-selected or empty category, type, issuer, or tag
+    as owner-scoped classification feedback.
+  - Recognize recurring document templates even when variable values such as
+    payment months, dates, invoice numbers, or amounts change.
+  - Prefer a strong, explainable user feedback match over a conflicting AI
+    suggestion, while keeping existing manually assigned metadata untouched.
+  - Keep feedback personal and vocabulary-aware; one correction must not create
+    a global rule for other users or unrelated documents.
+  - Show the learned source and allow users to review or remove a learned
+    classification rule.
 - ✅ Record an owner-visible audit history for every document, persisted in PostgreSQL and separate from operational logs
 - Add a secure first-run onboarding assistant that creates the administrator and validates the basic runtime settings ✅ Implemented:
   - Resumable administrator, storage, processing, optional AI, optional OIDC, backup, and review steps.

@@ -508,6 +508,12 @@ h3 {
   color: #9db2ca;
 }
 
+.feedback-hint {
+  margin: 0 0 0.45rem;
+  color: #8de4bd;
+  font-size: 0.72rem;
+}
+
 .suggestion-item {
   display: flex;
   align-items: center;

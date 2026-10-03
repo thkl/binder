@@ -140,6 +140,46 @@ h3 {
   overflow: hidden;
 }
 
+.feedback-card {
+  margin-top: 1rem;
+  overflow: hidden;
+}
+
+.feedback-empty {
+  margin: 0;
+  padding: 1rem 1.6rem 1.4rem;
+  color: #7188a5;
+  font-size: 0.75rem;
+}
+
+.feedback-list {
+  border-top: 1px solid rgba(157, 190, 232, 0.1);
+}
+
+.feedback-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1.6rem;
+  border-bottom: 1px solid rgba(157, 190, 232, 0.08);
+}
+
+.feedback-row > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.feedback-row strong {
+  color: #dceaff;
+}
+
+.feedback-row small {
+  color: #7188a5;
+  font-size: 0.7rem;
+}
+
 .definition-intro {
   margin: 0;
   padding: 1rem 1.6rem 0;

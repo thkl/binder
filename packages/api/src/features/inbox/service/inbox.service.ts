@@ -87,12 +87,18 @@ export class InboxService {
           const suggestion = await this.titleSuggestions.suggest(item.ownerUuid, item.documentUuid);
           await this.recordSuggestionGenerated(item.ownerUuid, item.documentUuid, suggestion);
           let autoApplied = item.autoApplied;
-          if (automaticApproval.enabled && suggestion.confidence >= automaticApproval.confidence) {
+          const highConfidence = suggestion.confidence >= automaticApproval.confidence;
+          const feedbackOnly = suggestion.feedbackFields.length > 0 && !highConfidence;
+          if (
+            automaticApproval.enabled &&
+            (highConfidence || suggestion.feedbackFields.length > 0)
+          ) {
             try {
               const result = await this.documents.applySuggestionToEmptyFields(
                 item.ownerUuid,
                 item.documentUuid,
                 suggestion,
+                feedbackOnly ? suggestion.feedbackFields : undefined,
               );
               autoApplied = autoApplied || result.appliedFields.length > 0;
               this.logger.info('Automatically applied inbox AI suggestion', {

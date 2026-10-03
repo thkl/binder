@@ -31,6 +31,9 @@ import {
   UpdateIssuerInputSchema,
   DocumentExtractedTextResponse,
   DocumentExtractedTextResponseSchema,
+  ClassificationFeedback,
+  ClassificationFeedbackListResponseSchema,
+  ClassificationFeedbackDeleteResponseSchema,
 } from '@binder/common';
 import { ClearDocumentSuggestionResponseSchema } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
@@ -40,6 +43,7 @@ export class MetadataService {
   readonly vocabulary = signal<VocabularyResponse | null>(null);
   readonly definitions = signal<MetadataDefinition[]>([]);
   readonly issuers = signal<Issuer[]>([]);
+  readonly feedback = signal<ClassificationFeedback[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
@@ -57,7 +61,7 @@ export class MetadataService {
       );
       const vocabulary = VocabularyResponseSchema.parse(response.data);
       this.vocabulary.set(vocabulary);
-      await Promise.all([this.loadDefinitions(), this.loadIssuers()]);
+      await Promise.all([this.loadDefinitions(), this.loadIssuers(), this.loadFeedback()]);
       return vocabulary;
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
@@ -94,6 +98,42 @@ export class MetadataService {
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
       return null;
+    }
+  }
+
+  async loadFeedback(): Promise<ClassificationFeedback[] | null> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>('/api/v1/classification-feedback', {
+          withCredentials: true,
+        }),
+      );
+      const feedback = ClassificationFeedbackListResponseSchema.parse(response.data).items;
+      this.feedback.set(feedback);
+      return feedback;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  async removeFeedback(uuid: string): Promise<boolean> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.delete<ApiResponse<unknown>>(`/api/v1/classification-feedback/${uuid}`, {
+          withCredentials: true,
+        }),
+      );
+      ClassificationFeedbackDeleteResponseSchema.parse(response.data);
+      this.feedback.update((items) => items.filter((item) => item.uuid !== uuid));
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    } finally {
+      this.saving.set(false);
     }
   }
 

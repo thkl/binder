@@ -277,6 +277,8 @@ export const DocumentAuditEventTypeSchema = z.enum([
   'ai-suggestion-generated',
   'ai-suggestion-applied',
   'ai-suggestion-cleared',
+  'classification-feedback',
+  'classification-feedback-removed',
   'requeued',
   'archive-queued',
   'archive-generated',
@@ -406,6 +408,17 @@ export const SetDocumentTitleInputSchema = z.object({
 });
 export type SetDocumentTitleInput = z.infer<typeof SetDocumentTitleInputSchema>;
 
+export const ClassificationFeedbackFieldSchema = z.enum([
+  'documentType',
+  'category',
+  'issuer',
+  'tag',
+]);
+export type ClassificationFeedbackField = z.infer<typeof ClassificationFeedbackFieldSchema>;
+
+export const ClassificationSuggestionSourceSchema = z.enum(['ai', 'feedback', 'mixed']);
+export type ClassificationSuggestionSource = z.infer<typeof ClassificationSuggestionSourceSchema>;
+
 export const DocumentTitleSuggestionSchema = z.object({
   suggestedTitle: z.string().trim().min(1).max(255),
   confidence: z.number().min(0).max(1),
@@ -414,8 +427,40 @@ export const DocumentTitleSuggestionSchema = z.object({
   categoryUuid: z.uuid().nullable().default(null),
   tagUuids: z.array(z.uuid()).max(50).default([]),
   custom: z.record(z.string(), z.unknown()).default({}),
+  classificationSource: ClassificationSuggestionSourceSchema.default('ai'),
+  feedbackFields: z.array(ClassificationFeedbackFieldSchema).max(10).default([]),
 });
 export type DocumentTitleSuggestion = z.infer<typeof DocumentTitleSuggestionSchema>;
+
+export const ClassificationFeedbackSchema = z.object({
+  uuid: z.uuid(),
+  field: ClassificationFeedbackFieldSchema,
+  valueUuid: z.uuid(),
+  valueName: z.string().min(1),
+  sourceDocumentUuid: z.uuid().nullable(),
+  sourceDocumentTitle: z.string().max(255).nullable(),
+  sourceOriginalFilename: z.string().min(1).max(255).nullable(),
+  matchCount: z.number().int().positive(),
+  active: z.boolean(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export type ClassificationFeedback = z.infer<typeof ClassificationFeedbackSchema>;
+
+export const ClassificationFeedbackListResponseSchema = z.object({
+  items: z.array(ClassificationFeedbackSchema),
+});
+export type ClassificationFeedbackListResponse = z.infer<
+  typeof ClassificationFeedbackListResponseSchema
+>;
+
+export const ClassificationFeedbackDeleteResponseSchema = z.object({
+  deleted: z.literal(true),
+  uuid: z.uuid(),
+});
+export type ClassificationFeedbackDeleteResponse = z.infer<
+  typeof ClassificationFeedbackDeleteResponseSchema
+>;
 
 export const DocumentBulkActionSchema = z.enum(['analyze', 'requeue', 'mark-reviewed']);
 export type DocumentBulkAction = z.infer<typeof DocumentBulkActionSchema>;

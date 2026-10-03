@@ -373,6 +373,15 @@
                "required": [
                     "settings"
                ]
+          },
+          "56": {
+               "created": [
+                    "document_classification_feedback"
+               ],
+               "required": [
+                    "documents",
+                    "users"
+               ]
           }
      }
 }

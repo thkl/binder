@@ -16,6 +16,7 @@ import { DocumentAuditServiceModule } from './document-audit.service.module';
 import { DocumentChangeSetStoreModule } from './document-change-set.store.module';
 import { DocumentBulkMetadataService } from './service/document-bulk-metadata.service';
 import { CalendarStoreModule } from '../calendar/calendar.store.module';
+import { ClassificationFeedbackServiceModule } from '../classification-feedback/classification-feedback.service.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { CalendarStoreModule } from '../calendar/calendar.store.module';
     IssuerServiceModule,
     SharedModule,
     CalendarStoreModule,
+    ClassificationFeedbackServiceModule,
   ],
   providers: [
     DocumentService,

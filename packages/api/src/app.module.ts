@@ -22,6 +22,7 @@ import { SetupModule } from './features/setup/setup.module';
 import { AiProviderModule } from './features/ai-provider/ai-provider.module';
 import { PluginModule } from './features/plugin/plugin.module';
 import { CalendarModule } from './features/calendar/calendar.module';
+import { ClassificationFeedbackModule } from './features/classification-feedback/classification-feedback.module';
 
 @Module({
   controllers: [HealthController],
@@ -45,6 +46,7 @@ import { CalendarModule } from './features/calendar/calendar.module';
     AiProviderModule,
     PluginModule,
     CalendarModule,
+    ClassificationFeedbackModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

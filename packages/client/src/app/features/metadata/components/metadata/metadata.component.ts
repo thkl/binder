@@ -12,6 +12,7 @@ import {
   MetadataFieldType,
   UpdateVocabularyItem,
   VocabularyItem,
+  ClassificationFeedback,
 } from '@binder/common';
 import { AuthService } from '../../../authentication/services/auth.service';
 import { MetadataService } from '../../services/metadata.service';
@@ -60,6 +61,7 @@ export class MetadataComponent implements OnInit {
   readonly editingDefinitionUuid = signal<string | null>(null);
   readonly editingDefinitionLabel = signal('');
   readonly deleteDefinitionUuid = signal<string | null>(null);
+  readonly deleteFeedbackUuid = signal<string | null>(null);
 
   readonly activeItems = computed(() => {
     const scope = this.currentScope();
@@ -335,5 +337,32 @@ export class MetadataComponent implements OnInit {
 
   canManageDefinition(definition: { scope: Scopes }): boolean {
     return definition.scope === 'personal' || this.auth.user()?.isAdmin === true;
+  }
+
+  feedbackFieldLabel(field: ClassificationFeedback['field']): string {
+    const key =
+      field === 'documentType'
+        ? 'metadata.types'
+        : field === 'category'
+          ? 'metadata.categories'
+          : field === 'issuer'
+            ? 'editor.issuer'
+            : 'metadata.tags';
+    return this.i18n.t(key);
+  }
+
+  requestRemoveFeedback(uuid: string): void {
+    this.deleteFeedbackUuid.set(uuid);
+  }
+
+  cancelRemoveFeedback(): void {
+    this.deleteFeedbackUuid.set(null);
+  }
+
+  async confirmRemoveFeedback(): Promise<void> {
+    const uuid = this.deleteFeedbackUuid();
+    this.deleteFeedbackUuid.set(null);
+    if (!uuid) return;
+    await this.metadata.removeFeedback(uuid);
   }
 }

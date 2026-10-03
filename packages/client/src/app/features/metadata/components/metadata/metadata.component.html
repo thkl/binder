@@ -454,6 +454,45 @@
       </div>
     }
   </section>
+
+  <section class="feedback-card glass-card">
+    <header class="content-heading">
+      <div>
+        <p class="section-kicker">{{ 'metadata.learningKicker' | t }}</p>
+        <h3>{{ 'metadata.learningTitle' | t }}</h3>
+      </div>
+      <span class="count-badge">{{ metadata.feedback().length }} {{ 'metadata.entries' | t }}</span>
+    </header>
+    <p class="definition-intro">{{ 'metadata.learningCopy' | t }}</p>
+    @if (metadata.feedback().length === 0) {
+      <p class="feedback-empty">{{ 'metadata.learningEmpty' | t }}</p>
+    } @else {
+      <div class="feedback-list">
+        @for (rule of metadata.feedback(); track rule.uuid) {
+          <article class="feedback-row">
+            <div>
+              <strong>{{ rule.valueName }}</strong>
+              <small
+                >{{ feedbackFieldLabel(rule.field) }} · {{ rule.matchCount }}
+                {{ 'metadata.learningMatches' | t }}</small
+              >
+              @if (rule.sourceOriginalFilename) {
+                <small>{{ 'metadata.learningFrom' | t }} {{ rule.sourceOriginalFilename }}</small>
+              }
+            </div>
+            <button
+              type="button"
+              class="row-action danger-action"
+              [disabled]="metadata.saving()"
+              (click)="requestRemoveFeedback(rule.uuid)"
+            >
+              {{ 'metadata.learningRemove' | t }}
+            </button>
+          </article>
+        }
+      </div>
+    }
+  </section>
 </section>
 
 @if (deleteDefinitionUuid(); as definitionUuid) {
@@ -466,5 +505,16 @@
     [cancelLabel]="'metadata.cancel' | t"
     (confirmed)="confirmDeleteDefinition()"
     (cancelled)="cancelDeleteDefinition()"
+  />
+}
+
+@if (deleteFeedbackUuid(); as feedbackUuid) {
+  <binder-confirm-dialog
+    [title]="'metadata.learningRemoveTitle' | t"
+    [message]="'metadata.learningRemoveMessage' | t"
+    [confirmLabel]="'metadata.learningRemove' | t"
+    [cancelLabel]="'metadata.cancel' | t"
+    (confirmed)="confirmRemoveFeedback()"
+    (cancelled)="cancelRemoveFeedback()"
   />
 }

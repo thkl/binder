@@ -8,6 +8,7 @@ import { BinderLogger } from '../../../shared/service/logger.helper';
 import { MetadataService } from '../../metadata/service/metadata.service';
 import { IssuerService } from '../../issuer/service/issuer.service';
 import { AiProviderService } from '../../ai-provider/service/ai-provider.service';
+import { ClassificationFeedbackService } from '../../classification-feedback/service/classification-feedback.service';
 
 const ProviderResponseSchema = z.object({
   choices: z.array(z.object({ message: z.object({ content: z.string() }) })).min(1),
@@ -27,6 +28,7 @@ export class TitleSuggestionService {
     private readonly metadata: MetadataService,
     private readonly issuers: IssuerService,
     private readonly aiProviders: AiProviderService,
+    private readonly feedback: ClassificationFeedbackService,
   ) {}
 
   async suggest(ownerUuid: string, documentUuid: string): Promise<DocumentTitleSuggestion> {
@@ -160,17 +162,32 @@ export class TitleSuggestionService {
       tagUuids: suggestion.tagUuids.filter((uuid) => allowedTagUuids.has(uuid)),
       custom: safeCustom,
     };
+    let finalSuggestion = safeSuggestion;
+    try {
+      finalSuggestion = await this.feedback.applyToSuggestion(
+        ownerUuid,
+        documentUuid,
+        safeSuggestion,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Unable to apply classification feedback for ${documentUuid}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+
     this.logger.info('Document metadata suggestion received', {
       documentUuid,
-      confidence: safeSuggestion.confidence,
-      hasIssuer: Boolean(safeSuggestion.issuerUuid),
-      hasType: Boolean(safeSuggestion.documentTypeUuid),
-      hasCategory: Boolean(safeSuggestion.categoryUuid),
-      tagCount: safeSuggestion.tagUuids.length,
-      customFieldCount: Object.keys(safeSuggestion.custom).length,
+      confidence: finalSuggestion.confidence,
+      classificationSource: finalSuggestion.classificationSource,
+      feedbackFields: finalSuggestion.feedbackFields,
+      hasIssuer: Boolean(finalSuggestion.issuerUuid),
+      hasType: Boolean(finalSuggestion.documentTypeUuid),
+      hasCategory: Boolean(finalSuggestion.categoryUuid),
+      tagCount: finalSuggestion.tagUuids.length,
+      customFieldCount: Object.keys(finalSuggestion.custom).length,
     });
-    await document.update({ aiSuggestion: safeSuggestion });
-    return safeSuggestion;
+    await document.update({ aiSuggestion: finalSuggestion });
+    return finalSuggestion;
   }
 }
 

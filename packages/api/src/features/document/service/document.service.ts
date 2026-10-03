@@ -29,6 +29,7 @@ import {
   DocumentMetadataSummary,
   DocumentTitleSuggestion,
   SetDocumentMetadataInput,
+  ClassificationFeedbackField,
 } from '@binder/common';
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
@@ -67,6 +68,7 @@ import { PipelineJob } from '../../pipeline/models/pipeline-job.entity';
 import { PipelineJobEvent } from '../../pipeline/models/pipeline-job-event.entity';
 import { CalendarEventStore } from '../../calendar/store/calendar-event.store';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
+import { ClassificationFeedbackService } from '../../classification-feedback/service/classification-feedback.service';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -95,6 +97,7 @@ export class DocumentService {
     private readonly audit: DocumentAuditService,
     private readonly calendarEvents: CalendarEventStore,
     private readonly settings: ApplicationSettingsService,
+    private readonly classificationFeedback: ClassificationFeedbackService,
   ) {}
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -1050,8 +1053,15 @@ export class DocumentService {
       throw new NotFoundException('Document not found');
     }
 
+    const previousMetadata = await this.metadata.getDocumentMetadata(ownerUuid, uuid);
     const metadata = await this.metadata.setDocumentMetadata(ownerUuid, uuid, input);
     if (metadata) {
+      await this.classificationFeedback.recordManualChanges(
+        ownerUuid,
+        uuid,
+        previousMetadata,
+        metadata,
+      );
       const clearNewMarker = await this.shouldClearNewMarkerOnMetadataSave();
       const reviewStateChanged = clearNewMarker && document.isNew;
       if (reviewStateChanged) {
@@ -1104,6 +1114,7 @@ export class DocumentService {
     ownerUuid: string,
     uuid: string,
     suggestion: DocumentTitleSuggestion,
+    onlyFields?: ClassificationFeedbackField[],
   ): Promise<{ appliedFields: string[] }> {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
@@ -1111,24 +1122,26 @@ export class DocumentService {
 
     const metadata = await this.metadata.getDocumentMetadata(ownerUuid, uuid);
     const appliedFields: string[] = [];
+    const canApply = (field: ClassificationFeedbackField | 'title' | 'custom'): boolean =>
+      onlyFields === undefined || onlyFields.includes(field as ClassificationFeedbackField);
     const titleIsEmpty =
       !document.title?.trim() || document.title.trim() === document.originalFilename.trim();
-    if (titleIsEmpty && suggestion.suggestedTitle.trim()) {
+    if (canApply('title') && titleIsEmpty && suggestion.suggestedTitle.trim()) {
       await this.documents.update(uuid, { title: suggestion.suggestedTitle });
       appliedFields.push('title');
     }
 
     const classification: SetDocumentMetadataInput = {};
-    if (!metadata.issuer && suggestion.issuerUuid) {
+    if (canApply('issuer') && !metadata.issuer && suggestion.issuerUuid) {
       classification.issuerUuid = suggestion.issuerUuid;
     }
-    if (!metadata.documentType && suggestion.documentTypeUuid) {
+    if (canApply('documentType') && !metadata.documentType && suggestion.documentTypeUuid) {
       classification.documentTypeUuid = suggestion.documentTypeUuid;
     }
-    if (!metadata.category && suggestion.categoryUuid) {
+    if (canApply('category') && !metadata.category && suggestion.categoryUuid) {
       classification.categoryUuid = suggestion.categoryUuid;
     }
-    if (metadata.tags.length === 0 && suggestion.tagUuids.length > 0) {
+    if (canApply('tag') && metadata.tags.length === 0 && suggestion.tagUuids.length > 0) {
       classification.tagUuids = suggestion.tagUuids;
     }
     if (Object.keys(classification).length > 0) {
@@ -1151,7 +1164,7 @@ export class DocumentService {
         return this.isEmptyMetadataValue(current) && !this.isEmptyMetadataValue(value);
       }),
     );
-    if (Object.keys(newCustomValues).length > 0) {
+    if (canApply('custom') && Object.keys(newCustomValues).length > 0) {
       try {
         await this.metadata.setDocumentMetadata(ownerUuid, uuid, {
           custom: { ...metadata.custom, ...newCustomValues },

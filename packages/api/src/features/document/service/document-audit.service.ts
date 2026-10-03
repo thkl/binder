@@ -132,6 +132,12 @@ export class DocumentAuditService {
       ...(typeof details.changeSetUuid === 'string'
         ? { changeSetUuid: details.changeSetUuid }
         : {}),
+      ...(typeof details.feedbackUuid === 'string' ? { feedbackUuid: details.feedbackUuid } : {}),
+      ...(typeof details.valueUuid === 'string' ? { valueUuid: details.valueUuid } : {}),
+      ...(typeof details.previousValueUuid === 'string'
+        ? { previousValueUuid: details.previousValueUuid }
+        : {}),
+      ...(typeof details.reason === 'string' ? { reason: details.reason.slice(0, 200) } : {}),
     };
   }
 }

@@ -19,6 +19,9 @@
           </div>
           <small>{{ pending.confidence * 100 | number: '1.0-0' }}% confidence</small>
         </div>
+        @if (pending.feedbackFields.length > 0) {
+          <p class="feedback-hint">{{ 'editor.feedbackHint' | t }}</p>
+        }
         <label class="suggestion-item"
           ><input
             type="checkbox"
