@@ -18,7 +18,11 @@ raw file passes malware scan
           → chunking and indexing
 ```
 
-OCR should be skipped when a PDF already contains usable text unless the user explicitly requests re-OCR. This avoids unnecessary processing and preserves the original file.
+OCR is only queued when the extracted text is empty or unusable. The first OCR
+pass uses OCRmyPDF's `--redo-ocr` mode so an existing broken OCR layer can be
+replaced without rasterizing every page. If the resulting text is still
+unusable, the worker retries once with `--force-ocr` as a fallback. The
+original file is never changed.
 
 ## Container boundary
 
@@ -67,8 +71,9 @@ OCR uses one OCRmyPDF job by default (`pipeline.ocrJobs=1`). This keeps a small
 server from spawning one OCR process per CPU core. `pipeline.ocrRotatePages` remains
 enabled by default for scanned pages, while `pipeline.ocrDeskew` is disabled by
 default because deskewing is CPU-intensive and can be enabled when document quality
-requires it. Pages that already contain text are skipped instead of being forced
-through OCR again.
+requires it. The normal pass uses `--redo-ocr`; a forced pass is used only when
+the result still contains no usable searchable text. This avoids the unnecessary
+CPU cost of rasterizing healthy documents.
 
 The production worker image installs OCRmyPDF, Ghostscript, Tesseract, and the German/English language data. Local worker runs require the same tools to be installed on the host; if `ocrmypdf` is missing, the job fails visibly and follows the normal retry policy.
 

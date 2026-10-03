@@ -66,6 +66,7 @@ import { InboxItem } from '../../inbox/models/inbox-item.entity';
 import { PipelineJob } from '../../pipeline/models/pipeline-job.entity';
 import { PipelineJobEvent } from '../../pipeline/models/pipeline-job-event.entity';
 import { CalendarEventStore } from '../../calendar/store/calendar-event.store';
+import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -93,6 +94,7 @@ export class DocumentService {
     private readonly eventEmitter: EventEmitter2,
     private readonly audit: DocumentAuditService,
     private readonly calendarEvents: CalendarEventStore,
+    private readonly settings: ApplicationSettingsService,
   ) {}
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -130,6 +132,7 @@ export class DocumentService {
         sizeBytes: stored.sizeBytes,
         checksumSha256: stored.checksumSha256,
       });
+      const malwareScanRequired = await this.isMalwareScanRequired();
       const document = await this.documents.create({
         uuid,
         ownerUuid,
@@ -140,7 +143,7 @@ export class DocumentService {
         pageCount: 1,
         issuerUuid: null,
         isNew: true,
-        status: 'scanning',
+        status: malwareScanRequired ? 'scanning' : 'processing',
       });
       await this.recordAudit({
         documentUuid: document.uuid,
@@ -158,7 +161,11 @@ export class DocumentService {
         stored.sizeBytes,
       );
       try {
-        await this.pipeline.enqueue(document.uuid, ownerUuid, 'malware-scan');
+        await this.pipeline.enqueue(
+          document.uuid,
+          ownerUuid,
+          malwareScanRequired ? 'malware-scan' : 'text-extraction',
+        );
       } catch (error) {
         this.logger.error(`Unable to enqueue document pipeline for ${document.uuid}`, error);
       }
@@ -899,8 +906,9 @@ export class DocumentService {
       throw new BadRequestException('The original document file is not available in storage');
     }
 
+    const malwareScanRequired = await this.isMalwareScanRequired();
     const updated = await this.documents.update(document.uuid, {
-      status: 'scanning',
+      status: malwareScanRequired ? 'scanning' : 'processing',
       isNew: true,
       aiSuggestion: null,
     });
@@ -908,7 +916,11 @@ export class DocumentService {
       throw new NotFoundException('Document not found');
     }
 
-    const job = await this.pipeline.enqueue(updated.uuid, ownerUuid, 'malware-scan');
+    const job = await this.pipeline.enqueue(
+      updated.uuid,
+      ownerUuid,
+      malwareScanRequired ? 'malware-scan' : 'text-extraction',
+    );
     await this.inboxItems.queueDocumentForAnalysis({
       ownerUuid,
       documentUuid: updated.uuid,
@@ -924,12 +936,24 @@ export class DocumentService {
       actorType: 'user',
       eventType: 'requeued',
       summary: 'Document processing requeued',
-      details: { jobKind: 'malware-scan' },
+      details: { jobKind: malwareScanRequired ? 'malware-scan' : 'text-extraction' },
     });
     return {
       document: this.toDocumentResponse(updated),
       job,
     };
+  }
+
+  private async isMalwareScanRequired(): Promise<boolean> {
+    try {
+      const value = await this.settings.get('security.malwareScan.required', 'true');
+      return value?.trim().toLowerCase() !== 'false';
+    } catch (error) {
+      this.logger.warn('Unable to read malware scanning policy; failing closed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return true;
+    }
   }
 
   private assertDocumentContentAvailable(

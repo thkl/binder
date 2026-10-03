@@ -5,7 +5,16 @@ import { randomUUID } from 'node:crypto';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { resolveStoragePath } from './storage.js';
-export async function runOcr(storageKey: string, documentUuid: string): Promise<string> {
+
+export interface OcrOptions {
+  forceOcr?: boolean;
+}
+
+export async function runOcr(
+  storageKey: string,
+  documentUuid: string,
+  options: OcrOptions = {},
+): Promise<string> {
   const input = resolveStoragePath(storageKey);
   const key = `derived/${documentUuid}/ocr.pdf`;
   const output = resolveStoragePath(key);
@@ -18,12 +27,17 @@ export async function runOcr(storageKey: string, documentUuid: string): Promise<
     jobs: config.ocrJobs,
     rotatePages: config.ocrRotatePages,
     deskew: config.ocrDeskew,
+    forceOcr: options.forceOcr ?? false,
     input: storageKey,
     output: key,
   });
 
   try {
-    await runExternalCommand('ocrmypdf', buildOcrArguments(input, temporary), documentUuid);
+    await runExternalCommand(
+      'ocrmypdf',
+      buildOcrArguments(input, temporary, options),
+      documentUuid,
+    );
     await fs.rename(temporary, output);
     return key;
   } finally {
@@ -31,11 +45,15 @@ export async function runOcr(storageKey: string, documentUuid: string): Promise<
   }
 }
 
-export function buildOcrArguments(input: string, output: string): string[] {
+export function buildOcrArguments(
+  input: string,
+  output: string,
+  options: OcrOptions = {},
+): string[] {
   return [
     '--jobs',
     String(config.ocrJobs),
-    '--skip-text',
+    options.forceOcr ? '--force-ocr' : '--redo-ocr',
     ...(config.ocrRotatePages ? ['--rotate-pages'] : []),
     ...(config.ocrDeskew ? ['--deskew'] : []),
     '--language',

@@ -64,6 +64,7 @@ async function reconcileUploadedDocuments(): Promise<void> {
     where: { status: { [Op.in]: ['uploaded', 'scanning'] } },
   });
   let created = 0;
+  const initialJobKind = config.malwareScan.required ? 'malware-scan' : 'text-extraction';
 
   for (const candidate of documents) {
     await sequelize.transaction(async (transaction) => {
@@ -73,61 +74,72 @@ async function reconcileUploadedDocuments(): Promise<void> {
       });
       if (!document || !['uploaded', 'scanning'].includes(document.status)) return;
 
-      const existingScan = await PipelineJob.findOne({
+      if (!config.malwareScan.required) {
+        await PipelineJob.update(
+          {
+            status: 'cancelled',
+            completedAt: new Date(),
+            lockedAt: null,
+            lockedBy: null,
+            lastError: 'Malware scanning disabled by configuration',
+          },
+          {
+            where: {
+              documentUuid: document.uuid,
+              kind: 'malware-scan',
+              status: 'queued',
+            },
+            transaction,
+          },
+        );
+      }
+
+      const existingInitialJob = await PipelineJob.findOne({
         where: {
           documentUuid: document.uuid,
-          kind: 'malware-scan',
+          kind: initialJobKind,
           status: { [Op.in]: ['queued', 'running', 'succeeded'] },
         },
         transaction,
       });
-      if (existingScan) return;
+      if (existingInitialJob) {
+        if (!config.malwareScan.required && document.status === 'scanning') {
+          await document.update({ status: 'processing' }, { transaction });
+        }
+        return;
+      }
 
-      await PipelineJob.update(
-        {
-          status: 'cancelled',
-          completedAt: new Date(),
-          lockedAt: null,
-          lockedBy: null,
-          lastError: 'Superseded by mandatory malware scan',
-        },
-        {
-          where: {
-            documentUuid: document.uuid,
-            status: 'queued',
-            kind: { [Op.ne]: 'malware-scan' },
+      if (config.malwareScan.required) {
+        await PipelineJob.update(
+          {
+            status: 'cancelled',
+            completedAt: new Date(),
+            lockedAt: null,
+            lockedBy: null,
+            lastError: 'Superseded by mandatory malware scan',
           },
-          transaction,
-        },
-      );
+          {
+            where: {
+              documentUuid: document.uuid,
+              status: 'queued',
+              kind: { [Op.ne]: 'malware-scan' },
+            },
+            transaction,
+          },
+        );
+      }
 
-      await document.update({ status: 'scanning' }, { transaction });
-      const job = await PipelineJob.create(
-        {
-          uuid: randomUUID(),
-          documentUuid: document.uuid,
-          ownerUuid: document.ownerUuid,
-          kind: 'malware-scan',
-          status: 'queued',
-          attempts: 0,
-          maxAttempts: 3,
-          availableAt: new Date(),
-          lockedAt: null,
-          lockedBy: null,
-          startedAt: null,
-          completedAt: null,
-          lastError: null,
-        },
+      await document.update(
+        { status: config.malwareScan.required ? 'scanning' : 'processing' },
         { transaction },
       );
-      await PipelineJobEvent.create(
-        {
-          uuid: randomUUID(),
-          jobUuid: job.uuid,
-          type: 'queued',
-          message: 'Queued mandatory malware scan by worker reconciliation',
-        },
-        { transaction },
+      await queueInitialJob(
+        transaction,
+        document,
+        initialJobKind,
+        config.malwareScan.required
+          ? 'Queued mandatory malware scan by worker reconciliation'
+          : 'Queued text extraction because malware scanning is disabled',
       );
       created += 1;
     });
@@ -135,8 +147,44 @@ async function reconcileUploadedDocuments(): Promise<void> {
 
   logger.info('Reconciled unscanned documents', {
     candidates: documents.length,
-    scanJobsCreated: created,
+    initialJobsCreated: created,
+    initialJobKind,
   });
+}
+
+async function queueInitialJob(
+  transaction: Transaction,
+  document: Document,
+  kind: JobKind,
+  message: string,
+): Promise<void> {
+  const job = await PipelineJob.create(
+    {
+      uuid: randomUUID(),
+      documentUuid: document.uuid,
+      ownerUuid: document.ownerUuid,
+      kind,
+      status: 'queued',
+      attempts: 0,
+      maxAttempts: 3,
+      availableAt: new Date(),
+      lockedAt: null,
+      lockedBy: null,
+      startedAt: null,
+      completedAt: null,
+      lastError: null,
+    },
+    { transaction },
+  );
+  await PipelineJobEvent.create(
+    {
+      uuid: randomUUID(),
+      jobUuid: job.uuid,
+      type: 'queued',
+      message,
+    },
+    { transaction },
+  );
 }
 async function claimNextJob(): Promise<ClaimedJob | null> {
   return sequelize.transaction(async (transaction) => {
@@ -252,7 +300,16 @@ async function processJob(job: ClaimedJob): Promise<void> {
 
       case 'ocr': {
         const key = await runOcr(job.storageKey, job.documentUuid);
-        const extracted = await extractPdfPages(key);
+        let extracted = await extractPdfPages(key);
+
+        if (extracted.requiresOcr) {
+          logger.warn('OCR redo pass produced no usable text; forcing OCR', {
+            documentUuid: job.documentUuid,
+            jobUuid: job.jobUuid,
+          });
+          await runOcr(job.storageKey, job.documentUuid, { forceOcr: true });
+          extracted = await extractPdfPages(key);
+        }
 
         if (extracted.requiresOcr) {
           throw new Error('OCR completed but produced no usable searchable text');

@@ -19,6 +19,7 @@ import {
 import { DocumentCategory, DocumentTag, DocumentType } from '../models/vocabulary.entity';
 import { MetadataStore } from '../store/metadata.store';
 import { FolderService } from '../../folder/service/folder.service';
+import { preferPersonalVocabulary } from './vocabulary-precedence';
 
 type VocabularyKind = 'documentTypes' | 'categories' | 'tags';
 
@@ -200,9 +201,9 @@ export class MetadataService {
   async listForAnalysis(ownerUuid: string): Promise<VocabularyResponse> {
     const vocabulary = await this.list(ownerUuid);
     return VocabularyResponseSchema.parse({
-      documentTypes: this.preferPersonal(vocabulary.documentTypes),
-      categories: this.preferPersonal(vocabulary.categories),
-      tags: this.preferPersonal(vocabulary.tags),
+      documentTypes: preferPersonalVocabulary(vocabulary.documentTypes, ownerUuid),
+      categories: preferPersonalVocabulary(vocabulary.categories, ownerUuid),
+      tags: preferPersonalVocabulary(vocabulary.tags, ownerUuid),
     });
   }
 
@@ -350,16 +351,6 @@ export class MetadataService {
     if (kind === 'documentTypes') return DocumentType;
     if (kind === 'categories') return DocumentCategory;
     return DocumentTag;
-  }
-
-  private preferPersonal(items: VocabularyItem[]): VocabularyItem[] {
-    const names = new Set<string>();
-    return items.filter((item) => {
-      const key = item.name.trim().toLocaleLowerCase();
-      if (names.has(key)) return false;
-      names.add(key);
-      return true;
-    });
   }
 
   private toResponse(item: {
