@@ -45,9 +45,17 @@ written into the archive metadata.
 For emergency recovery on a local machine:
 
 ```bash
-age --decrypt binder-20261004-120000.tar.gz.age > backup.tar.gz
+age --decrypt -o backup.tar.gz binder-20261004-120000.tar.gz.age
 tar -xzf backup.tar.gz
 ```
+
+If you are using MacOS you can install the age tool via homebrew
+```
+brew install age
+```
+
+You will be prompted for the encryption password. The password was set in the binder
+settings as `backup.encryptionPassword`
 
 The output directory contains `database.dump`, `manifest.json`, and, for a
 full backup, the `storage/` directory. Restore the database with `pg_restore`

@@ -1,3 +1,5 @@
+![image](./docs/screenshot.png)
+
 # Binder
 
 Lightweight, self-hosted document management with filesystem originals, PostgreSQL metadata, asynchronous processing, and hybrid search.
