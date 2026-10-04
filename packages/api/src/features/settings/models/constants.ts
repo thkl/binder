@@ -282,6 +282,16 @@ export const settingsMap: SettingsMapItem[] = [
     section: 'maintenance',
   },
   {
+    key: 'backup.scope',
+    valueFrom: 'backup.scope',
+    encrypted: false,
+    default: 'full',
+    label: 'Backup contents',
+    type: 'select',
+    options: ['database', 'full'],
+    section: 'maintenance',
+  },
+  {
     key: 'backup.provider',
     valueFrom: 'backup.provider',
     encrypted: false,

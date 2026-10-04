@@ -26,8 +26,6 @@ export const ConfigKeys = {
   PG_DUMP_PATH: 'PG_DUMP_PATH',
   DROPBOX_APP_KEY: 'DROPBOX_APP_KEY',
   DROPBOX_APP_SECRET: 'DROPBOX_APP_SECRET',
-  DROPBOX_APP_KEY_FILE: 'DROPBOX_APP_KEY_FILE',
-  DROPBOX_APP_SECRET_FILE: 'DROPBOX_APP_SECRET_FILE',
 } as const;
 
 export interface BinderConfig {
@@ -58,6 +56,4 @@ export interface BinderConfig {
   PG_DUMP_PATH?: string;
   DROPBOX_APP_KEY?: string;
   DROPBOX_APP_SECRET?: string;
-  DROPBOX_APP_KEY_FILE?: string;
-  DROPBOX_APP_SECRET_FILE?: string;
 }

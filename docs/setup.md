@@ -171,6 +171,28 @@ openssl rand -base64 48   # SETUP_SECRET
 `ENCRYPTION_KEY` must decode to exactly 32 bytes. Keep it stable after data
 has been encrypted; changing it makes encrypted settings unreadable.
 
+## Secret environment variables and secret files
+
+Binder accepts every server secret either as a normal environment variable or
+through a matching `_FILE` variable. The direct value takes precedence; when
+it is empty or unset, Binder reads the matching file, verifies that it is a
+regular readable file, trims the contents, and caches the result for the
+process lifetime.
+
+For example, Docker or Kubernetes secret mounts can provide:
+
+```env
+DATABASE_PASSWORD_FILE=/run/secrets/database_password
+ENCRYPTION_KEY_FILE=/run/secrets/encryption_key
+SESSION_SECRET_FILE=/run/secrets/session_secret
+SETUP_SECRET_FILE=/run/secrets/setup_secret
+```
+
+The files must be mounted into every container that needs the value. In the
+standard deployment this means the API and worker both need database and
+encryption secrets. Dropbox app credentials also support the same convention:
+`DROPBOX_APP_KEY_FILE` and `DROPBOX_APP_SECRET_FILE`.
+
 ## 4. Start Binder with Docker Compose
 
 The standard container deployment includes PostgreSQL with pgvector, ClamAV,

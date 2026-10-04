@@ -26,6 +26,7 @@ import { ApplicationSettingsService } from '../../settings/service/application-s
 import { SSOAuthenticationService } from '../../authentication/service/ssoauthentication.service';
 import { PipelineWorkerHeartbeatStore } from '../../pipeline/store/pipeline-worker-heartbeat.store';
 import { createGravatarUrl } from '../../authentication/service/gravatar';
+import { SecretsService } from '../../../shared/config/secrets.service';
 
 interface SetupPaths {
   appRoot: string;
@@ -44,6 +45,7 @@ export class SetupService {
     private readonly settings: ApplicationSettingsService,
     private readonly sso: SSOAuthenticationService,
     private readonly workerHeartbeats: PipelineWorkerHeartbeatStore,
+    private readonly secrets: SecretsService,
   ) {}
 
   async status(): Promise<SetupStatus> {
@@ -51,7 +53,7 @@ export class SetupService {
     const onboardingRequired = await this.setupState.isOnboardingRequired();
     return SetupStatusSchema.parse({
       required,
-      available: required && Boolean(this.config.get<string>(ConfigKeys.SETUP_SECRET)),
+      available: required && Boolean(this.secrets.get(ConfigKeys.SETUP_SECRET)),
       onboardingRequired,
       onboardingCompleted: !onboardingRequired && !required,
     });
@@ -63,7 +65,7 @@ export class SetupService {
       throw new ConflictException('Initial administrator setup is already complete');
     }
 
-    const configuredSecret = this.config.get<string>(ConfigKeys.SETUP_SECRET);
+    const configuredSecret = this.secrets.get(ConfigKeys.SETUP_SECRET);
     if (!configuredSecret || !this.secretsMatch(input.setupSecret, configuredSecret)) {
       throw new UnauthorizedException('The setup secret is invalid');
     }

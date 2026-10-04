@@ -4,9 +4,14 @@ import { EncryptionService } from './encryption.service.js';
 
 function service(): EncryptionService {
   const key = Buffer.alloc(32, 7).toString('base64');
-  return new EncryptionService({
-    get: () => key,
-  } as never);
+  return new EncryptionService(
+    {
+      get: () => key,
+    } as never,
+    {
+      get: () => key,
+    } as never,
+  );
 }
 
 test('encrypts and decrypts values with AES-GCM', () => {

@@ -7,9 +7,11 @@ import { CsrfGuard } from './guards/csrf.guard';
 import { EncryptionService } from './util/encryption.service';
 import { ApplicationSettingsService } from '../features/settings/service/application-settings.service';
 import { ApplicationSettingStore } from '../features/settings/store/application-setting.store';
+import { SecretsModule } from './config/secrets.module';
 
 @Module({
   imports: [
+    SecretsModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

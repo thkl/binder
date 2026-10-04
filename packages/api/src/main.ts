@@ -14,6 +14,7 @@ import { BinderConfig, ConfigKeys } from './shared/config/config.keys';
 import { DatabaseConnectionService } from './database/service/database-connection.service';
 import { DatabaseMigrationService } from './database/service/database-migration.service';
 import { AuthenticationService } from './features/authentication/service/authentication.service';
+import { SecretsService } from './shared/config/secrets.service';
 
 const mainlogger = new Logger('MAIN');
 
@@ -43,6 +44,7 @@ async function bootstrap(): Promise<void> {
   const logger = loggingService.initializeLogging();
   app.useLogger(logger);
   const nestConfigService = app.get(ConfigService<BinderConfig>);
+  const secrets = app.get(SecretsService);
   checkConfiguration(nestConfigService);
 
   const rootUri = nestConfigService.get<string>(ConfigKeys.ROOT_URI)!;
@@ -66,17 +68,14 @@ async function bootstrap(): Promise<void> {
     logger.debug!('Skip Cors');
   }
 
-  const sessionSecret = nestConfigService.get<string>(ConfigKeys.SESSION_SECRET);
-  if (!sessionSecret) {
-    throw new Error(`Missing required configuration key: ${ConfigKeys.SESSION_SECRET}`);
-  }
+  const sessionSecret = secrets.require(ConfigKeys.SESSION_SECRET);
 
   const pgPool = new Pool({
     host: nestConfigService.get<string>(ConfigKeys.DATABASE_HOST),
     port: nestConfigService.get<number>(ConfigKeys.DATABASE_PORT) ?? 5432,
     database: nestConfigService.get<string>(ConfigKeys.DATABASE_NAME),
     user: nestConfigService.get<string>(ConfigKeys.DATABASE_USER),
-    password: nestConfigService.get<string>(ConfigKeys.DATABASE_PASSWORD),
+    password: secrets.require(ConfigKeys.DATABASE_PASSWORD),
   });
   const PgSession = connectPgSimple(session);
 

@@ -57,6 +57,7 @@
                 <span class="field-count">{{ 'settings.externalStorage.connected' | t }}</span>
               }
             </header>
+            <div style="padding: 1.6rem;">
             <p class="muted">{{ 'settings.externalStorage.copy' | t }}</p>
             @if (dropbox.error(); as error) {
               <p class="field-hint warning" role="alert">{{ error }}</p>
@@ -66,7 +67,7 @@
             } @else if (dropbox.status()?.connected) {
               <button
                 type="button"
-                class="text-button"
+                class="secondary-button"
                 (click)="dropbox.disconnect()"
                 [disabled]="dropbox.loading()"
               >
@@ -75,13 +76,29 @@
             } @else {
               <button
                 type="button"
-                class="save-button"
+                class="secondary-button"
                 (click)="dropbox.connect()"
                 [disabled]="dropbox.loading()"
               >
                 {{ 'settings.externalStorage.connect' | t }}
               </button>
             }
+            <div class="external-backup-action">
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="requestBackup()"
+                [disabled]="maintenance.loading()"
+              >
+                {{ 'settings.externalStorage.runBackup' | t }}
+              </button>
+              @if (backupRequested()) {
+                <span class="saved-message">{{
+                  'settings.externalStorage.backupRequested' | t
+                }}</span>
+              }
+            </div>
+            </div>
           </section>
         }
         @if (activeSection() === 'users') {
@@ -202,7 +219,13 @@
                         />
                       }
                       @if (item.encrypted) {
-                        <span class="field-hint">{{ 'settings.encrypted' | t }}</span>
+                        <span class="field-hint">
+                          {{
+                            stringValue(item) === '****'
+                              ? ('settings.configured' | t)
+                              : ('settings.encrypted' | t)
+                          }}
+                        </span>
                       }
                       @if (item.patternMessage) {
                         <span class="field-hint">{{ patternHint(item) }}</span>

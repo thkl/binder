@@ -13,10 +13,14 @@ export class MaintenanceService {
   ) {}
 
   async getStatus() {
+    await this.runs.failStaleRuns();
     const items = await this.runs.listRecent();
+    const backupScope =
+      (await this.settings.get('backup.scope', 'full')) === 'database' ? 'database' : 'full';
 
     return MaintenanceStatusResponseSchema.parse({
       backupRootConfigured: Boolean((await this.settings.get('backup.root'))?.trim()),
+      backupScope,
       items: items.map((item) => ({
         uuid: item.uuid,
         jobKey: item.jobKey,
@@ -38,6 +42,7 @@ export class MaintenanceService {
   }
 
   async requestBackup() {
+    await this.runs.failStaleRuns();
     const pending = await this.requests.findPendingBackup();
     const running = await this.runs.findRunning('backup');
     if (pending || running) {

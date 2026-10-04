@@ -61,6 +61,16 @@ export class ApplicationSettingsService {
     description?: string,
   ): Promise<void> {
     try {
+      // A connected external provider is authoritative. The generic settings
+      // form submits all fields and may otherwise send a stale `none` value
+      // after OAuth has connected Dropbox. Disconnecting removes the refresh
+      // token first, so selecting `none` still works through the disconnect UI.
+      if (key === 'backup.provider' && value === 'none') {
+        const dropboxConnection = await this.appSettingsStore.findById(
+          'backup.dropbox.refreshToken',
+        );
+        if (dropboxConnection) value = 'dropbox';
+      }
       if (isEncrypted) {
         if (value !== SECRET_STRIPPED_VALUE) {
           // Do not change Values that are ****

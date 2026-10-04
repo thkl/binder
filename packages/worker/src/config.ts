@@ -4,6 +4,7 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { Op } from 'sequelize';
 import { AiProviderProfile, ApplicationSetting } from './models.js';
 import { logger } from './logger.js';
+import { secrets } from '@binder/common/secrets';
 
 export interface WorkerConfig {
   storageRoot: string;
@@ -258,7 +259,7 @@ export function stopRuntimeConfigurationReload(): void {
 }
 
 export function decryptSettingSecret(value: string, ivHex: string): string {
-  const encoded = process.env.ENCRYPTION_KEY;
+  const encoded = secrets.get('ENCRYPTION_KEY');
   if (!encoded) throw new Error('ENCRYPTION_KEY is required to decrypt embedding settings');
   const key = Buffer.from(encoded, 'base64');
   if (key.length !== 32) throw new Error('ENCRYPTION_KEY must decode to 32 bytes');
@@ -312,7 +313,5 @@ export function readPositiveInteger(name: string, fallback: number): number {
 }
 
 export function readRequiredEnvironment(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`${name} is required`);
-  return value;
+  return secrets.require(name);
 }

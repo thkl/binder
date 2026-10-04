@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { BinderLogger } from '../service/logger.helper';
 import { BinderConfig, ConfigKeys } from '../config/config.keys';
+import { SecretsService } from '../config/secrets.service';
 
 /**
  * Encryption Service
@@ -37,7 +38,10 @@ export class EncryptionService implements OnModuleInit {
   private readonly ENCRYPTED_PREFIX = 'gcm:';
   private masterKey: Buffer = Buffer.from([]);
 
-  constructor(private configService: ConfigService<BinderConfig>) {}
+  constructor(
+    private configService: ConfigService<BinderConfig>,
+    private readonly secrets: SecretsService,
+  ) {}
 
   /**
    * Initialize and validate master encryption key on module startup
@@ -59,7 +63,7 @@ export class EncryptionService implements OnModuleInit {
    * @throws {Error} If ENCRYPTION_KEY is missing or invalid length
    */
   private validateMasterKey(): void {
-    const encryptionKey = this.configService.get<string>(ConfigKeys.ENCRYPTION_KEY);
+    const encryptionKey = this.secrets.get(ConfigKeys.ENCRYPTION_KEY);
 
     if (!encryptionKey) {
       throw new Error(

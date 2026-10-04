@@ -20,6 +20,7 @@ import { AiProviderManagerComponent } from '../ai-provider-manager/ai-provider-m
 import { UserManagementComponent } from '../user-management/user-management.component';
 import { AuthService } from '../../../authentication/services/auth.service';
 import { DropboxConnectionService } from '../../services/dropbox-connection.service';
+import { MaintenanceService } from '../../../maintenance/services/maintenance.service';
 
 @Component({
   selector: 'binder-settings',
@@ -37,10 +38,12 @@ export class SettingsComponent implements OnInit {
   readonly i18n = inject(I18nService);
   readonly auth = inject(AuthService);
   readonly dropbox = inject(DropboxConnectionService);
+  readonly maintenance = inject(MaintenanceService);
 
   readonly activeSection = signal('');
   readonly saved = signal(false);
   readonly values = signal<Record<string, string | boolean>>({});
+  readonly backupRequested = signal(false);
 
   readonly sections = computed(() => this.settingsService.settings()?.template.sections ?? []);
   readonly activeSectionLabel = computed(() => this.sectionLabel(this.activeSection()));
@@ -87,6 +90,14 @@ export class SettingsComponent implements OnInit {
   async selectSection(section: string): Promise<void> {
     this.saved.set(false);
     await this.router.navigate(['/settings', section]);
+  }
+
+  async requestBackup(): Promise<void> {
+    if (this.maintenance.loading()) return;
+    const requestUuid = await this.maintenance.requestBackup();
+    if (!requestUuid) return;
+    this.backupRequested.set(true);
+    window.setTimeout(() => this.backupRequested.set(false), 5_000);
   }
 
   stringValue(item: SettingsMapItem): string {
@@ -204,6 +215,9 @@ export class SettingsComponent implements OnInit {
   }
 
   private serializeValue(item: SettingsMapItem): string {
+    if (item.key === 'backup.provider' && this.dropbox.status()?.connected) {
+      return 'dropbox';
+    }
     const value = this.values()[item.key];
     if (item.type === 'checkbox') {
       return this.booleanValue(item) ? 'true' : 'false';

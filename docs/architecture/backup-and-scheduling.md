@@ -26,13 +26,32 @@ share.
 - Log job start, completion, duration, size, destination, and failure reason;
   never log database passwords or dump contents.
 
+The `backup.scope` setting controls what is included:
+
+- `database` creates a database-only backup. Without an encryption password it
+  can remain a local plaintext pg_dump; with a password it is stored as an
+  encrypted `.tar.gz.age` archive.
+- `full` includes the PostgreSQL dump and the complete configured
+  document-storage tree. Full backups always require `backup.encryptionPassword`
+  so document files are never sent to an external provider unencrypted.
+
 When `backup.encryptionPassword` is configured, the worker creates a
-`.binder` bundle instead of retaining the plaintext dump. The bundle contains
-the PostgreSQL dump, the complete configured document-storage tree, and a
-versioned manifest. It is encrypted with AES-256-GCM using a key derived from
-the configured password with scrypt. The password is only stored encrypted at
-rest in Binder's settings; it is never sent to Dropbox or written into the
-bundle metadata.
+`.tar.gz.age` archive instead of retaining the plaintext dump. The archive is
+standard age passphrase encryption around a gzip-compressed tar archive, so it
+can be recovered with the normal `age` and `tar` tools. The password is only
+stored encrypted at rest in Binder's settings; it is never sent to Dropbox or
+written into the archive metadata.
+
+For emergency recovery on a local machine:
+
+```bash
+age --decrypt binder-20261004-120000.tar.gz.age > backup.tar.gz
+tar -xzf backup.tar.gz
+```
+
+The output directory contains `database.dump`, `manifest.json`, and, for a
+full backup, the `storage/` directory. Restore the database with `pg_restore`
+and copy the storage tree to the configured Binder storage location.
 
 External delivery is selected with `backup.provider` and
 `backup.remoteFolder`. Dropbox uses an OAuth refresh token stored encrypted in
@@ -144,7 +163,7 @@ The worker maintenance loop will:
 
 The implemented scheduled jobs are:
 
-- PostgreSQL backup
+- Database or full backup, depending on `backup.scope`
 - backup retention cleanup
 - document-storage consistency audit
 

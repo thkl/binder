@@ -10,6 +10,12 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./secrets": {
+      "types": "./dist/secrets.d.ts",
+      "import": "./dist/secrets.js",
+      "require": "./dist/secrets.js",
+      "default": "./dist/secrets.js"
     }
   },
   "scripts": {

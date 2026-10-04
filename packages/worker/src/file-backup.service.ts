@@ -1,10 +1,11 @@
-import { createCipheriv, randomBytes, scrypt } from 'node:crypto';
 import { execFile, spawn } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import * as path from 'node:path';
+import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { promisify } from 'node:util';
+import { Encrypter } from 'age-encryption';
 import { Op } from 'sequelize';
 import { ApplicationSetting } from './models.js';
 import { config, decryptSettingSecret, readRequiredEnvironment } from './config.js';
@@ -12,11 +13,11 @@ import { FileProviderFactory } from './file-provider/file-provider-factory.js';
 import { logger } from './logger.js';
 
 const execFileAsync = promisify(execFile);
-const scryptAsync = promisify(scrypt);
 
 export interface FileBackupSettings {
   root: string;
   encryptionPassword: string;
+  scope: 'database' | 'full';
   provider: string;
   remoteFolder: string;
 }
@@ -33,6 +34,9 @@ export class FileBackupService {
   async create(settings: FileBackupSettings): Promise<FileBackupResult> {
     if (settings.provider !== 'none' && !settings.encryptionPassword) {
       throw new Error('External file providers require an encrypted backup password');
+    }
+    if (settings.scope === 'full' && !settings.encryptionPassword) {
+      throw new Error('Full backups require an encrypted backup password');
     }
     await fs.mkdir(settings.root, { recursive: true, mode: 0o770 });
     const timestamp = this.timestamp(new Date());
@@ -55,7 +59,7 @@ export class FileBackupService {
         return { artifactName: dumpName, sizeBytes, uploaded: false };
       }
 
-      const encryptedName = dumpName.replace(/\.dump$/, '.binder');
+      const encryptedName = dumpName.replace(/\.dump$/, '.tar.gz.age');
       const encryptedPath = path.join(settings.root, encryptedName);
       const bundleRoot = await fs.mkdtemp(path.join(settings.root, '.binder-bundle-'));
       try {
@@ -64,19 +68,28 @@ export class FileBackupService {
           path.join(bundleRoot, 'manifest.json'),
           `${JSON.stringify(
             {
-              format: 'binder-encrypted-backup',
+              format: 'age-encrypted-tar-gzip',
               version: 1,
               createdAt: new Date().toISOString(),
               database: readRequiredEnvironment('DATABASE_NAME'),
               applicationVersion: process.env.APP_VERSION ?? 'unknown',
-              includes: ['database.dump', 'storage/'],
+              scope: settings.scope,
+              includes:
+                settings.scope === 'full'
+                  ? ['database.dump', 'storage/']
+                  : ['database.dump', 'manifest.json'],
             },
             null,
             2,
           )}\n`,
           { mode: 0o660 },
         );
-        await this.encryptBundle(bundleRoot, encryptedPath, settings.encryptionPassword);
+        await this.encryptBundle(
+          bundleRoot,
+          encryptedPath,
+          settings.encryptionPassword,
+          settings.scope,
+        );
       } finally {
         await fs.rm(bundleRoot, { recursive: true, force: true });
       }
@@ -86,7 +99,7 @@ export class FileBackupService {
         path.join(settings.root, `${encryptedName}.json`),
         encryptedName,
         sizeBytes,
-        'binder-encrypted-backup',
+        'age-encrypted-tar-gzip',
       );
       const provider = await this.providers.create();
       if (!provider) return { artifactName: encryptedName, sizeBytes, uploaded: false };
@@ -129,46 +142,28 @@ export class FileBackupService {
     sourceRoot: string,
     targetPath: string,
     password: string,
+    scope: 'database' | 'full',
   ): Promise<void> {
-    const salt = randomBytes(16);
-    const iv = randomBytes(12);
-    const key = (await scryptAsync(password, salt, 32)) as Buffer;
-    const cipher = createCipheriv('aes-256-gcm', key, iv);
-    await fs.writeFile(
-      targetPath,
-      Buffer.from(
-        `BINDER-ENCRYPTED-BACKUP-V1\n${JSON.stringify({
-          algorithm: 'aes-256-gcm',
-          kdf: 'scrypt',
-          salt: salt.toString('base64'),
-          iv: iv.toString('base64'),
-        })}\n`,
-      ),
-      { mode: 0o660 },
+    const tarArgs = ['-czf', '-'];
+    if (scope === 'full') {
+      tarArgs.push('-C', path.dirname(config.storageRoot), path.basename(config.storageRoot));
+    }
+    tarArgs.push('-C', sourceRoot, 'database.dump', 'manifest.json');
+    const tar = spawn('tar', tarArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const encrypter = new Encrypter();
+    encrypter.setPassphrase(password);
+    const tarStream = Readable.toWeb(tar.stdout!) as unknown as ReadableStream<Uint8Array>;
+    const encryptedStream = await encrypter.encrypt(tarStream);
+    await pipeline(
+      Readable.fromWeb(encryptedStream as any),
+      createWriteStream(targetPath, { mode: 0o660 }),
     );
-    const tar = spawn(
-      'tar',
-      [
-        '-czf',
-        '-',
-        '-C',
-        path.dirname(config.storageRoot),
-        path.basename(config.storageRoot),
-        '-C',
-        sourceRoot,
-        'database.dump',
-        'manifest.json',
-      ],
-      { stdio: ['ignore', 'pipe', 'pipe'] },
-    );
-    await pipeline(tar.stdout!, cipher, createWriteStream(targetPath, { flags: 'a' }));
     await new Promise<void>((resolve, reject) => {
       tar.once('close', (code) =>
         code === 0 ? resolve() : reject(new Error(`tar exited with code ${code}`)),
       );
       tar.once('error', reject);
     });
-    await fs.appendFile(targetPath, cipher.getAuthTag());
   }
 
   private async writeManifest(
@@ -202,6 +197,7 @@ export class FileBackupService {
           [Op.in]: [
             'backup.root',
             'backup.encryptionPassword',
+            'backup.scope',
             'backup.provider',
             'backup.remoteFolder',
           ],
@@ -224,6 +220,7 @@ export class FileBackupService {
         ? path.normalize(root)
         : path.resolve(process.env.APP_ROOT_PATH ?? process.cwd(), root),
       encryptionPassword: values.get('backup.encryptionPassword') ?? '',
+      scope: values.get('backup.scope') === 'database' ? 'database' : 'full',
       provider: values.get('backup.provider')?.trim() || 'none',
       remoteFolder: values.get('backup.remoteFolder')?.trim() || '/Binder backups',
     };

@@ -17,7 +17,7 @@ import { CronSchedule } from './maintenance-cron.js';
 import { resolveStoragePath } from './storage.js';
 
 const BACKUP_NAME = /^binder-\d{8}-\d{6}\.dump$/;
-const ENCRYPTED_BACKUP_NAME = /^binder-\d{8}-\d{6}\.binder$/;
+const ENCRYPTED_BACKUP_NAME = /^binder-\d{8}-\d{6}\.(?:tar\.gz\.age|binder)$/;
 
 interface MaintenanceSettings {
   root: string;
@@ -48,6 +48,7 @@ const DEFAULT_SETTINGS: MaintenanceSettings = {
   backup: {
     root: path.resolve(process.env.APP_ROOT_PATH ?? process.cwd(), 'backup'),
     encryptionPassword: '',
+    scope: 'full',
     provider: 'none',
     remoteFolder: '/Binder backups',
   },
@@ -163,7 +164,10 @@ export class MaintenanceScheduler {
         durationMs: Date.now() - started,
         error: this.errorMessage(error),
       });
-      logger.error('PostgreSQL backup failed', { error: this.errorMessage(error) });
+      logger.error('Backup failed', {
+        scope: settings.backup.scope,
+        error: this.errorMessage(error),
+      });
     }
   }
 
@@ -473,7 +477,7 @@ export class MaintenanceScheduler {
         { transaction },
       );
       await request.destroy({ transaction });
-      logger.info('Claimed manual PostgreSQL backup request', {
+      logger.info('Claimed manual backup request', {
         requestUuid: request.uuid,
         runUuid: run.uuid,
       });

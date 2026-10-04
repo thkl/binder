@@ -48,6 +48,7 @@ export type MaintenanceRun = z.infer<typeof MaintenanceRunSchema>;
 
 export const MaintenanceStatusResponseSchema = z.object({
   backupRootConfigured: z.boolean(),
+  backupScope: z.enum(['database', 'full']),
   items: z.array(MaintenanceRunSchema),
 });
 export type MaintenanceStatusResponse = z.infer<typeof MaintenanceStatusResponseSchema>;

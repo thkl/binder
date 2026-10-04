@@ -13,6 +13,7 @@ import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { User } from '../models/user.entity';
 import { ScopedUser } from '../decorators/current-user.decorator';
 import { createGravatarUrl } from './gravatar';
+import { SecretsService } from '../../../shared/config/secrets.service';
 
 @Injectable()
 export class AuthenticationService {
@@ -21,6 +22,7 @@ export class AuthenticationService {
   constructor(
     private readonly users: UserStore,
     private readonly config: ConfigService<BinderConfig>,
+    private readonly secrets: SecretsService,
   ) {}
 
   async ensureBootstrapAdmin(): Promise<void> {
@@ -28,7 +30,7 @@ export class AuthenticationService {
       return;
     }
 
-    const setupAvailable = Boolean(this.config.get<string>(ConfigKeys.SETUP_SECRET));
+    const setupAvailable = Boolean(this.secrets.get(ConfigKeys.SETUP_SECRET));
     this.logger.info(
       setupAvailable
         ? 'No administrator exists. First-run onboarding is available.'

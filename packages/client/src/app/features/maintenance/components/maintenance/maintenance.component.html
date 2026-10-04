@@ -85,7 +85,7 @@
                 {{ run.status === 'succeeded' ? '✓' : run.status === 'failed' ? '!' : '…' }}
               </div>
               <div class="run-copy">
-                <strong>{{ jobLabel(run.jobKey) }}</strong>
+                <strong>{{ jobLabel(run) }}</strong>
                 <small>{{ statusLabel(run.status) }} · {{ run.startedAt | date: 'medium' }}</small>
                 @if (run.error) {
                   <span class="run-error">{{ run.error }}</span>

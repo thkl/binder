@@ -52,8 +52,15 @@ export class MaintenanceComponent implements OnInit {
     window.setTimeout(() => void this.maintenance.load(), 3_000);
   }
 
-  jobLabel(jobKey: MaintenanceRun['jobKey']): string {
-    return this.i18n.t(`maintenance.job.${jobKey}`);
+  jobLabel(run: MaintenanceRun): string {
+    if (run.jobKey === 'backup') {
+      return this.i18n.t(
+        this.maintenance.status()?.backupScope === 'full'
+          ? 'maintenance.job.full-backup'
+          : 'maintenance.job.database-backup',
+      );
+    }
+    return this.i18n.t(`maintenance.job.${run.jobKey}`);
   }
 
   statusLabel(status: MaintenanceRun['status']): string {

@@ -353,6 +353,18 @@ h3 {
   font-weight: 800;
 }
 
+.secondary-button {
+    border-radius: .65rem;
+    padding: .8rem 1rem;
+    cursor: pointer;
+    font: inherit;
+    font-size: .8rem;
+    font-weight: 800;
+    border: 1px solid rgba(157, 190, 232, .2);
+    color: #b9c9dc;
+    background: transparent;
+}
+
 .save-button:hover:not(:disabled) {
   background: #8be7fa;
 }

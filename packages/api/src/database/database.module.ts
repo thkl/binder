@@ -37,19 +37,21 @@ import { DocumentMetadataChangeSet } from '../features/document/models/document-
 import { PipelineWorkerHeartbeat } from '../features/pipeline/models/pipeline-worker-heartbeat.entity';
 import { CalendarEvent } from '../features/calendar/models/calendar-event.entity';
 import { DocumentClassificationFeedback } from '../features/classification-feedback/models/document-classification-feedback.entity';
+import { SecretsModule } from '../shared/config/secrets.module';
+import { SecretsService } from '../shared/config/secrets.service';
 
 @Global()
 @Module({
   imports: [
     SequelizeModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService<BinderConfig>) => {
+      imports: [ConfigModule, SecretsModule],
+      inject: [ConfigService, SecretsService],
+      useFactory: (config: ConfigService<BinderConfig>, secrets: SecretsService) => {
         const databaseHost = config.get<string>(ConfigKeys.DATABASE_HOST);
         const databaseName = config.get<string>(ConfigKeys.DATABASE_NAME);
         const databasePort = config.get<number>(ConfigKeys.DATABASE_PORT);
         const databaseUser = config.get<string>(ConfigKeys.DATABASE_USER);
-        const databasePassword = config.get<string>(ConfigKeys.DATABASE_PASSWORD);
+        const databasePassword = secrets.require(ConfigKeys.DATABASE_PASSWORD);
 
         if (!databaseHost) {
           throw new Error(`Missing required configuration key: ${ConfigKeys.DATABASE_HOST}`);

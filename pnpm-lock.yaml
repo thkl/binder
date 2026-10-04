@@ -188,6 +188,12 @@ importers:
 
   packages/worker:
     dependencies:
+      '@binder/common':
+        specifier: workspace:*
+        version: link:../common
+      age-encryption:
+        specifier: 0.3.1
+        version: 0.3.1
       dotenv:
         specifier: 18.0.3
         version: 18.0.3
@@ -1198,6 +1204,30 @@ packages:
       '@nestjs/core': ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0
       reflect-metadata: ^0.1.13 || ^0.2.0
 
+  '@noble/ciphers@2.4.0':
+    resolution: {integrity: sha512-AnjFn0Jv92laAkvMrghlFZq4qQCIN/4DxFV/eooqtC2YTjB7kBeLMS2T9KJX4Dn+ZVXLOwK0lSgqDtx9gvxtiw==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/curves@2.0.1':
+    resolution: {integrity: sha512-vs1Az2OOTBiP4q0pwjW5aF0xp9n4MxVrmkFBxc6EKZc6ddYx5gaZiAsZoq0uRRXWbi3AT/sBqn05eRPtn1JCPw==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/curves@2.4.0':
+    resolution: {integrity: sha512-P4/62zrgfH33CneE3Dn4WhJVA22YUU0eR51wKIan4NVRvwsA0YnPTwWGpNbpuacSujmSFLvyzpyuR30+fbq2Ew==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/hashes@2.0.1':
+    resolution: {integrity: sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/hashes@2.4.0':
+    resolution: {integrity: sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/post-quantum@0.5.4':
+    resolution: {integrity: sha512-leww0zzIirrvwaYMPI9fj6aRIlA/c6Y0/lifQQ1YOOyHEr0MNH3yYpjXeiVG+tWdPps4XxGclFWX2INPO3Yo5w==}
+    engines: {node: '>= 20.19.0'}
+
   '@oxc-parser/binding-android-arm-eabi@0.150.0':
     resolution: {integrity: sha512-oQef2Zu4Prz1KLKznz3HqZzU9uVoA5PMoDZuuLmqms7hKmKSAPzlaMnLllJq3t+rgKmfJJ2siPrpZfFrW06btw==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -1515,6 +1545,9 @@ packages:
     resolution: {integrity: sha512-IOD+T+S5LyVVuLAtLq/5k+WxnT9UpJecyDPvIT+AWug+mZJkd+HKVVHryenNJBaW29tIxNfoDuVFPEsZ4UKcNw==}
     engines: {node: ^22.22.3 || ^24.15.0 || >=26.0.0, npm: ^6.11.0 || ^7.5.6 || >=8.0.0, yarn: '>= 1.13.0'}
 
+  '@scure/base@2.4.0':
+    resolution: {integrity: sha512-thZ1TuJwFwBblOhgsjDKvvGirBxNp+wSvY/DR6tJBJOTDhdAAcHJ8Vbr2eFnqaxeca4+t0i9KBf+uHYGWwZORg==}
+
   '@sindresorhus/is@4.6.0':
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
     engines: {node: '>=10'}
@@ -1711,6 +1744,9 @@ packages:
     resolution: {integrity: sha512-lGq+9yr1/GuAWaVYIHRjvvySG5/4VfKIvC8EWxStPdcDh/Ka7FG3twP6v4d5BkravUilhIAsG4Qj83t02LWUPQ==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+
+  age-encryption@0.3.1:
+    resolution: {integrity: sha512-bYgd7lxM7tEANmb9bXf7xTFB3Qpq+JGKinVSdFh5MV+t2fJJZSTdKhWkvXTFJQGysZd+K9Dt3F+n+4DKazXlnQ==}
 
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
@@ -4811,6 +4847,25 @@ snapshots:
       '@nestjs/core': 12.1.0(@nestjs/common@12.1.0(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/platform-express@12.1.0)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       reflect-metadata: 0.2.2
 
+  '@noble/ciphers@2.4.0': {}
+
+  '@noble/curves@2.0.1':
+    dependencies:
+      '@noble/hashes': 2.0.1
+
+  '@noble/curves@2.4.0':
+    dependencies:
+      '@noble/hashes': 2.4.0
+
+  '@noble/hashes@2.0.1': {}
+
+  '@noble/hashes@2.4.0': {}
+
+  '@noble/post-quantum@0.5.4':
+    dependencies:
+      '@noble/curves': 2.0.1
+      '@noble/hashes': 2.0.1
+
   '@oxc-parser/binding-android-arm-eabi@0.150.0':
     optional: true
 
@@ -4986,6 +5041,8 @@ snapshots:
       typescript: 6.0.3
     transitivePeerDependencies:
       - chokidar
+
+  '@scure/base@2.4.0': {}
 
   '@sindresorhus/is@4.6.0': {}
 
@@ -5258,6 +5315,14 @@ snapshots:
 
   acorn@8.18.0:
     optional: true
+
+  age-encryption@0.3.1:
+    dependencies:
+      '@noble/ciphers': 2.4.0
+      '@noble/curves': 2.4.0
+      '@noble/hashes': 2.4.0
+      '@noble/post-quantum': 0.5.4
+      '@scure/base': 2.4.0
 
   agent-base@7.1.4: {}
 

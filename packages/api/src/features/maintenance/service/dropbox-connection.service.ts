@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { randomBytes, createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { SessionRequest } from '../../authentication/models/request.model';
+import { SecretsService } from '../../../shared/config/secrets.service';
 
 interface DropboxTokenResponse {
   refresh_token?: string;
@@ -16,6 +16,7 @@ export class DropboxConnectionService {
   constructor(
     private readonly settings: ApplicationSettingsService,
     private readonly config: ConfigService<BinderConfig>,
+    private readonly secrets: SecretsService,
   ) {}
 
   async status(): Promise<{ provider: string; connected: boolean; configured: boolean }> {
@@ -96,27 +97,10 @@ export class DropboxConnectionService {
   }
 
   private async appKey(): Promise<string | undefined> {
-    return this.credential(ConfigKeys.DROPBOX_APP_KEY, ConfigKeys.DROPBOX_APP_KEY_FILE);
+    return this.secrets.get(ConfigKeys.DROPBOX_APP_KEY);
   }
   private async appSecret(): Promise<string | undefined> {
-    return this.credential(ConfigKeys.DROPBOX_APP_SECRET, ConfigKeys.DROPBOX_APP_SECRET_FILE);
-  }
-  private async credential(
-    key: keyof BinderConfig,
-    fileKey: keyof BinderConfig,
-  ): Promise<string | undefined> {
-    const value = this.config.get<string>(key)?.trim();
-    if (value) return value;
-    const file = this.config.get<string>(fileKey)?.trim();
-    if (!file) return undefined;
-    try {
-      const secret = (await readFile(file, 'utf8')).trim();
-      return secret || undefined;
-    } catch (error) {
-      throw new BadRequestException(
-        `Unable to read Dropbox credential file: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+    return this.secrets.get(ConfigKeys.DROPBOX_APP_SECRET);
   }
   private redirectUri(): string {
     return `${this.config.get<string>(ConfigKeys.ROOT_URI)}/${this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1'}/maintenance/dropbox/callback`;
