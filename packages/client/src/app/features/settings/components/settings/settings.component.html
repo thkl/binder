@@ -84,19 +84,7 @@
               </button>
             }
             <div class="external-backup-action">
-              <button
-                type="button"
-                class="secondary-button"
-                (click)="requestBackup()"
-                [disabled]="maintenance.loading()"
-              >
-                {{ 'settings.externalStorage.runBackup' | t }}
-              </button>
-              @if (backupRequested()) {
-                <span class="saved-message">{{
-                  'settings.externalStorage.backupRequested' | t
-                }}</span>
-              }
+              <p class="field-hint"><a href="/maintenance">{{ 'settings.runBackupNowLink' | t }}</a></p>
             </div>
             </div>
           </section>

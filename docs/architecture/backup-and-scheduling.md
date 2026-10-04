@@ -167,6 +167,10 @@ The implemented scheduled jobs are:
 - backup retention cleanup
 - document-storage consistency audit
 
+Completed pipeline jobs and their technical job events are cleaned up after
+`pipeline.jobRetentionDays` (10 days by default). This removes only pipeline
+history; document audit events are retained separately.
+
 The next maintenance jobs are planned as:
 
 - temporary/derived-file cleanup after a configurable age

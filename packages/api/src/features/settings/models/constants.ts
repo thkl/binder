@@ -273,6 +273,16 @@ export const settingsMap: SettingsMapItem[] = [
     section: 'maintenance',
   },
   {
+    key: 'pipeline.jobRetentionDays',
+    valueFrom: 'pipeline.jobRetentionDays',
+    encrypted: false,
+    default: '10',
+    label: 'Keep completed pipeline jobs for (days)',
+    type: 'text',
+    required: true,
+    section: 'maintenance',
+  },
+  {
     key: 'backup.encryptionPassword',
     valueFrom: 'backup.encryptionPassword',
     encrypted: true,

@@ -43,6 +43,7 @@ export class MaintenanceService {
 
   async requestBackup() {
     await this.runs.failStaleRuns();
+    await this.requests.removeStaleBackupRequests();
     const pending = await this.requests.findPendingBackup();
     const running = await this.runs.findRunning('backup');
     if (pending || running) {

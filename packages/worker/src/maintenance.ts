@@ -9,6 +9,8 @@ import {
   DocumentStorageIssue,
   MaintenanceRequest,
   MaintenanceRun,
+  PipelineJob,
+  PipelineJobEvent,
 } from './models.js';
 import { sequelize } from './database.js';
 import { FileBackupService, FileBackupSettings } from './file-backup.service.js';
@@ -17,7 +19,7 @@ import { CronSchedule } from './maintenance-cron.js';
 import { resolveStoragePath } from './storage.js';
 
 const BACKUP_NAME = /^binder-\d{8}-\d{6}\.dump$/;
-const ENCRYPTED_BACKUP_NAME = /^binder-\d{8}-\d{6}\.(?:tar\.gz\.age|binder)$/;
+const ENCRYPTED_BACKUP_NAME = /^binder-\d{8}-\d{6}\.tar\.gz\.age$/;
 
 interface MaintenanceSettings {
   root: string;
@@ -27,6 +29,7 @@ interface MaintenanceSettings {
   timezone: string;
   storageConsistencyEnabled: boolean;
   storageConsistencySchedule: string;
+  pipelineJobRetentionDays: number;
   backup: FileBackupSettings;
 }
 
@@ -45,6 +48,7 @@ const DEFAULT_SETTINGS: MaintenanceSettings = {
   timezone: 'UTC',
   storageConsistencyEnabled: true,
   storageConsistencySchedule: '0 3 * * *',
+  pipelineJobRetentionDays: 10,
   backup: {
     root: path.resolve(process.env.APP_ROOT_PATH ?? process.cwd(), 'backup'),
     encryptionPassword: '',
@@ -61,6 +65,7 @@ export class MaintenanceScheduler {
   private running = false;
   private stopping = false;
   private activeTick?: Promise<void>;
+  private lastPipelineJobCleanupDay?: string;
 
   async start(): Promise<void> {
     try {
@@ -99,6 +104,7 @@ export class MaintenanceScheduler {
 
     try {
       const settings = await this.loadSettings();
+      await this.runPipelineJobRetention(settings.pipelineJobRetentionDays);
       const manualRun = await this.claimManualBackup();
       if (manualRun) {
         await this.executeBackup(manualRun, settings);
@@ -228,6 +234,36 @@ export class MaintenanceScheduler {
       logger.error('Document storage consistency check failed', {
         error: this.errorMessage(error),
       });
+    }
+  }
+
+  private async runPipelineJobRetention(retentionDays: number): Promise<void> {
+    const today = new Date().toISOString().slice(0, 10);
+    if (this.lastPipelineJobCleanupDay === today) return;
+
+    const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+    const deletedJobs = await sequelize.transaction(async (transaction) => {
+      const jobs = await PipelineJob.findAll({
+        attributes: ['uuid'],
+        where: {
+          status: { [Op.in]: ['succeeded', 'failed', 'cancelled'] },
+          completedAt: { [Op.lt]: cutoff },
+        },
+        transaction,
+      });
+      const jobUuids = jobs.map((job) => job.uuid);
+      if (jobUuids.length === 0) return 0;
+
+      await PipelineJobEvent.destroy({
+        where: { jobUuid: { [Op.in]: jobUuids } },
+        transaction,
+      });
+      return PipelineJob.destroy({ where: { uuid: { [Op.in]: jobUuids } }, transaction });
+    });
+
+    this.lastPipelineJobCleanupDay = today;
+    if (deletedJobs > 0) {
+      logger.info('Completed pipeline jobs cleaned up', { deletedJobs, retentionDays });
     }
   }
 
@@ -407,6 +443,7 @@ export class MaintenanceScheduler {
             'maintenance.timezone',
             'maintenance.storageConsistency.enabled',
             'maintenance.storageConsistency.schedule',
+            'pipeline.jobRetentionDays',
           ],
         },
       },
@@ -425,6 +462,11 @@ export class MaintenanceScheduler {
         values.get('maintenance.storageConsistency.enabled')?.toLowerCase() !== 'false',
       storageConsistencySchedule:
         values.get('maintenance.storageConsistency.schedule')?.trim() || '0 3 * * *',
+      pipelineJobRetentionDays:
+        Number.isInteger(Number(values.get('pipeline.jobRetentionDays'))) &&
+        Number(values.get('pipeline.jobRetentionDays')) > 0
+          ? Number(values.get('pipeline.jobRetentionDays'))
+          : 10,
     };
   }
 
