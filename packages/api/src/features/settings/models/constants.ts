@@ -322,6 +322,15 @@ export const settingsMap: SettingsMapItem[] = [
     section: 'maintenance',
   },
   {
+    key: 'backup.removeLocalAfterUpload',
+    valueFrom: 'backup.removeLocalAfterUpload',
+    encrypted: false,
+    default: false,
+    label: 'Remove local backup after successful upload',
+    type: 'checkbox',
+    section: 'maintenance',
+  },
+  {
     key: 'maintenance.timezone',
     valueFrom: 'maintenance.timezone',
     encrypted: false,

@@ -479,6 +479,7 @@ const EN: TranslationMap = {
   'setting.backup.scope.full': 'Database and documents',
   'setting.backup.provider': 'External backup provider',
   'setting.backup.remoteFolder': 'External backup folder',
+  'setting.backup.removeLocalAfterUpload': 'Remove local backup after successful upload',
   'setting.backup.remoteFolder.hint':
     'For a Dropbox App-folder app, use / for the app-folder root. The Dropbox Apps/BinderDocuments folder is already the app root.',
   'setting.maintenance.timezone': 'Maintenance timezone',
@@ -1140,6 +1141,7 @@ const DE: TranslationMap = {
   'setting.backup.scope.full': 'Datenbank und Dokumente',
   'setting.backup.provider': 'Externer Backup-Anbieter',
   'setting.backup.remoteFolder': 'Externer Backup-Ordner',
+  'setting.backup.removeLocalAfterUpload': 'Lokales Backup nach erfolgreichem Upload löschen',
   'setting.backup.remoteFolder.hint':
     'Bei einer Dropbox-App-Ordner-App ist / das Stammverzeichnis der App. Der Dropbox-Ordner Apps/BinderDocuments ist bereits das App-Stammverzeichnis.',
   'setting.maintenance.timezone': 'Zeitzone für Wartung',

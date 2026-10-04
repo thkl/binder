@@ -60,6 +60,11 @@ not paste a token into the application. Uploads use provider upload sessions
 for large bundles. A Dropbox connection cannot decrypt a backup; operators
 must retain the encryption password separately. If no provider is selected,
 the encrypted bundle remains in `backup.root` for the existing retention job.
+When `backup.removeLocalAfterUpload` is enabled, the worker removes the local
+encrypted artifact and its sidecar manifest only after the provider confirms a
+successful upload. Remote backups are also included in retention cleanup; files
+matching Binder backup names older than `backup.retentionDays` are deleted from
+the configured provider folder.
 
 ## Configure the Dropbox application
 

@@ -1,6 +1,6 @@
 import { createWriteStream } from 'node:fs';
 import * as fs from 'node:fs/promises';
-import { FileProvider } from './file-provider.js';
+import { FileProvider, FileProviderEntry } from './file-provider.js';
 
 const DROPBOX_CONTENT_URL = 'https://content.dropboxapi.com/2';
 const CHUNK_SIZE = 8 * 1024 * 1024;
@@ -8,6 +8,16 @@ const REQUEST_TIMEOUT_MS = 120_000;
 
 interface DropboxTokenResponse {
   access_token?: string;
+}
+
+interface DropboxListFolderResponse {
+  entries?: Array<{
+    '.tag'?: string;
+    path_display?: string;
+    server_modified?: string;
+  }>;
+  has_more?: boolean;
+  cursor?: string;
 }
 
 export class DropboxFileProvider extends FileProvider {
@@ -96,6 +106,50 @@ export class DropboxFileProvider extends FileProvider {
     await this.request('files/delete_v2', accessToken, undefined, { path: remotePath });
   }
 
+  async listFiles(remoteFolder: string): Promise<FileProviderEntry[]> {
+    const accessToken = await this.accessToken();
+    const entries: FileProviderEntry[] = [];
+    let cursor: string | undefined;
+    let hasMore = true;
+
+    while (hasMore) {
+      const response = await fetch(
+        `${DROPBOX_CONTENT_URL}/files/${cursor ? 'list_folder/continue' : 'list_folder'}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(
+            cursor
+              ? { cursor }
+              : {
+                  path: remoteFolder === '/' ? '' : remoteFolder.replace(/\/$/, ''),
+                  recursive: false,
+                },
+          ),
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        },
+      );
+      if (!response.ok) {
+        const details = await response.text();
+        throw new Error(
+          `Dropbox list operation failed with HTTP ${response.status}: ${details.slice(0, 500)}`,
+        );
+      }
+      const page = (await response.json()) as DropboxListFolderResponse;
+      for (const entry of page.entries ?? []) {
+        if (entry['.tag'] !== 'file' || !entry.path_display || !entry.server_modified) continue;
+        entries.push({ path: entry.path_display, modifiedAt: new Date(entry.server_modified) });
+      }
+      hasMore = page.has_more === true;
+      cursor = page.cursor;
+    }
+
+    return entries;
+  }
+
   private async accessToken(): Promise<string> {
     const response = await fetch('https://api.dropboxapi.com/oauth2/token', {
       method: 'POST',
@@ -137,10 +191,26 @@ export class DropboxFileProvider extends FileProvider {
     });
     if (!response.ok) {
       const details = await response.text();
+      const missingScope = this.missingScope(details);
       throw new Error(
-        `Dropbox file operation failed with HTTP ${response.status}: ${details.slice(0, 500)}`,
+        missingScope
+          ? `Dropbox authorization is missing the ${missingScope} scope. Enable it in the Dropbox App Console and reconnect Dropbox.`
+          : `Dropbox file operation failed with HTTP ${response.status}: ${details.slice(0, 500)}`,
       );
     }
     return (await response.json()) as Record<string, unknown>;
+  }
+
+  private missingScope(details: string): string | null {
+    try {
+      const parsed = JSON.parse(details) as {
+        error?: { '.tag'?: string; required_scope?: string };
+      };
+      return parsed.error?.['.tag'] === 'missing_scope'
+        ? (parsed.error.required_scope ?? 'required Dropbox file access')
+        : null;
+    } catch {
+      return null;
+    }
   }
 }

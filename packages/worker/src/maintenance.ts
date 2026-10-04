@@ -55,6 +55,7 @@ const DEFAULT_SETTINGS: MaintenanceSettings = {
     scope: 'full',
     provider: 'none',
     remoteFolder: '/Binder backups',
+    removeLocalAfterUpload: false,
   },
 };
 
@@ -120,7 +121,7 @@ export class MaintenanceScheduler {
         const schedule = new CronSchedule(settings.schedule);
         const nextRunAt = schedule.nextOccurrence(now, settings.timezone);
         await this.runBackup(settings, nextRunAt);
-        await this.runRetention(settings.root, settings.retentionDays, nextRunAt);
+        await this.runRetention(settings, nextRunAt);
       }
 
       if (
@@ -177,25 +178,29 @@ export class MaintenanceScheduler {
     }
   }
 
-  private async runRetention(
-    backupRoot: string,
-    retentionDays: number,
-    nextRunAt: Date | null,
-  ): Promise<void> {
+  private async runRetention(settings: MaintenanceSettings, nextRunAt: Date | null): Promise<void> {
     if (await this.hasRunning('backup-retention')) return;
     const run = await this.startRun('backup-retention', nextRunAt);
     const started = Date.now();
 
     try {
-      const deletedFiles = await this.removeExpired(backupRoot, retentionDays);
+      const deletedFiles = await this.removeExpired(settings.root, settings.retentionDays);
+      const deletedRemoteFiles = await this.fileBackup.removeExpiredRemoteBackups(
+        settings.backup,
+        settings.retentionDays,
+      );
       await run.update({
         status: 'succeeded',
         finishedAt: new Date(),
         durationMs: Date.now() - started,
-        deletedFiles,
+        deletedFiles: deletedFiles + deletedRemoteFiles,
         error: null,
       });
-      logger.info('Backup retention cleanup completed', { deletedFiles, retentionDays });
+      logger.info('Backup retention cleanup completed', {
+        deletedFiles,
+        deletedRemoteFiles,
+        retentionDays: settings.retentionDays,
+      });
     } catch (error) {
       await run.update({
         status: 'failed',

@@ -20,6 +20,7 @@ export interface FileBackupSettings {
   scope: 'database' | 'full';
   provider: string;
   remoteFolder: string;
+  removeLocalAfterUpload: boolean;
 }
 
 export interface FileBackupResult {
@@ -134,11 +135,42 @@ export class FileBackupService {
         artifactName: encryptedName,
         remotePath,
       });
+      if (settings.removeLocalAfterUpload) {
+        await fs.rm(encryptedPath, { force: true });
+        await fs.rm(`${encryptedPath}.json`, { force: true });
+        logger.info('Removed local backup after successful upload', {
+          artifactName: encryptedName,
+        });
+      }
       return { artifactName: encryptedName, sizeBytes, uploaded: true };
     } catch (error) {
       await fs.rm(dumpPath, { force: true }).catch(() => undefined);
       throw error instanceof Error ? error : new Error(String(error));
     }
+  }
+
+  async removeExpiredRemoteBackups(
+    settings: FileBackupSettings,
+    retentionDays: number,
+  ): Promise<number> {
+    const provider = await this.providers.create();
+    if (!provider) return 0;
+
+    const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+    const entries = await provider.listFiles(settings.remoteFolder);
+    const candidates = entries.filter(
+      (entry) =>
+        /^binder-\d{8}-\d{6}\.(?:dump|tar\.gz\.age)$/.test(path.basename(entry.path)) &&
+        entry.modifiedAt.getTime() < cutoff,
+    );
+    for (const entry of candidates) await provider.deleteFile(entry.path);
+    if (candidates.length > 0) {
+      logger.info('Removed expired remote backups', {
+        deletedFiles: candidates.length,
+        retentionDays,
+      });
+    }
+    return candidates.length;
   }
 
   private async createDatabaseDump(targetPath: string): Promise<void> {
@@ -232,6 +264,7 @@ export class FileBackupService {
             'backup.scope',
             'backup.provider',
             'backup.remoteFolder',
+            'backup.removeLocalAfterUpload',
           ],
         },
       },
@@ -255,6 +288,7 @@ export class FileBackupService {
       scope: values.get('backup.scope') === 'database' ? 'database' : 'full',
       provider: values.get('backup.provider')?.trim() || 'none',
       remoteFolder: values.get('backup.remoteFolder')?.trim() || '/Binder backups',
+      removeLocalAfterUpload: values.get('backup.removeLocalAfterUpload')?.toLowerCase() === 'true',
     };
   }
 
