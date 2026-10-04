@@ -2,7 +2,7 @@
 
 ## Decision
 
-Use `/Users/thomaskluge/Development/basic-crud` as the reusable CRUD store layer between Sequelize models and NestJS application services, subject to the boundaries in this document.
+Use `/basic-crud` as the reusable CRUD store layer between Sequelize models and NestJS application services, subject to the boundaries in this document.
 
 The dependency direction is:
 

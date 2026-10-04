@@ -177,6 +177,16 @@ export class FileBackupService {
     }
     tarArgs.push('-C', sourceRoot, 'database.dump', 'manifest.json');
     const tar = spawn('tar', tarArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+    tar.stderr?.on('data', (chunk: Buffer) => {
+      const message = chunk.toString().trim();
+      if (message) logger.warn('Backup archive tool reported a warning', { message });
+    });
+    const tarExit = new Promise<void>((resolve, reject) => {
+      tar.once('close', (code) =>
+        code === 0 ? resolve() : reject(new Error(`tar exited with code ${code}`)),
+      );
+      tar.once('error', reject);
+    });
     const encrypter = new Encrypter();
     encrypter.setPassphrase(password);
     const tarStream = Readable.toWeb(tar.stdout!) as unknown as ReadableStream<Uint8Array>;
@@ -185,12 +195,7 @@ export class FileBackupService {
       Readable.fromWeb(encryptedStream as any),
       createWriteStream(targetPath, { mode: 0o660 }),
     );
-    await new Promise<void>((resolve, reject) => {
-      tar.once('close', (code) =>
-        code === 0 ? resolve() : reject(new Error(`tar exited with code ${code}`)),
-      );
-      tar.once('error', reject);
-    });
+    await tarExit;
   }
 
   private async writeManifest(
