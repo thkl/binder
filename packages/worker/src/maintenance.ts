@@ -1,9 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { execFile } from 'node:child_process';
 import { createReadStream } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { promisify } from 'node:util';
 import { Op } from 'sequelize';
 import {
   ApplicationSetting,
@@ -13,13 +11,13 @@ import {
   MaintenanceRun,
 } from './models.js';
 import { sequelize } from './database.js';
+import { FileBackupService, FileBackupSettings } from './file-backup.service.js';
 import { logger } from './logger.js';
 import { CronSchedule } from './maintenance-cron.js';
 import { resolveStoragePath } from './storage.js';
-import { readRequiredEnvironment } from './config.js';
 
-const execFileAsync = promisify(execFile);
 const BACKUP_NAME = /^binder-\d{8}-\d{6}\.dump$/;
+const ENCRYPTED_BACKUP_NAME = /^binder-\d{8}-\d{6}\.binder$/;
 
 interface MaintenanceSettings {
   root: string;
@@ -29,6 +27,7 @@ interface MaintenanceSettings {
   timezone: string;
   storageConsistencyEnabled: boolean;
   storageConsistencySchedule: string;
+  backup: FileBackupSettings;
 }
 
 interface StorageProblem {
@@ -46,9 +45,16 @@ const DEFAULT_SETTINGS: MaintenanceSettings = {
   timezone: 'UTC',
   storageConsistencyEnabled: true,
   storageConsistencySchedule: '0 3 * * *',
+  backup: {
+    root: path.resolve(process.env.APP_ROOT_PATH ?? process.cwd(), 'backup'),
+    encryptionPassword: '',
+    provider: 'none',
+    remoteFolder: '/Binder backups',
+  },
 };
 
 export class MaintenanceScheduler {
+  private readonly fileBackup = new FileBackupService();
   private timer?: NodeJS.Timeout;
   private readonly lastTriggeredMinutes = new Map<string, number>();
   private running = false;
@@ -94,7 +100,7 @@ export class MaintenanceScheduler {
       const settings = await this.loadSettings();
       const manualRun = await this.claimManualBackup();
       if (manualRun) {
-        await this.executeBackup(manualRun, settings.root);
+        await this.executeBackup(manualRun, settings);
         return;
       }
 
@@ -106,7 +112,7 @@ export class MaintenanceScheduler {
         this.markTriggered('backup', now);
         const schedule = new CronSchedule(settings.schedule);
         const nextRunAt = schedule.nextOccurrence(now, settings.timezone);
-        await this.runBackup(settings.root, nextRunAt);
+        await this.runBackup(settings, nextRunAt);
         await this.runRetention(settings.root, settings.retentionDays, nextRunAt);
       }
 
@@ -130,17 +136,17 @@ export class MaintenanceScheduler {
     }
   }
 
-  private async runBackup(backupRoot: string, nextRunAt: Date | null): Promise<void> {
+  private async runBackup(settings: MaintenanceSettings, nextRunAt: Date | null): Promise<void> {
     if (await this.hasRunning('backup')) return;
     const run = await this.startRun('backup', nextRunAt);
-    await this.executeBackup(run, backupRoot);
+    await this.executeBackup(run, settings);
   }
 
-  private async executeBackup(run: MaintenanceRun, backupRoot: string): Promise<void> {
+  private async executeBackup(run: MaintenanceRun, settings: MaintenanceSettings): Promise<void> {
     const started = Date.now();
 
     try {
-      const result = await this.createBackup(backupRoot);
+      const result = await this.fileBackup.create(settings.backup);
       await run.update({
         status: 'succeeded',
         finishedAt: new Date(),
@@ -149,7 +155,7 @@ export class MaintenanceScheduler {
         sizeBytes: result.sizeBytes,
         error: null,
       });
-      logger.info('PostgreSQL backup completed', result);
+      logger.info('Backup completed', result);
     } catch (error) {
       await run.update({
         status: 'failed',
@@ -367,81 +373,18 @@ export class MaintenanceScheduler {
     logger.info('Document storage issue resolved', { documentUuid });
   }
 
-  private async createBackup(
-    backupRoot: string,
-  ): Promise<{ artifactName: string; sizeBytes: number }> {
-    await fs.mkdir(backupRoot, { recursive: true, mode: 0o770 });
-
-    const artifactName = `binder-${this.timestamp(new Date())}.dump`;
-    const temporaryPath = path.join(
-      backupRoot,
-      `.${artifactName}.${process.pid}.${randomUUID()}.tmp`,
-    );
-    const artifactPath = path.join(backupRoot, artifactName);
-    const manifestPath = path.join(backupRoot, `${artifactName}.json`);
-
-    try {
-      const { stderr } = await execFileAsync(
-        process.env.PG_DUMP_PATH ?? 'pg_dump',
-        [
-          '--format=custom',
-          '--file',
-          temporaryPath,
-          '--host',
-          readRequiredEnvironment('DATABASE_HOST'),
-          '--port',
-          String(process.env.DATABASE_PORT ?? 5432),
-          '--username',
-          readRequiredEnvironment('DATABASE_USER'),
-          readRequiredEnvironment('DATABASE_NAME'),
-        ],
-        {
-          env: { ...process.env, PGPASSWORD: readRequiredEnvironment('DATABASE_PASSWORD') },
-          maxBuffer: 1024 * 1024,
-        },
-      );
-
-      if (stderr.trim())
-        logger.warn('pg_dump reported warnings', { stderr: stderr.trim().slice(0, 2000) });
-      await fs.chmod(temporaryPath, 0o660);
-      await fs.rename(temporaryPath, artifactPath);
-      const stats = await fs.stat(artifactPath);
-      await fs.writeFile(
-        manifestPath,
-        `${JSON.stringify(
-          {
-            format: 'pg_dump-custom',
-            createdAt: new Date().toISOString(),
-            database: readRequiredEnvironment('DATABASE_NAME'),
-            host: readRequiredEnvironment('DATABASE_HOST'),
-            port: Number(process.env.DATABASE_PORT ?? 5432),
-            applicationVersion: process.env.APP_VERSION ?? 'unknown',
-            artifactName,
-            sizeBytes: stats.size,
-          },
-          null,
-          2,
-        )}\n`,
-        { mode: 0o660 },
-      );
-
-      return { artifactName, sizeBytes: stats.size };
-    } catch (error) {
-      await fs.rm(temporaryPath, { force: true }).catch(() => undefined);
-      throw new Error(this.errorMessage(error));
-    }
-  }
-
   private async removeExpired(backupRoot: string, retentionDays: number): Promise<number> {
     const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
     const entries = await fs.readdir(backupRoot, { withFileTypes: true }).catch(() => []);
     let deletedFiles = 0;
-
     for (const entry of entries) {
-      if (!entry.isFile() || !BACKUP_NAME.test(entry.name)) continue;
+      if (
+        !entry.isFile() ||
+        (!BACKUP_NAME.test(entry.name) && !ENCRYPTED_BACKUP_NAME.test(entry.name))
+      )
+        continue;
       const artifactPath = path.join(backupRoot, entry.name);
-      const stats = await fs.stat(artifactPath);
-      if (stats.mtimeMs >= cutoff) continue;
+      if ((await fs.stat(artifactPath)).mtimeMs >= cutoff) continue;
       await fs.unlink(artifactPath);
       await fs.rm(path.join(backupRoot, `${entry.name}.json`), { force: true });
       deletedFiles += 1;
@@ -450,11 +393,10 @@ export class MaintenanceScheduler {
   }
 
   private async loadSettings(): Promise<MaintenanceSettings> {
-    const settings = await ApplicationSetting.findAll({
+    const rows = await ApplicationSetting.findAll({
       where: {
         key: {
           [Op.in]: [
-            'backup.root',
             'backup.enabled',
             'backup.schedule',
             'backup.retentionDays',
@@ -465,28 +407,20 @@ export class MaintenanceScheduler {
         },
       },
     });
-    const values = new Map(settings.map((setting) => [setting.key, setting.value]));
+    const values = new Map(rows.map((setting) => [setting.key, setting.value]));
     const retentionDays = Number(values.get('backup.retentionDays'));
-
+    const backup = await FileBackupService.loadSettings();
     return {
-      root: this.resolveConfiguredPath(values.get('backup.root')?.trim() || DEFAULT_SETTINGS.root),
-      enabled:
-        values.get('backup.enabled') === undefined
-          ? DEFAULT_SETTINGS.enabled
-          : values.get('backup.enabled')?.toLowerCase() === 'true',
-      schedule: values.get('backup.schedule')?.trim() || DEFAULT_SETTINGS.schedule,
-      retentionDays:
-        Number.isInteger(retentionDays) && retentionDays > 0
-          ? retentionDays
-          : DEFAULT_SETTINGS.retentionDays,
-      timezone: values.get('maintenance.timezone')?.trim() || DEFAULT_SETTINGS.timezone,
+      root: backup.root,
+      backup,
+      enabled: values.get('backup.enabled')?.toLowerCase() === 'true',
+      schedule: values.get('backup.schedule')?.trim() || '0 2 * * *',
+      retentionDays: Number.isInteger(retentionDays) && retentionDays > 0 ? retentionDays : 30,
+      timezone: values.get('maintenance.timezone')?.trim() || 'UTC',
       storageConsistencyEnabled:
-        values.get('maintenance.storageConsistency.enabled') === undefined
-          ? DEFAULT_SETTINGS.storageConsistencyEnabled
-          : values.get('maintenance.storageConsistency.enabled')?.toLowerCase() === 'true',
+        values.get('maintenance.storageConsistency.enabled')?.toLowerCase() !== 'false',
       storageConsistencySchedule:
-        values.get('maintenance.storageConsistency.schedule')?.trim() ||
-        DEFAULT_SETTINGS.storageConsistencySchedule,
+        values.get('maintenance.storageConsistency.schedule')?.trim() || '0 3 * * *',
     };
   }
 

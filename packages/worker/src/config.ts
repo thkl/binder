@@ -201,14 +201,16 @@ export async function loadRuntimeConfiguration(): Promise<boolean> {
     config.embeddings.model = selectedEmbeddingProvider.embeddingModel ?? '';
     config.embeddings.apiKey =
       selectedEmbeddingProvider.apiKey && selectedEmbeddingProvider.apiKeyIv
-        ? decryptSecret(selectedEmbeddingProvider.apiKey, selectedEmbeddingProvider.apiKeyIv)
+        ? decryptSettingSecret(selectedEmbeddingProvider.apiKey, selectedEmbeddingProvider.apiKeyIv)
         : '';
   } else {
     const key = values.get('ai.apiKey')?.value
       ? values.get('ai.apiKey')
       : values.get('embeddings.apiKey');
     config.embeddings.apiKey =
-      key?.isEncrypted && key.valueIv ? decryptSecret(key.value, key.valueIv) : (key?.value ?? '');
+      key?.isEncrypted && key.valueIv
+        ? decryptSettingSecret(key.value, key.valueIv)
+        : (key?.value ?? '');
   }
   if (config.embeddings.enabled && !config.embeddings.apiKey)
     logger.warn('Embeddings enabled but no API key is configured');
@@ -255,7 +257,7 @@ export function stopRuntimeConfigurationReload(): void {
   runtimeConfigurationReloading = false;
 }
 
-function decryptSecret(value: string, ivHex: string): string {
+export function decryptSettingSecret(value: string, ivHex: string): string {
   const encoded = process.env.ENCRYPTION_KEY;
   if (!encoded) throw new Error('ENCRYPTION_KEY is required to decrypt embedding settings');
   const key = Buffer.from(encoded, 'base64');

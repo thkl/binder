@@ -8,6 +8,8 @@ export type SessionRequest = Request & {
     csrfToken?: string;
     oidcState?: string;
     oidcCodeVerifier?: string;
+    dropboxState?: string;
+    dropboxCodeVerifier?: string;
   };
   user?: ScopedUser;
 };

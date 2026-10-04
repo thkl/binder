@@ -26,6 +26,22 @@ share.
 - Log job start, completion, duration, size, destination, and failure reason;
   never log database passwords or dump contents.
 
+When `backup.encryptionPassword` is configured, the worker creates a
+`.binder` bundle instead of retaining the plaintext dump. The bundle contains
+the PostgreSQL dump, the complete configured document-storage tree, and a
+versioned manifest. It is encrypted with AES-256-GCM using a key derived from
+the configured password with scrypt. The password is only stored encrypted at
+rest in Binder's settings; it is never sent to Dropbox or written into the
+bundle metadata.
+
+External delivery is selected with `backup.provider` and
+`backup.remoteFolder`. Dropbox uses an OAuth refresh token stored encrypted in
+`backup.dropbox.refreshToken`; administrators connect it from Settings and do
+not paste a token into the application. Uploads use provider upload sessions
+for large bundles. A Dropbox connection cannot decrypt a backup; operators
+must retain the encryption password separately. If no provider is selected,
+the encrypted bundle remains in `backup.root` for the existing retention job.
+
 The backup job should also write a small manifest containing the dump version,
 creation time, database identity, and application version. A later consistency
 check can compare document storage keys and checksums with the NAS share

@@ -46,6 +46,44 @@
       </aside>
 
       <div class="settings-content">
+        @if (activeSection() === 'maintenance') {
+          <section class="settings-form glass-card provider-connection-card">
+            <header class="form-heading">
+              <div>
+                <p class="section-kicker">{{ 'settings.externalStorage.kicker' | t }}</p>
+                <h3>{{ 'settings.externalStorage.title' | t }}</h3>
+              </div>
+              @if (dropbox.status()?.connected) {
+                <span class="field-count">{{ 'settings.externalStorage.connected' | t }}</span>
+              }
+            </header>
+            <p class="muted">{{ 'settings.externalStorage.copy' | t }}</p>
+            @if (dropbox.error(); as error) {
+              <p class="field-hint warning" role="alert">{{ error }}</p>
+            }
+            @if (!dropbox.status()?.configured) {
+              <p class="field-hint">{{ 'settings.externalStorage.notConfigured' | t }}</p>
+            } @else if (dropbox.status()?.connected) {
+              <button
+                type="button"
+                class="text-button"
+                (click)="dropbox.disconnect()"
+                [disabled]="dropbox.loading()"
+              >
+                {{ 'settings.externalStorage.disconnect' | t }}
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="save-button"
+                (click)="dropbox.connect()"
+                [disabled]="dropbox.loading()"
+              >
+                {{ 'settings.externalStorage.connect' | t }}
+              </button>
+            }
+          </section>
+        }
         @if (activeSection() === 'users') {
           <binder-user-management />
         } @else {

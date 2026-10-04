@@ -19,6 +19,7 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
 import { AiProviderManagerComponent } from '../ai-provider-manager/ai-provider-manager.component';
 import { UserManagementComponent } from '../user-management/user-management.component';
 import { AuthService } from '../../../authentication/services/auth.service';
+import { DropboxConnectionService } from '../../services/dropbox-connection.service';
 
 @Component({
   selector: 'binder-settings',
@@ -35,6 +36,7 @@ export class SettingsComponent implements OnInit {
   readonly metadataService = inject(MetadataService);
   readonly i18n = inject(I18nService);
   readonly auth = inject(AuthService);
+  readonly dropbox = inject(DropboxConnectionService);
 
   readonly activeSection = signal('');
   readonly saved = signal(false);
@@ -63,6 +65,7 @@ export class SettingsComponent implements OnInit {
       this.settingsService.load(),
       this.settingsService.loadUsers(),
       this.metadataService.loadDefinitions(),
+      this.dropbox.load(),
     ]);
     if (!response) {
       return;

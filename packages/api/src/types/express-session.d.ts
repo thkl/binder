@@ -5,5 +5,7 @@ declare module 'express-session' {
     userId?: string;
     mustChangePassword?: boolean;
     csrfToken?: string;
+    dropboxState?: string;
+    dropboxCodeVerifier?: string;
   }
 }

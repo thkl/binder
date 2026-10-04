@@ -24,6 +24,8 @@ export const ConfigKeys = {
   NODE_ENV: 'NODE_ENV',
   DOCUMENT_STORAGE_ROOT: 'DOCUMENT_STORAGE_ROOT', // this only exists in dev
   PG_DUMP_PATH: 'PG_DUMP_PATH',
+  DROPBOX_APP_KEY: 'DROPBOX_APP_KEY',
+  DROPBOX_APP_SECRET: 'DROPBOX_APP_SECRET',
 } as const;
 
 export interface BinderConfig {
@@ -52,4 +54,6 @@ export interface BinderConfig {
   SESSION_TTL_MS?: string;
   DOCUMENT_STORAGE_ROOT?: string;
   PG_DUMP_PATH?: string;
+  DROPBOX_APP_KEY?: string;
+  DROPBOX_APP_SECRET?: string;
 }
