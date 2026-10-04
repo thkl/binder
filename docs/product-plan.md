@@ -164,6 +164,14 @@ worker setting and run automatically after text extraction when enabled.
   - Add IMAP mailbox settings, import owner, polling interval, and post-import handling.
   - Keep the actual mailbox adapter on the existing inbox/import pipeline and process it next.
 - Import documents from email
+- Add disaster-recovery onboarding for backup providers:
+  - Let the administrator connect Dropbox during first-run onboarding.
+  - Discover and display available encrypted backups with dates, scopes, and sizes.
+  - Offer an explicit restore choice before normal setup is finalized.
+  - Require the backup password and separate confirmation before replacing the
+    initial database and document storage.
+  - Preserve the existing audit and safety boundaries; recovery must never
+    become an unauthenticated or accidental destructive operation.
 - Add secure email-based password reset for local accounts
 - Connect scanners and other external sources
 - Learn from explicit user corrections to improve recurring-document classification ✅ Implemented:

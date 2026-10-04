@@ -255,6 +255,21 @@ option accepts an absolute path such as `/mnt/documents` and bind-mounts it at
 `BINDER_DOCUMENTS_PATH` in `.env` and is preserved on later runs. The document
 storage path is separate from the PostgreSQL and backup volumes.
 
+For recovery of an existing installation, run the script interactively and
+choose **Recovery**, or set the mode explicitly:
+
+```bash
+BINDER_SETUP_MODE=recovery ./scripts/setup.sh
+```
+
+Recovery mode never generates replacement values for `DATABASE_PASSWORD` or
+`ENCRYPTION_KEY`; those must match the existing PostgreSQL installation and
+the key that encrypted Binder's stored settings. It also asks for the Dropbox
+app key and secret so the recovered installation can refresh its Dropbox
+connection. Keep the existing document-storage and PostgreSQL volumes
+attached. Generating a new encryption key would make encrypted settings,
+including the Dropbox refresh token, unreadable.
+
 Configured values in an existing `.env` are preserved. Keep this file safe
 and do not delete it while the PostgreSQL volume exists: PostgreSQL only uses
 `POSTGRES_PASSWORD` when initializing a new data directory, so generating a

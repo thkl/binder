@@ -24,7 +24,11 @@ RUN pnpm deploy --legacy --filter @binder/worker --prod /out/worker
 RUN rm -rf /out/api/node_modules/@binder/common \
   && mkdir -p /out/api/node_modules/@binder/common \
   && cp /workspace/packages/common/package.json /out/api/node_modules/@binder/common/package.json \
-  && cp -R /workspace/packages/common/dist /out/api/node_modules/@binder/common/dist
+  && cp -R /workspace/packages/common/dist /out/api/node_modules/@binder/common/dist \
+  && rm -rf /out/worker/node_modules/@binder/common \
+  && mkdir -p /out/worker/node_modules/@binder/common \
+  && cp /workspace/packages/common/package.json /out/worker/node_modules/@binder/common/package.json \
+  && cp -R /workspace/packages/common/dist /out/worker/node_modules/@binder/common/dist
 
 FROM node:24-bookworm-slim AS api
 

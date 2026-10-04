@@ -142,6 +142,13 @@ to the P2 hardening phase. The repository includes a guarded operator script at
 and `RESTORE_CONFIRM=YES`, and refuses to target the configured live database
 unless `ALLOW_LIVE_RESTORE=YES` is explicitly supplied.
 
+P3 onboarding may provide a guided version of this flow for catastrophic
+recovery: connect Dropbox, inspect encrypted backup metadata, select a backup,
+enter the backup password, and explicitly confirm replacement of the initial
+database and document storage. This must remain a privileged, authenticated
+setup action and retain the same guarded restore boundaries as the operator
+script.
+
 ## Scheduler boundary
 
 Recurring maintenance currently runs inside the persistent worker process,

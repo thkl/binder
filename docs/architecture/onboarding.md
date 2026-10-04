@@ -63,9 +63,13 @@ optional steps:
    later under Settings.
 6. **Optional OIDC** — configure or skip OIDC and validate issuer discovery,
    client configuration, and internal-user mapping behavior.
-7. **Backups** — enable the scheduled backup and retention settings and run a
+7. **Optional disaster recovery** — connect Dropbox, list available encrypted
+   backups, and optionally restore a selected backup before completing setup.
+   The administrator must provide the backup password and explicitly confirm
+   replacement of the initial database and document storage.
+8. **Backups** — enable the scheduled backup and retention settings and run a
    writable-destination check.
-8. **Review and finish** — show the effective non-secret configuration,
+9. **Review and finish** — show the effective non-secret configuration,
    identify skipped optional steps, and complete onboarding.
 
 Every step must have a server-side validation endpoint or transaction-backed
@@ -83,6 +87,9 @@ POST /api/v1/setup/validate-storage
 POST /api/v1/setup/validate-processing
 POST /api/v1/setup/validate-oidc
 POST /api/v1/setup/validate-backup
+POST /api/v1/setup/dropbox/connect
+GET  /api/v1/setup/recovery/backups
+POST /api/v1/setup/recovery/restore
 POST /api/v1/setup/complete
 ```
 
@@ -102,6 +109,14 @@ Processing validation uses a short-lived database heartbeat written by the
 worker. A missing heartbeat is shown as a warning so an administrator can
 finish the installation while starting the worker separately, but the issue
 is visible before documents are uploaded.
+
+Recovery is deliberately a separate, explicit setup action. The backup listing
+must expose only safe metadata such as filename, creation time, scope, and
+size; it must not expose Dropbox tokens or backup passwords. Restore must stage
+and validate the selected archive, verify the password and manifest, quiesce
+consumers, and require confirmation before replacing the initial database or
+document storage. A failed restore must leave the installation in an
+operator-visible recovery state rather than silently completing onboarding.
 
 ## Runtime settings
 

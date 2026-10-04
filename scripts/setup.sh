@@ -21,6 +21,7 @@ COMPOSE_FILE="${COMPOSE_FILE:-$PROJECT_ROOT/docker-compose.yml}"
 BINDER_VERSION="${BINDER_VERSION:-$(awk -F'"' '/"version":/ { print $4; exit }' "$PROJECT_ROOT/packages/api/package.json")}"
 BINDER_VERSION="${BINDER_VERSION:-unknown}"
 environment_created=0
+setup_mode="${BINDER_SETUP_MODE:-new}"
 
 printf '\n========================================\n'
 printf ' Installing Binder Docker version %s\n' "$BINDER_VERSION"
@@ -35,6 +36,7 @@ and starts the Binder Compose stack in the background.
 
 Environment:
   BINDER_ENV_FILE   Environment file to create/use (default: .env)
+  BINDER_SETUP_MODE Installation mode: new or recovery (default: new)
   BINDER_HOST_PORT  Host port for the Binder web interface (default: 3000)
   BINDER_VERSION     Version shown in the installer banner (default: API package version)
   COMPOSE_FILE      Compose file to use (default: docker-compose.yml)
@@ -83,6 +85,32 @@ read_env_value() {
   local key="$1"
 
   awk -F= -v key="$key" '$1 == key { sub(/^[^=]*=/, ""); print; exit }' "$ENV_FILE"
+}
+
+choose_setup_mode() {
+  if [[ "${BINDER_SETUP_MODE:-}" == "recovery" || "${BINDER_SETUP_MODE:-}" == "new" ]]; then
+    setup_mode="$BINDER_SETUP_MODE"
+    return
+  fi
+
+  if [[ "$#" -ne 0 || ! -t 0 ]]; then
+    setup_mode='new'
+    return
+  fi
+
+  printf '\nWhat kind of installation is this?\n'
+  printf '  1) New installation (generate missing secrets)\n'
+  printf '  2) Recovery of an existing installation (provide existing secrets)\n'
+  while true; do
+    printf 'Choose installation type [1/2, default: 1]: '
+    IFS= read -r setup_choice
+    setup_choice="${setup_choice:-1}"
+    case "$setup_choice" in
+      1) setup_mode='new'; return ;;
+      2) setup_mode='recovery'; return ;;
+      *) printf 'Please choose 1 or 2.\n' >&2 ;;
+    esac
+  done
 }
 
 is_placeholder() {
@@ -258,10 +286,51 @@ ensure_secret() {
   fi
 }
 
-ensure_secret DATABASE_PASSWORD "$(openssl rand -hex 32)"
-ensure_secret ENCRYPTION_KEY "$(openssl rand -base64 32 | tr -d '\r\n')"
-ensure_secret SESSION_SECRET "$(openssl rand -hex 48)"
-ensure_secret SETUP_SECRET "$(openssl rand -hex 48)"
+require_existing_secret() {
+  local key="$1"
+  local current_value
+  local supplied_value
+
+  current_value="$(read_env_value "$key" || true)"
+  if ! is_placeholder "$current_value"; then
+    printf 'Preserved configured %s for recovery\n' "$key"
+    return
+  fi
+
+  if [[ ! -t 0 ]]; then
+    printf 'error: recovery mode requires %s in %s or an interactive terminal\n' "$key" "$ENV_FILE" >&2
+    exit 1
+  fi
+
+  printf 'Enter the existing %s: ' "$key"
+  IFS= read -r -s supplied_value
+  printf '\n'
+  if is_placeholder "$supplied_value"; then
+    printf 'error: %s is required for recovery\n' "$key" >&2
+    exit 1
+  fi
+  set_env_value "$key" "$supplied_value"
+}
+
+choose_setup_mode "$@"
+
+if [[ "$setup_mode" == 'recovery' ]]; then
+  printf '\nRecovery mode selected. Existing secrets will be preserved or requested.\n'
+  require_existing_secret DATABASE_PASSWORD
+  require_existing_secret ENCRYPTION_KEY
+  require_existing_secret DROPBOX_APP_KEY
+  require_existing_secret DROPBOX_APP_SECRET
+else
+  ensure_secret DATABASE_PASSWORD "$(openssl rand -hex 32)"
+  ensure_secret ENCRYPTION_KEY "$(openssl rand -base64 32 | tr -d '\r\n')"
+  ensure_secret SESSION_SECRET "$(openssl rand -hex 48)"
+  ensure_secret SETUP_SECRET "$(openssl rand -hex 48)"
+fi
+
+if [[ "$setup_mode" == 'recovery' ]]; then
+  ensure_secret SESSION_SECRET "$(openssl rand -hex 48)"
+  ensure_secret SETUP_SECRET "$(openssl rand -hex 48)"
+fi
 
 chmod 600 "$ENV_FILE"
 printf 'Protected %s with mode 600\n' "$ENV_FILE"
