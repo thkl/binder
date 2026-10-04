@@ -57,10 +57,9 @@ export class SettingsComponent implements OnInit {
       const section = params.get('section');
       if (section) {
         this.activeSection.set(section);
+        void this.loadSettings();
       }
     });
-
-    void this.loadSettings();
   }
 
   async loadSettings(): Promise<void> {
