@@ -18,9 +18,9 @@ export class FileProviderFactory {
           : setting.value,
       ]),
     );
-    if (values.get('backup.provider') !== 'dropbox') return null;
-
     const refreshToken = values.get('backup.dropbox.refreshToken');
+    const provider = values.get('backup.provider');
+    if (provider !== 'dropbox' && !refreshToken) return null;
     const appKey = secrets.get('DROPBOX_APP_KEY');
     const appSecret = secrets.get('DROPBOX_APP_SECRET');
     if (!refreshToken || !appKey || !appSecret) {
@@ -28,5 +28,4 @@ export class FileProviderFactory {
     }
     return new DropboxFileProvider(refreshToken, appKey, appSecret);
   }
-
 }

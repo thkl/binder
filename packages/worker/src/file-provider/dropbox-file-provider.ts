@@ -4,6 +4,7 @@ import { FileProvider } from './file-provider.js';
 
 const DROPBOX_CONTENT_URL = 'https://content.dropboxapi.com/2';
 const CHUNK_SIZE = 8 * 1024 * 1024;
+const REQUEST_TIMEOUT_MS = 120_000;
 
 interface DropboxTokenResponse {
   access_token?: string;
@@ -73,9 +74,14 @@ export class DropboxFileProvider extends FileProvider {
         Authorization: `Bearer ${accessToken}`,
         'Dropbox-API-Arg': JSON.stringify({ path: remotePath }),
       },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
-    if (!response.ok || !response.body)
-      throw new Error(`Dropbox download failed with HTTP ${response.status}`);
+    if (!response.ok || !response.body) {
+      const details = await response.text();
+      throw new Error(
+        `Dropbox download failed with HTTP ${response.status}: ${details.slice(0, 500)}`,
+      );
+    }
     const output = createWriteStream(localPath, { mode: 0o660 });
     for await (const chunk of response.body) output.write(chunk);
     output.end();
@@ -100,8 +106,14 @@ export class DropboxFileProvider extends FileProvider {
         client_id: this.appKey,
         client_secret: this.appSecret,
       }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
-    if (!response.ok) throw new Error(`Dropbox token refresh failed with HTTP ${response.status}`);
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(
+        `Dropbox token refresh failed with HTTP ${response.status}: ${details.slice(0, 500)}`,
+      );
+    }
     const data = (await response.json()) as DropboxTokenResponse;
     if (!data.access_token) throw new Error('Dropbox token refresh returned no access token');
     return data.access_token;
@@ -121,8 +133,14 @@ export class DropboxFileProvider extends FileProvider {
         'Dropbox-API-Arg': JSON.stringify(argument),
       },
       body: body ? Buffer.from(body) : undefined,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
-    if (!response.ok) throw new Error(`Dropbox file operation failed with HTTP ${response.status}`);
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(
+        `Dropbox file operation failed with HTTP ${response.status}: ${details.slice(0, 500)}`,
+      );
+    }
     return (await response.json()) as Record<string, unknown>;
   }
 }

@@ -32,6 +32,12 @@ export class FileBackupService {
   constructor(private readonly providers = new FileProviderFactory()) {}
 
   async create(settings: FileBackupSettings): Promise<FileBackupResult> {
+    logger.info('Starting backup', {
+      scope: settings.scope,
+      provider: settings.provider,
+      backupRoot: settings.root,
+      remoteFolder: settings.remoteFolder,
+    });
     if (settings.provider !== 'none' && !settings.encryptionPassword) {
       throw new Error('External file providers require an encrypted backup password');
     }
@@ -56,6 +62,10 @@ export class FileBackupService {
           sizeBytes,
           'pg_dump-custom',
         );
+        logger.info('Database backup stored locally; external upload skipped', {
+          artifactName: dumpName,
+          provider: settings.provider,
+        });
         return { artifactName: dumpName, sizeBytes, uploaded: false };
       }
 
@@ -95,6 +105,11 @@ export class FileBackupService {
       }
 
       const sizeBytes = (await fs.stat(encryptedPath)).size;
+      logger.info('Backup artifact created', {
+        artifactName: encryptedName,
+        sizeBytes,
+        scope: settings.scope,
+      });
       await this.writeManifest(
         path.join(settings.root, `${encryptedName}.json`),
         encryptedName,
@@ -102,11 +117,23 @@ export class FileBackupService {
         'age-encrypted-tar-gzip',
       );
       const provider = await this.providers.create();
-      if (!provider) return { artifactName: encryptedName, sizeBytes, uploaded: false };
-      await provider.storeFile(
-        encryptedPath,
-        `${settings.remoteFolder.replace(/\/$/, '')}/${encryptedName}`,
-      );
+      if (!provider) {
+        logger.warn('Skipping external backup upload: no provider is configured', {
+          artifactName: encryptedName,
+          configuredProvider: settings.provider,
+        });
+        return { artifactName: encryptedName, sizeBytes, uploaded: false };
+      }
+      const remotePath = `${settings.remoteFolder.replace(/\/$/, '')}/${encryptedName}`;
+      logger.info('Uploading backup to external file provider', {
+        artifactName: encryptedName,
+        remotePath,
+      });
+      await provider.storeFile(encryptedPath, remotePath);
+      logger.info('Backup uploaded to external file provider', {
+        artifactName: encryptedName,
+        remotePath,
+      });
       return { artifactName: encryptedName, sizeBytes, uploaded: true };
     } catch (error) {
       await fs.rm(dumpPath, { force: true }).catch(() => undefined);

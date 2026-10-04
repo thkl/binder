@@ -131,6 +131,16 @@ export class ApplicationSettingsService {
         result.push(st);
       }
 
+      // A connected Dropbox refresh token is authoritative even if an older
+      // settings save left the provider selector at `none`.
+      const hasDropboxConnection = settingData.some(
+        (setting) => setting.key === 'backup.dropbox.refreshToken',
+      );
+      if (hasDropboxConnection) {
+        const provider = result.find((setting) => setting.key === 'backup.provider');
+        if (provider && provider.value === 'none') provider.value = 'dropbox';
+      }
+
       const settings: ApplicationSettingExported = {
         template: {
           sections: settingsSections,

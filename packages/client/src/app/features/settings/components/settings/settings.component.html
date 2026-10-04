@@ -57,35 +57,37 @@
                 <span class="field-count">{{ 'settings.externalStorage.connected' | t }}</span>
               }
             </header>
-            <div style="padding: 1.6rem;">
-            <p class="muted">{{ 'settings.externalStorage.copy' | t }}</p>
-            @if (dropbox.error(); as error) {
-              <p class="field-hint warning" role="alert">{{ error }}</p>
-            }
-            @if (!dropbox.status()?.configured) {
-              <p class="field-hint">{{ 'settings.externalStorage.notConfigured' | t }}</p>
-            } @else if (dropbox.status()?.connected) {
-              <button
-                type="button"
-                class="secondary-button"
-                (click)="dropbox.disconnect()"
-                [disabled]="dropbox.loading()"
-              >
-                {{ 'settings.externalStorage.disconnect' | t }}
-              </button>
-            } @else {
-              <button
-                type="button"
-                class="secondary-button"
-                (click)="dropbox.connect()"
-                [disabled]="dropbox.loading()"
-              >
-                {{ 'settings.externalStorage.connect' | t }}
-              </button>
-            }
-            <div class="external-backup-action">
-              <p class="field-hint"><a href="/maintenance">{{ 'settings.runBackupNowLink' | t }}</a></p>
-            </div>
+            <div style="padding: 1.6rem">
+              <p class="muted">{{ 'settings.externalStorage.copy' | t }}</p>
+              @if (dropbox.error(); as error) {
+                <p class="field-hint warning" role="alert">{{ error }}</p>
+              }
+              @if (!dropbox.status()?.configured) {
+                <p class="field-hint">{{ 'settings.externalStorage.notConfigured' | t }}</p>
+              } @else if (dropbox.status()?.connected) {
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="dropbox.disconnect()"
+                  [disabled]="dropbox.loading()"
+                >
+                  {{ 'settings.externalStorage.disconnect' | t }}
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="dropbox.connect()"
+                  [disabled]="dropbox.loading()"
+                >
+                  {{ 'settings.externalStorage.connect' | t }}
+                </button>
+              }
+              <div class="external-backup-action">
+                <p class="field-hint">
+                  <a href="/maintenance">{{ 'settings.runBackupNowLink' | t }}</a>
+                </p>
+              </div>
             </div>
           </section>
         }
@@ -217,6 +219,9 @@
                       }
                       @if (item.patternMessage) {
                         <span class="field-hint">{{ patternHint(item) }}</span>
+                      }
+                      @if (item.key === 'backup.remoteFolder') {
+                        <span class="field-hint">{{ 'setting.backup.remoteFolder.hint' | t }}</span>
                       }
                     </label>
                   }
