@@ -1,4 +1,5 @@
 import { Op } from 'sequelize';
+import { readFileSync } from 'node:fs';
 import { ApplicationSetting } from '../models.js';
 import { decryptSettingSecret } from '../config.js';
 import { DropboxFileProvider } from './dropbox-file-provider.js';
@@ -20,11 +21,26 @@ export class FileProviderFactory {
     if (values.get('backup.provider') !== 'dropbox') return null;
 
     const refreshToken = values.get('backup.dropbox.refreshToken');
-    const appKey = process.env.DROPBOX_APP_KEY;
-    const appSecret = process.env.DROPBOX_APP_SECRET;
+    const appKey = this.credential('DROPBOX_APP_KEY');
+    const appSecret = this.credential('DROPBOX_APP_SECRET');
     if (!refreshToken || !appKey || !appSecret) {
       throw new Error('Dropbox is connected but its OAuth configuration is incomplete');
     }
     return new DropboxFileProvider(refreshToken, appKey, appSecret);
+  }
+
+  private credential(name: 'DROPBOX_APP_KEY' | 'DROPBOX_APP_SECRET'): string | undefined {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+    const file = process.env[`${name}_FILE`]?.trim();
+    if (!file) return undefined;
+    try {
+      const secret = readFileSync(file, 'utf8').trim();
+      return secret || undefined;
+    } catch (error) {
+      throw new Error(
+        `Unable to read ${name}_FILE: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 }

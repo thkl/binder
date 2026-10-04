@@ -42,6 +42,63 @@ for large bundles. A Dropbox connection cannot decrypt a backup; operators
 must retain the encryption password separately. If no provider is selected,
 the encrypted bundle remains in `backup.root` for the existing retention job.
 
+## Configure the Dropbox application
+
+The Dropbox app key and secret identify Binder's OAuth application. They are
+server-side credentials and must never be committed to the repository or
+entered into the Binder settings UI.
+
+1. Open the [Dropbox App Console](https://www.dropbox.com/developers/apps) and
+   choose **Create app**.
+2. Select **Scoped access**, then choose **Full Dropbox** or **App folder**.
+   App folder is the safer choice if Binder should only access its own Dropbox
+   folder.
+3. Give the app the required files scopes: `files.content.read` and
+   `files.content.write`. Save the permissions.
+4. On the app's **Settings** page, copy **App key** and **App secret** into the
+   server environment:
+
+   ```env
+   DROPBOX_APP_KEY=your-app-key
+   DROPBOX_APP_SECRET=your-app-secret
+   ```
+
+   When the deployment injects Docker or Kubernetes secrets as files, use the
+   optional file variables instead:
+
+   ```env
+   DROPBOX_APP_KEY_FILE=/run/secrets/api_dropbox_app_key
+   DROPBOX_APP_SECRET_FILE=/run/secrets/api_dropbox_app_secret
+   ```
+
+   The same variables must be available to both the API and worker containers.
+   A direct value is used first; the corresponding `_FILE` value is used when
+   the direct variable is empty. Secret-file contents are trimmed and are not
+   logged.
+
+5. Add Binder's derived callback URL to **Redirect URIs** in the same Dropbox
+   app. It is built from `ROOT_URI` and `API_PREFIX`:
+
+   ```text
+   {ROOT_URI}/{API_PREFIX}/maintenance/dropbox/callback
+   ```
+
+   With the default local configuration this is:
+
+   ```text
+   http://localhost:3000/api/v1/maintenance/dropbox/callback
+   ```
+
+   The URL must match exactly, including scheme, hostname, port, path, and
+   trailing slash behavior. No `DROPBOX_REDIRECT_URI` setting is needed in
+   Binder.
+
+6. Restart the API and worker after setting the credentials. In Binder, open
+   **Settings → Backup and maintenance → Dropbox connection** and choose
+   **Connect Dropbox**. Dropbox will ask the administrator to authorize the
+   requested file scopes; Binder stores only the resulting refresh token,
+   encrypted with the application encryption key.
+
 The backup job should also write a small manifest containing the dump version,
 creation time, database identity, and application version. A later consistency
 check can compare document storage keys and checksums with the NAS share

@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { randomBytes, createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
@@ -18,16 +19,17 @@ export class DropboxConnectionService {
   ) {}
 
   async status(): Promise<{ provider: string; connected: boolean; configured: boolean }> {
+    const [appKey, appSecret] = await Promise.all([this.appKey(), this.appSecret()]);
     return {
       provider: (await this.settings.get('backup.provider', 'none')) ?? 'none',
       connected: Boolean(await this.settings.get('backup.dropbox.refreshToken')),
-      configured: Boolean(this.appKey() && this.appSecret() && this.redirectUri()),
+      configured: Boolean(appKey && appSecret),
     };
   }
 
-  authorize(request: SessionRequest, response: Response): void {
-    const appKey = this.appKey();
-    if (!appKey || !this.appSecret()) {
+  async authorize(request: SessionRequest, response: Response): Promise<void> {
+    const [appKey, appSecret] = await Promise.all([this.appKey(), this.appSecret()]);
+    if (!appKey || !appSecret) {
       throw new BadRequestException('Dropbox OAuth is not configured on the server');
     }
     const state = randomBytes(24).toString('hex');
@@ -61,7 +63,8 @@ export class DropboxConnectionService {
     const verifier = request.session.dropboxCodeVerifier;
     delete request.session.dropboxState;
     delete request.session.dropboxCodeVerifier;
-    if (!verifier || !this.appKey() || !this.appSecret()) {
+    const [appKey, appSecret] = await Promise.all([this.appKey(), this.appSecret()]);
+    if (!verifier || !appKey || !appSecret) {
       throw new BadRequestException('Dropbox OAuth is not configured on the server');
     }
     const tokenResponse = await fetch('https://api.dropboxapi.com/oauth2/token', {
@@ -70,8 +73,8 @@ export class DropboxConnectionService {
       body: new URLSearchParams({
         code,
         grant_type: 'authorization_code',
-        client_id: this.appKey()!,
-        client_secret: this.appSecret()!,
+        client_id: appKey,
+        client_secret: appSecret,
         redirect_uri: this.redirectUri(),
         code_verifier: verifier,
       }),
@@ -92,11 +95,28 @@ export class DropboxConnectionService {
     await this.settings.set('backup.provider', 'none');
   }
 
-  private appKey(): string | undefined {
-    return this.config.get<string>(ConfigKeys.DROPBOX_APP_KEY);
+  private async appKey(): Promise<string | undefined> {
+    return this.credential(ConfigKeys.DROPBOX_APP_KEY, ConfigKeys.DROPBOX_APP_KEY_FILE);
   }
-  private appSecret(): string | undefined {
-    return this.config.get<string>(ConfigKeys.DROPBOX_APP_SECRET);
+  private async appSecret(): Promise<string | undefined> {
+    return this.credential(ConfigKeys.DROPBOX_APP_SECRET, ConfigKeys.DROPBOX_APP_SECRET_FILE);
+  }
+  private async credential(
+    key: keyof BinderConfig,
+    fileKey: keyof BinderConfig,
+  ): Promise<string | undefined> {
+    const value = this.config.get<string>(key)?.trim();
+    if (value) return value;
+    const file = this.config.get<string>(fileKey)?.trim();
+    if (!file) return undefined;
+    try {
+      const secret = (await readFile(file, 'utf8')).trim();
+      return secret || undefined;
+    } catch (error) {
+      throw new BadRequestException(
+        `Unable to read Dropbox credential file: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
   private redirectUri(): string {
     return `${this.config.get<string>(ConfigKeys.ROOT_URI)}/${this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1'}/maintenance/dropbox/callback`;
