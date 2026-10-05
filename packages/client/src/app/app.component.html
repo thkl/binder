@@ -86,7 +86,7 @@
               @if (auth.user()?.mcpEnabled !== false) {
                 <a
                   class="nav-menu-link"
-                  routerLink="/settings/security"
+                  routerLink="/settings/mcpaccess"
                   routerLinkActive="active"
                   (click)="closeMenu()"
                   >{{ 'nav.mcpAccess' | t }}</a
@@ -115,6 +115,13 @@
                   >{{ 'nav.users' | t }}</a
                 >
               }
+              <a
+                class="nav-menu-link"
+                routerLink="/settings/email-import"
+                routerLinkActive="active"
+                (click)="closeMenu()"
+                >{{ 'nav.emailImport' | t }}</a
+              >
               <a
                 class="nav-menu-link"
                 routerLink="/metadata"

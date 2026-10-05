@@ -66,6 +66,25 @@ export async function importInboxDocuments(force = false): Promise<void> {
   }
 }
 
+export async function importEmailPdf(
+  buffer: Buffer,
+  filename: string,
+  ownerUuid: string,
+): Promise<'imported' | 'duplicate' | 'rejected'> {
+  const inboxPath = await resolveStoragePath(config.inbox.path);
+  await ensureWritableDirectory(inboxPath);
+  await ensureWritableDirectory(join(inboxPath, 'duplicates'));
+  await ensureWritableDirectory(join(inboxPath, 'rejected'));
+
+  const storedFilename = `${randomUUID()}-${safeFilename(filename)}`;
+  const sourcePath = join(inboxPath, storedFilename);
+  await fs.writeFile(sourcePath, buffer, { mode: 0o640 });
+  const stableAt = new Date(Date.now() - config.inbox.stabilityMs - 1);
+  await fs.utimes(sourcePath, stableAt, stableAt);
+  const result = await importFile(inboxPath, storedFilename, ownerUuid, await getCompletionStage());
+  return result === 'skipped' ? 'rejected' : result;
+}
+
 async function importFile(
   inboxPath: string,
   filename: string,

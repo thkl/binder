@@ -24,6 +24,7 @@ import { PluginModule } from './features/plugin/plugin.module';
 import { CalendarModule } from './features/calendar/calendar.module';
 import { ClassificationFeedbackModule } from './features/classification-feedback/classification-feedback.module';
 import { McpPluginModule } from './features/plugin/mcp/mcp.plugin.module';
+import { EmailImportModule } from './features/email-import/email-import.module';
 
 @Module({
   controllers: [HealthController],
@@ -49,6 +50,7 @@ import { McpPluginModule } from './features/plugin/mcp/mcp.plugin.module';
     CalendarModule,
     ClassificationFeedbackModule,
     McpPluginModule.register(process.env.MCP_ENABLED !== 'false'),
+    EmailImportModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

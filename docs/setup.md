@@ -217,6 +217,11 @@ result. A detected threat or unavailable required scanner moves the document
 to `quarantined`; the original is not downloadable, previewable, searchable,
 exportable, or available to AI processing in that state.
 
+The worker must load `MALWARE_SCAN_CONFIG_FILE=/app/clamdscan.conf`, which is
+provided by the standard Compose service. That file selects TCP transport to
+the `clamav` service on port `3310`; a `LocalSocket` error means the running
+worker has not loaded the Compose config and must be rebuilt/restarted.
+
 The API is served on the Docker host port configured by `BINDER_HOST_PORT`
 (`3000` by default). PostgreSQL is intentionally not published to the host by
 the default Compose file. Inspect it from inside the container when needed:

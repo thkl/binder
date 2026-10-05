@@ -19,6 +19,7 @@ import { embedDocument } from './embeddings.js';
 import { importInboxDocuments } from './inbox-importer.js';
 import { matchDocumentIssuer } from './issuer-matcher.js';
 import { MalwareDetectedError, scanDocument } from './malware-scanner.js';
+import { importEmailMessages } from './email-importer.js';
 interface ClaimedJob {
   jobUuid: string;
   documentUuid: string;
@@ -37,12 +38,14 @@ export async function startPipelineWorker(): Promise<void> {
   });
   await recoverStaleJobs();
   await importInboxDocuments(true);
+  await importEmailMessages(true);
   await reconcileUploadedDocuments();
   await logQueueStatus();
   let last = Date.now();
   while (!stopping) {
     try {
       await importInboxDocuments();
+      await importEmailMessages();
       if (Date.now() - last >= config.reconcileIntervalMs) {
         await reconcileUploadedDocuments();
         last = Date.now();

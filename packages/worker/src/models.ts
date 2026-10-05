@@ -65,6 +65,36 @@ export class ApplicationSetting extends Model {
   declare valueIv: string | null;
 }
 
+@Table({ tableName: 'email_import_configs', underscored: true, timestamps: true })
+export class EmailImportConfig extends Model {
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ field: 'owner_id', type: DataType.UUID })
+  declare ownerUuid: string;
+
+  @Column({ type: DataType.BOOLEAN }) declare enabled: boolean;
+  @Column({ type: DataType.STRING(255) }) declare host: string;
+  @Column({ type: DataType.INTEGER }) declare port: number;
+  @Column({ type: DataType.BOOLEAN }) declare secure: boolean;
+  @Column({ type: DataType.STRING(320) }) declare username: string;
+  @Column({ type: DataType.TEXT, allowNull: true }) declare password: string | null;
+  @Column({ field: 'password_iv', type: DataType.STRING(32), allowNull: true })
+  declare passwordIv: string | null;
+  @Column({ type: DataType.STRING(255) }) declare mailbox: string;
+  @Column({ field: 'poll_interval_ms', type: DataType.INTEGER }) declare pollIntervalMs: number;
+  @Column({ field: 'delete_after_import', type: DataType.BOOLEAN }) declare deleteAfterImport: boolean;
+  @Column({ field: 'trusted_senders', type: DataType.JSONB }) declare trustedSenders: string[];
+  @Column({ field: 'last_polled_at', type: DataType.DATE, allowNull: true })
+  declare lastPolledAt: Date | null;
+  @Column({ field: 'last_error', type: DataType.TEXT, allowNull: true })
+  declare lastError: string | null;
+  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
+  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
+}
+
 @Table({ tableName: 'pipeline_worker_heartbeats', underscored: true, timestamps: false })
 export class PipelineWorkerHeartbeat extends Model {
   @PrimaryKey

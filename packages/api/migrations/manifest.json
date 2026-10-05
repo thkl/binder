@@ -395,6 +395,14 @@
                "required": [
                     "api_tokens"
                ]
+          },
+          "59": {
+               "created": [
+                    "email_import_configs"
+               ],
+               "required": [
+                    "users"
+               ]
           }
      }
 }

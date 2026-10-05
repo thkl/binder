@@ -69,12 +69,17 @@ export class SettingsComponent implements OnInit {
   }
 
   async loadSettings(): Promise<void> {
-    if (this.activeSection() === 'security' && this.auth.user()?.mcpEnabled === false) {
+    if (this.activeSection() === 'mcpaccess' && this.auth.user()?.mcpEnabled === false) {
       await this.router.navigate(['/settings/common'], { replaceUrl: true });
       return;
     }
 
+    if (this.activeSection() === 'mcpaccess' && !this.auth.user()?.isAdmin) {
+      return;
+    }
+
     if (this.activeSection() === 'security' && !this.auth.user()?.isAdmin) {
+      await this.router.navigate(['/settings/mcpaccess'], { replaceUrl: true });
       return;
     }
 
@@ -92,7 +97,7 @@ export class SettingsComponent implements OnInit {
     const requestedSection = this.activeSection();
     const firstSection = response.template.sections[0]?.key;
     const sectionExists =
-      requestedSection === 'users' ||
+      requestedSection === 'users' || requestedSection === 'mcpaccess' ||
       response.template.sections.some((section) => section.key === requestedSection);
 
     if (!sectionExists && firstSection) {

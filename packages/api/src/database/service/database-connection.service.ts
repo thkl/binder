@@ -41,6 +41,7 @@ import { PipelineWorkerHeartbeat } from '../../features/pipeline/models/pipeline
 import { CalendarEvent } from '../../features/calendar/models/calendar-event.entity';
 import { DocumentClassificationFeedback } from '../../features/classification-feedback/models/document-classification-feedback.entity';
 import { ApiToken } from '../../features/plugin/mcp/models/api-token.entity';
+import { EmailImportConfig } from '../../features/email-import/models/email-import-config.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -98,6 +99,7 @@ export class DatabaseConnectionService {
       CalendarEvent,
       DocumentClassificationFeedback,
       ApiToken,
+      EmailImportConfig,
     ]);
     await this.initialize();
   }

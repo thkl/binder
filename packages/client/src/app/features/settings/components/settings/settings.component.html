@@ -7,7 +7,7 @@
     </div>
   </div>
 
-  @if (auth.user()?.mcpEnabled !== false && activeSection() === 'security' && !auth.user()?.isAdmin) {
+  @if (auth.user()?.mcpEnabled !== false && activeSection() === 'mcpaccess') {
     <binder-api-token-manager />
   } @else if (settingsService.loading()) {
     <div class="settings-status glass-card">
@@ -95,7 +95,7 @@
         }
         @if (activeSection() === 'users') {
           <binder-user-management />
-        } @else if (activeSection() === 'security') {
+        } @else if (activeSection() === 'mcpaccess') {
           <binder-api-token-manager />
         } @else {
           <form class="settings-form glass-card" (submit)="$event.preventDefault(); save()">

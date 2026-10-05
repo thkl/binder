@@ -49,6 +49,13 @@ export const appRoutes: Routes = [
     redirectTo: 'settings/common',
   },
   {
+    path: 'settings/email-import',
+    loadComponent: () =>
+      import('./features/settings/components/email-import/email-import.component').then(
+        ({ EmailImportComponent }) => EmailImportComponent,
+      ),
+  },
+  {
     path: 'settings/:section',
     loadComponent: () =>
       import('./features/settings/components/settings/settings.component').then(

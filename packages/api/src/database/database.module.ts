@@ -40,6 +40,7 @@ import { DocumentClassificationFeedback } from '../features/classification-feedb
 import { ApiToken } from '../features/plugin/mcp/models/api-token.entity';
 import { SecretsModule } from '../shared/config/secrets.module';
 import { SecretsService } from '../shared/config/secrets.service';
+import { EmailImportConfig } from '../features/email-import/models/email-import-config.entity';
 
 @Global()
 @Module({
@@ -119,6 +120,7 @@ import { SecretsService } from '../shared/config/secrets.service';
       CalendarEvent,
       DocumentClassificationFeedback,
       ApiToken,
+      EmailImportConfig,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],
