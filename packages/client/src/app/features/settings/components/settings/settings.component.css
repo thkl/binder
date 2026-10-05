@@ -54,13 +54,6 @@ h2 {
   gap: 1rem;
 }
 
-.glass-card {
-  border: 1px solid var(--glass-border);
-  border-radius: 1.1rem;
-  background: var(--glass-card-background-color);
-  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.16);
-  backdrop-filter: blur(18px);
-}
 
 .section-sidebar {
   padding: 0.8rem;
@@ -154,95 +147,6 @@ h3 {
   letter-spacing: -0.04em;
 }
 
-.field-count {
-  color: #7188a5;
-  font-size: 0.75rem;
-}
-
-.fields {
-  display: grid;
-  gap: 1.2rem;
-  padding: 1.6rem;
-}
-
-.text-field {
-  display: grid;
-  gap: 0.45rem;
-  color: #b9c9dc;
-  font-size: 0.8rem;
-}
-
-.field-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #dceaff;
-}
-
-.field-label strong {
-  font-size: 0.85rem;
-}
-
-.field-label em {
-  color: var(--cyan);
-  font-size: 0.62rem;
-  font-style: normal;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.text-field small,
-.checkbox-copy small {
-  color: #7188a5;
-  font-size: 0.7rem;
-}
-
-.text-field input,
-.text-field select {
-  width: 100%;
-  border: 1px solid rgba(157, 190, 232, 0.2);
-  border-radius: 0.65rem;
-  padding: 0.8rem 0.85rem;
-  color: var(--ink);
-  background: rgba(5, 18, 35, 0.55);
-  outline: none;
-}
-
-.text-field textarea {
-  width: 100%;
-  min-height: 10rem;
-  resize: vertical;
-  border: 1px solid rgba(157, 190, 232, 0.2);
-  border-radius: 0.65rem;
-  padding: 0.8rem 0.85rem;
-  color: var(--ink);
-  background: rgba(5, 18, 35, 0.55);
-  outline: none;
-  font: inherit;
-  line-height: 1.5;
-}
-
-.text-field input:focus,
-.text-field select:focus {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(97, 215, 244, 0.13);
-}
-
-.text-field textarea:focus {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(97, 215, 244, 0.13);
-}
-
-.field-hint {
-  color: #67e0ac;
-  font-size: 0.68rem;
-}
-
-.field-hint.warning {
-  color: #f1c995;
-}
-
 .metadata-setting-summary {
   display: flex;
   align-items: center;
@@ -269,62 +173,6 @@ h3 {
   color: #8fa8c3;
 }
 
-.checkbox-field {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 1rem;
-  border: 1px solid rgba(157, 190, 232, 0.12);
-  border-radius: 0.75rem;
-  cursor: pointer;
-}
-
-.checkbox-field input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.checkbox-copy {
-  display: grid;
-  gap: 0.3rem;
-}
-
-.checkbox-copy strong {
-  color: #dceaff;
-  font-size: 0.85rem;
-}
-
-.toggle {
-  display: flex;
-  align-items: center;
-  width: 2.6rem;
-  height: 1.45rem;
-  padding: 0.18rem;
-  border-radius: 2rem;
-  background: #1b3553;
-  transition: background 0.2s;
-}
-
-.toggle span {
-  width: 1.05rem;
-  height: 1.05rem;
-  border-radius: 50%;
-  background: #7188a5;
-  transition:
-    transform 0.2s,
-    background 0.2s;
-}
-
-.checkbox-field:has(input:checked) .toggle {
-  background: rgba(97, 215, 244, 0.35);
-}
-
-.checkbox-field:has(input:checked) .toggle span {
-  transform: translateX(1.15rem);
-  background: var(--cyan);
-}
 
 .form-footer {
   display: flex;

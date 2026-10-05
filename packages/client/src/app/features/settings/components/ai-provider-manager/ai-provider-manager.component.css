@@ -183,48 +183,6 @@ h4 {
   flex-wrap: wrap;
 }
 
-.primary-button,
-.secondary-button,
-.text-button,
-.danger-button {
-  border: 0;
-  border-radius: 0.55rem;
-  padding: 0.55rem 0.7rem;
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.primary-button {
-  color: #061a2f;
-  background: var(--cyan);
-}
-
-.secondary-button {
-  border: 1px solid rgba(157, 190, 232, 0.2);
-  color: #cfe1f5;
-  background: rgba(157, 190, 232, 0.08);
-}
-
-.text-button {
-  color: var(--cyan);
-  background: transparent;
-}
-
-.danger-button {
-  color: #ff9c9c;
-  background: transparent;
-}
-
-.primary-button:disabled,
-.secondary-button:disabled,
-.text-button:disabled,
-.danger-button:disabled {
-  cursor: wait;
-  opacity: 0.55;
-}
-
 .provider-form {
   border-top: 1px solid var(--glass-border);
 }
