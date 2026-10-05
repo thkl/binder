@@ -88,6 +88,18 @@ export class UserStore extends BaseCrudStore<User, IStoreUser, UserStoreQueries>
     });
   }
 
+  async findByLogin(login: string): Promise<User | null> {
+    const normalized = login.trim();
+    return this.model.findOne({
+      where: {
+        [Op.or]: [
+          { username: { [Op.iLike]: normalized } },
+          { email: { [Op.iLike]: normalized.toLowerCase() } },
+        ],
+      },
+    });
+  }
+
   async findByEmailInsensitive(email: string, excludeUuid?: string): Promise<User | null> {
     return this.model.findOne({
       where: {

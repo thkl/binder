@@ -14,6 +14,7 @@ export class ApiTokenManagerComponent implements OnInit {
   readonly settings = inject(SettingsService);
   readonly name = signal('');
   readonly allowWrite = signal(false);
+  readonly expirationDays = signal<90 | 180>(90);
   readonly createdToken = signal<string | null>(null);
   readonly saving = signal(false);
   readonly pendingRevokeUuid = signal<string | null>(null);
@@ -28,11 +29,13 @@ export class ApiTokenManagerComponent implements OnInit {
     const token = await this.settings.createApiToken({
       name: this.name().trim(),
       permissions: this.allowWrite() ? ['documents:read', 'documents:write'] : ['documents:read'],
+      expiresAt: new Date(Date.now() + this.expirationDays() * 24 * 60 * 60 * 1000).toISOString(),
     });
     if (token) {
       this.createdToken.set(token);
       this.name.set('');
       this.allowWrite.set(false);
+      this.expirationDays.set(90);
     }
     this.saving.set(false);
   }

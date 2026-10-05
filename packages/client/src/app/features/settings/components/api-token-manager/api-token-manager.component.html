@@ -37,6 +37,16 @@
       <span  class="checkbox-copy">Allow document writes</span>
        <span class="toggle"><span></span></span>
     </label>
+    <label class="text-field">
+      <span class="field-label">Token expiration</span>
+      <select
+        [value]="expirationDays()"
+        (change)="expirationDays.set(+$any($event.target).value === 180 ? 180 : 90)"
+      >
+        <option [value]="90">90 days (default)</option>
+        <option [value]="180">180 days</option>
+      </select>
+    </label>
     <button class="primary-action" type="submit" [disabled]="saving() || !name().trim()">
       Create token
     </button>

@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomBytes, createHash } from 'node:crypto';
 import { ApiTokenPermission, CreateApiTokenInput } from '@binder/common';
 import { InjectModel } from '@nestjs/sequelize';
@@ -7,6 +7,9 @@ import { User } from '../models/user.entity';
 import { ScopedUser } from '../decorators/current-user.decorator';
 
 const TOKEN_PREFIX = 'bnd_pat_';
+const DEFAULT_EXPIRATION_DAYS = 90;
+const MAX_EXPIRATION_DAYS = 180;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class ApiTokenService {
@@ -26,7 +29,7 @@ export class ApiTokenService {
       tokenHash: this.hash(token),
       permissions: [...new Set(input.permissions)] as ApiTokenPermission[],
       lastUsedAt: null,
-      expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+      expiresAt: this.resolveExpiresAt(input.expiresAt),
       revokedAt: null,
     });
     return { token, apiToken: this.toResponse(record) };
@@ -78,6 +81,20 @@ export class ApiTokenService {
 
   private hash(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private resolveExpiresAt(value?: string | null): Date {
+    const now = Date.now();
+    const expiresAt = value ? new Date(value) : new Date(now + DEFAULT_EXPIRATION_DAYS * DAY_MS);
+
+    if (!Number.isFinite(expiresAt.getTime()) || expiresAt.getTime() <= now) {
+      throw new BadRequestException('Token expiration must be in the future');
+    }
+    if (expiresAt.getTime() > now + MAX_EXPIRATION_DAYS * DAY_MS) {
+      throw new BadRequestException('Token expiration cannot be more than 180 days');
+    }
+
+    return expiresAt;
   }
 
   private toResponse(record: ApiToken) {

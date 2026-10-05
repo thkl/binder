@@ -39,7 +39,7 @@ export class AuthenticationService {
   }
 
   async login(input: LoginInput): Promise<AuthenticatedUser> {
-    const user = await this.users.findOneNamed('findByUsername', {}, { username: input.username });
+    const user = await this.users.findByLogin(input.username);
     if (user === null) {
       this.logger.debug(`user ${input.username} not found`);
     }

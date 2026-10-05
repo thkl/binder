@@ -93,7 +93,11 @@ export class SettingsService {
     }
   }
 
-  async createApiToken(input: { name: string; permissions: string[] }): Promise<string | null> {
+  async createApiToken(input: {
+    name: string;
+    permissions: string[];
+    expiresAt: string;
+  }): Promise<string | null> {
     try {
       const response = await firstValueFrom(
         this.http.post<ApiResponse<unknown>>('/api/v1/auth/api-tokens', input, {
