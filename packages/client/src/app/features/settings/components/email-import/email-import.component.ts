@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { EmailImportConfig, EmailImportService } from '../../services/email-import.service';
+import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'binder-email-import',
   standalone: true,
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, ConfirmDialogComponent],
   templateUrl: './email-import.component.html',
   styleUrl: './email-import.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,6 +26,7 @@ export class EmailImportComponent implements OnInit {
   readonly trustedSenders = signal('');
   readonly passwordChanged = signal(false);
   readonly saved = signal(false);
+  readonly confirmDelete = signal(false);
 
   ngOnInit(): void { void this.load(); }
 
@@ -45,6 +47,31 @@ export class EmailImportComponent implements OnInit {
     if (this.passwordChanged()) input['password'] = this.password();
     const config = await this.service.save(input);
     if (config) { this.setValues(config); this.saved.set(true); }
+  }
+
+  requestDelete(): void {
+    if (!this.enabled() && this.service.config()) this.confirmDelete.set(true);
+  }
+
+  cancelDelete(): void {
+    this.confirmDelete.set(false);
+  }
+
+  async deleteSettings(): Promise<void> {
+    this.confirmDelete.set(false);
+    if (!(await this.service.delete())) return;
+    this.enabled.set(false);
+    this.host.set('');
+    this.port.set(993);
+    this.secure.set(true);
+    this.username.set('');
+    this.password.set('');
+    this.mailbox.set('INBOX');
+    this.pollIntervalMinutes.set(15);
+    this.deleteAfterImport.set(false);
+    this.trustedSenders.set('');
+    this.passwordChanged.set(false);
+    this.saved.set(false);
   }
 
   private setValues(config: EmailImportConfig): void {

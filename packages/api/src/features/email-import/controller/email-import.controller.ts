@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Put, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
@@ -37,5 +37,11 @@ export class EmailImportController {
   ): Promise<{ data: Record<string, unknown> }> {
     const input = EmailImportConfigInputSchema.parse(body);
     return { data: await this.configs.save(user.userId, input) };
+  }
+
+  @Delete('config')
+  async deleteConfig(@CurrentUser() user: ScopedUser): Promise<{ data: null }> {
+    await this.configs.delete(user.userId);
+    return { data: null };
   }
 }

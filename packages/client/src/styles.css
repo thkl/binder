@@ -60,13 +60,14 @@ button {
 .secondary-button,
 .text-button,
 .danger-button {
-  border: 0;
-  border-radius: 0.55rem;
-  padding: 0.55rem 0.7rem;
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
+    border: 1px solid;
+    border-radius: 0.55rem;
+    padding: 0.8rem 1rem;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-color: #ff9c9c;
 }
 
 .primary-button {

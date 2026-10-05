@@ -25,6 +25,10 @@ export class EmailImportConfigService {
     return this.toResponse(config);
   }
 
+  async delete(ownerUuid: string): Promise<void> {
+    await EmailImportConfig.destroy({ where: { ownerUuid } });
+  }
+
   async save(ownerUuid: string, input: EmailImportConfigInput): Promise<Record<string, unknown>> {
     const existing = await EmailImportConfig.findOne({ where: { ownerUuid } });
     const passwordProvided = input.password !== undefined;

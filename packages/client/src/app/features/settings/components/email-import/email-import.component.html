@@ -53,9 +53,25 @@
       error }}</p> }
 
     <footer class="form-footer">
+      @if (service.config() && !enabled()) {
+        <button class="danger-button" type="button" (click)="requestDelete()" [disabled]="service.saving()">
+          {{ 'emailImport.deleteSettings' | t }}
+        </button>
+      }
       <button class="save-button" type="submit" [disabled]="service.saving()">{{ service.saving() ? ('settings.saving' |
         t) : ('settings.save' | t) }}</button>
     </footer>
   </form>
   }
 </section>
+
+@if (confirmDelete()) {
+  <binder-confirm-dialog
+    [title]="'emailImport.deleteTitle' | t"
+    [message]="'emailImport.deleteMessage' | t"
+    [confirmLabel]="'emailImport.deleteConfirm' | t"
+    [cancelLabel]="'common.cancel' | t"
+    (confirmed)="deleteSettings()"
+    (cancelled)="cancelDelete()"
+  />
+}

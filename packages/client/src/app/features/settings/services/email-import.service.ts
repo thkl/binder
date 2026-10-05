@@ -65,6 +65,23 @@ export class EmailImportService {
     }
   }
 
+  async delete(): Promise<boolean> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      await firstValueFrom(
+        this.http.delete('/api/v1/email-import/config', { withCredentials: true }),
+      );
+      this.config.set(null);
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
   private getErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string')
       return error.error.message;
