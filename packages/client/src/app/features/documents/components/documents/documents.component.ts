@@ -110,6 +110,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly folderActionMessage = signal<string | null>(null);
   readonly bulkMetadataDialogOpen = signal(false);
   readonly bulkMetadataMessage = signal<string | null>(null);
+  readonly emptyDropActive = signal(false);
+  readonly emptyUploadMessage = signal<'success' | null>(null);
+  readonly emptyUploadError = signal<string | null>(null);
+  readonly emptyUploadTotal = signal(0);
+  readonly emptyUploadCompleted = signal(0);
+  readonly emptyUploadedCount = signal(0);
   readonly listSearch = signal('');
   readonly activeFilterMenu = signal<DocumentFilterKey | null>(null);
   readonly selectedSavedSearchUuid = signal<string | null>(null);
@@ -425,6 +431,68 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       return;
     }
     await this.documents.upload(file);
+  }
+
+  onEmptyDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (this.documents.uploading()) return;
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+    this.emptyDropActive.set(true);
+  }
+
+  onEmptyDragLeave(event: DragEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    const relatedTarget = event.relatedTarget as Node | null;
+    if (relatedTarget && target.contains(relatedTarget)) return;
+    this.emptyDropActive.set(false);
+  }
+
+  async onEmptyDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    this.emptyDropActive.set(false);
+    if (this.documents.uploading()) return;
+    await this.uploadEmptyFiles(Array.from(event.dataTransfer?.files ?? []));
+  }
+
+  async emptyFilesSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    await this.uploadEmptyFiles(files);
+  }
+
+  private async uploadEmptyFiles(files: File[]): Promise<void> {
+    this.emptyUploadMessage.set(null);
+    this.emptyUploadError.set(null);
+    this.documents.clearUploadNotice();
+    this.emptyUploadTotal.set(files.length);
+    this.emptyUploadCompleted.set(0);
+    this.emptyUploadedCount.set(0);
+    if (files.length === 0) return;
+
+    const pdfFiles = files.filter((file) => this.isPdf(file));
+    if (pdfFiles.length !== files.length) {
+      this.emptyUploadError.set(this.i18n.t('home.uploadOnlyPdf'));
+    }
+    this.emptyUploadTotal.set(pdfFiles.length);
+    if (pdfFiles.length === 0) return;
+
+    let failedCount = 0;
+    for (const file of pdfFiles) {
+      const uploaded = await this.documents.upload(file);
+      if (uploaded) this.emptyUploadedCount.update((count) => count + 1);
+      else failedCount += 1;
+      this.emptyUploadCompleted.update((count) => count + 1);
+    }
+
+    if (this.emptyUploadedCount() > 0) this.emptyUploadMessage.set('success');
+    if (failedCount > 0 && !this.emptyUploadError()) {
+      this.emptyUploadError.set(this.documents.error() ?? this.i18n.t('home.uploadFailed'));
+    }
+  }
+
+  private isPdf(file: File): boolean {
+    return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
   }
 
   async nextPage(): Promise<void> {

@@ -399,10 +399,43 @@
           <p>{{ 'documents.loading' | t }}</p>
         </div>
       } @else if (documents.page()?.items?.length === 0) {
-        <div class="empty-state">
+        <div
+          class="empty-state empty-upload-state"
+          [class.drop-active]="emptyDropActive()"
+          (dragover)="onEmptyDragOver($event)"
+          (dragleave)="onEmptyDragLeave($event)"
+          (drop)="onEmptyDrop($event)"
+        >
+          @if (emptyDropActive()) {
+            <span class="empty-upload-active" aria-live="polite">{{ 'home.dropActive' | t }}</span>
+          }
           <span class="empty-icon">▱</span>
           <h3>{{ 'documents.ready' | t }}</h3>
           <p>{{ 'documents.empty' | t }}</p>
+          <label class="empty-upload-button">
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              multiple
+              (change)="emptyFilesSelected($event)"
+              [disabled]="documents.uploading()"
+            />
+            {{ 'home.uploadTitle' | t }}
+          </label>
+          @if (documents.uploading()) {
+            <p class="empty-upload-status" role="status">
+              {{ 'home.uploadProgress' | t }} {{ emptyUploadCompleted() + 1 }} /
+              {{ emptyUploadTotal() }}…
+            </p>
+          }
+          @if (emptyUploadMessage() === 'success') {
+            <p class="empty-upload-status success" role="status">
+              {{ emptyUploadedCount() }} {{ 'home.uploadedDocuments' | t }}
+            </p>
+          }
+          @if (emptyUploadError(); as error) {
+            <p class="empty-upload-status error" role="alert">{{ error }}</p>
+          }
         </div>
       } @else {
         @if (viewMode() === 'list') {

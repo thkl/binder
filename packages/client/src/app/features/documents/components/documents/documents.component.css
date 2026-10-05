@@ -920,6 +920,64 @@ h2 {
   text-align: center;
 }
 
+.empty-upload-state {
+  position: relative;
+  border: 1px dashed rgba(97, 215, 244, 0.28);
+  border-radius: 0.9rem;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.empty-upload-state.drop-active {
+  border-color: var(--cyan);
+  background: rgba(97, 215, 244, 0.1);
+}
+
+.empty-upload-active {
+  position: absolute;
+  top: 1rem;
+  color: var(--cyan);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.empty-upload-button {
+  display: inline-flex;
+  margin-top: 1rem;
+  border: 1px solid rgba(97, 215, 244, 0.35);
+  border-radius: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  color: var(--cyan);
+  background: rgba(97, 215, 244, 0.08);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.empty-upload-button:hover,
+.empty-upload-button:focus-within {
+  background: rgba(97, 215, 244, 0.16);
+}
+
+.empty-upload-button input {
+  display: none;
+}
+
+.empty-upload-status {
+  margin: 0.8rem 0 0;
+  color: var(--cyan);
+  font-size: 0.76rem;
+}
+
+.empty-upload-status.success {
+  color: #67e0ac;
+}
+
+.empty-upload-status.error {
+  color: #ffb0b0;
+}
+
 .empty-state h3 {
   margin: 1rem 0 0.3rem;
   color: #dceaff;
