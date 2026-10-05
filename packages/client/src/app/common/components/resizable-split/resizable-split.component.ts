@@ -106,7 +106,7 @@ export class ResizableSplitComponent {
       return 'minmax(0, 1fr)';
     }
 
-    return `${this.firstSizeCssValue()} ${this.dividerSize}px minmax(0, 1fr)`;
+    return `var(--resizable-split-rows, ${this.firstSizeCssValue()} ${this.dividerSize}px minmax(0, 1fr))`;
   });
 
   readonly ariaOrientation = computed(() => (this.isVertical() ? 'vertical' : 'horizontal'));

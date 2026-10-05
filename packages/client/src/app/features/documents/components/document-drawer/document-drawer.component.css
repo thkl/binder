@@ -346,8 +346,57 @@
 }
 
 @media (max-width: 680px) {
+  .drawer-content {
+    overflow: auto;
+  }
+
+  .preview-panel,
+  .preview-panel[hidden],
+  .document-workspace,
   .document-workspace.analysis-enabled {
-    grid-template-rows: minmax(0, 1.2fr) minmax(17rem, 1fr);
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  :host ::ng-deep .document-workspace.analysis-enabled resizable-split {
+    height: auto !important;
+    min-height: 0;
+    overflow: visible;
+    --resizable-split-rows: minmax(32rem, 72dvh) auto;
+  }
+
+  :host ::ng-deep .document-workspace.analysis-enabled .resizable-split {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  :host ::ng-deep .document-workspace.analysis-enabled .resizable-split__divider {
+    display: none;
+  }
+
+  :host ::ng-deep .document-workspace.analysis-enabled .resizable-split__pane {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  :host ::ng-deep .document-workspace.analysis-enabled .resizable-split__pane--first {
+    height: min(72dvh, 48rem);
+    min-height: 32rem;
+  }
+
+  :host ::ng-deep .document-workspace.analysis-enabled .resizable-split__pane--second {
+    height: auto;
+    min-height: 17rem;
+  }
+
+  :host ::ng-deep .document-workspace.analysis-enabled .resizable-split__pane > [splitPaneFirst],
+  :host ::ng-deep
+    .document-workspace.analysis-enabled
+    .resizable-split__pane
+    > [splitPaneSecond] {
+    height: 100%;
   }
 
   .preview-panel,
