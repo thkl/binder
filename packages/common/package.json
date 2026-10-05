@@ -25,9 +25,9 @@
     "coverage": "pnpm build && node --experimental-test-coverage --test dist/index.spec.js"
   },
   "dependencies": {
-    "zod": "^4.0.0"
+    "zod": "4.6.5"
   },
   "devDependencies": {
-    "@types/node": "^24.13.6"
+    "@types/node": "26.6.4"
   }
 }

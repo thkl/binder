@@ -7,7 +7,7 @@
     </div>
   </div>
 
-  @if (activeSection() === 'security' && !auth.user()?.isAdmin) {
+  @if (auth.user()?.mcpEnabled !== false && activeSection() === 'security' && !auth.user()?.isAdmin) {
     <binder-api-token-manager />
   } @else if (settingsService.loading()) {
     <div class="settings-status glass-card">

@@ -23,7 +23,7 @@ import { AiProviderModule } from './features/ai-provider/ai-provider.module';
 import { PluginModule } from './features/plugin/plugin.module';
 import { CalendarModule } from './features/calendar/calendar.module';
 import { ClassificationFeedbackModule } from './features/classification-feedback/classification-feedback.module';
-import { McpModule } from './features/mcp/mcp.module';
+import { McpPluginModule } from './features/plugin/mcp/mcp.plugin.module';
 
 @Module({
   controllers: [HealthController],
@@ -48,7 +48,7 @@ import { McpModule } from './features/mcp/mcp.module';
     PluginModule,
     CalendarModule,
     ClassificationFeedbackModule,
-    McpModule,
+    McpPluginModule.register(process.env.MCP_ENABLED !== 'false'),
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

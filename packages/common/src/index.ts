@@ -336,6 +336,7 @@ export const PluginCapabilitySchema = z.enum([
   'document-import',
   'document-analysis',
   'calendar',
+  'mcp',
 ]);
 export type PluginCapability = z.infer<typeof PluginCapabilitySchema>;
 
@@ -1012,6 +1013,7 @@ export const AuthenticatedUserSchema = z.object({
   isAdmin: z.boolean(),
   mustChangePassword: z.boolean(),
   gravatarUrl: z.url().nullable().default(null),
+  mcpEnabled: z.boolean().default(true),
 });
 
 export type AuthenticatedUser = z.infer<typeof AuthenticatedUserSchema>;

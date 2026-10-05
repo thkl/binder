@@ -1,10 +1,15 @@
-import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { randomBytes, createHash } from 'node:crypto';
 import { ApiTokenPermission, CreateApiTokenInput } from '@binder/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { ApiToken } from '../models/api-token.entity';
-import { User } from '../models/user.entity';
-import { ScopedUser } from '../decorators/current-user.decorator';
+import { User } from '../../../authentication/models/user.entity';
+import { ScopedUser } from '../../../authentication/decorators/current-user.decorator';
 
 const TOKEN_PREFIX = 'bnd_pat_';
 const DEFAULT_EXPIRATION_DAYS = 90;
@@ -46,9 +51,7 @@ export class ApiTokenService {
   async revoke(userUuid: string, tokenUuid: string): Promise<void> {
     const record = await this.tokens.findOne({ where: { uuid: tokenUuid, userUuid } });
     if (!record) throw new ForbiddenException('Token not found');
-    if (!record.revokedAt) {
-      await record.update({ revokedAt: new Date() });
-    }
+    if (!record.revokedAt) await record.update({ revokedAt: new Date() });
   }
 
   async authenticate(rawToken: string): Promise<ScopedUser> {
@@ -86,14 +89,12 @@ export class ApiTokenService {
   private resolveExpiresAt(value?: string | null): Date {
     const now = Date.now();
     const expiresAt = value ? new Date(value) : new Date(now + DEFAULT_EXPIRATION_DAYS * DAY_MS);
-
     if (!Number.isFinite(expiresAt.getTime()) || expiresAt.getTime() <= now) {
       throw new BadRequestException('Token expiration must be in the future');
     }
     if (expiresAt.getTime() > now + MAX_EXPIRATION_DAYS * DAY_MS) {
       throw new BadRequestException('Token expiration cannot be more than 180 days');
     }
-
     return expiresAt;
   }
 

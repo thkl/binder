@@ -360,6 +360,15 @@ export const settingsMap: SettingsMapItem[] = [
     section: 'maintenance',
   },
   {
+    key: 'security.mcp.enabled',
+    valueFrom: 'security.mcp.enabled',
+    encrypted: false,
+    default: true,
+    label: 'Enable MCP access',
+    type: 'checkbox',
+    section: 'security',
+  },
+  {
     key: 'security.malwareScan.required',
     valueFrom: 'security.malwareScan.required',
     encrypted: false,

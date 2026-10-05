@@ -3,15 +3,16 @@ import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 import { DocumentSearchQuerySchema } from '@binder/common';
 import { z } from 'zod';
 import type { Request, Response } from 'express';
-import { ApiTokenGuard } from '../authentication/guards/api-token.guard';
-import { ApiTokenService } from '../authentication/service/api-token.service';
-import type { ScopedUser } from '../authentication/decorators/current-user.decorator';
-import { DocumentService } from '../document/service/document.service';
+import { ApiTokenGuard } from '../guards/api-token.guard';
+import { McpEnabledGuard } from '../guards/mcp-enabled.guard';
+import { ApiTokenService } from '../service/api-token.service';
+import type { ScopedUser } from '../../../authentication/decorators/current-user.decorator';
+import { DocumentService } from '../../../document/service/document.service';
 
 type McpRequest = Request & { user?: ScopedUser };
 
 @Controller('mcp')
-@UseGuards(ApiTokenGuard)
+@UseGuards(McpEnabledGuard, ApiTokenGuard)
 export class McpController {
   constructor(
     private readonly documents: DocumentService,

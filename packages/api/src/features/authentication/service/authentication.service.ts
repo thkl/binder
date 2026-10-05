@@ -104,6 +104,7 @@ export class AuthenticationService {
       isAdmin: user.isAdmin,
       mustChangePassword: user.mustChangePassword,
       gravatarUrl: createGravatarUrl(user.email),
+      mcpEnabled: this.config.get<string>(ConfigKeys.MCP_ENABLED) !== 'false',
     };
   }
 

@@ -83,13 +83,15 @@
           </button>
           @if (openMenu() === 'settings') {
             <nav class="nav-panel" id="settings-menu" [attr.aria-label]="'nav.settings' | t">
-              <a
-                class="nav-menu-link"
-                routerLink="/settings/security"
-                routerLinkActive="active"
-                (click)="closeMenu()"
-                >{{ 'nav.mcpAccess' | t }}</a
-              >
+              @if (auth.user()?.mcpEnabled !== false) {
+                <a
+                  class="nav-menu-link"
+                  routerLink="/settings/security"
+                  routerLinkActive="active"
+                  (click)="closeMenu()"
+                  >{{ 'nav.mcpAccess' | t }}</a
+                >
+              }
               @if (auth.user()?.isAdmin) {
                 <a
                   class="nav-menu-link"
