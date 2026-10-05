@@ -390,6 +390,11 @@
                "required": [
                     "users"
                ]
+          },
+          "58": {
+               "required": [
+                    "api_tokens"
+               ]
           }
      }
 }
