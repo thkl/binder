@@ -146,6 +146,33 @@
   font-weight: 750;
 }
 
+.password-field {
+  position: relative;
+}
+
+.password-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.password-generate {
+  margin-top: 0.1rem;
+  border: 1px solid rgba(97, 215, 244, 0.35);
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  color: var(--cyan);
+  background: rgba(97, 215, 244, 0.08);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.password-generate:hover,
+.password-generate:focus-visible {
+  border-color: var(--cyan);
+  background: rgba(97, 215, 244, 0.14);
+}
+
 .editor-fields input {
   box-sizing: border-box;
   width: 100%;

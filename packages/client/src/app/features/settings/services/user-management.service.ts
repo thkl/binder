@@ -13,6 +13,7 @@ import {
   UpdateManagedUserInputSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
+import { ZodError } from 'zod';
 
 @Injectable({ providedIn: 'root' })
 export class UserManagementService {
@@ -121,6 +122,9 @@ export class UserManagementService {
   }
 
   private getErrorMessage(error: unknown): string {
+    if (error instanceof ZodError) {
+      return error.issues[0]?.message ?? 'Please check the entered user details.';
+    }
     if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
       return error.error.message;
     }

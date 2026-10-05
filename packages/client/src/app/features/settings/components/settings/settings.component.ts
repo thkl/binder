@@ -69,6 +69,10 @@ export class SettingsComponent implements OnInit {
   }
 
   async loadSettings(): Promise<void> {
+    if (this.activeSection() === 'security' && !this.auth.user()?.isAdmin) {
+      return;
+    }
+
     const [response] = await Promise.all([
       this.settingsService.load(),
       this.settingsService.loadUsers(),

@@ -29,6 +29,7 @@ export class UserManagementComponent implements OnInit {
   readonly username = signal('');
   readonly email = signal('');
   readonly password = signal('');
+  readonly passwordVisible = signal(false);
   readonly isAdmin = signal(false);
   readonly isActive = signal(true);
   readonly saved = signal(false);
@@ -48,6 +49,7 @@ export class UserManagementComponent implements OnInit {
     this.username.set('');
     this.email.set('');
     this.password.set('');
+    this.passwordVisible.set(false);
     this.isAdmin.set(false);
     this.isActive.set(true);
     this.saved.set(false);
@@ -58,6 +60,7 @@ export class UserManagementComponent implements OnInit {
     this.username.set(user.username);
     this.email.set(user.email ?? '');
     this.password.set('');
+    this.passwordVisible.set(false);
     this.isAdmin.set(user.isAdmin);
     this.isActive.set(user.isActive);
     this.saved.set(false);
@@ -76,6 +79,20 @@ export class UserManagementComponent implements OnInit {
     if (target === 'isAdmin') this.isAdmin.set(value);
     if (target === 'isActive') this.isActive.set(value);
     this.saved.set(false);
+  }
+
+  generatePassword(): void {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@$%*+-_';
+    const values = new Uint32Array(20);
+    globalThis.crypto.getRandomValues(values);
+    const generated = Array.from(values, (value) => alphabet[value % alphabet.length]).join('');
+    this.password.set(generated);
+    this.passwordVisible.set(true);
+    this.saved.set(false);
+  }
+
+  togglePasswordVisibility(): void {
+    this.passwordVisible.update((visible) => !visible);
   }
 
   async save(): Promise<void> {

@@ -67,13 +67,17 @@ export class AuthenticationService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    await this.users.update(user.uuid, {
+    const updated = await this.users.update(user.uuid, {
       ...user,
       passwordHash: await argon2.hash(input.newPassword),
       mustChangePassword: false,
     });
 
-    return this.toAuthenticatedUser(user);
+    if (!updated) {
+      throw new UnauthorizedException('User is no longer available');
+    }
+
+    return this.toAuthenticatedUser(updated);
   }
 
   async getAuthenticatedUser(userId: string): Promise<AuthenticatedUser | null> {

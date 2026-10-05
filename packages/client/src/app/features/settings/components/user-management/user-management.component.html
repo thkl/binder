@@ -88,17 +88,30 @@
               (input)="updateText('email', $event)"
             />
           </label>
-          <label>
+          <label class="password-field">
             <span>{{
               editingUser() ? ('users.temporaryPassword' | t) : ('users.password' | t)
             }}</span>
             <input
-              type="password"
+              [type]="passwordVisible() ? 'text' : 'password'"
               autocomplete="new-password"
               [value]="password()"
               (input)="updateText('password', $event)"
               [required]="!editingUser() && !email()"
             />
+            <div class="password-actions">
+              <button type="button" class="password-generate" (click)="generatePassword()">
+                Generate password
+              </button>
+              <button
+                type="button"
+                class="password-generate"
+                (click)="togglePasswordVisibility()"
+                [attr.aria-pressed]="passwordVisible()"
+              >
+                {{ passwordVisible() ? 'Hide password' : 'Show password' }}
+              </button>
+            </div>
             <small>{{
               editingUser() ? ('users.passwordResetHint' | t) : ('users.passwordHint' | t)
             }}</small>

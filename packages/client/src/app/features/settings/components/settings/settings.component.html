@@ -7,7 +7,9 @@
     </div>
   </div>
 
-  @if (settingsService.loading()) {
+  @if (activeSection() === 'security' && !auth.user()?.isAdmin) {
+    <binder-api-token-manager />
+  } @else if (settingsService.loading()) {
     <div class="settings-status glass-card">
       <span class="spinner"></span> Loading configuration…
     </div>
