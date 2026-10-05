@@ -37,6 +37,7 @@ import { DocumentMetadataChangeSet } from '../features/document/models/document-
 import { PipelineWorkerHeartbeat } from '../features/pipeline/models/pipeline-worker-heartbeat.entity';
 import { CalendarEvent } from '../features/calendar/models/calendar-event.entity';
 import { DocumentClassificationFeedback } from '../features/classification-feedback/models/document-classification-feedback.entity';
+import { ApiToken } from '../features/authentication/models/api-token.entity';
 import { SecretsModule } from '../shared/config/secrets.module';
 import { SecretsService } from '../shared/config/secrets.service';
 
@@ -117,6 +118,7 @@ import { SecretsService } from '../shared/config/secrets.service';
       PipelineWorkerHeartbeat,
       CalendarEvent,
       DocumentClassificationFeedback,
+      ApiToken,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],

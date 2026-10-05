@@ -21,11 +21,17 @@ import { UserManagementComponent } from '../user-management/user-management.comp
 import { AuthService } from '../../../authentication/services/auth.service';
 import { DropboxConnectionService } from '../../services/dropbox-connection.service';
 import { MaintenanceService } from '../../../maintenance/services/maintenance.service';
+import { ApiTokenManagerComponent } from '../api-token-manager/api-token-manager.component';
 
 @Component({
   selector: 'binder-settings',
   standalone: true,
-  imports: [TranslatePipe, AiProviderManagerComponent, UserManagementComponent],
+  imports: [
+    TranslatePipe,
+    AiProviderManagerComponent,
+    UserManagementComponent,
+    ApiTokenManagerComponent,
+  ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

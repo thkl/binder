@@ -8,6 +8,7 @@ export interface ScopedUser {
   scope: string;
   role: string;
   isAdmin: boolean;
+  permissions?: string[];
 }
 
 /**

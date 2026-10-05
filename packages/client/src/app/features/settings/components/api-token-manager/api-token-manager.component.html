@@ -1,0 +1,60 @@
+<section class="api-token-manager glass-card">
+  <header class="card-heading">
+    <div>
+      <p class="section-kicker">MCP ACCESS</p>
+      <h3>API tokens</h3>
+      <p class="muted">Create a user-scoped bearer token for remote MCP clients.</p>
+    </div>
+  </header>
+
+  @if (createdToken(); as token) {
+    <div class="token-reveal" role="alert">
+      <strong>Copy this token now. It will not be shown again.</strong>
+      <code>{{ token }}</code>
+      <button type="button" class="secondary-button" (click)="createdToken.set(null)">Done</button>
+    </div>
+  }
+
+  <form class="token-form" (submit)="$event.preventDefault(); create()">
+    <label>
+      <span>Token name</span>
+      <input
+        [value]="name()"
+        (input)="name.set($any($event.target).value)"
+        placeholder="Claude Binder"
+        required
+      />
+    </label>
+    <label class="checkbox-field">
+      <input
+        type="checkbox"
+        [checked]="allowWrite()"
+        (change)="allowWrite.set($any($event.target).checked)"
+      />
+      <span>Allow document writes</span>
+    </label>
+    <button class="primary-action" type="submit" [disabled]="saving() || !name().trim()">
+      Create token
+    </button>
+  </form>
+
+  <div class="token-list">
+    @for (token of settings.apiTokens(); track token.uuid) {
+      <div class="token-row" [class.revoked]="!!token.revokedAt">
+        <div>
+          <strong>{{ token.name }}</strong>
+          <small>{{ token.tokenPrefix }} · {{ token.permissions.join(', ') }}</small>
+        </div>
+        @if (token.revokedAt) {
+          <span class="status-badge inactive">Revoked</span>
+        } @else {
+          <button type="button" class="secondary-button" (click)="revoke(token.uuid)">
+            Revoke
+          </button>
+        }
+      </div>
+    } @empty {
+      <p class="muted">No API tokens have been created.</p>
+    }
+  </div>
+</section>

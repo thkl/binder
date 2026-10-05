@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -16,6 +17,7 @@ import {
   ResetManagedUserPasswordInputSchema,
   UpdateManagedUserInputSchema,
   UserDirectoryResponseSchema,
+  CreateApiTokenInputSchema,
 } from '@binder/common';
 import type { Request } from 'express';
 import { AuthenticationService } from '../service/authentication.service';
@@ -27,12 +29,14 @@ import { Throttle } from '@nestjs/throttler';
 import { ensureCsrfToken } from '../../../shared/security/csrf-token';
 import { CurrentUser, ScopedUser } from '../decorators/current-user.decorator';
 import { UserManagementService } from '../service/user-management.service';
+import { ApiTokenService } from '../service/api-token.service';
 
 @Controller('auth')
 export class AuthenticationController {
   constructor(
     private readonly authentication: AuthenticationService,
     private readonly userManagement: UserManagementService,
+    private readonly tokenService: ApiTokenService,
   ) {}
 
   @Get('users')
@@ -104,6 +108,27 @@ export class AuthenticationController {
       request.session.save((error) => (error ? reject(error) : resolve()));
     });
     return { data: result, csrfToken };
+  }
+
+  @Get('api-tokens')
+  @UseGuards(AuthenticationGuard)
+  async apiTokens(@CurrentUser() user: ScopedUser) {
+    return { data: await this.tokenService.list(user.userId) };
+  }
+
+  @Post('api-tokens')
+  @UseGuards(AuthenticationGuard)
+  async createApiToken(@Body() body: unknown, @CurrentUser() user: ScopedUser) {
+    return {
+      data: await this.tokenService.create(user.userId, CreateApiTokenInputSchema.parse(body)),
+    };
+  }
+
+  @Delete('api-tokens/:uuid')
+  @UseGuards(AuthenticationGuard)
+  async revokeApiToken(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    await this.tokenService.revoke(user.userId, uuid);
+    return { data: null };
   }
 
   @Get('session')

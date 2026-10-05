@@ -7,6 +7,9 @@ import {
   SetApplicationSettingInput,
   UserDirectoryItem,
   UserDirectoryResponseSchema,
+  ApiToken,
+  ApiTokenListResponseSchema,
+  CreatedApiTokenSchema,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 
@@ -17,6 +20,7 @@ export class SettingsService {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly users = signal<UserDirectoryItem[]>([]);
+  readonly apiTokens = signal<ApiToken[]>([]);
 
   private readonly apiUrl = '/api/v1/settings';
 
@@ -72,6 +76,53 @@ export class SettingsService {
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
       return [];
+    }
+  }
+
+  async loadApiTokens(): Promise<ApiToken[]> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>('/api/v1/auth/api-tokens', { withCredentials: true }),
+      );
+      const tokens = ApiTokenListResponseSchema.parse(response.data).items;
+      this.apiTokens.set(tokens);
+      return tokens;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return [];
+    }
+  }
+
+  async createApiToken(input: { name: string; permissions: string[] }): Promise<string | null> {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>('/api/v1/auth/api-tokens', input, {
+          withCredentials: true,
+        }),
+      );
+      const created = CreatedApiTokenSchema.parse(response.data);
+      this.apiTokens.update((tokens) => [created.apiToken, ...tokens]);
+      return created.token;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  async revokeApiToken(uuid: string): Promise<boolean> {
+    try {
+      await firstValueFrom(
+        this.http.delete(`/api/v1/auth/api-tokens/${uuid}`, { withCredentials: true }),
+      );
+      this.apiTokens.update((tokens) =>
+        tokens.map((token) =>
+          token.uuid === uuid ? { ...token, revokedAt: new Date().toISOString() } : token,
+        ),
+      );
+      return true;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return false;
     }
   }
 

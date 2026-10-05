@@ -43,6 +43,15 @@ test('rejects authenticated mutations without a matching token', () => {
   );
 });
 
+test('allows bearer-authenticated API mutations without a browser CSRF token', () => {
+  assert.equal(
+    guard().canActivate(
+      context(request({ session: {}, headers: { authorization: 'Bearer bnd_pat_test' } })),
+    ),
+    true,
+  );
+});
+
 test('requires the configured browser origin for login', () => {
   assert.equal(
     guard().canActivate(

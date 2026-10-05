@@ -93,6 +93,8 @@
         }
         @if (activeSection() === 'users') {
           <binder-user-management />
+        } @else if (activeSection() === 'security') {
+          <binder-api-token-manager />
         } @else {
           <form class="settings-form glass-card" (submit)="$event.preventDefault(); save()">
             <header class="form-heading">
@@ -142,7 +144,10 @@
                         <select [value]="stringValue(item)" (change)="updateText(item, $event)">
                           <option value="">{{ 'settings.noOwner' | t }}</option>
                           @for (user of settingsService.users(); track user.uuid) {
-                            <option [value]="user.uuid" [selected]="(user.uuid===stringValue(item)) ? 'selected':undefined">
+                            <option
+                              [value]="user.uuid"
+                              [selected]="user.uuid === stringValue(item) ? 'selected' : undefined"
+                            >
                               {{ user.username }}{{ user.email ? ' · ' + user.email : ''
                               }}{{ user.isAdmin ? ' · ' + ('settings.admin' | t) : '' }}
                             </option>
@@ -161,7 +166,12 @@
                           }
                           <option value="">{{ 'settings.selectMetadata' | t }}</option>
                           @for (definition of metadataOptions(item); track definition.uuid) {
-                            <option [value]="definition.key" [selected]="(definition.key===stringValue(item)) ? 'selected':undefined">
+                            <option
+                              [value]="definition.key"
+                              [selected]="
+                                definition.key === stringValue(item) ? 'selected' : undefined
+                              "
+                            >
                               {{ definition.label }} · {{ definition.key }} ·
                               {{
                                 definition.scope === 'system'
@@ -188,7 +198,10 @@
                       } @else if (item.type === 'select') {
                         <select [value]="stringValue(item)" (change)="updateText(item, $event)">
                           @for (option of item.options ?? []; track option) {
-                            <option [value]="option" [selected]="(option===stringValue(item)) ? 'selected':undefined">
+                            <option
+                              [value]="option"
+                              [selected]="option === stringValue(item) ? 'selected' : undefined"
+                            >
                               {{ settingOptionLabel(item.key, option) }}
                             </option>
                           }

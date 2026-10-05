@@ -1016,6 +1016,44 @@ export const AuthenticatedUserSchema = z.object({
 
 export type AuthenticatedUser = z.infer<typeof AuthenticatedUserSchema>;
 
+export const ApiTokenPermissionSchema = z.enum([
+  'documents:read',
+  'documents:write',
+  'folders:read',
+  'folders:write',
+  'analysis:execute',
+  'audit:read',
+]);
+export type ApiTokenPermission = z.infer<typeof ApiTokenPermissionSchema>;
+
+export const ApiTokenSchema = z.object({
+  uuid: z.uuid(),
+  name: z.string().min(1).max(100),
+  tokenPrefix: z.string().min(1).max(32),
+  permissions: z.array(ApiTokenPermissionSchema),
+  createdAt: z.iso.datetime(),
+  lastUsedAt: z.iso.datetime().nullable(),
+  expiresAt: z.iso.datetime().nullable(),
+  revokedAt: z.iso.datetime().nullable(),
+});
+export type ApiToken = z.infer<typeof ApiTokenSchema>;
+
+export const ApiTokenListResponseSchema = z.object({ items: z.array(ApiTokenSchema) });
+export type ApiTokenListResponse = z.infer<typeof ApiTokenListResponseSchema>;
+
+export const CreateApiTokenInputSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  permissions: z.array(ApiTokenPermissionSchema).min(1).max(20),
+  expiresAt: z.iso.datetime().nullable().optional(),
+});
+export type CreateApiTokenInput = z.infer<typeof CreateApiTokenInputSchema>;
+
+export const CreatedApiTokenSchema = z.object({
+  token: z.string().min(1),
+  apiToken: ApiTokenSchema,
+});
+export type CreatedApiToken = z.infer<typeof CreatedApiTokenSchema>;
+
 export const CsrfTokenSchema = z.string().min(32).max(128);
 export const CsrfTokenResponseSchema = z.object({ csrfToken: CsrfTokenSchema });
 export type CsrfTokenResponse = z.infer<typeof CsrfTokenResponseSchema>;

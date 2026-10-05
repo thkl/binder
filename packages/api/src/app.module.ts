@@ -23,6 +23,7 @@ import { AiProviderModule } from './features/ai-provider/ai-provider.module';
 import { PluginModule } from './features/plugin/plugin.module';
 import { CalendarModule } from './features/calendar/calendar.module';
 import { ClassificationFeedbackModule } from './features/classification-feedback/classification-feedback.module';
+import { McpModule } from './features/mcp/mcp.module';
 
 @Module({
   controllers: [HealthController],
@@ -47,6 +48,7 @@ import { ClassificationFeedbackModule } from './features/classification-feedback
     PluginModule,
     CalendarModule,
     ClassificationFeedbackModule,
+    McpModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

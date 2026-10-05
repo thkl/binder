@@ -17,6 +17,13 @@ export class CsrfGuard implements CanActivate {
     const path = request.path || request.url;
     if (path.endsWith('/ssoauth/callback')) return true;
 
+    // Bearer-authenticated API/MCP requests do not use browser cookies, so
+    // they are not exposed to the CSRF threat this guard protects against.
+    const authorization = request.headers.authorization;
+    if (!request.session?.userId && authorization && /^Bearer\s+/i.test(authorization)) {
+      return true;
+    }
+
     const token = this.headerValue(request.headers['x-csrf-token']);
     const sessionToken = request.session?.csrfToken;
     if (token && sessionToken && this.tokensMatch(token, sessionToken)) return true;

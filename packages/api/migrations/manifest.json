@@ -382,6 +382,14 @@
                     "documents",
                     "users"
                ]
+          },
+          "57": {
+               "created": [
+                    "api_tokens"
+               ],
+               "required": [
+                    "users"
+               ]
           }
      }
 }

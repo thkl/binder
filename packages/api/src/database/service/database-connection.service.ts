@@ -40,6 +40,7 @@ import { DocumentMetadataChangeSet } from '../../features/document/models/docume
 import { PipelineWorkerHeartbeat } from '../../features/pipeline/models/pipeline-worker-heartbeat.entity';
 import { CalendarEvent } from '../../features/calendar/models/calendar-event.entity';
 import { DocumentClassificationFeedback } from '../../features/classification-feedback/models/document-classification-feedback.entity';
+import { ApiToken } from '../../features/authentication/models/api-token.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -96,6 +97,7 @@ export class DatabaseConnectionService {
       PipelineWorkerHeartbeat,
       CalendarEvent,
       DocumentClassificationFeedback,
+      ApiToken,
     ]);
     await this.initialize();
   }
