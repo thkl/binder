@@ -286,7 +286,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   async selectFolder(folderUuid: string | null): Promise<void> {
     if (!this.canLeaveMetadata()) return;
-    console.log("Select Folder", folderUuid)
+    this.documents.duplicateUpload.set(false);
     if (folderUuid !== null) {
       this.router.navigate(['documents', folderUuid]);
     } else {
