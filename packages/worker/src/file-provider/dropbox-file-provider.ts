@@ -3,6 +3,7 @@ import * as fs from 'node:fs/promises';
 import { FileProvider, FileProviderEntry } from './file-provider.js';
 
 const DROPBOX_CONTENT_URL = 'https://content.dropboxapi.com/2';
+const DROPBOX_API_URL = 'https://api.dropboxapi.com/2';
 const CHUNK_SIZE = 8 * 1024 * 1024;
 const REQUEST_TIMEOUT_MS = 120_000;
 
@@ -114,7 +115,7 @@ export class DropboxFileProvider extends FileProvider {
 
     while (hasMore) {
       const response = await fetch(
-        `${DROPBOX_CONTENT_URL}/files/${cursor ? 'list_folder/continue' : 'list_folder'}`,
+        `${DROPBOX_API_URL}/files/${cursor ? 'list_folder/continue' : 'list_folder'}`,
         {
           method: 'POST',
           headers: {

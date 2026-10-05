@@ -1,25 +1,61 @@
 <section class="email-import settings-page">
-  <div class="settings-heading"><div><p class="section-kicker">{{ 'emailImport.kicker' | t }}</p><h2>{{ 'emailImport.title' | t }}</h2><p class="muted">{{ 'emailImport.copy' | t }}</p></div></div>
+  <div class="settings-heading">
+    <div>
+      <p class="section-kicker">{{ 'emailImport.kicker' | t }}</p>
+      <h2>{{ 'emailImport.title' | t }}</h2>
+      <p class="muted">{{ 'emailImport.copy' | t }}</p>
+    </div>
+  </div>
   @if (service.loading()) {
-    <div class="settings-status glass-card">{{ 'emailImport.loading' | t }}</div>
+  <div class="settings-status glass-card">{{ 'emailImport.loading' | t }}</div>
   } @else {
-    <form class="settings-form glass-card" (submit)="$event.preventDefault(); save()">
-      <label class="checkbox-field"><input type="checkbox" [checked]="enabled()" (change)="enabled.set($any($event.target).checked)" name="enabled" /><span class="checkbox-copy"><strong>{{ 'emailImport.enabled' | t }}</strong><small>{{ 'emailImport.enabledHint' | t }}</small></span><span class="toggle"><span></span></span></label>
-      <div class="fields">
-        <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.host' | t }}</strong></span><input name="host" [value]="host()" (input)="host.set($any($event.target).value)" autocomplete="off" /></label>
-        <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.port' | t }}</strong></span><input name="port" type="number" min="1" max="65535" [value]="port()" (input)="port.set(+$any($event.target).value)" /></label>
-        <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.username' | t }}</strong></span><input name="username" [value]="username()" (input)="username.set($any($event.target).value)" autocomplete="username" /></label>
-        <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.password' | t }}</strong></span><input name="password" type="password" [placeholder]="service.config()?.hasPassword ? ('emailImport.passwordConfigured' | t) : ''" [value]="password()" (input)="password.set($any($event.target).value); passwordChanged.set(true)" autocomplete="new-password" /></label>
-        <label class="checkbox-field"><input type="checkbox" [checked]="secure()" (change)="secure.set($any($event.target).checked)" name="secure" /><span class="checkbox-copy"><strong>{{ 'emailImport.secure' | t }}</strong></span><span class="toggle"><span></span></span></label>
-        <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.mailbox' | t }}</strong></span><input name="mailbox" [value]="mailbox()" (input)="mailbox.set($any($event.target).value)" /></label>
-        <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.interval' | t }}</strong></span><input name="interval" type="number" min="1" max="1440" [value]="pollIntervalMinutes()" (input)="pollIntervalMinutes.set(+$any($event.target).value)" /></label>
-        <label class="checkbox-field"><input type="checkbox" [checked]="deleteAfterImport()" (change)="deleteAfterImport.set($any($event.target).checked)" name="deleteAfterImport" /><span class="checkbox-copy"><strong>{{ 'emailImport.deleteAfterImport' | t }}</strong><small>{{ 'emailImport.deleteAfterImportHint' | t }}</small></span><span class="toggle"><span></span></span></label>
-      </div>
-      <label class="text-field wide"><span class="field-label"><strong>{{ 'emailImport.trustedSenders' | t }}</strong></span><textarea name="trustedSenders" rows="4" [value]="trustedSenders()" (input)="trustedSenders.set($any($event.target).value)" [placeholder]="'emailImport.trustedSendersPlaceholder' | t"></textarea><small>{{ 'emailImport.trustedSendersHint' | t }}</small></label>
-      @if (service.error(); as error) { <p class="field-hint warning" role="alert">{{ error }}</p> }
-      @if (saved()) { <p class="field-hint success" role="status">{{ 'emailImport.saved' | t }}</p> }
-      @if (service.config()?.lastError; as error) { <p class="field-hint warning">{{ 'emailImport.lastError' | t }}: {{ error }}</p> }
-      <button class="save-button" type="submit" [disabled]="service.saving()">{{ service.saving() ? ('settings.saving' | t) : ('settings.save' | t) }}</button>
-    </form>
+  <form class="settings-form glass-card" (submit)="$event.preventDefault(); save()">
+    <label class="checkbox-field"><input type="checkbox" [checked]="enabled()"
+        (change)="enabled.set($any($event.target).checked)" name="enabled" /><span class="checkbox-copy"><strong>{{
+          'emailImport.enabled' | t }}</strong><small>{{ 'emailImport.enabledHint' | t }}</small></span><span
+        class="toggle"><span></span></span></label>
+    <div class="fields">
+      <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.host' | t }}</strong></span><input
+          name="host" [value]="host()" (input)="host.set($any($event.target).value)" autocomplete="off" /></label>
+      <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.port' | t }}</strong></span><input
+          name="port" type="number" min="1" max="65535" [value]="port()"
+          (input)="port.set(+$any($event.target).value)" /></label>
+      <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.username' | t }}</strong></span><input
+          name="username" [value]="username()" (input)="username.set($any($event.target).value)"
+          autocomplete="username" /></label>
+      <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.password' | t }}</strong></span><input
+          name="password" type="password"
+          [placeholder]="service.config()?.hasPassword ? ('emailImport.passwordConfigured' | t) : ''"
+          [value]="password()" (input)="password.set($any($event.target).value); passwordChanged.set(true)"
+          autocomplete="new-password" /></label>
+      <label class="checkbox-field"><input type="checkbox" [checked]="secure()"
+          (change)="secure.set($any($event.target).checked)" name="secure" /><span class="checkbox-copy"><strong>{{
+            'emailImport.secure' | t }}</strong></span><span class="toggle"><span></span></span></label>
+      <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.mailbox' | t }}</strong></span><input
+          name="mailbox" [value]="mailbox()" (input)="mailbox.set($any($event.target).value)" /></label>
+      <label class="text-field"><span class="field-label"><strong>{{ 'emailImport.interval' | t }}</strong></span><input
+          name="interval" type="number" min="1" max="1440" [value]="pollIntervalMinutes()"
+          (input)="pollIntervalMinutes.set(+$any($event.target).value)" /></label>
+      <label class="checkbox-field"><input type="checkbox" [checked]="deleteAfterImport()"
+          (change)="deleteAfterImport.set($any($event.target).checked)" name="deleteAfterImport" /><span
+          class="checkbox-copy"><strong>{{ 'emailImport.deleteAfterImport' | t }}</strong><small>{{
+            'emailImport.deleteAfterImportHint' | t }}</small></span><span class="toggle"><span></span></span></label>
+    </div>
+    <label class="text-field wide" style="padding:1.6rem"><span class="field-label"><strong>{{
+          'emailImport.trustedSenders'
+          | t }}</strong></span><textarea name="trustedSenders" rows="4" [value]="trustedSenders()"
+        (input)="trustedSenders.set($any($event.target).value)"
+        [placeholder]="'emailImport.trustedSendersPlaceholder' | t"></textarea><small>{{
+        'emailImport.trustedSendersHint' | t }}</small></label>
+    @if (service.error(); as error) { <p class="field-hint warning" role="alert">{{ error }}</p> }
+    @if (saved()) { <p class="field-hint success" role="status">{{ 'emailImport.saved' | t }}</p> }
+    @if (service.config()?.lastError; as error) { <p class="field-hint warning">{{ 'emailImport.lastError' | t }}: {{
+      error }}</p> }
+
+    <footer class="form-footer">
+      <button class="save-button" type="submit" [disabled]="service.saving()">{{ service.saving() ? ('settings.saving' |
+        t) : ('settings.save' | t) }}</button>
+    </footer>
+  </form>
   }
 </section>
