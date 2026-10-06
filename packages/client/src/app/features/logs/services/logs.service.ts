@@ -32,6 +32,20 @@ export class LogsService {
     }
   }
 
+  async refresh(): Promise<void> {
+    const selectedFilename = this.previewFilename();
+    await this.load();
+
+    if (this.error()) return;
+    if (!selectedFilename) return;
+
+    if (this.files().some((file) => file.name === selectedFilename)) {
+      await this.preview(selectedFilename);
+    } else {
+      this.closePreview();
+    }
+  }
+
   downloadUrl(filename: string): string {
     return this.application.getApiUrl('v1', 'logs', `/${encodeURIComponent(filename)}`);
   }

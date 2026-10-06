@@ -42,6 +42,7 @@ import { CalendarEvent } from '../../features/calendar/models/calendar-event.ent
 import { DocumentClassificationFeedback } from '../../features/classification-feedback/models/document-classification-feedback.entity';
 import { ApiToken } from '../../features/plugin/mcp/models/api-token.entity';
 import { EmailImportConfig } from '../../features/email-import/models/email-import-config.entity';
+import { PasswordResetToken } from '../../features/authentication/models/password-reset-token.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -100,6 +101,7 @@ export class DatabaseConnectionService {
       DocumentClassificationFeedback,
       ApiToken,
       EmailImportConfig,
+      PasswordResetToken,
     ]);
     await this.initialize();
   }

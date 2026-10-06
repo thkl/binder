@@ -39,6 +39,25 @@ const EN: TranslationMap = {
   'login.password': 'Password',
   'login.signingIn': 'Signing in…',
   'login.signIn': 'Sign in',
+  'login.forgotPassword': 'Forgot your password?',
+  'passwordReset.requestTitle': 'Reset your password',
+  'passwordReset.requestCopy':
+    'Enter your username or email and we will send a reset link if the account can use local sign-in.',
+  'passwordReset.confirmTitle': 'Choose a new password',
+  'passwordReset.confirmCopy':
+    'Your reset link is valid for 30 minutes. Choose a new password to continue.',
+  'passwordReset.identifier': 'Username or email',
+  'passwordReset.requestButton': 'Send reset link',
+  'passwordReset.sending': 'Sending…',
+  'passwordReset.requestSuccess':
+    'If an eligible account exists, a password reset link has been sent.',
+  'passwordReset.confirmButton': 'Reset password',
+  'passwordReset.confirmSuccess':
+    'Your password has been reset. You can sign in with the new password now.',
+  'passwordReset.backToLogin': 'Back to sign in',
+  'passwordReset.identifierRequired': 'Enter your username or email.',
+  'passwordReset.passwordInvalid': 'Use a password between 12 and 512 characters.',
+  'passwordReset.serverError': 'The password reset could not be completed. Please try again.',
   'login.or': 'or',
   'login.sso': 'Continue with SSO',
   'setup.kicker': 'FIRST-RUN SETUP',
@@ -726,6 +745,26 @@ const DE: TranslationMap = {
   'login.password': 'Passwort',
   'login.signingIn': 'Anmeldung…',
   'login.signIn': 'Anmelden',
+  'login.forgotPassword': 'Passwort vergessen?',
+  'passwordReset.requestTitle': 'Passwort zurücksetzen',
+  'passwordReset.requestCopy':
+    'Geben Sie Ihren Benutzernamen oder Ihre E-Mail ein. Wenn das Konto die lokale Anmeldung verwendet, senden wir einen Link.',
+  'passwordReset.confirmTitle': 'Neues Passwort wählen',
+  'passwordReset.confirmCopy':
+    'Der Link ist 30 Minuten gültig. Wählen Sie ein neues Passwort, um fortzufahren.',
+  'passwordReset.identifier': 'Benutzername oder E-Mail',
+  'passwordReset.requestButton': 'Link senden',
+  'passwordReset.sending': 'Wird gesendet…',
+  'passwordReset.requestSuccess':
+    'Wenn ein passendes Konto existiert, wurde ein Link zum Zurücksetzen gesendet.',
+  'passwordReset.confirmButton': 'Passwort zurücksetzen',
+  'passwordReset.confirmSuccess':
+    'Ihr Passwort wurde zurückgesetzt. Sie können sich jetzt mit dem neuen Passwort anmelden.',
+  'passwordReset.backToLogin': 'Zur Anmeldung',
+  'passwordReset.identifierRequired': 'Geben Sie Ihren Benutzernamen oder Ihre E-Mail ein.',
+  'passwordReset.passwordInvalid': 'Verwenden Sie ein Passwort mit 12 bis 512 Zeichen.',
+  'passwordReset.serverError':
+    'Das Passwort konnte nicht zurückgesetzt werden. Bitte versuchen Sie es erneut.',
   'login.or': 'oder',
   'login.sso': 'Mit SSO fortfahren',
   'setup.kicker': 'ERSTEINRICHTUNG',

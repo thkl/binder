@@ -50,6 +50,9 @@
         <button class="submit-button" type="submit" [disabled]="auth.submitting()">
           {{ auth.submitting() ? ('login.signingIn' | t) : ('login.signIn' | t) }}
         </button>
+        <a class="password-reset-link" routerLink="/reset-password">{{
+          'login.forgotPassword' | t
+        }}</a>
         @if (ssoActive()) {
           <div class="separator">
             <span>{{ 'login.or' | t }}</span>

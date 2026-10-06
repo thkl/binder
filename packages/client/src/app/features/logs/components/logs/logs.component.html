@@ -5,11 +5,11 @@
       <h2>{{ 'logs.title' | t }}</h2>
       <p class="muted">{{ 'logs.copy' | t }}</p>
     </div>
-    <button class="refresh-button" type="button" (click)="logs.load()" [disabled]="logs.loading()">
-      @if (logs.loading()) {
+    <button class="refresh-button" type="button" (click)="logs.refresh()" [disabled]="logs.loading() || logs.previewLoading()">
+      @if (logs.loading() || logs.previewLoading()) {
         <span class="spinner"></span>
       }
-      {{ logs.loading() ? ('logs.loading' | t) : ('logs.refresh' | t) }}
+      {{ logs.loading() || logs.previewLoading() ? ('logs.loading' | t) : ('logs.refresh' | t) }}
     </button>
   </header>
 

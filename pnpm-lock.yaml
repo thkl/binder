@@ -77,6 +77,9 @@ importers:
       nest-winston:
         specifier: 2.0.0
         version: 2.0.0(@nestjs/common@12.1.2(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(winston@3.19.0)
+      nodemailer:
+        specifier: 7.0.6
+        version: 7.0.6
       openid-client:
         specifier: 6.8.8
         version: 6.8.8
@@ -3032,6 +3035,10 @@ packages:
   nodemailer@10.0.14:
     resolution: {integrity: sha512-eJoLFKg55fesSlzUekmfOv/SBXh4KUYT8oiQc2RLP0tfG0rbNMJBK7wgHJwXTJwqyKlSJMz9UzDZ4v+aHEvo8g==}
     engines: {node: '>=20.0.0'}
+
+  nodemailer@7.0.6:
+    resolution: {integrity: sha512-F44uVzgwo49xboqbFgBGkRaiMgtoBrBEWCVincJPK9+S9Adkzt/wXCLKbf7dxucmxfTI5gHGB+bEmdyzN6QKjw==}
+    engines: {node: '>=6.0.0'}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -6733,6 +6740,8 @@ snapshots:
   node-releases@2.0.57: {}
 
   nodemailer@10.0.14: {}
+
+  nodemailer@7.0.6: {}
 
   normalize-path@3.0.0: {}
 

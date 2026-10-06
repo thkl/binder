@@ -13,6 +13,8 @@ import {
   ChangePasswordInputSchema,
   CreateManagedUserInputSchema,
   LoginInputSchema,
+  PasswordResetConfirmInputSchema,
+  PasswordResetRequestInputSchema,
   ResetManagedUserPasswordInputSchema,
   UpdateManagedUserInputSchema,
   UserDirectoryResponseSchema,
@@ -27,12 +29,14 @@ import { Throttle } from '@nestjs/throttler';
 import { ensureCsrfToken } from '../../../shared/security/csrf-token';
 import { CurrentUser, ScopedUser } from '../decorators/current-user.decorator';
 import { UserManagementService } from '../service/user-management.service';
+import { PasswordResetService } from '../service/password-reset.service';
 
 @Controller('auth')
 export class AuthenticationController {
   constructor(
     private readonly authentication: AuthenticationService,
     private readonly userManagement: UserManagementService,
+    private readonly passwordReset: PasswordResetService,
   ) {}
 
   @Get('users')
@@ -104,6 +108,20 @@ export class AuthenticationController {
       request.session.save((error) => (error ? reject(error) : resolve()));
     });
     return { data: result, csrfToken };
+  }
+
+  @Post('password-reset/request')
+  @Throttle({ default: { limit: 3, ttl: 15 * 60_000 } })
+  async requestPasswordReset(@Body() body: unknown): Promise<{ data: { accepted: true } }> {
+    const input = PasswordResetRequestInputSchema.parse(body);
+    return { data: await this.passwordReset.request(input.identifier) };
+  }
+
+  @Post('password-reset/confirm')
+  @Throttle({ default: { limit: 10, ttl: 15 * 60_000 } })
+  async confirmPasswordReset(@Body() body: unknown): Promise<{ data: { accepted: true } }> {
+    const input = PasswordResetConfirmInputSchema.parse(body);
+    return { data: await this.passwordReset.confirm(input.token, input.newPassword) };
   }
 
   @Get('session')

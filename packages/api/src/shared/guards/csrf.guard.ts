@@ -28,7 +28,12 @@ export class CsrfGuard implements CanActivate {
     const sessionToken = request.session?.csrfToken;
     if (token && sessionToken && this.tokensMatch(token, sessionToken)) return true;
 
-    if (path.endsWith('/auth/login') || path.endsWith('/setup/admin')) {
+    if (
+      path.endsWith('/auth/login') ||
+      path.endsWith('/auth/password-reset/request') ||
+      path.endsWith('/auth/password-reset/confirm') ||
+      path.endsWith('/setup/admin')
+    ) {
       if (this.isTrustedBrowserOrigin(request)) return true;
     }
 

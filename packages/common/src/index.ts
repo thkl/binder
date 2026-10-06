@@ -960,6 +960,19 @@ export const LoginInputSchema = z.object({
 
 export type LoginInput = z.infer<typeof LoginInputSchema>;
 
+export const PasswordResetRequestInputSchema = z.object({
+  identifier: z.string().trim().min(1).max(320),
+});
+
+export type PasswordResetRequestInput = z.infer<typeof PasswordResetRequestInputSchema>;
+
+export const PasswordResetConfirmInputSchema = z.object({
+  token: z.string().min(20).max(512),
+  newPassword: z.string().min(12).max(512),
+});
+
+export type PasswordResetConfirmInput = z.infer<typeof PasswordResetConfirmInputSchema>;
+
 export const SetupStatusSchema = z.object({
   required: z.boolean(),
   available: z.boolean(),

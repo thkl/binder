@@ -157,6 +157,17 @@ input:focus {
 .submit-button:hover:not(:disabled) {
   background: #8be7fa;
 }
+.password-reset-link {
+  display: block;
+  margin-top: -0.35rem;
+  color: var(--cyan);
+  text-align: right;
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+.password-reset-link:hover {
+  text-decoration: underline;
+}
 button:disabled {
   cursor: wait;
   opacity: 0.6;

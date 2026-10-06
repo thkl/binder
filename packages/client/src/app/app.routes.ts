@@ -2,6 +2,13 @@ import { Routes } from '@angular/router';
 
 export const appRoutes: Routes = [
   {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/authentication/components/password-reset/password-reset.component').then(
+        ({ PasswordResetComponent }) => PasswordResetComponent,
+      ),
+  },
+  {
     path: 'inbox',
     loadComponent: () =>
       import('./features/inbox/components/inbox/inbox.component').then(

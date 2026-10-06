@@ -408,6 +408,15 @@
                "required": [
                     "email_import_configs"
                ]
+          },
+          "61": {
+               "created": [
+                    "password_reset_tokens"
+               ],
+               "required": [
+                    "users",
+                    "user_sessions"
+               ]
           }
      }
 }

@@ -45,7 +45,7 @@ The initial production session store is `connect-pg-simple` using the applicatio
 
 ### Password reset by email
 
-Email-based password reset is a planned P3 feature for local accounts. It
+Email-based password reset is available for local accounts. It
 must use a single-use, short-lived opaque token. Only a hash of the token is
 stored in PostgreSQL; the raw token is sent through the configured mailer and
 is never logged or included in API responses.
@@ -65,7 +65,7 @@ Required behavior:
 - Mail delivery failures must be visible to operators without exposing the
   requested account or reset token in logs.
 
-The planned endpoints are:
+The endpoints are:
 
 ```text
 POST /api/v1/auth/password-reset/request

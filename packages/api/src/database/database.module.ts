@@ -41,6 +41,7 @@ import { ApiToken } from '../features/plugin/mcp/models/api-token.entity';
 import { SecretsModule } from '../shared/config/secrets.module';
 import { SecretsService } from '../shared/config/secrets.service';
 import { EmailImportConfig } from '../features/email-import/models/email-import-config.entity';
+import { PasswordResetToken } from '../features/authentication/models/password-reset-token.entity';
 
 @Global()
 @Module({
@@ -121,6 +122,7 @@ import { EmailImportConfig } from '../features/email-import/models/email-import-
       DocumentClassificationFeedback,
       ApiToken,
       EmailImportConfig,
+      PasswordResetToken,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],
