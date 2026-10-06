@@ -74,6 +74,14 @@ export class SetupController {
     return { data: SetupValidationResponseSchema.parse(await this.setup.validateBackup()) };
   }
 
+  @Get('recovery/backups')
+  @UseGuards(AuthenticationGuard, ScopeGuard, RolesGuard)
+  @Roles('admin')
+  @Scopes(['web'])
+  async recoveryBackups() {
+    return { data: await this.setup.listRecoveryBackups() };
+  }
+
   @Post('complete')
   @UseGuards(AuthenticationGuard, ScopeGuard, RolesGuard)
   @Roles('admin')

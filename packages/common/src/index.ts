@@ -999,6 +999,21 @@ export const SetupValidationResponseSchema = z.object({
 });
 export type SetupValidationResponse = z.infer<typeof SetupValidationResponseSchema>;
 
+export const RecoveryBackupSchema = z.object({
+  filename: z.string().regex(/^binder-\d{8}-\d{6}\.tar\.gz\.age$/),
+  createdAt: z.iso.datetime(),
+  scope: z.enum(['database', 'full']),
+  sizeBytes: z.number().int().nonnegative(),
+});
+export type RecoveryBackup = z.infer<typeof RecoveryBackupSchema>;
+
+export const RecoveryBackupListResponseSchema = z.object({
+  configured: z.boolean(),
+  connected: z.boolean(),
+  backups: z.array(RecoveryBackupSchema),
+});
+export type RecoveryBackupListResponse = z.infer<typeof RecoveryBackupListResponseSchema>;
+
 export const SetupCompletionResponseSchema = z.object({
   completed: z.literal(true),
   completedAt: z.iso.datetime(),

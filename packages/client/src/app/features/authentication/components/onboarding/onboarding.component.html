@@ -35,17 +35,20 @@
         <li [class.active]="step() === 'oidc'" [class.complete]="stepNumber() > 5">
           <span>5</span>{{ 'setup.stepOidc' | t }}
         </li>
-        <li [class.active]="step() === 'backup'" [class.complete]="stepNumber() > 6">
-          <span>6</span>{{ 'setup.stepBackup' | t }}
+        <li [class.active]="step() === 'recovery'" [class.complete]="stepNumber() > 6">
+          <span>6</span>{{ 'setup.stepRecovery' | t }}
         </li>
-        <li [class.active]="step() === 'review'"><span>7</span>{{ 'setup.stepReview' | t }}</li>
+        <li [class.active]="step() === 'backup'" [class.complete]="stepNumber() > 7">
+          <span>7</span>{{ 'setup.stepBackup' | t }}
+        </li>
+        <li [class.active]="step() === 'review'"><span>8</span>{{ 'setup.stepReview' | t }}</li>
       </ol>
     </div>
 
     <div class="form-panel">
       <div class="progress-row">
         <span>{{ 'setup.stepProgress' | t }}</span>
-        <strong>{{ stepNumber() }} / 7</strong>
+        <strong>{{ stepNumber() }} / 8</strong>
       </div>
 
       @if (step() === 'admin') {
@@ -350,6 +353,56 @@
             </button>
           </div>
         </form>
+      } @else if (step() === 'recovery') {
+        <div class="form-heading">
+          <p class="eyebrow">{{ 'setup.stepProgressRecovery' | t }}</p>
+          <h2>{{ 'setup.recoveryTitle' | t }}</h2>
+          <p>{{ 'setup.recoveryCopy' | t }}</p>
+        </div>
+
+        <div class="ai-note" role="note">
+          <strong>{{ 'setup.recoverySafetyTitle' | t }}</strong>
+          <p>{{ 'setup.recoverySafetyCopy' | t }}</p>
+        </div>
+
+        @if (setup.recoveryBackups(); as recovery) {
+          @if (!recovery.connected) {
+            <p class="field-hint">{{ 'setup.recoveryNotConnected' | t }}</p>
+          } @else if (recovery.backups.length === 0) {
+            <p class="field-hint">{{ 'setup.recoveryEmpty' | t }}</p>
+          } @else {
+            <div class="check-list" aria-live="polite">
+              @for (backup of recovery.backups; track backup.filename) {
+                <div class="check-row check-ok">
+                  <span aria-hidden="true">✓</span>
+                  <p>
+                    {{ backup.filename }} · {{ backup.createdAt | date: 'medium' }} ·
+                    {{ backup.sizeBytes }} bytes
+                  </p>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        @if (setup.recoveryLoading()) {
+          <p class="field-hint">{{ 'setup.recoveryLoading' | t }}</p>
+        }
+        @if (setup.error(); as error) {
+          <p class="error" role="alert">{{ error }}</p>
+        }
+
+        <div class="onboarding-actions">
+          <button type="button" class="secondary-button" (click)="goBack()">
+            {{ 'setup.back' | t }}
+          </button>
+          <button type="button" class="secondary-button" (click)="connectDropbox()">
+            {{ 'setup.recoveryConnect' | t }}
+          </button>
+          <button type="button" (click)="continueRecovery()">
+            {{ 'setup.continue' | t }}
+          </button>
+        </div>
       } @else if (step() === 'backup') {
         <div class="form-heading">
           <p class="eyebrow">{{ 'setup.stepProgressBackup' | t }}</p>

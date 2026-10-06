@@ -6,9 +6,16 @@ import { SetupStateStore } from './store/setup-state.store';
 import { SharedModule } from '../../shared/shared.service.module';
 import { AuthenticationServiceModule } from '../authentication/authentication.service.module';
 import { PipelineStoreModule } from '../pipeline/pipeline.store.module';
+import { MaintenanceModule } from '../maintenance/maintenance.module';
 
 @Module({
-  imports: [DatabaseModule, SharedModule, AuthenticationServiceModule, PipelineStoreModule],
+  imports: [
+    DatabaseModule,
+    SharedModule,
+    AuthenticationServiceModule,
+    PipelineStoreModule,
+    MaintenanceModule,
+  ],
   controllers: [SetupController],
   providers: [SetupService, SetupStateStore],
 })

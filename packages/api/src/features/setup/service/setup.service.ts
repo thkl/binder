@@ -27,6 +27,7 @@ import { SSOAuthenticationService } from '../../authentication/service/ssoauthen
 import { PipelineWorkerHeartbeatStore } from '../../pipeline/store/pipeline-worker-heartbeat.store';
 import { createGravatarUrl } from '../../authentication/service/gravatar';
 import { SecretsService } from '../../../shared/config/secrets.service';
+import { DropboxConnectionService } from '../../maintenance/service/dropbox-connection.service';
 
 interface SetupPaths {
   appRoot: string;
@@ -46,6 +47,7 @@ export class SetupService {
     private readonly sso: SSOAuthenticationService,
     private readonly workerHeartbeats: PipelineWorkerHeartbeatStore,
     private readonly secrets: SecretsService,
+    private readonly dropbox: DropboxConnectionService,
   ) {}
 
   async status(): Promise<SetupStatus> {
@@ -258,6 +260,10 @@ export class SetupService {
     ];
 
     return this.validationResult(checks);
+  }
+
+  async listRecoveryBackups() {
+    return this.dropbox.listRecoveryBackups();
   }
 
   async completeOnboarding(): Promise<SetupCompletionResponse> {

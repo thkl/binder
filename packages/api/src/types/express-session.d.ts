@@ -7,5 +7,6 @@ declare module 'express-session' {
     csrfToken?: string;
     dropboxState?: string;
     dropboxCodeVerifier?: string;
+    dropboxReturnTo?: string;
   }
 }

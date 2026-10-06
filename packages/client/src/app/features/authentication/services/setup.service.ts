@@ -4,6 +4,8 @@ import {
   ApiResponse,
   SetupCompletionResponse,
   SetupCompletionResponseSchema,
+  RecoveryBackupListResponse,
+  RecoveryBackupListResponseSchema,
   SetupValidationResponse,
   SetupValidationResponseSchema,
 } from '@binder/common';
@@ -23,6 +25,8 @@ export class SetupService {
   readonly validating = signal<SetupValidationStep | null>(null);
   readonly completing = signal(false);
   readonly error = signal<string | null>(null);
+  readonly recoveryBackups = signal<RecoveryBackupListResponse | null>(null);
+  readonly recoveryLoading = signal(false);
 
   constructor(
     private readonly http: HttpClient,
@@ -70,6 +74,27 @@ export class SetupService {
       return null;
     } finally {
       this.completing.set(false);
+    }
+  }
+
+  async loadRecoveryBackups(): Promise<RecoveryBackupListResponse | null> {
+    this.recoveryLoading.set(true);
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(
+          this.application.getApiUrl('v1', 'setup/recovery/backups'),
+          { withCredentials: true },
+        ),
+      );
+      const backups = RecoveryBackupListResponseSchema.parse(response.data);
+      this.recoveryBackups.set(backups);
+      return backups;
+    } catch (error) {
+      this.error.set(this.errorMessage(error));
+      return null;
+    } finally {
+      this.recoveryLoading.set(false);
     }
   }
 

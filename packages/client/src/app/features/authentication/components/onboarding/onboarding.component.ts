@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { SetupService, SetupValidationStep } from '../../services/setup.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
@@ -10,7 +11,8 @@ import type {
   SetupCheck,
 } from '@binder/common';
 
-type OnboardingStep = 'admin' | 'storage' | 'processing' | 'ai' | 'oidc' | 'backup' | 'review';
+type OnboardingStep =
+  'admin' | 'storage' | 'processing' | 'ai' | 'oidc' | 'recovery' | 'backup' | 'review';
 
 const STEP_ORDER: OnboardingStep[] = [
   'admin',
@@ -18,6 +20,7 @@ const STEP_ORDER: OnboardingStep[] = [
   'processing',
   'ai',
   'oidc',
+  'recovery',
   'backup',
   'review',
 ];
@@ -58,7 +61,7 @@ const BACKUP_SETTINGS = [
 @Component({
   selector: 'binder-onboarding',
   standalone: true,
-  imports: [TranslatePipe, AiProviderManagerComponent],
+  imports: [DatePipe, TranslatePipe, AiProviderManagerComponent],
   templateUrl: './onboarding.component.html',
   styleUrl: './onboarding.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -132,13 +135,22 @@ export class OnboardingComponent {
     this.oidcSkipped.set(false);
     const validation = await this.validate('oidc');
     if (validation?.valid || validation?.checks.every((check) => check.status === 'warning')) {
-      this.goTo('backup');
+      await this.prepareRecoveryStep();
     }
   }
 
   skipOidc(): void {
     this.oidcSkipped.set(true);
+    void this.prepareRecoveryStep();
+  }
+
+  async continueRecovery(): Promise<void> {
+    await this.setup.loadRecoveryBackups();
     this.goTo('backup');
+  }
+
+  connectDropbox(): void {
+    window.location.assign('/api/v1/maintenance/dropbox/connect?returnTo=/');
   }
 
   async continueBackup(): Promise<void> {
@@ -229,8 +241,18 @@ export class OnboardingComponent {
     this.values.set(values);
     this.oidcSecretPreserved.set(values['oidc.CLIENT_SECRET'] === '****');
     this.settingsLoaded.set(true);
-    this.goTo('storage');
-    await this.validate('storage');
+    if (window.location.search.includes('dropbox=connected')) {
+      window.history.replaceState({}, '', window.location.pathname);
+      await this.prepareRecoveryStep();
+    } else {
+      this.goTo('storage');
+      await this.validate('storage');
+    }
+  }
+
+  private async prepareRecoveryStep(): Promise<void> {
+    this.goTo('recovery');
+    await this.setup.loadRecoveryBackups();
   }
 
   private async validate(step: SetupValidationStep) {

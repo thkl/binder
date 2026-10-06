@@ -25,7 +25,12 @@ export class DropboxController {
   @Roles('admin')
   @Scopes(['web'])
   connect(@Req() request: SessionRequest, @Res() response: Response) {
-    return this.dropbox.authorize(request, response);
+    const returnTo = request.query.returnTo;
+    return this.dropbox.authorize(
+      request,
+      response,
+      typeof returnTo === 'string' ? returnTo : undefined,
+    );
   }
 
   @Get('callback')
