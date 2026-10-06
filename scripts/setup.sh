@@ -312,14 +312,50 @@ require_existing_secret() {
   set_env_value "$key" "$supplied_value"
 }
 
+require_or_generate_database_password() {
+  local current_value
+  local supplied_value
+
+  current_value="$(read_env_value DATABASE_PASSWORD || true)"
+  if ! is_placeholder "$current_value"; then
+    printf 'Preserved configured DATABASE_PASSWORD for recovery\n'
+    return
+  fi
+
+  if [[ ! -t 0 ]]; then
+    printf 'error: recovery mode requires DATABASE_PASSWORD in %s or an interactive terminal\n' "$ENV_FILE" >&2
+    exit 1
+  fi
+
+  printf 'Enter the existing DATABASE_PASSWORD, or press Enter to generate a new one: '
+  IFS= read -r -s supplied_value
+  printf '\n'
+  if [[ -z "$supplied_value" ]]; then
+    supplied_value="$(openssl rand -hex 32)"
+    printf 'Generated a new DATABASE_PASSWORD for the restored database.\n'
+  elif is_placeholder "$supplied_value"; then
+    printf 'error: DATABASE_PASSWORD cannot be a placeholder\n' >&2
+    exit 1
+  else
+    printf 'Using the supplied existing DATABASE_PASSWORD for recovery.\n'
+  fi
+  set_env_value DATABASE_PASSWORD "$supplied_value"
+}
+
 choose_setup_mode "$@"
 
 if [[ "$setup_mode" == 'recovery' ]]; then
-  printf '\nRecovery mode selected. Existing secrets will be preserved or requested.\n'
-  require_existing_secret DATABASE_PASSWORD
+  printf '\nRecovery mode selected.\n'
+  printf 'The following deployment secrets are required for Binder itself:\n'
+  printf '  DATABASE_PASSWORD: PostgreSQL connection password (not the backup password; it can be generated for a new database).\n'
+  printf '  ENCRYPTION_KEY: key used to decrypt Binder settings from the restored database.\n'
+  printf 'The backup encryption password is entered later in the recovery wizard and is not stored in this environment file.\n'
+  require_or_generate_database_password
   require_existing_secret ENCRYPTION_KEY
-  require_existing_secret DROPBOX_APP_KEY
-  require_existing_secret DROPBOX_APP_SECRET
+  printf 'Dropbox OAuth app credentials are optional in recovery mode; the wizard can use a one-time Dropbox access token instead.\n'
+  if ! is_placeholder "$(read_env_value DROPBOX_APP_KEY || true)" && ! is_placeholder "$(read_env_value DROPBOX_APP_SECRET || true)"; then
+    printf 'Preserved configured Dropbox OAuth app credentials for recovery.\n'
+  fi
 else
   ensure_secret DATABASE_PASSWORD "$(openssl rand -hex 32)"
   ensure_secret ENCRYPTION_KEY "$(openssl rand -base64 32 | tr -d '\r\n')"
