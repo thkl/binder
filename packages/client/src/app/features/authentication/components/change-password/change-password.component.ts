@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 
@@ -19,10 +20,12 @@ export class ChangePasswordComponent {
   readonly newPassword = signal('');
   readonly confirmation = signal('');
   readonly validationError = signal<string | null>(null);
+  readonly changedSuccessfully = signal(false);
 
   constructor(
     readonly auth: AuthService,
     private readonly i18n: I18nService,
+    private readonly router: Router,
   ) {}
 
   async submit(event: SubmitEvent): Promise<void> {
@@ -38,8 +41,13 @@ export class ChangePasswordComponent {
       this.oldPassword.set('');
       this.newPassword.set('');
       this.confirmation.set('');
+      this.changedSuccessfully.set(true);
       this.changed.emit();
     }
+  }
+
+  async backToHome(): Promise<void> {
+    await this.router.navigate(['/']);
   }
 
   inputValue(event: Event): string {
