@@ -417,6 +417,11 @@
                     "users",
                     "user_sessions"
                ]
+          },
+          "62": {
+               "required": [
+                    "maintenance_requests"
+               ]
           }
      }
 }

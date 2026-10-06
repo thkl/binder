@@ -20,6 +20,8 @@ import {
   SetupStatusSchema,
   SetupValidationResponse,
   SetupValidationResponseSchema,
+  RecoveryRestoreInput,
+  MaintenanceRequestResponseSchema,
 } from '@binder/common';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { SetupAlreadyCompletedError, SetupStateStore } from '../store/setup-state.store';
@@ -30,6 +32,8 @@ import { createGravatarUrl } from '../../authentication/service/gravatar';
 import { SecretsService } from '../../../shared/config/secrets.service';
 import { DropboxConnectionService } from '../../maintenance/service/dropbox-connection.service';
 import { SessionRequest } from '../../authentication/models/request.model';
+import { MaintenanceRequestStore } from '../../maintenance/store/maintenance-request.store';
+import { EncryptionService } from '../../../shared/util/encryption.service';
 
 interface SetupPaths {
   appRoot: string;
@@ -50,6 +54,8 @@ export class SetupService {
     private readonly workerHeartbeats: PipelineWorkerHeartbeatStore,
     private readonly secrets: SecretsService,
     private readonly dropbox: DropboxConnectionService,
+    private readonly maintenanceRequests: MaintenanceRequestStore,
+    private readonly encryption: EncryptionService,
   ) {}
 
   async status(): Promise<SetupStatus> {
@@ -284,6 +290,28 @@ export class SetupService {
       );
     }
     return this.dropbox.authorize(request, response, '/');
+  }
+
+  async requestRecoveryRestore(input: RecoveryRestoreInput) {
+    const pending = await this.maintenanceRequests.findPendingRestore();
+    if (pending) throw new ConflictException('A recovery restore is already queued');
+    const encryptedPassword = this.encryption.encrypt(input.backupPassword);
+    const encryptedAccessToken = input.accessToken
+      ? this.encryption.encrypt(input.accessToken)
+      : null;
+    const request = await this.maintenanceRequests.create({
+      jobKey: 'restore',
+      payload: {
+        filename: input.filename,
+        remoteFolder: input.remoteFolder ?? '/',
+        password: encryptedPassword.encrypted,
+        passwordIv: encryptedPassword.iv,
+        ...(encryptedAccessToken
+          ? { accessToken: encryptedAccessToken.encrypted, accessTokenIv: encryptedAccessToken.iv }
+          : {}),
+      },
+    });
+    return MaintenanceRequestResponseSchema.parse({ uuid: request.uuid });
   }
 
   async completeOnboarding(): Promise<SetupCompletionResponse> {

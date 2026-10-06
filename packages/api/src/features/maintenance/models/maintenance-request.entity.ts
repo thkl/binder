@@ -17,7 +17,10 @@ export class MaintenanceRequest extends Model {
   declare uuid: string;
 
   @Column({ field: 'job_key', type: DataType.STRING(64), allowNull: false })
-  declare jobKey: 'backup';
+  declare jobKey: 'backup' | 'restore';
+
+  @Column({ type: DataType.JSONB, allowNull: false, defaultValue: {} })
+  declare payload: Record<string, string>;
 
   @CreatedAt
   @Column({ field: 'created_at', type: DataType.DATE })

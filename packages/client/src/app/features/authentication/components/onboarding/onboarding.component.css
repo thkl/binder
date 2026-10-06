@@ -297,6 +297,16 @@ input:focus {
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
+.recovery-option {
+  width: 100%;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.recovery-option.selected {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
 .check-ok > span {
   color: #061326;
   background: #67e0ac;

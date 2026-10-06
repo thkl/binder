@@ -6,6 +6,8 @@ import {
   SetupCompletionResponseSchema,
   RecoveryBackupListResponse,
   RecoveryBackupListResponseSchema,
+  RecoveryRestoreInput,
+  MaintenanceRequestResponseSchema,
   SetupValidationResponse,
   SetupValidationResponseSchema,
 } from '@binder/common';
@@ -98,6 +100,32 @@ export class SetupService {
       const backups = RecoveryBackupListResponseSchema.parse(response.data);
       this.recoveryBackups.set(backups);
       return backups;
+    } catch (error) {
+      this.error.set(this.errorMessage(error));
+      return null;
+    } finally {
+      this.recoveryLoading.set(false);
+    }
+  }
+
+  async requestRecoveryRestore(
+    input: RecoveryRestoreInput,
+    publicRecovery = false,
+  ): Promise<string | null> {
+    this.recoveryLoading.set(true);
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.application.getApiUrl(
+            'v1',
+            publicRecovery ? 'setup/recovery/public/restore' : 'setup/recovery/restore',
+          ),
+          input,
+          { withCredentials: true },
+        ),
+      );
+      return MaintenanceRequestResponseSchema.parse(response.data).uuid;
     } catch (error) {
       this.error.set(this.errorMessage(error));
       return null;

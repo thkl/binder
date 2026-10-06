@@ -42,6 +42,20 @@ can be recovered with the normal `age` and `tar` tools. The password is only
 stored encrypted at rest in Binder's settings; it is never sent to Dropbox or
 written into the archive metadata.
 
+### Recovery warning
+
+An encrypted full backup requires both of these independent secrets:
+
+- The original deployment `ENCRYPTION_KEY`, which decrypts Binder's encrypted
+  database settings after the database is restored.
+- The backup encryption password configured as `backup.encryptionPassword`,
+  which decrypts the `.tar.gz.age` archive itself.
+
+Both are essential. A valid Dropbox OAuth connection or one-time Dropbox
+access token only retrieves the archive; it cannot decrypt it. The PostgreSQL
+`DATABASE_PASSWORD` is a separate runtime connection credential and is not a
+replacement for either recovery secret.
+
 For emergency recovery on a local machine:
 
 ```bash

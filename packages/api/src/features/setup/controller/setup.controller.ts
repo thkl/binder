@@ -5,6 +5,7 @@ import {
   SetupAdminInputSchema,
   SetupCompletionResponseSchema,
   RecoveryBackupListInputSchema,
+  RecoveryRestoreInputSchema,
   SetupStatusSchema,
   SetupValidationResponseSchema,
 } from '@binder/common';
@@ -98,6 +99,22 @@ export class SetupController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async publicRecoveryDropboxConnect(@Req() request: SessionRequest, @Res() response: Response) {
     return this.setup.authorizePublicRecovery(request, response);
+  }
+
+  @Post('recovery/public/restore')
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  async publicRecoveryRestore(@Body() body: unknown) {
+    const input = RecoveryRestoreInputSchema.parse(body);
+    return { data: await this.setup.requestRecoveryRestore(input) };
+  }
+
+  @Post('recovery/restore')
+  @UseGuards(AuthenticationGuard, ScopeGuard, RolesGuard)
+  @Roles('admin')
+  @Scopes(['web'])
+  async recoveryRestore(@Body() body: unknown) {
+    const input = RecoveryRestoreInputSchema.parse(body);
+    return { data: await this.setup.requestRecoveryRestore(input) };
   }
 
   @Post('complete')

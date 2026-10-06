@@ -17,6 +17,6 @@ import { DropboxConnectionService } from './service/dropbox-connection.service';
     MaintenanceRequestStore,
     DropboxConnectionService,
   ],
-  exports: [DropboxConnectionService],
+  exports: [DropboxConnectionService, MaintenanceRequestStore],
 })
 export class MaintenanceModule {}

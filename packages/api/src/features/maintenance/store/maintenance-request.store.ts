@@ -17,6 +17,13 @@ export class MaintenanceRequestStore extends BaseCrudStore<MaintenanceRequest> {
     });
   }
 
+  findPendingRestore(): Promise<MaintenanceRequest | null> {
+    return this.model.findOne({
+      where: { jobKey: 'restore' },
+      order: [['createdAt', 'ASC']],
+    });
+  }
+
   async removeStaleBackupRequests(maxAgeMs = 15 * 60 * 1000): Promise<number> {
     const count = await this.model.destroy({
       where: {

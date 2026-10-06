@@ -33,7 +33,8 @@ export class CsrfGuard implements CanActivate {
       path.endsWith('/auth/password-reset/request') ||
       path.endsWith('/auth/password-reset/confirm') ||
       path.endsWith('/setup/admin') ||
-      path.endsWith('/setup/recovery/public/backups')
+      path.endsWith('/setup/recovery/public/backups') ||
+      path.endsWith('/setup/recovery/public/restore')
     ) {
       if (this.isTrustedBrowserOrigin(request)) return true;
     }

@@ -171,6 +171,24 @@ openssl rand -base64 48   # SETUP_SECRET
 `ENCRYPTION_KEY` must decode to exactly 32 bytes. Keep it stable after data
 has been encrypted; changing it makes encrypted settings unreadable.
 
+### Recovery secrets — keep both
+
+Full recovery requires two different secrets, and having only one is not
+enough:
+
+1. `ENCRYPTION_KEY` is the Binder deployment key. It decrypts encrypted values
+   stored in the restored PostgreSQL database, including Dropbox credentials
+   and other protected settings. It must be the exact key from the original
+   installation.
+2. The backup encryption password is the passphrase configured as
+   `backup.encryptionPassword`. It decrypts the `.tar.gz.age` backup archive
+   and is entered separately during recovery. It is not the PostgreSQL
+   password and is not stored in `.env`.
+
+If either secret is missing, a full encrypted backup cannot be recovered. A
+Dropbox connection or access token only provides access to the backup file; it
+does not decrypt it.
+
 ## Secret environment variables and secret files
 
 Binder accepts every server secret either as a normal environment variable or
@@ -267,13 +285,19 @@ choose **Recovery**, or set the mode explicitly:
 BINDER_SETUP_MODE=recovery ./scripts/setup.sh
 ```
 
-Recovery mode never generates replacement values for `DATABASE_PASSWORD` or
-`ENCRYPTION_KEY`; those must match the existing PostgreSQL installation and
-the key that encrypted Binder's stored settings. It also asks for the Dropbox
-app key and secret so the recovered installation can refresh its Dropbox
-connection. Keep the existing document-storage and PostgreSQL volumes
-attached. Generating a new encryption key would make encrypted settings,
-including the Dropbox refresh token, unreadable.
+Recovery mode preserves the existing `ENCRYPTION_KEY`, which must match the
+key that encrypted Binder's stored settings. If the PostgreSQL database is
+being recreated, the script can generate a new `DATABASE_PASSWORD`; if an
+existing PostgreSQL volume is reused, enter its current password instead.
+Dropbox app credentials are optional because recovery can use a one-time
+Dropbox access token. Keep the existing document-storage and PostgreSQL
+volumes attached when reusing them. Generating a new `ENCRYPTION_KEY` would
+make encrypted settings, including the Dropbox refresh token, unreadable.
+
+The backup encryption password is still mandatory for an encrypted full
+backup. Enter it in the recovery wizard when the selected archive is
+validated. The database password and backup encryption password are separate
+values and must never be substituted for one another.
 
 Configured values in an existing `.env` are preserved. Keep this file safe
 and do not delete it while the PostgreSQL volume exists: PostgreSQL only uses

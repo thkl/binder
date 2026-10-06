@@ -12,7 +12,7 @@ import type {
 } from '@binder/common';
 
 type OnboardingStep =
-  'admin' | 'storage' | 'processing' | 'ai' | 'oidc' | 'recovery' | 'backup' | 'review';
+  'admin' | 'storage' | 'processing' | 'ai' | 'oidc' | 'recovery' | 'restore' | 'backup' | 'review';
 
 const STEP_ORDER: OnboardingStep[] = [
   'admin',
@@ -21,6 +21,7 @@ const STEP_ORDER: OnboardingStep[] = [
   'ai',
   'oidc',
   'recovery',
+  'restore',
   'backup',
   'review',
 ];
@@ -81,6 +82,10 @@ export class OnboardingComponent {
   readonly recoveryAccessToken = signal('');
   readonly recoveryFolder = signal('/');
   readonly recoveryMode = signal(false);
+  readonly selectedRecoveryBackup = signal<string | null>(null);
+  readonly recoveryPassword = signal('');
+  readonly recoveryConfirmation = signal('');
+  readonly recoveryQueued = signal(false);
 
   readonly stepNumber = computed(() => STEP_ORDER.indexOf(this.step()) + 1);
   readonly canGoBack = computed(() => this.stepNumber() > 2);
@@ -158,7 +163,41 @@ export class OnboardingComponent {
       this.recoveryMode(),
       this.recoveryFolder(),
     );
-    this.goTo('backup');
+    if (!this.selectedRecoveryBackup()) {
+      this.stepError.set(this.i18n.t('setup.recoverySelectRequired'));
+      return;
+    }
+    this.goTo('restore');
+  }
+
+  selectRecoveryBackup(filename: string): void {
+    this.selectedRecoveryBackup.set(filename);
+    this.stepError.set(null);
+  }
+
+  async submitRecoveryRestore(): Promise<void> {
+    this.stepError.set(null);
+    if (this.recoveryPassword() !== this.recoveryConfirmation()) {
+      this.stepError.set(this.i18n.t('setup.recoveryPasswordMismatch'));
+      return;
+    }
+    const filename = this.selectedRecoveryBackup();
+    if (!filename) return;
+    const requestUuid = await this.setup.requestRecoveryRestore(
+      {
+        filename,
+        accessToken: this.recoveryAccessToken() || undefined,
+        remoteFolder: this.recoveryFolder(),
+        backupPassword: this.recoveryPassword(),
+        confirmation: 'RESTORE',
+      },
+      this.recoveryMode(),
+    );
+    if (requestUuid) {
+      this.recoveryPassword.set('');
+      this.recoveryConfirmation.set('');
+      this.recoveryQueued.set(true);
+    }
   }
 
   async refreshRecoveryBackups(): Promise<void> {

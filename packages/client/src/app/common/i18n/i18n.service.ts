@@ -77,6 +77,7 @@ const EN: TranslationMap = {
   'setup.stepAi': 'Optional AI',
   'setup.stepOidc': 'Optional SSO',
   'setup.stepRecovery': 'Recovery',
+  'setup.stepRestore': 'Restore',
   'setup.stepBackup': 'Backups',
   'setup.stepReview': 'Review',
   'setup.stepWorkspace': 'Start working',
@@ -140,6 +141,22 @@ const EN: TranslationMap = {
   'setup.recoveryEmpty': 'No encrypted full backups were found in the configured Dropbox folder.',
   'setup.recoveryLoading': 'Loading available backups…',
   'setup.recoveryConnect': 'Connect Dropbox',
+  'setup.recoverySelectRequired': 'Select a backup before continuing.',
+  'setup.stepProgressRestore': 'STEP 7 OF 9',
+  'setup.restoreTitle': 'Confirm recovery',
+  'setup.restoreCopy':
+    'Enter the backup encryption password and confirm that this installation may be replaced.',
+  'setup.restoreSelected': 'Selected backup',
+  'setup.recoveryPassword': 'Backup encryption password',
+  'setup.recoveryPasswordHint':
+    'This is the password configured as backup.encryptionPassword, not the database password.',
+  'setup.recoveryConfirm': 'Confirmation',
+  'setup.recoveryConfirmHint': 'Type RESTORE to confirm the destructive recovery request.',
+  'setup.recoveryPasswordMismatch': 'The backup passwords do not match.',
+  'setup.restoreButton': 'Queue restore',
+  'setup.restoreQueuedTitle': 'Restore queued',
+  'setup.restoreQueuedCopy':
+    'The worker will stage and restore the selected backup. Do not continue normal setup until the recovery process has completed.',
   'setup.recoveryStart': 'Recover an existing installation',
   'setup.recoveryAccessToken': 'One-time Dropbox access token',
   'setup.recoveryAccessTokenHint':
@@ -809,6 +826,7 @@ const DE: TranslationMap = {
   'setup.stepAi': 'Optionale KI',
   'setup.stepOidc': 'Optionales SSO',
   'setup.stepRecovery': 'Wiederherstellung',
+  'setup.stepRestore': 'Wiederherstellen',
   'setup.stepBackup': 'Backups',
   'setup.stepReview': 'Prüfung',
   'setup.stepWorkspace': 'Arbeitsbereich öffnen',
@@ -879,6 +897,23 @@ const DE: TranslationMap = {
     'Im konfigurierten Dropbox-Ordner wurden keine verschlüsselten vollständigen Backups gefunden.',
   'setup.recoveryLoading': 'Verfügbare Backups werden geladen…',
   'setup.recoveryConnect': 'Dropbox verbinden',
+  'setup.recoverySelectRequired': 'Wählen Sie ein Backup aus, bevor Sie fortfahren.',
+  'setup.stepProgressRestore': 'SCHRITT 7 VON 9',
+  'setup.restoreTitle': 'Wiederherstellung bestätigen',
+  'setup.restoreCopy':
+    'Geben Sie das Backup-Verschlüsselungspasswort ein und bestätigen Sie, dass diese Installation ersetzt werden darf.',
+  'setup.restoreSelected': 'Ausgewähltes Backup',
+  'setup.recoveryPassword': 'Backup-Verschlüsselungspasswort',
+  'setup.recoveryPasswordHint':
+    'Dies ist das als backup.encryptionPassword konfigurierte Passwort, nicht das Datenbankpasswort.',
+  'setup.recoveryConfirm': 'Bestätigung',
+  'setup.recoveryConfirmHint':
+    'Geben Sie RESTORE ein, um die destruktive Wiederherstellungsanforderung zu bestätigen.',
+  'setup.recoveryPasswordMismatch': 'Die Backup-Passwörter stimmen nicht überein.',
+  'setup.restoreButton': 'Wiederherstellung einreihen',
+  'setup.restoreQueuedTitle': 'Wiederherstellung eingereiht',
+  'setup.restoreQueuedCopy':
+    'Der Worker wird das ausgewählte Backup vorbereiten und wiederherstellen. Fahren Sie erst nach Abschluss der Wiederherstellung mit der normalen Einrichtung fort.',
   'setup.recoveryStart': 'Vorhandene Installation wiederherstellen',
   'setup.recoveryAccessToken': 'Einmaliger Dropbox-Zugriffstoken',
   'setup.recoveryAccessTokenHint':

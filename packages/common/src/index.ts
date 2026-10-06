@@ -21,7 +21,12 @@ export const DocumentArchiveStatusSchema = z.enum([
 
 export type DocumentArchiveStatus = z.infer<typeof DocumentArchiveStatusSchema>;
 
-export const MaintenanceJobSchema = z.enum(['backup', 'backup-retention', 'storage-consistency']);
+export const MaintenanceJobSchema = z.enum([
+  'backup',
+  'backup-retention',
+  'storage-consistency',
+  'restore',
+]);
 export type MaintenanceJob = z.infer<typeof MaintenanceJobSchema>;
 
 export const MaintenanceRunStatusSchema = z.enum(['running', 'succeeded', 'failed']);
@@ -1019,6 +1024,15 @@ export const RecoveryBackupListInputSchema = z.object({
   remoteFolder: z.string().trim().min(1).max(1024).optional(),
 });
 export type RecoveryBackupListInput = z.infer<typeof RecoveryBackupListInputSchema>;
+
+export const RecoveryRestoreInputSchema = z.object({
+  filename: RecoveryBackupSchema.shape.filename,
+  accessToken: z.string().trim().min(1).max(4096).optional(),
+  remoteFolder: z.string().trim().min(1).max(1024).optional(),
+  backupPassword: z.string().min(1).max(512),
+  confirmation: z.literal('RESTORE'),
+});
+export type RecoveryRestoreInput = z.infer<typeof RecoveryRestoreInputSchema>;
 
 export const SetupCompletionResponseSchema = z.object({
   completed: z.literal(true),

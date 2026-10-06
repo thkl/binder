@@ -38,17 +38,20 @@
         <li [class.active]="step() === 'recovery'" [class.complete]="stepNumber() > 6">
           <span>6</span>{{ 'setup.stepRecovery' | t }}
         </li>
-        <li [class.active]="step() === 'backup'" [class.complete]="stepNumber() > 7">
-          <span>7</span>{{ 'setup.stepBackup' | t }}
+        <li [class.active]="step() === 'restore'" [class.complete]="stepNumber() > 7">
+          <span>7</span>{{ 'setup.stepRestore' | t }}
         </li>
-        <li [class.active]="step() === 'review'"><span>8</span>{{ 'setup.stepReview' | t }}</li>
+        <li [class.active]="step() === 'backup'" [class.complete]="stepNumber() > 8">
+          <span>8</span>{{ 'setup.stepBackup' | t }}
+        </li>
+        <li [class.active]="step() === 'review'"><span>9</span>{{ 'setup.stepReview' | t }}</li>
       </ol>
     </div>
 
     <div class="form-panel">
       <div class="progress-row">
         <span>{{ 'setup.stepProgress' | t }}</span>
-        <strong>{{ stepNumber() }} / 8</strong>
+        <strong>{{ stepNumber() }} / 9</strong>
       </div>
 
       @if (step() === 'admin') {
@@ -396,13 +399,19 @@
           } @else {
             <div class="check-list" aria-live="polite">
               @for (backup of recovery.backups; track backup.filename) {
-                <div class="check-row check-ok">
+                <button
+                  type="button"
+                  class="check-row recovery-option"
+                  [class.check-ok]="selectedRecoveryBackup() === backup.filename"
+                  [class.selected]="selectedRecoveryBackup() === backup.filename"
+                  (click)="selectRecoveryBackup(backup.filename)"
+                >
                   <span aria-hidden="true">✓</span>
                   <p>
                     {{ backup.filename }} · {{ backup.createdAt | date: 'medium' }} ·
                     {{ backup.sizeBytes }} bytes
                   </p>
-                </div>
+                </button>
               }
             </div>
           }
@@ -412,6 +421,9 @@
           <p class="field-hint">{{ 'setup.recoveryLoading' | t }}</p>
         }
         @if (setup.error(); as error) {
+          <p class="error" role="alert">{{ error }}</p>
+        }
+        @if (stepError(); as error) {
           <p class="error" role="alert">{{ error }}</p>
         }
 
@@ -429,6 +441,57 @@
             {{ 'setup.continue' | t }}
           </button>
         </div>
+      } @else if (step() === 'restore') {
+        <div class="form-heading">
+          <p class="eyebrow">{{ 'setup.stepProgressRestore' | t }}</p>
+          <h2>{{ 'setup.restoreTitle' | t }}</h2>
+          <p>{{ 'setup.restoreCopy' | t }}</p>
+        </div>
+
+        @if (recoveryQueued()) {
+          <div class="ai-note" role="status">
+            <strong>{{ 'setup.restoreQueuedTitle' | t }}</strong>
+            <p>{{ 'setup.restoreQueuedCopy' | t }}</p>
+          </div>
+        } @else {
+          <div class="setting-summary">
+            <span>{{ 'setup.restoreSelected' | t }}</span>
+            <strong>{{ selectedRecoveryBackup() }}</strong>
+          </div>
+          <form (submit)="$event.preventDefault(); submitRecoveryRestore()">
+            <label for="recovery-password">{{ 'setup.recoveryPassword' | t }}</label>
+            <input
+              id="recovery-password"
+              type="password"
+              autocomplete="off"
+              [value]="recoveryPassword()"
+              (input)="recoveryPassword.set(inputValue($event))"
+              required
+            />
+            <p class="field-hint">{{ 'setup.recoveryPasswordHint' | t }}</p>
+            <label for="recovery-confirmation">{{ 'setup.recoveryConfirm' | t }}</label>
+            <input
+              id="recovery-confirmation"
+              type="text"
+              autocomplete="off"
+              [value]="recoveryConfirmation()"
+              (input)="recoveryConfirmation.set(inputValue($event))"
+              required
+            />
+            <p class="field-hint">{{ 'setup.recoveryConfirmHint' | t }}</p>
+            @if (stepError(); as error) {
+              <p class="error" role="alert">{{ error }}</p>
+            }
+            <div class="onboarding-actions">
+              <button type="button" class="secondary-button" (click)="goBack()">
+                {{ 'setup.back' | t }}
+              </button>
+              <button type="submit" [disabled]="setup.recoveryLoading()">
+                {{ 'setup.restoreButton' | t }}
+              </button>
+            </div>
+          </form>
+        }
       } @else if (step() === 'backup') {
         <div class="form-heading">
           <p class="eyebrow">{{ 'setup.stepProgressBackup' | t }}</p>
