@@ -89,6 +89,10 @@ export class EmailImportConfig extends Model {
   @Column({ field: 'trusted_senders', type: DataType.JSONB }) declare trustedSenders: string[];
   @Column({ field: 'last_polled_at', type: DataType.DATE, allowNull: true })
   declare lastPolledAt: Date | null;
+  @Column({ field: 'last_uid_validity', type: DataType.STRING(40), allowNull: true })
+  declare lastUidValidity: string | null;
+  @Column({ field: 'last_message_uid', type: DataType.STRING(40), allowNull: true })
+  declare lastMessageUid: string | null;
   @Column({ field: 'last_error', type: DataType.TEXT, allowNull: true })
   declare lastError: string | null;
   @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;

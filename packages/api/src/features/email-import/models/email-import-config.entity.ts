@@ -25,6 +25,8 @@ export interface EmailImportConfigAttributes {
   deleteAfterImport: boolean;
   trustedSenders: string[];
   lastPolledAt: Date | null;
+  lastUidValidity: string | null;
+  lastMessageUid: string | null;
   lastError: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -32,10 +34,12 @@ export interface EmailImportConfigAttributes {
 
 export type EmailImportConfigCreationAttributes = Omit<
   EmailImportConfigAttributes,
-  'uuid' | 'createdAt' | 'updatedAt' | 'lastPolledAt' | 'lastError'
+  'uuid' | 'createdAt' | 'updatedAt' | 'lastPolledAt' | 'lastUidValidity' | 'lastMessageUid' | 'lastError'
 > & {
   uuid?: string;
   lastPolledAt?: Date | null;
+  lastUidValidity?: string | null;
+  lastMessageUid?: string | null;
   lastError?: string | null;
 };
 
@@ -90,6 +94,14 @@ export class EmailImportConfig extends Model<
   @AllowNull
   @Column({ field: 'last_polled_at', type: DataType.DATE, allowNull: true })
   declare lastPolledAt: Date | null;
+
+  @AllowNull
+  @Column({ field: 'last_uid_validity', type: DataType.STRING(40), allowNull: true })
+  declare lastUidValidity: string | null;
+
+  @AllowNull
+  @Column({ field: 'last_message_uid', type: DataType.STRING(40), allowNull: true })
+  declare lastMessageUid: string | null;
 
   @AllowNull
   @Column({ field: 'last_error', type: DataType.TEXT, allowNull: true })

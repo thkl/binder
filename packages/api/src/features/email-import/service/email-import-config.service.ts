@@ -68,6 +68,8 @@ export class EmailImportConfigService {
           passwordIv,
           trustedSenders: normalizeSenders(input.trustedSenders),
           lastPolledAt: null,
+          lastUidValidity: null,
+          lastMessageUid: null,
           lastError: null,
         });
 

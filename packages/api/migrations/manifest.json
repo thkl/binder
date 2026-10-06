@@ -403,6 +403,11 @@
                "required": [
                     "users"
                ]
+          },
+          "60": {
+               "required": [
+                    "email_import_configs"
+               ]
           }
      }
 }
