@@ -8,6 +8,7 @@ import * as argon2 from 'argon2';
 import { QueryTypes } from 'sequelize';
 
 export const RESET_RESPONSE = { accepted: true as const };
+export const RESET_REJECTED_RESPONSE = { accepted: false as const };
 
 @Injectable()
 export class PasswordResetTokenStore extends BaseCrudStore<PasswordResetToken, IStoreUser> {
@@ -20,18 +21,18 @@ export class PasswordResetTokenStore extends BaseCrudStore<PasswordResetToken, I
     return createHash('sha256').update(token, 'utf8').digest('hex');
   }
 
-  async confirm(token: string, newPassword: string): Promise<{ accepted: true }> {
+  async confirm(token: string, newPassword: string): Promise<{ accepted: boolean }> {
     const userModel = User;
     const reset = await this.findOne({
       where: { tokenHash: this.hash(token), usedAt: null },
     });
 
     if (!reset || reset.expiresAt.getTime() <= Date.now()) {
-      return RESET_RESPONSE;
+      return RESET_REJECTED_RESPONSE;
     }
 
     const user = await userModel.findByPk(reset.userUuid);
-    if (!user || !user.isActive || !user.passwordHash) return RESET_RESPONSE;
+    if (!user || !user.isActive || !user.passwordHash) return RESET_REJECTED_RESPONSE;
 
     await this.model.sequelize?.transaction(async (transaction) => {
       await user.update(

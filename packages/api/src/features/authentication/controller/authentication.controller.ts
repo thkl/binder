@@ -119,7 +119,7 @@ export class AuthenticationController {
 
   @Post('password-reset/confirm')
   @Throttle({ default: { limit: 10, ttl: 15 * 60_000 } })
-  async confirmPasswordReset(@Body() body: unknown): Promise<{ data: { accepted: true } }> {
+  async confirmPasswordReset(@Body() body: unknown): Promise<{ data: { accepted: boolean } }> {
     const input = PasswordResetConfirmInputSchema.parse(body);
     return { data: await this.passwordReset.confirm(input.token, input.newPassword) };
   }

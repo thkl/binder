@@ -47,7 +47,7 @@ export class PasswordResetService {
     return RESET_RESPONSE;
   }
 
-  async confirm(token: string, newPassword: string): Promise<{ accepted: true }> {
+  async confirm(token: string, newPassword: string): Promise<{ accepted: boolean }> {
     return this.tokenStore.confirm(token, newPassword);
   }
 

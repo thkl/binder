@@ -54,6 +54,8 @@ const EN: TranslationMap = {
   'passwordReset.confirmButton': 'Reset password',
   'passwordReset.confirmSuccess':
     'Your password has been reset. You can sign in with the new password now.',
+  'passwordReset.invalidLink':
+    'This password reset link is invalid or has already been used. Request a new link.',
   'passwordReset.backToLogin': 'Back to sign in',
   'passwordReset.identifierRequired': 'Enter your username or email.',
   'passwordReset.passwordInvalid': 'Use a password between 12 and 512 characters.',
@@ -760,6 +762,8 @@ const DE: TranslationMap = {
   'passwordReset.confirmButton': 'Passwort zurücksetzen',
   'passwordReset.confirmSuccess':
     'Ihr Passwort wurde zurückgesetzt. Sie können sich jetzt mit dem neuen Passwort anmelden.',
+  'passwordReset.invalidLink':
+    'Dieser Link ist ungültig oder wurde bereits verwendet. Fordern Sie einen neuen Link an.',
   'passwordReset.backToLogin': 'Zur Anmeldung',
   'passwordReset.identifierRequired': 'Geben Sie Ihren Benutzernamen oder Ihre E-Mail ein.',
   'passwordReset.passwordInvalid': 'Verwenden Sie ein Passwort mit 12 bis 512 Zeichen.',

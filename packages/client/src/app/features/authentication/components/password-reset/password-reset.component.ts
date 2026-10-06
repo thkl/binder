@@ -76,11 +76,17 @@ export class PasswordResetComponent implements OnInit {
     this.submitting.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(
-        this.http.post(this.app.getApiUrl('v1', 'auth/password-reset/confirm'), input.data, {
-          withCredentials: true,
-        }),
+      const response = await firstValueFrom(
+        this.http.post<{ data?: { accepted?: boolean } }>(
+          this.app.getApiUrl('v1', 'auth/password-reset/confirm'),
+          input.data,
+          { withCredentials: true },
+        ),
       );
+      if (response.data?.accepted !== true) {
+        this.error.set(this.i18n.t('passwordReset.invalidLink'));
+        return;
+      }
       this.success.set(true);
       this.password.set('');
       this.confirmation.set('');
