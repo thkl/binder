@@ -264,17 +264,17 @@ export class SetupService {
     return this.validationResult(checks);
   }
 
-  async listRecoveryBackups(accessToken?: string) {
-    return this.dropbox.listRecoveryBackups(accessToken);
+  async listRecoveryBackups(accessToken?: string, remoteFolder?: string) {
+    return this.dropbox.listRecoveryBackups(accessToken, remoteFolder);
   }
 
-  async listPublicRecoveryBackups(accessToken?: string) {
+  async listPublicRecoveryBackups(accessToken?: string, remoteFolder?: string) {
     if (!(await this.setupState.isRequired())) {
       throw new UnauthorizedException(
         'Public recovery is only available before administrator setup',
       );
     }
-    return this.dropbox.listRecoveryBackups(accessToken);
+    return this.dropbox.listRecoveryBackups(accessToken, remoteFolder);
   }
 
   async authorizePublicRecovery(request: SessionRequest, response: Response): Promise<void> {

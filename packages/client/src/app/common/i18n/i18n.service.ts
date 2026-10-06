@@ -144,6 +144,9 @@ const EN: TranslationMap = {
   'setup.recoveryAccessToken': 'One-time Dropbox access token',
   'setup.recoveryAccessTokenHint':
     'Optional. The token is used only for this request and is never stored by Binder.',
+  'setup.recoveryFolder': 'Dropbox backup folder',
+  'setup.recoveryFolderHint':
+    'Use / for a Dropbox App-folder application, or enter the folder containing the Binder backups.',
   'setup.recoveryList': 'List backups',
   'setup.secretKeepHint': 'Leave the field empty to keep the existing encrypted secret.',
   'setup.skipOptional': 'Skip optional step',
@@ -880,6 +883,9 @@ const DE: TranslationMap = {
   'setup.recoveryAccessToken': 'Einmaliger Dropbox-Zugriffstoken',
   'setup.recoveryAccessTokenHint':
     'Optional. Der Token wird nur für diese Anfrage verwendet und niemals von Binder gespeichert.',
+  'setup.recoveryFolder': 'Dropbox-Backup-Ordner',
+  'setup.recoveryFolderHint':
+    'Verwenden Sie / für eine Dropbox-App-Ordner-Anwendung oder geben Sie den Ordner mit den Binder-Backups ein.',
   'setup.recoveryList': 'Backups auflisten',
   'setup.secretKeepHint': 'Leer lassen, um das vorhandene verschlüsselte Geheimnis beizubehalten.',
   'setup.skipOptional': 'Optionalen Schritt überspringen',

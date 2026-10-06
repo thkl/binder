@@ -82,14 +82,16 @@ export class SetupController {
   @Scopes(['web'])
   async recoveryBackups(@Body() body: unknown) {
     const input = RecoveryBackupListInputSchema.parse(body ?? {});
-    return { data: await this.setup.listRecoveryBackups(input.accessToken) };
+    return { data: await this.setup.listRecoveryBackups(input.accessToken, input.remoteFolder) };
   }
 
   @Post('recovery/public/backups')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async publicRecoveryBackups(@Body() body: unknown) {
     const input = RecoveryBackupListInputSchema.parse(body ?? {});
-    return { data: await this.setup.listPublicRecoveryBackups(input.accessToken) };
+    return {
+      data: await this.setup.listPublicRecoveryBackups(input.accessToken, input.remoteFolder),
+    };
   }
 
   @Get('recovery/public/dropbox/connect')

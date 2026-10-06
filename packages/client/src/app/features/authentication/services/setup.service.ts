@@ -80,6 +80,7 @@ export class SetupService {
   async loadRecoveryBackups(
     accessToken?: string,
     publicRecovery = false,
+    remoteFolder?: string,
   ): Promise<RecoveryBackupListResponse | null> {
     this.recoveryLoading.set(true);
     this.error.set(null);
@@ -90,7 +91,7 @@ export class SetupService {
             'v1',
             publicRecovery ? 'setup/recovery/public/backups' : 'setup/recovery/backups',
           ),
-          accessToken ? { accessToken } : {},
+          { ...(accessToken ? { accessToken } : {}), ...(remoteFolder ? { remoteFolder } : {}) },
           { withCredentials: true },
         ),
       );

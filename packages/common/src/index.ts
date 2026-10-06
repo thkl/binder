@@ -1016,6 +1016,7 @@ export type RecoveryBackupListResponse = z.infer<typeof RecoveryBackupListRespon
 
 export const RecoveryBackupListInputSchema = z.object({
   accessToken: z.string().trim().min(1).max(4096).optional(),
+  remoteFolder: z.string().trim().min(1).max(1024).optional(),
 });
 export type RecoveryBackupListInput = z.infer<typeof RecoveryBackupListInputSchema>;
 

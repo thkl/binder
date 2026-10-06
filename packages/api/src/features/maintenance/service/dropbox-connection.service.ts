@@ -100,15 +100,20 @@ export class DropboxConnectionService {
     response.redirect(`${rootUri.replace(/\/$/, '')}${returnTo}?dropbox=connected`);
   }
 
-  async listRecoveryBackups(oneTimeAccessToken?: string): Promise<RecoveryBackupListResponse> {
+  async listRecoveryBackups(
+    oneTimeAccessToken?: string,
+    recoveryFolder?: string,
+  ): Promise<RecoveryBackupListResponse> {
     const status = await this.status();
     const accessTokenOverride = oneTimeAccessToken?.trim();
     if (!accessTokenOverride && (!status.configured || !status.connected)) {
       return RecoveryBackupListResponseSchema.parse({ ...status, backups: [] });
     }
 
+    const configuredFolder = await this.settings.get('backup.remoteFolder', '/Binder backups');
     const remoteFolder =
-      (await this.settings.get('backup.remoteFolder', '/Binder backups'))?.trim() ||
+      recoveryFolder?.trim() ||
+      (oneTimeAccessToken ? '/' : configuredFolder?.trim()) ||
       '/Binder backups';
     const accessToken = accessTokenOverride ?? (await this.accessToken());
     const entries: RecoveryBackup[] = [];
@@ -137,6 +142,11 @@ export class DropboxConnectionService {
       );
       if (!response.ok) {
         const details = await response.text();
+        if (response.status === 409 && details.includes('path/not_found')) {
+          throw new BadRequestException(
+            `Dropbox backup folder was not found: ${remoteFolder}. For a Dropbox App-folder application, use /; otherwise enter the folder containing the Binder backups.`,
+          );
+        }
         throw new BadRequestException(
           `Dropbox backup listing failed with HTTP ${response.status}: ${details.slice(0, 300)}`,
         );

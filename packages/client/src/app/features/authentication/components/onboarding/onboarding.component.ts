@@ -79,6 +79,7 @@ export class OnboardingComponent {
   readonly oidcSkipped = signal(false);
   readonly stepError = signal<string | null>(null);
   readonly recoveryAccessToken = signal('');
+  readonly recoveryFolder = signal('/');
   readonly recoveryMode = signal(false);
 
   readonly stepNumber = computed(() => STEP_ORDER.indexOf(this.step()) + 1);
@@ -152,12 +153,20 @@ export class OnboardingComponent {
   }
 
   async continueRecovery(): Promise<void> {
-    await this.setup.loadRecoveryBackups(this.recoveryAccessToken(), this.recoveryMode());
+    await this.setup.loadRecoveryBackups(
+      this.recoveryAccessToken(),
+      this.recoveryMode(),
+      this.recoveryFolder(),
+    );
     this.goTo('backup');
   }
 
   async refreshRecoveryBackups(): Promise<void> {
-    await this.setup.loadRecoveryBackups(this.recoveryAccessToken(), this.recoveryMode());
+    await this.setup.loadRecoveryBackups(
+      this.recoveryAccessToken(),
+      this.recoveryMode(),
+      this.recoveryFolder(),
+    );
   }
 
   connectDropbox(): void {
@@ -267,7 +276,7 @@ export class OnboardingComponent {
 
   private async prepareRecoveryStep(publicRecovery = false): Promise<void> {
     this.goTo('recovery');
-    await this.setup.loadRecoveryBackups(undefined, publicRecovery);
+    await this.setup.loadRecoveryBackups(undefined, publicRecovery, this.recoveryFolder());
   }
 
   private async validate(step: SetupValidationStep) {

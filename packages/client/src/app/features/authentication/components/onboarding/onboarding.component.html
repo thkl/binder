@@ -378,6 +378,16 @@
         />
         <p class="field-hint">{{ 'setup.recoveryAccessTokenHint' | t }}</p>
 
+        <label for="recovery-folder">{{ 'setup.recoveryFolder' | t }}</label>
+        <input
+          id="recovery-folder"
+          type="text"
+          autocomplete="off"
+          [value]="recoveryFolder()"
+          (input)="recoveryFolder.set(inputValue($event))"
+        />
+        <p class="field-hint">{{ 'setup.recoveryFolderHint' | t }}</p>
+
         @if (setup.recoveryBackups(); as recovery) {
           @if (!recovery.connected) {
             <p class="field-hint">{{ 'setup.recoveryNotConnected' | t }}</p>
