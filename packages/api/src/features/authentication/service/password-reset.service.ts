@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'node:crypto';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
@@ -23,6 +23,7 @@ export class PasswordResetService {
   ) {}
 
   async request(identifier: string): Promise<{ accepted: true }> {
+    const smtp = await this.getSmtpConfig();
     const user = await this.users.findByLogin(identifier);
     if (!user || !user.isActive || !user.email || !user.passwordHash) return RESET_RESPONSE;
 
@@ -36,7 +37,7 @@ export class PasswordResetService {
     });
 
     try {
-      await this.sendResetEmail(user, rawToken);
+      await this.sendResetEmail(user, rawToken, smtp);
     } catch (error) {
       this.logger.error('Password reset email could not be sent', {
         userUuid: user.uuid,
@@ -50,30 +51,51 @@ export class PasswordResetService {
     return this.tokenStore.confirm(token, newPassword);
   }
 
-  private async sendResetEmail(user: User, rawToken: string): Promise<void> {
+  private async getSmtpConfig(): Promise<SmtpConfig> {
     const enabled = (await this.settings.get('mailer.smtp.enabled', 'false')) === 'true';
     const host = (await this.settings.get('mailer.smtp.host', ''))?.trim();
     const fromAddress = (await this.settings.get('mailer.smtp.fromAddress', ''))?.trim();
-    if (!enabled || !host || !fromAddress) throw new Error('SMTP is not configured or enabled');
+    if (!enabled || !host || !fromAddress) {
+      throw new ServiceUnavailableException(
+        'Password reset email is not configured. Please contact an administrator.',
+      );
+    }
 
-    const port = Number(await this.settings.get('mailer.smtp.port', '587')) || 587;
-    const secure = (await this.settings.get('mailer.smtp.secure', 'false')) === 'true';
-    const username = await this.settings.get('mailer.smtp.username', '');
-    const password = await this.settings.get('mailer.smtp.password', '');
-    const fromName = (await this.settings.get('mailer.smtp.fromName', 'Binder')) || 'Binder';
+    return {
+      host,
+      fromAddress,
+      port: Number(await this.settings.get('mailer.smtp.port', '587')) || 587,
+      secure: (await this.settings.get('mailer.smtp.secure', 'false')) === 'true',
+      username: await this.settings.get('mailer.smtp.username', ''),
+      password: await this.settings.get('mailer.smtp.password', ''),
+      fromName: (await this.settings.get('mailer.smtp.fromName', 'Binder')) || 'Binder',
+    };
+  }
+
+  private async sendResetEmail(user: User, rawToken: string, smtp: SmtpConfig): Promise<void> {
     const rootUri = this.config.get<string>(ConfigKeys.ROOT_URI) ?? '';
     const resetUrl = `${rootUri.replace(/\/$/u, '')}/reset-password?token=${encodeURIComponent(rawToken)}`;
     const transport = createTransport({
-      host,
-      port,
-      secure,
-      auth: username ? { user: username, pass: password } : undefined,
+      host: smtp.host,
+      port: smtp.port,
+      secure: smtp.secure,
+      auth: smtp.username ? { user: smtp.username, pass: smtp.password } : undefined,
     });
     await transport.sendMail({
-      from: { name: fromName, address: fromAddress },
+      from: { name: smtp.fromName, address: smtp.fromAddress },
       to: user.email as string,
       subject: 'Reset your Binder password',
       text: `Use this link to reset your Binder password. It expires in 30 minutes:\n\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
     });
   }
+}
+
+interface SmtpConfig {
+  host: string;
+  port: number;
+  secure: boolean;
+  username: string | undefined;
+  password: string | undefined;
+  fromAddress: string;
+  fromName: string;
 }
