@@ -476,12 +476,14 @@ const EN: TranslationMap = {
   'emailImport.deleteAfterImportHint': 'Disabled by default for safety.',
   'emailImport.trustedSenders': 'Trusted senders (optional)',
   'emailImport.trustedSendersPlaceholder': 'one@example.com\nanother@example.com',
-  'emailImport.trustedSendersHint': 'One exact address per line. Other messages stay in the mailbox.',
+  'emailImport.trustedSendersHint':
+    'One exact address per line. Other messages stay in the mailbox.',
   'emailImport.saved': 'Mailbox settings saved.',
   'emailImport.lastError': 'Last polling error',
   'emailImport.deleteSettings': 'Delete mailbox settings',
   'emailImport.deleteTitle': 'Delete mailbox settings',
-  'emailImport.deleteMessage': 'Delete the mailbox credentials and import settings? This cannot be undone.',
+  'emailImport.deleteMessage':
+    'Delete the mailbox credentials and import settings? This cannot be undone.',
   'emailImport.deleteConfirm': 'Delete settings',
   'setting.mailer.imap.enabled': 'Enable email import',
   'setting.mailer.imap.host': 'IMAP server host',
@@ -1152,7 +1154,8 @@ const DE: TranslationMap = {
   'emailImport.copy': 'PDF-Anhänge aus Ihrem Postfach in Ihre Dokumenten-Inbox importieren.',
   'emailImport.loading': 'Postfach-Einstellungen werden geladen…',
   'emailImport.enabled': 'E-Mail-Import aktivieren',
-  'emailImport.enabledHint': 'Nur geprüfte und unterstützte Anhänge gelangen in die Dokumentenpipeline.',
+  'emailImport.enabledHint':
+    'Nur geprüfte und unterstützte Anhänge gelangen in die Dokumentenpipeline.',
   'emailImport.host': 'IMAP-Server',
   'emailImport.port': 'IMAP-Serverport',
   'emailImport.username': 'IMAP-Benutzername',
@@ -1165,12 +1168,14 @@ const DE: TranslationMap = {
   'emailImport.deleteAfterImportHint': 'Aus Sicherheitsgründen standardmäßig deaktiviert.',
   'emailImport.trustedSenders': 'Vertrauenswürdige Absender (optional)',
   'emailImport.trustedSendersPlaceholder': 'eine@example.com\nweitere@example.com',
-  'emailImport.trustedSendersHint': 'Eine exakte Adresse pro Zeile. Andere Nachrichten bleiben im Postfach.',
+  'emailImport.trustedSendersHint':
+    'Eine exakte Adresse pro Zeile. Andere Nachrichten bleiben im Postfach.',
   'emailImport.saved': 'Postfach-Einstellungen gespeichert.',
   'emailImport.lastError': 'Letzter Abfragefehler',
   'emailImport.deleteSettings': 'Postfach-Einstellungen löschen',
   'emailImport.deleteTitle': 'Postfach-Einstellungen löschen',
-  'emailImport.deleteMessage': 'Postfach-Zugangsdaten und Import-Einstellungen löschen? Dies kann nicht rückgängig gemacht werden.',
+  'emailImport.deleteMessage':
+    'Postfach-Zugangsdaten und Import-Einstellungen löschen? Dies kann nicht rückgängig gemacht werden.',
   'emailImport.deleteConfirm': 'Einstellungen löschen',
   'setting.mailer.imap.enabled': 'E-Mail-Import aktivieren',
   'setting.mailer.imap.host': 'IMAP-Server',

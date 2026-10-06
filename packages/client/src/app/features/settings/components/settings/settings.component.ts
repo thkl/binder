@@ -97,7 +97,8 @@ export class SettingsComponent implements OnInit {
     const requestedSection = this.activeSection();
     const firstSection = response.template.sections[0]?.key;
     const sectionExists =
-      requestedSection === 'users' || requestedSection === 'mcpaccess' ||
+      requestedSection === 'users' ||
+      requestedSection === 'mcpaccess' ||
       response.template.sections.some((section) => section.key === requestedSection);
 
     if (!sectionExists && firstSection) {
@@ -218,14 +219,12 @@ export class SettingsComponent implements OnInit {
       return;
     }
 
-    const input = response.template.items.map(
-      (item): SetApplicationSettingInput => ({
-        key: item.key,
-        value: this.serializeValue(item),
-        isEncrypted: item.encrypted,
-        description: response.data.find((data) => data.key === item.key)?.description ?? undefined,
-      }),
-    );
+    const input = response.template.items.map((item): SetApplicationSettingInput => ({
+      key: item.key,
+      value: this.serializeValue(item),
+      isEncrypted: item.encrypted,
+      description: response.data.find((data) => data.key === item.key)?.description ?? undefined,
+    }));
 
     if (await this.settingsService.saveAll(input)) {
       this.saved.set(true);

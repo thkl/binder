@@ -34,7 +34,13 @@ export interface EmailImportConfigAttributes {
 
 export type EmailImportConfigCreationAttributes = Omit<
   EmailImportConfigAttributes,
-  'uuid' | 'createdAt' | 'updatedAt' | 'lastPolledAt' | 'lastUidValidity' | 'lastMessageUid' | 'lastError'
+  | 'uuid'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'lastPolledAt'
+  | 'lastUidValidity'
+  | 'lastMessageUid'
+  | 'lastError'
 > & {
   uuid?: string;
   lastPolledAt?: Date | null;
@@ -82,10 +88,20 @@ export class EmailImportConfig extends Model<
   @Column({ type: DataType.STRING(255), allowNull: false, defaultValue: 'INBOX' })
   declare mailbox: string;
 
-  @Column({ field: 'poll_interval_ms', type: DataType.INTEGER, allowNull: false, defaultValue: 900000 })
+  @Column({
+    field: 'poll_interval_ms',
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 900000,
+  })
   declare pollIntervalMs: number;
 
-  @Column({ field: 'delete_after_import', type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+  @Column({
+    field: 'delete_after_import',
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
   declare deleteAfterImport: boolean;
 
   @Column({ field: 'trusted_senders', type: DataType.JSONB, allowNull: false, defaultValue: [] })

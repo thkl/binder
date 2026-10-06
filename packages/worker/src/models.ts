@@ -12,20 +12,10 @@ import {
 } from 'sequelize-typescript';
 
 export type JobKind =
-  | 'malware-scan'
-  | 'thumbnail'
-  | 'text-extraction'
-  | 'ocr'
-  | 'embedding'
-  | 'pdfa';
+  'malware-scan' | 'thumbnail' | 'text-extraction' | 'ocr' | 'embedding' | 'pdfa';
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 export type DocumentStatus =
-  | 'uploaded'
-  | 'scanning'
-  | 'processing'
-  | 'ready'
-  | 'failed'
-  | 'quarantined';
+  'uploaded' | 'scanning' | 'processing' | 'ready' | 'failed' | 'quarantined';
 export type DocumentArchiveStatus = 'not-requested' | 'queued' | 'processing' | 'ready' | 'failed';
 
 export type DocumentAuditActorType = 'user' | 'worker' | 'system';
@@ -85,7 +75,8 @@ export class EmailImportConfig extends Model {
   declare passwordIv: string | null;
   @Column({ type: DataType.STRING(255) }) declare mailbox: string;
   @Column({ field: 'poll_interval_ms', type: DataType.INTEGER }) declare pollIntervalMs: number;
-  @Column({ field: 'delete_after_import', type: DataType.BOOLEAN }) declare deleteAfterImport: boolean;
+  @Column({ field: 'delete_after_import', type: DataType.BOOLEAN })
+  declare deleteAfterImport: boolean;
   @Column({ field: 'trusted_senders', type: DataType.JSONB }) declare trustedSenders: string[];
   @Column({ field: 'last_polled_at', type: DataType.DATE, allowNull: true })
   declare lastPolledAt: Date | null;
@@ -231,10 +222,7 @@ export class MaintenanceRun extends Model {
 }
 
 export type DocumentStorageIssueType =
-  | 'missing'
-  | 'size-mismatch'
-  | 'checksum-mismatch'
-  | 'unreadable';
+  'missing' | 'size-mismatch' | 'checksum-mismatch' | 'unreadable';
 
 @Table({ tableName: 'document_storage_issues', underscored: true, timestamps: true })
 export class DocumentStorageIssue extends Model {
@@ -391,12 +379,7 @@ export class DocumentAuditEvent extends Model {
 }
 
 export type InboxItemStatus =
-  | 'new'
-  | 'processing'
-  | 'imported'
-  | 'duplicate'
-  | 'rejected'
-  | 'failed';
+  'new' | 'processing' | 'imported' | 'duplicate' | 'rejected' | 'failed';
 export type InboxAiStatus = 'pending' | 'processing' | 'ready' | 'failed';
 
 @Table({ tableName: 'inbox_items', underscored: true, timestamps: true })

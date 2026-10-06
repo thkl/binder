@@ -601,12 +601,12 @@ export class DocumentStore extends BaseCrudStore<Document> {
     if (query.status && blockedStatuses.includes(query.status)) return [];
     const hasFilters = Boolean(
       query.status ||
-        query.issuerUuid ||
-        query.documentTypeUuid ||
-        query.categoryUuid ||
-        query.folderUuid ||
-        query.tagUuids?.length ||
-        query.metadata,
+      query.issuerUuid ||
+      query.documentTypeUuid ||
+      query.categoryUuid ||
+      query.folderUuid ||
+      query.tagUuids?.length ||
+      query.metadata,
     );
     if (!hasFilters) return null;
     const documents = await this.model.findAll({

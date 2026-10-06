@@ -25,9 +25,11 @@ body {
   margin: 0;
   min-width: 320px;
 
-  --glass-card-background-color: linear-gradient(135deg,
-      rgba(20, 52, 88, 0.78),
-      rgba(10, 27, 50, 0.72));
+  --glass-card-background-color: linear-gradient(
+    135deg,
+    rgba(20, 52, 88, 0.78),
+    rgba(10, 27, 50, 0.72)
+  );
 }
 
 *,
@@ -48,11 +50,11 @@ a {
 
 button {
   border: 0;
-  border-radius: .65rem;
-  padding: .8rem 1rem;
+  border-radius: 0.65rem;
+  padding: 0.8rem 1rem;
   cursor: pointer;
   font: inherit;
-  font-size: .8rem;
+  font-size: 0.8rem;
   font-weight: 800;
 }
 
@@ -60,14 +62,14 @@ button {
 .secondary-button,
 .text-button,
 .danger-button {
-    border: 1px solid;
-    border-radius: 0.55rem;
-    padding: 0.8rem 1rem;
-    font: inherit;
-    font-size: 0.72rem;
-    font-weight: 700;
-    cursor: pointer;
-    border-color: #ff9c9c;
+  border: 1px solid;
+  border-radius: 0.55rem;
+  padding: 0.8rem 1rem;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  border-color: #ff9c9c;
 }
 
 .primary-button {
@@ -98,7 +100,6 @@ button {
   cursor: wait;
   opacity: 0.55;
 }
-
 
 .field-count {
   color: #7188a5;
@@ -189,7 +190,6 @@ button {
   color: #f1c995;
 }
 
-
 .checkbox-field {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -216,7 +216,6 @@ button {
   color: #dceaff;
   font-size: 0.85rem;
 }
-
 
 .toggle {
   display: flex;
@@ -247,7 +246,6 @@ button {
   transform: translateX(1.15rem);
   background: var(--cyan);
 }
-
 
 .glass-card {
   border: 1px solid var(--glass-border);

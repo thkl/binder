@@ -11,12 +11,7 @@ import {
 } from 'sequelize-typescript';
 
 export type InboxItemStatus =
-  | 'new'
-  | 'processing'
-  | 'imported'
-  | 'duplicate'
-  | 'rejected'
-  | 'failed';
+  'new' | 'processing' | 'imported' | 'duplicate' | 'rejected' | 'failed';
 export type InboxAiStatus = 'pending' | 'processing' | 'ready' | 'failed';
 
 export interface InboxItemAttributes {

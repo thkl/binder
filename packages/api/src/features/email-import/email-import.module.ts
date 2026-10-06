@@ -7,7 +7,11 @@ import { EmailImportController } from './controller/email-import.controller';
 import { EmailImportConfigService } from './service/email-import-config.service';
 
 @Module({
-  imports: [SharedModule, AuthenticationServiceModule, SequelizeModule.forFeature([EmailImportConfig])],
+  imports: [
+    SharedModule,
+    AuthenticationServiceModule,
+    SequelizeModule.forFeature([EmailImportConfig]),
+  ],
   controllers: [EmailImportController],
   providers: [EmailImportConfigService],
   exports: [EmailImportConfigService],

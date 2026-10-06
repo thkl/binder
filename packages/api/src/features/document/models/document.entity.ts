@@ -11,12 +11,7 @@ import {
 } from 'sequelize-typescript';
 
 export type DocumentStatus =
-  | 'uploaded'
-  | 'scanning'
-  | 'processing'
-  | 'ready'
-  | 'failed'
-  | 'quarantined';
+  'uploaded' | 'scanning' | 'processing' | 'ready' | 'failed' | 'quarantined';
 export type DocumentArchiveStatus = 'not-requested' | 'queued' | 'processing' | 'ready' | 'failed';
 
 export interface DocumentAttributes {

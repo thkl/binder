@@ -26,13 +26,7 @@ export interface VocabularyAttributes {
 export type VocabularyCreationAttributes = Omit<VocabularyAttributes, 'createdAt' | 'updatedAt'>;
 
 export type MetadataFieldType =
-  | 'text'
-  | 'number'
-  | 'date'
-  | 'datetime'
-  | 'boolean'
-  | 'select'
-  | 'multi-select';
+  'text' | 'number' | 'date' | 'datetime' | 'boolean' | 'select' | 'multi-select';
 
 abstract class VocabularyBase<T extends VocabularyAttributes = VocabularyAttributes> extends Model<
   T,

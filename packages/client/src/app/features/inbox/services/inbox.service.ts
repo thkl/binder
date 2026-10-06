@@ -62,7 +62,7 @@ export class InboxService {
     }
   }
 
-  setActiveDocumens(uuidList:string[]) {
+  setActiveDocumens(uuidList: string[]) {
     this.activeDocuments.set(uuidList);
   }
 
@@ -151,7 +151,7 @@ export class InboxService {
           this.documentChangeRevision.update((revision) => revision + 1);
           const activeList = this.activeDocuments();
           // only reload if the current document list contains at least one of the documens
-          if(change.data.documentUuids.some(id => activeList.includes(id))) {
+          if (change.data.documentUuids.some((id) => activeList.includes(id))) {
             void this.load();
           }
         }

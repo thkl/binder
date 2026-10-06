@@ -28,7 +28,9 @@ export class EmailImportComponent implements OnInit {
   readonly saved = signal(false);
   readonly confirmDelete = signal(false);
 
-  ngOnInit(): void { void this.load(); }
+  ngOnInit(): void {
+    void this.load();
+  }
 
   async load(): Promise<void> {
     const config = await this.service.load();
@@ -37,16 +39,27 @@ export class EmailImportComponent implements OnInit {
 
   async save(): Promise<void> {
     this.saved.set(false);
-    const senders = this.trustedSenders().split(/[\n,;]/u).map((sender) => sender.trim().toLowerCase()).filter(Boolean);
+    const senders = this.trustedSenders()
+      .split(/[\n,;]/u)
+      .map((sender) => sender.trim().toLowerCase())
+      .filter(Boolean);
     const input: Record<string, unknown> = {
-      enabled: this.enabled(), host: this.host().trim(), port: Number(this.port()), secure: this.secure(),
-      username: this.username().trim(), mailbox: this.mailbox().trim() || 'INBOX',
+      enabled: this.enabled(),
+      host: this.host().trim(),
+      port: Number(this.port()),
+      secure: this.secure(),
+      username: this.username().trim(),
+      mailbox: this.mailbox().trim() || 'INBOX',
       pollIntervalMs: Number(this.pollIntervalMinutes()) * 60_000,
-      deleteAfterImport: this.deleteAfterImport(), trustedSenders: senders,
+      deleteAfterImport: this.deleteAfterImport(),
+      trustedSenders: senders,
     };
     if (this.passwordChanged()) input['password'] = this.password();
     const config = await this.service.save(input);
-    if (config) { this.setValues(config); this.saved.set(true); }
+    if (config) {
+      this.setValues(config);
+      this.saved.set(true);
+    }
   }
 
   requestDelete(): void {
@@ -75,10 +88,16 @@ export class EmailImportComponent implements OnInit {
   }
 
   private setValues(config: EmailImportConfig): void {
-    this.enabled.set(config.enabled); this.host.set(config.host); this.port.set(config.port);
-    this.secure.set(config.secure); this.username.set(config.username); this.password.set('');
-    this.passwordChanged.set(false); this.mailbox.set(config.mailbox);
+    this.enabled.set(config.enabled);
+    this.host.set(config.host);
+    this.port.set(config.port);
+    this.secure.set(config.secure);
+    this.username.set(config.username);
+    this.password.set('');
+    this.passwordChanged.set(false);
+    this.mailbox.set(config.mailbox);
     this.pollIntervalMinutes.set(Math.max(1, Math.round(config.pollIntervalMs / 60_000)));
-    this.deleteAfterImport.set(config.deleteAfterImport); this.trustedSenders.set(config.trustedSenders.join('\n'));
+    this.deleteAfterImport.set(config.deleteAfterImport);
+    this.trustedSenders.set(config.trustedSenders.join('\n'));
   }
 }

@@ -3463,10 +3463,7 @@ export abstract class BaseCrudStore<
       ...descriptor.fields.map((f) => ({
         name: f.csvColumn,
         type: (f.type === 'date' ? 'string' : (f.type ?? 'string')) as
-          | 'string'
-          | 'number'
-          | 'boolean'
-          | 'json',
+          'string' | 'number' | 'boolean' | 'json',
       })),
     ];
 

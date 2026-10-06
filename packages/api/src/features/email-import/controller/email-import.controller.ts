@@ -26,7 +26,9 @@ export class EmailImportController {
   constructor(private readonly configs: EmailImportConfigService) {}
 
   @Get('config')
-  async getConfig(@CurrentUser() user: ScopedUser): Promise<{ data: Record<string, unknown> | null }> {
+  async getConfig(
+    @CurrentUser() user: ScopedUser,
+  ): Promise<{ data: Record<string, unknown> | null }> {
     return { data: await this.configs.get(user.userId) };
   }
 

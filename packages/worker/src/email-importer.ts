@@ -14,7 +14,11 @@ export async function importEmailMessages(force = false): Promise<void> {
 
   const mailboxes = await EmailImportConfig.findAll({ where: { enabled: true } });
   for (const mailbox of mailboxes) {
-    if (!force && mailbox.lastPolledAt && Date.now() - mailbox.lastPolledAt.getTime() < mailbox.pollIntervalMs)
+    if (
+      !force &&
+      mailbox.lastPolledAt &&
+      Date.now() - mailbox.lastPolledAt.getTime() < mailbox.pollIntervalMs
+    )
       continue;
     await pollMailbox(mailbox);
   }
@@ -51,7 +55,8 @@ async function pollMailbox(mailbox: EmailImportConfig): Promise<void> {
       if (uidValidity === undefined) throw new Error('IMAP server did not provide UIDVALIDITY');
 
       let lastMessageUid = mailbox.lastMessageUid ? BigInt(mailbox.lastMessageUid) : 0n;
-      const cursorReset = mailbox.lastUidValidity !== null && mailbox.lastUidValidity !== uidValidity.toString();
+      const cursorReset =
+        mailbox.lastUidValidity !== null && mailbox.lastUidValidity !== uidValidity.toString();
       if (cursorReset) {
         lastMessageUid = 0n;
         logger.warn('Email mailbox UIDVALIDITY changed; resetting UID cursor', {
@@ -62,10 +67,7 @@ async function pollMailbox(mailbox: EmailImportConfig): Promise<void> {
         });
       }
 
-      const uids = await client.search(
-        { uid: `${lastMessageUid + 1n}:*` },
-        { uid: true },
-      );
+      const uids = await client.search({ uid: `${lastMessageUid + 1n}:*` }, { uid: true });
       if (!Array.isArray(uids)) return;
       logger.info('Email mailbox check found new messages', {
         mailboxUuid: mailbox.uuid,
@@ -75,21 +77,42 @@ async function pollMailbox(mailbox: EmailImportConfig): Promise<void> {
       });
       let handled = 0;
       for (const uid of uids.slice(0, 50)) {
-        const message = await client.fetchOne(uid, { uid: true, envelope: true, source: true }, { uid: true });
+        const message = await client.fetchOne(
+          uid,
+          { uid: true, envelope: true, source: true },
+          { uid: true },
+        );
         if (!message) continue;
-        const sender = message.envelope?.from?.find((entry) => entry.address)?.address?.toLowerCase();
-        if (!sender || (mailbox.trustedSenders.length > 0 && !mailbox.trustedSenders.includes(sender))) {
+        const sender = message.envelope?.from
+          ?.find((entry) => entry.address)
+          ?.address?.toLowerCase();
+        if (
+          !sender ||
+          (mailbox.trustedSenders.length > 0 && !mailbox.trustedSenders.includes(sender))
+        ) {
           logger.info('Skipped email from untrusted sender', { mailboxUuid: mailbox.uuid, sender });
           await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
-          await mailbox.update({ lastUidValidity: uidValidity.toString(), lastMessageUid: String(uid) });
+          await mailbox.update({
+            lastUidValidity: uidValidity.toString(),
+            lastMessageUid: String(uid),
+          });
           lastMessageUid = BigInt(uid);
           continue;
         }
 
-        const source = Buffer.isBuffer(message.source) ? message.source : Buffer.from(message.source ?? '');
+        const source = Buffer.isBuffer(message.source)
+          ? message.source
+          : Buffer.from(message.source ?? '');
         if (source.length > MAX_MESSAGE_BYTES) {
-          logger.warn('Skipped oversized email message', { mailboxUuid: mailbox.uuid, uid, sizeBytes: source.length });
-          await mailbox.update({ lastUidValidity: uidValidity.toString(), lastMessageUid: String(uid) });
+          logger.warn('Skipped oversized email message', {
+            mailboxUuid: mailbox.uuid,
+            uid,
+            sizeBytes: source.length,
+          });
+          await mailbox.update({
+            lastUidValidity: uidValidity.toString(),
+            lastMessageUid: String(uid),
+          });
           lastMessageUid = BigInt(uid);
           continue;
         }
@@ -102,7 +125,10 @@ async function pollMailbox(mailbox: EmailImportConfig): Promise<void> {
             attachment.size <= config.maxUploadBytes,
         );
         if (pdfs.length === 0) {
-          await mailbox.update({ lastUidValidity: uidValidity.toString(), lastMessageUid: String(uid) });
+          await mailbox.update({
+            lastUidValidity: uidValidity.toString(),
+            lastMessageUid: String(uid),
+          });
           lastMessageUid = BigInt(uid);
           continue;
         }
@@ -120,7 +146,10 @@ async function pollMailbox(mailbox: EmailImportConfig): Promise<void> {
         if (allImported) {
           await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
           if (mailbox.deleteAfterImport) await client.messageDelete(uid, { uid: true });
-          await mailbox.update({ lastUidValidity: uidValidity.toString(), lastMessageUid: String(uid) });
+          await mailbox.update({
+            lastUidValidity: uidValidity.toString(),
+            lastMessageUid: String(uid),
+          });
           lastMessageUid = BigInt(uid);
         } else {
           logger.warn('Email message will be retried because an attachment was not imported', {
@@ -136,13 +165,16 @@ async function pollMailbox(mailbox: EmailImportConfig): Promise<void> {
         lastMessageUid: lastMessageUid.toString(),
         lastError: null,
       });
-      if (handled > 0) logger.info('Email import completed', { mailboxUuid: mailbox.uuid, handled });
+      if (handled > 0)
+        logger.info('Email import completed', { mailboxUuid: mailbox.uuid, handled });
     } finally {
       lock.release();
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    await mailbox.update({ lastPolledAt: new Date(), lastError: message.slice(0, 2000) }).catch(() => undefined);
+    await mailbox
+      .update({ lastPolledAt: new Date(), lastError: message.slice(0, 2000) })
+      .catch(() => undefined);
     logger.warn('Email mailbox polling failed', { mailboxUuid: mailbox.uuid, error: message });
   } finally {
     await client?.logout().catch(() => undefined);

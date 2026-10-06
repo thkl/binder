@@ -1,6 +1,5 @@
 <section class="api-token-manager glass-card settings-page">
   <header class="card-heading settings-heading">
-
     <div>
       <p class="section-kicker">MCP ACCESS</p>
       <h3>API tokens</h3>
@@ -17,40 +16,39 @@
   }
 
   <form class="token-form" (submit)="$event.preventDefault(); create()">
-     <div class="fields">
-
-    <label class="text-field">
-      <span class="field-label">Token name</span>
-      <input
-        [value]="name()"
-        (input)="name.set($any($event.target).value)"
-        placeholder="Claude Binder"
-        required
-      />
-    </label>
-    <label  class="checkbox-field">
-      <input
-        type="checkbox"
-        [checked]="allowWrite()"
-        (change)="allowWrite.set($any($event.target).checked)"
-      />
-      <span  class="checkbox-copy">Allow document writes</span>
-       <span class="toggle"><span></span></span>
-    </label>
-    <label class="text-field">
-      <span class="field-label">Token expiration</span>
-      <select
-        [value]="expirationDays()"
-        (change)="expirationDays.set(+$any($event.target).value === 180 ? 180 : 90)"
-      >
-        <option [value]="90">90 days (default)</option>
-        <option [value]="180">180 days</option>
-      </select>
-    </label>
-    <button class="primary-action" type="submit" [disabled]="saving() || !name().trim()">
-      Create token
-    </button>
-     </div>
+    <div class="fields">
+      <label class="text-field">
+        <span class="field-label">Token name</span>
+        <input
+          [value]="name()"
+          (input)="name.set($any($event.target).value)"
+          placeholder="Claude Binder"
+          required
+        />
+      </label>
+      <label class="checkbox-field">
+        <input
+          type="checkbox"
+          [checked]="allowWrite()"
+          (change)="allowWrite.set($any($event.target).checked)"
+        />
+        <span class="checkbox-copy">Allow document writes</span>
+        <span class="toggle"><span></span></span>
+      </label>
+      <label class="text-field">
+        <span class="field-label">Token expiration</span>
+        <select
+          [value]="expirationDays()"
+          (change)="expirationDays.set(+$any($event.target).value === 180 ? 180 : 90)"
+        >
+          <option [value]="90">90 days (default)</option>
+          <option [value]="180">180 days</option>
+        </select>
+      </label>
+      <button class="primary-action" type="submit" [disabled]="saving() || !name().trim()">
+        Create token
+      </button>
+    </div>
   </form>
 
   <div class="token-list">

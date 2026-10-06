@@ -1,24 +1,24 @@
 .email-import .fields {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .email-import .wide {
-    grid-column: 1 / -1;
+  grid-column: 1 / -1;
 }
 
 .email-import textarea {
-    resize: vertical;
-    min-height: 6rem;
+  resize: vertical;
+  min-height: 6rem;
 }
 
 @media (max-width: 700px) {
-    .email-import .fields {
-        grid-template-columns: 1fr;
-    }
+  .email-import .fields {
+    grid-template-columns: 1fr;
+  }
 
-    .email-import .wide {
-        grid-column: auto;
-    }
+  .email-import .wide {
+    grid-column: auto;
+  }
 }
 
 .settings-page {
@@ -41,7 +41,6 @@
   letter-spacing: 0.18em;
 }
 
-
 h2 {
   margin: 0.5rem 0 0.4rem;
   font-size: clamp(2rem, 4vw, 3rem);
@@ -53,8 +52,6 @@ h2 {
   color: var(--muted);
   line-height: 1.6;
 }
-
-
 
 .form-footer {
   display: flex;

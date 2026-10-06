@@ -131,7 +131,10 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   private readonly activeRoute = inject(ActivatedRoute);
 
   private selectedFolderID = toSignal(
-    this.activeRoute.paramMap.pipe(map(params => params.get('folderid')), distinctUntilChanged())
+    this.activeRoute.paramMap.pipe(
+      map((params) => params.get('folderid')),
+      distinctUntilChanged(),
+    ),
   );
 
   private readonly folderPages = signal<Record<string, number>>({});
@@ -229,7 +232,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
               await this.loadFolderPage(null, true);
               break;
             case 'new':
-              console.log('Selecting new')
+              console.log('Selecting new');
               this.activeFilterMenu.set(null);
               this.selectedSavedSearchUuid.set(null);
               this.rememberCurrentFolderPage();
@@ -240,7 +243,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
               await this.loadFolderPage(null, false, true);
               break;
             default:
-              console.log("Loading Folder Documents ", folderUuid)
+              console.log('Loading Folder Documents ', folderUuid);
               this.activeFilterMenu.set(null);
               this.selectedSavedSearchUuid.set(null);
               this.rememberCurrentFolderPage();
@@ -257,9 +260,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
           unassigned: false,
         });
       }
-    })
+    });
   }
-
 
   ngOnInit(): void {
     this.lastDocumentChangeRevision = this.inbox.documentChangeRevision();
@@ -270,7 +272,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     void this.folders.listAll();
     void this.metadata.loadVocabulary();
     void this.savedSearches.load();
-/*
+    /*
     void this.documents.load({
       groupBy: this.groupMode(),
       folderUuid: undefined,
@@ -301,8 +303,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   async selectNewDocuments(): Promise<void> {
     if (!this.canLeaveMetadata()) return;
-    this.router.navigate(['documents', 'new'])
-
+    this.router.navigate(['documents', 'new']);
   }
 
   async exportCurrentScope(): Promise<void> {
@@ -689,11 +690,11 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.documents.page.update((page) =>
       page
         ? {
-          ...page,
-          items: page.items.map((document) =>
-            document.uuid === uuid ? { ...document, isNew: false } : document,
-          ),
-        }
+            ...page,
+            items: page.items.map((document) =>
+              document.uuid === uuid ? { ...document, isNew: false } : document,
+            ),
+          }
         : page,
     );
   }
@@ -1032,9 +1033,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.unassignedFolderSelected.set(query.unassigned === true);
     this.newDocumentsSelected.set(
       !query.folderUuid &&
-      query.unassigned !== true &&
-      query.reviewStates?.length === 1 &&
-      query.reviewStates[0] === 'new',
+        query.unassigned !== true &&
+        query.reviewStates?.length === 1 &&
+        query.reviewStates[0] === 'new',
     );
     this.folders.select(this.unassignedFolderSelected() ? null : (query.folderUuid ?? null));
     this.activeFilterMenu.set(null);
@@ -1269,29 +1270,29 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       case 'documentType':
         return document.metadataSummary.documentType
           ? [
-            {
-              key: document.metadataSummary.documentType.uuid,
-              label: document.metadataSummary.documentType.name,
-            },
-          ]
+              {
+                key: document.metadataSummary.documentType.uuid,
+                label: document.metadataSummary.documentType.name,
+              },
+            ]
           : [];
       case 'category':
         return document.metadataSummary.category
           ? [
-            {
-              key: document.metadataSummary.category.uuid,
-              label: document.metadataSummary.category.name,
-            },
-          ]
+              {
+                key: document.metadataSummary.category.uuid,
+                label: document.metadataSummary.category.name,
+              },
+            ]
           : [];
       case 'issuer':
         return document.metadataSummary.issuer
           ? [
-            {
-              key: document.metadataSummary.issuer.uuid,
-              label: document.metadataSummary.issuer.name,
-            },
-          ]
+              {
+                key: document.metadataSummary.issuer.uuid,
+                label: document.metadataSummary.issuer.name,
+              },
+            ]
           : [];
       case 'tag':
         return document.metadataSummary.tags.map((tag) => ({ key: tag.uuid, label: tag.name }));

@@ -145,7 +145,7 @@
   cursor: pointer;
   font-size: 1.5rem;
   line-height: 1;
-  padding: .5rem 0.5rem;
+  padding: 0.5rem 0.5rem;
 }
 
 .drawer-close:hover,
@@ -222,7 +222,6 @@
 .document-workspace.analysis-enabled {
   grid-template-rows: minmax(0, 1fr);
 }
-
 
 .pdf-pane,
 .analysis-pane {
@@ -408,10 +407,7 @@
   }
 
   :host ::ng-deep .document-workspace.analysis-enabled .resizable-split__pane > [splitPaneFirst],
-  :host ::ng-deep
-    .document-workspace.analysis-enabled
-    .resizable-split__pane
-    > [splitPaneSecond] {
+  :host ::ng-deep .document-workspace.analysis-enabled .resizable-split__pane > [splitPaneSecond] {
     height: 100%;
   }
 

@@ -247,13 +247,13 @@
 
 button {
   border: 0;
-  border-radius: .65rem;
-  padding: .8rem 1rem;
+  border-radius: 0.65rem;
+  padding: 0.8rem 1rem;
   color: #061326;
   background: var(--cyan);
   cursor: pointer;
   font: inherit;
-  font-size: .8rem;
+  font-size: 0.8rem;
   font-weight: 800;
 }
 
@@ -264,7 +264,6 @@ button {
 }
 
 @media (max-width: 560px) {
-
   .management-heading,
   .card-heading,
   .editor-footer {

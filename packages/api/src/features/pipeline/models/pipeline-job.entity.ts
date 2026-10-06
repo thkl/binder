@@ -11,12 +11,7 @@ import {
 } from 'sequelize-typescript';
 
 export type PipelineJobKind =
-  | 'malware-scan'
-  | 'thumbnail'
-  | 'text-extraction'
-  | 'ocr'
-  | 'embedding'
-  | 'pdfa';
+  'malware-scan' | 'thumbnail' | 'text-extraction' | 'ocr' | 'embedding' | 'pdfa';
 export type PipelineJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 
 export interface PipelineJobAttributes {

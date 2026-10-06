@@ -78,7 +78,7 @@ export class DocumentsService {
       );
       const page = DocumentListResponseSchema.parse(response.data);
       this.page.set(page);
-      this.inboxService.setActiveDocumens(page.items.map(item=>item.uuid));
+      this.inboxService.setActiveDocumens(page.items.map((item) => item.uuid));
       await Promise.all([this.loadFacets(parsed), this.loadStorageIssues()]);
     } catch (error) {
       this.error.set(this.getErrorMessage(error));

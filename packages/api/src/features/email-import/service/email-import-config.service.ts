@@ -36,7 +36,9 @@ export class EmailImportConfigService {
     let passwordIv = existing?.passwordIv ?? null;
 
     if (input.enabled && (!input.host.trim() || !input.username.trim())) {
-      throw new BadRequestException('An IMAP host and username are required when email import is enabled');
+      throw new BadRequestException(
+        'An IMAP host and username are required when email import is enabled',
+      );
     }
 
     if (passwordProvided) {
@@ -51,7 +53,9 @@ export class EmailImportConfigService {
     }
 
     if (input.enabled && (!password || !passwordIv)) {
-      throw new BadRequestException('An IMAP password or app password is required when email import is enabled');
+      throw new BadRequestException(
+        'An IMAP password or app password is required when email import is enabled',
+      );
     }
 
     const config = existing

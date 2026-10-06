@@ -924,7 +924,9 @@ h2 {
   position: relative;
   border: 1px dashed rgba(97, 215, 244, 0.28);
   border-radius: 0.9rem;
-  transition: border-color 160ms ease, background 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
 }
 
 .empty-upload-state.drop-active {
