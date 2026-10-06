@@ -24,16 +24,33 @@ export class PasswordResetComponent implements OnInit {
   readonly identifier = signal('');
   readonly password = signal('');
   readonly confirmation = signal('');
+  readonly tokenValid = signal<boolean | null>(null);
   readonly submitting = signal(false);
   readonly success = signal(false);
   readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.token.set(this.route.snapshot.queryParamMap.get('token') ?? '');
+    const token = this.route.snapshot.queryParamMap.get('token') ?? '';
+    this.token.set(token);
+    if (token) void this.validateToken(token);
   }
 
   isConfirm(): boolean {
     return this.token().length > 0;
+  }
+
+  private async validateToken(token: string): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<{ data?: { valid?: boolean } }>(
+          `${this.app.getApiUrl('v1', 'auth/password-reset/validate')}?token=${encodeURIComponent(token)}`,
+          { withCredentials: true },
+        ),
+      );
+      this.tokenValid.set(response.data?.valid === true);
+    } catch {
+      this.tokenValid.set(false);
+    }
   }
 
   async request(event: SubmitEvent): Promise<void> {

@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -122,6 +123,16 @@ export class AuthenticationController {
   async confirmPasswordReset(@Body() body: unknown): Promise<{ data: { accepted: boolean } }> {
     const input = PasswordResetConfirmInputSchema.parse(body);
     return { data: await this.passwordReset.confirm(input.token, input.newPassword) };
+  }
+
+  @Get('password-reset/validate')
+  @Throttle({ default: { limit: 30, ttl: 15 * 60_000 } })
+  async validatePasswordReset(
+    @Query('token') token: string,
+  ): Promise<{ data: { valid: boolean } }> {
+    return {
+      data: { valid: token?.length >= 20 ? await this.passwordReset.isValid(token) : false },
+    };
   }
 
   @Get('session')

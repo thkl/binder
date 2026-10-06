@@ -21,6 +21,16 @@ export class PasswordResetTokenStore extends BaseCrudStore<PasswordResetToken, I
     return createHash('sha256').update(token, 'utf8').digest('hex');
   }
 
+  async isValid(token: string): Promise<boolean> {
+    const reset = await this.findOne({
+      where: { tokenHash: this.hash(token), usedAt: null },
+    });
+    if (!reset || reset.expiresAt.getTime() <= Date.now()) return false;
+
+    const user = await User.findByPk(reset.userUuid);
+    return Boolean(user?.isActive && user.passwordHash);
+  }
+
   async confirm(token: string, newPassword: string): Promise<{ accepted: boolean }> {
     const userModel = User;
     const reset = await this.findOne({

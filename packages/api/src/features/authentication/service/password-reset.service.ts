@@ -51,6 +51,10 @@ export class PasswordResetService {
     return this.tokenStore.confirm(token, newPassword);
   }
 
+  async isValid(token: string): Promise<boolean> {
+    return this.tokenStore.isValid(token);
+  }
+
   private async getSmtpConfig(): Promise<SmtpConfig> {
     const enabled = (await this.settings.get('mailer.smtp.enabled', 'false')) === 'true';
     const host = (await this.settings.get('mailer.smtp.host', ''))?.trim();
