@@ -5,6 +5,8 @@
   </main>
 } @else if (auth.setupRequired() || auth.onboardingActive()) {
   <binder-onboarding />
+} @else if (passwordResetRoute()) {
+  <router-outlet />
 } @else if (!auth.user()) {
   <binder-login />
 } @else if (auth.user()?.mustChangePassword) {

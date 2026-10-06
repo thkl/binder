@@ -7,6 +7,8 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthService } from './features/authentication/services/auth.service';
 import { ChangePasswordComponent } from './features/authentication/components/change-password/change-password.component';
 import { LoginComponent } from './features/authentication/components/login/login.component';
@@ -35,6 +37,7 @@ type NavigationMenu = 'documents' | 'settings' | 'account';
 })
 export class AppComponent implements OnInit {
   readonly openMenu = signal<NavigationMenu | null>(null);
+  readonly passwordResetRoute = signal(false);
   private readonly avatarFailedFor = signal<string | null>(null);
   readonly gravatarUrl = computed(() => {
     const user = this.auth.user();
@@ -46,7 +49,15 @@ export class AppComponent implements OnInit {
     readonly auth: AuthService,
     readonly i18n: I18nService,
     readonly inbox: InboxService,
+    readonly router: Router,
   ) {
+    this.passwordResetRoute.set(this.isPasswordResetUrl(this.router.url));
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) =>
+        this.passwordResetRoute.set(this.isPasswordResetUrl(event.urlAfterRedirects)),
+      );
+
     effect(() => {
       const user = this.auth.user();
       if (this.auth.loading()) return;
@@ -63,6 +74,10 @@ export class AppComponent implements OnInit {
         this.inbox.stopLiveUpdates();
       }
     });
+  }
+
+  private isPasswordResetUrl(url: string): boolean {
+    return url === '/reset-password' || url.startsWith('/reset-password?');
   }
 
   ngOnInit(): void {
