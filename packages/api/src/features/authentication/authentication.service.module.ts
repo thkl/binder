@@ -6,17 +6,10 @@ import { SharedModule } from '../../shared/shared.service.module';
 import { AuthenticationGuard } from './guards/authentication.guard';
 import { UserManagementService } from './service/user-management.service';
 import { PermissionGuard } from '../../shared/guards/permission.guard';
-import { SequelizeModule } from '@nestjs/sequelize';
-import { User } from './models/user.entity';
-import { PasswordResetToken } from './models/password-reset-token.entity';
 import { PasswordResetService } from './service/password-reset.service';
 
 @Module({
-  imports: [
-    AuthenticationStoreModule,
-    SharedModule,
-    SequelizeModule.forFeature([User, PasswordResetToken]),
-  ],
+  imports: [AuthenticationStoreModule, SharedModule],
   providers: [
     AuthenticationService,
     SSOAuthenticationService,

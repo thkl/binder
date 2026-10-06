@@ -1,18 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { QueryTypes, Sequelize } from 'sequelize';
-import { randomBytes, createHash } from 'node:crypto';
-import * as argon2 from 'argon2';
+import { randomBytes } from 'node:crypto';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { BinderLogger } from '../../../shared/service/logger.helper';
-import { PasswordResetToken } from '../models/password-reset-token.entity';
 import { UserStore } from '../stores/user.store';
 import { User } from '../models/user.entity';
 import { createTransport } from 'nodemailer';
+import { PasswordResetTokenStore, RESET_RESPONSE } from '../stores/token.store';
 
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
-const RESET_RESPONSE = { accepted: true as const };
 
 @Injectable()
 export class PasswordResetService {
@@ -20,8 +17,8 @@ export class PasswordResetService {
 
   constructor(
     private readonly users: UserStore,
+    private readonly tokenStore: PasswordResetTokenStore,
     private readonly settings: ApplicationSettingsService,
-    private readonly sequelize: Sequelize,
     private readonly config: ConfigService<BinderConfig>,
   ) {}
 
@@ -29,11 +26,11 @@ export class PasswordResetService {
     const user = await this.users.findByLogin(identifier);
     if (!user || !user.isActive || !user.email || !user.passwordHash) return RESET_RESPONSE;
 
-    await PasswordResetToken.destroy({ where: { userUuid: user.uuid } });
+    await this.tokenStore.deleteWhere({ userUuid: user.uuid });
     const rawToken = randomBytes(32).toString('base64url');
-    await PasswordResetToken.create({
+    await this.tokenStore.create({
       userUuid: user.uuid,
-      tokenHash: this.hash(rawToken),
+      tokenHash: this.tokenStore.hash(rawToken),
       expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
       usedAt: null,
     });
@@ -50,28 +47,7 @@ export class PasswordResetService {
   }
 
   async confirm(token: string, newPassword: string): Promise<{ accepted: true }> {
-    const reset = await PasswordResetToken.findOne({
-      where: { tokenHash: this.hash(token), usedAt: null },
-    });
-    if (!reset || reset.expiresAt.getTime() <= Date.now()) {
-      return RESET_RESPONSE;
-    }
-
-    const user = await User.findByPk(reset.userUuid);
-    if (!user || !user.isActive || !user.passwordHash) return RESET_RESPONSE;
-
-    await this.sequelize.transaction(async (transaction) => {
-      await user.update(
-        { passwordHash: await argon2.hash(newPassword), mustChangePassword: false },
-        { transaction },
-      );
-      await reset.update({ usedAt: new Date() }, { transaction });
-      await this.sequelize.query(
-        "DELETE FROM user_sessions WHERE sess::jsonb->>'userId' = :userId",
-        { replacements: { userId: user.uuid }, type: QueryTypes.DELETE, transaction },
-      );
-    });
-    return RESET_RESPONSE;
+    return this.tokenStore.confirm(token, newPassword);
   }
 
   private async sendResetEmail(user: User, rawToken: string): Promise<void> {
@@ -99,9 +75,5 @@ export class PasswordResetService {
       subject: 'Reset your Binder password',
       text: `Use this link to reset your Binder password. It expires in 30 minutes:\n\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
     });
-  }
-
-  private hash(token: string): string {
-    return createHash('sha256').update(token, 'utf8').digest('hex');
   }
 }
