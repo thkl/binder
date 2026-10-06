@@ -293,6 +293,9 @@ export class SetupService {
   }
 
   async requestRecoveryRestore(input: RecoveryRestoreInput) {
+    if (input.backupPassword !== input.backupPasswordConfirmation) {
+      throw new BadRequestException('The backup encryption passwords do not match');
+    }
     const pending = await this.maintenanceRequests.findPendingRestore();
     if (pending) throw new ConflictException('A recovery restore is already queued');
     const encryptedPassword = this.encryption.encrypt(input.backupPassword);

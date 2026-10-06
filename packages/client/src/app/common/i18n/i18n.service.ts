@@ -145,13 +145,13 @@ const EN: TranslationMap = {
   'setup.stepProgressRestore': 'STEP 7 OF 9',
   'setup.restoreTitle': 'Confirm recovery',
   'setup.restoreCopy':
-    'Enter the backup encryption password and confirm that this installation may be replaced.',
+    'Enter the backup encryption password twice. This fresh installation has no existing database to overwrite.',
   'setup.restoreSelected': 'Selected backup',
   'setup.recoveryPassword': 'Backup encryption password',
   'setup.recoveryPasswordHint':
     'This is the password configured as backup.encryptionPassword, not the database password.',
-  'setup.recoveryConfirm': 'Confirmation',
-  'setup.recoveryConfirmHint': 'Type RESTORE to confirm the destructive recovery request.',
+  'setup.recoveryConfirm': 'Repeat backup encryption password',
+  'setup.recoveryConfirmHint': 'Repeat the backup encryption password to confirm it.',
   'setup.recoveryPasswordMismatch': 'The backup passwords do not match.',
   'setup.restoreButton': 'Queue restore',
   'setup.restoreQueuedTitle': 'Restore queued',
@@ -901,14 +901,14 @@ const DE: TranslationMap = {
   'setup.stepProgressRestore': 'SCHRITT 7 VON 9',
   'setup.restoreTitle': 'Wiederherstellung bestätigen',
   'setup.restoreCopy':
-    'Geben Sie das Backup-Verschlüsselungspasswort ein und bestätigen Sie, dass diese Installation ersetzt werden darf.',
+    'Geben Sie das Backup-Verschlüsselungspasswort zweimal ein. Diese frische Installation enthält noch keine zu überschreibende Datenbank.',
   'setup.restoreSelected': 'Ausgewähltes Backup',
   'setup.recoveryPassword': 'Backup-Verschlüsselungspasswort',
   'setup.recoveryPasswordHint':
     'Dies ist das als backup.encryptionPassword konfigurierte Passwort, nicht das Datenbankpasswort.',
-  'setup.recoveryConfirm': 'Bestätigung',
+  'setup.recoveryConfirm': 'Backup-Verschlüsselungspasswort wiederholen',
   'setup.recoveryConfirmHint':
-    'Geben Sie RESTORE ein, um die destruktive Wiederherstellungsanforderung zu bestätigen.',
+    'Wiederholen Sie das Backup-Verschlüsselungspasswort zur Bestätigung.',
   'setup.recoveryPasswordMismatch': 'Die Backup-Passwörter stimmen nicht überein.',
   'setup.restoreButton': 'Wiederherstellung einreihen',
   'setup.restoreQueuedTitle': 'Wiederherstellung eingereiht',

@@ -189,7 +189,7 @@ export class OnboardingComponent {
         accessToken: this.recoveryAccessToken() || undefined,
         remoteFolder: this.recoveryFolder(),
         backupPassword: this.recoveryPassword(),
-        confirmation: 'RESTORE',
+        backupPasswordConfirmation: this.recoveryConfirmation(),
       },
       this.recoveryMode(),
     );

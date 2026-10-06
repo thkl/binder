@@ -1030,7 +1030,7 @@ export const RecoveryRestoreInputSchema = z.object({
   accessToken: z.string().trim().min(1).max(4096).optional(),
   remoteFolder: z.string().trim().min(1).max(1024).optional(),
   backupPassword: z.string().min(1).max(512),
-  confirmation: z.literal('RESTORE'),
+  backupPasswordConfirmation: z.string().min(1).max(512),
 });
 export type RecoveryRestoreInput = z.infer<typeof RecoveryRestoreInputSchema>;
 

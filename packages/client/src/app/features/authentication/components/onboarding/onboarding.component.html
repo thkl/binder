@@ -472,8 +472,8 @@
             <label for="recovery-confirmation">{{ 'setup.recoveryConfirm' | t }}</label>
             <input
               id="recovery-confirmation"
-              type="text"
-              autocomplete="off"
+              type="password"
+              autocomplete="new-password"
               [value]="recoveryConfirmation()"
               (input)="recoveryConfirmation.set(inputValue($event))"
               required
