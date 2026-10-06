@@ -121,6 +121,9 @@
             <button type="submit" [disabled]="auth.submitting()">
               {{ auth.submitting() ? ('setup.creating' | t) : ('setup.create' | t) }}
             </button>
+            <button type="button" class="secondary-button" (click)="startRecovery()">
+              {{ 'setup.recoveryStart' | t }}
+            </button>
           </form>
         }
       } @else if (!settingsLoaded()) {
@@ -269,16 +272,6 @@
           <p>{{ 'setup.aiPrivacyCopy' | t }}</p>
         </div>
 
-        <label for="recovery-access-token">{{ 'setup.recoveryAccessToken' | t }}</label>
-        <input
-          id="recovery-access-token"
-          type="password"
-          autocomplete="off"
-          [value]="recoveryAccessToken()"
-          (input)="recoveryAccessToken.set(inputValue($event))"
-        />
-        <p class="field-hint">{{ 'setup.recoveryAccessTokenHint' | t }}</p>
-
         <div class="onboarding-provider-manager">
           <binder-ai-provider-manager />
         </div>
@@ -374,6 +367,16 @@
           <strong>{{ 'setup.recoverySafetyTitle' | t }}</strong>
           <p>{{ 'setup.recoverySafetyCopy' | t }}</p>
         </div>
+
+        <label for="recovery-access-token">{{ 'setup.recoveryAccessToken' | t }}</label>
+        <input
+          id="recovery-access-token"
+          type="password"
+          autocomplete="off"
+          [value]="recoveryAccessToken()"
+          (input)="recoveryAccessToken.set(inputValue($event))"
+        />
+        <p class="field-hint">{{ 'setup.recoveryAccessTokenHint' | t }}</p>
 
         @if (setup.recoveryBackups(); as recovery) {
           @if (!recovery.connected) {

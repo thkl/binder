@@ -79,6 +79,7 @@ export class OnboardingComponent {
   readonly oidcSkipped = signal(false);
   readonly stepError = signal<string | null>(null);
   readonly recoveryAccessToken = signal('');
+  readonly recoveryMode = signal(false);
 
   readonly stepNumber = computed(() => STEP_ORDER.indexOf(this.step()) + 1);
   readonly canGoBack = computed(() => this.stepNumber() > 2);
@@ -91,6 +92,11 @@ export class OnboardingComponent {
   constructor() {
     if (this.auth.user()) {
       void this.prepareWorkspaceSteps();
+    } else if (window.location.search.includes('dropbox=connected')) {
+      this.recoveryMode.set(true);
+      this.settingsLoaded.set(true);
+      window.history.replaceState({}, '', window.location.pathname);
+      void this.prepareRecoveryStep(true);
     }
   }
 
@@ -136,26 +142,35 @@ export class OnboardingComponent {
     this.oidcSkipped.set(false);
     const validation = await this.validate('oidc');
     if (validation?.valid || validation?.checks.every((check) => check.status === 'warning')) {
-      await this.prepareRecoveryStep();
+      await this.prepareRecoveryStep(false);
     }
   }
 
   skipOidc(): void {
     this.oidcSkipped.set(true);
-    void this.prepareRecoveryStep();
+    void this.prepareRecoveryStep(false);
   }
 
   async continueRecovery(): Promise<void> {
-    await this.setup.loadRecoveryBackups(this.recoveryAccessToken());
+    await this.setup.loadRecoveryBackups(this.recoveryAccessToken(), this.recoveryMode());
     this.goTo('backup');
   }
 
   async refreshRecoveryBackups(): Promise<void> {
-    await this.setup.loadRecoveryBackups(this.recoveryAccessToken());
+    await this.setup.loadRecoveryBackups(this.recoveryAccessToken(), this.recoveryMode());
   }
 
   connectDropbox(): void {
-    window.location.assign('/api/v1/maintenance/dropbox/connect?returnTo=/');
+    const endpoint = this.recoveryMode()
+      ? '/api/v1/setup/recovery/public/dropbox/connect'
+      : '/api/v1/maintenance/dropbox/connect?returnTo=/';
+    window.location.assign(endpoint);
+  }
+
+  startRecovery(): void {
+    this.recoveryMode.set(true);
+    this.settingsLoaded.set(true);
+    void this.prepareRecoveryStep(true);
   }
 
   async continueBackup(): Promise<void> {
@@ -246,18 +261,13 @@ export class OnboardingComponent {
     this.values.set(values);
     this.oidcSecretPreserved.set(values['oidc.CLIENT_SECRET'] === '****');
     this.settingsLoaded.set(true);
-    if (window.location.search.includes('dropbox=connected')) {
-      window.history.replaceState({}, '', window.location.pathname);
-      await this.prepareRecoveryStep();
-    } else {
-      this.goTo('storage');
-      await this.validate('storage');
-    }
+    this.goTo('storage');
+    await this.validate('storage');
   }
 
-  private async prepareRecoveryStep(): Promise<void> {
+  private async prepareRecoveryStep(publicRecovery = false): Promise<void> {
     this.goTo('recovery');
-    await this.setup.loadRecoveryBackups();
+    await this.setup.loadRecoveryBackups(undefined, publicRecovery);
   }
 
   private async validate(step: SetupValidationStep) {

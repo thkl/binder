@@ -77,13 +77,19 @@ export class SetupService {
     }
   }
 
-  async loadRecoveryBackups(accessToken?: string): Promise<RecoveryBackupListResponse | null> {
+  async loadRecoveryBackups(
+    accessToken?: string,
+    publicRecovery = false,
+  ): Promise<RecoveryBackupListResponse | null> {
     this.recoveryLoading.set(true);
     this.error.set(null);
     try {
       const response = await firstValueFrom(
         this.http.post<ApiResponse<unknown>>(
-          this.application.getApiUrl('v1', 'setup/recovery/backups'),
+          this.application.getApiUrl(
+            'v1',
+            publicRecovery ? 'setup/recovery/public/backups' : 'setup/recovery/backups',
+          ),
           accessToken ? { accessToken } : {},
           { withCredentials: true },
         ),

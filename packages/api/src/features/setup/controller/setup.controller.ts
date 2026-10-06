@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import {
   SetupAdminInputSchema,
@@ -82,6 +83,19 @@ export class SetupController {
   async recoveryBackups(@Body() body: unknown) {
     const input = RecoveryBackupListInputSchema.parse(body ?? {});
     return { data: await this.setup.listRecoveryBackups(input.accessToken) };
+  }
+
+  @Post('recovery/public/backups')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async publicRecoveryBackups(@Body() body: unknown) {
+    const input = RecoveryBackupListInputSchema.parse(body ?? {});
+    return { data: await this.setup.listPublicRecoveryBackups(input.accessToken) };
+  }
+
+  @Get('recovery/public/dropbox/connect')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async publicRecoveryDropboxConnect(@Req() request: SessionRequest, @Res() response: Response) {
+    return this.setup.authorizePublicRecovery(request, response);
   }
 
   @Post('complete')

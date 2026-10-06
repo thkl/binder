@@ -4,6 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { promises as fs } from 'node:fs';
@@ -28,6 +29,7 @@ import { PipelineWorkerHeartbeatStore } from '../../pipeline/store/pipeline-work
 import { createGravatarUrl } from '../../authentication/service/gravatar';
 import { SecretsService } from '../../../shared/config/secrets.service';
 import { DropboxConnectionService } from '../../maintenance/service/dropbox-connection.service';
+import { SessionRequest } from '../../authentication/models/request.model';
 
 interface SetupPaths {
   appRoot: string;
@@ -264,6 +266,24 @@ export class SetupService {
 
   async listRecoveryBackups(accessToken?: string) {
     return this.dropbox.listRecoveryBackups(accessToken);
+  }
+
+  async listPublicRecoveryBackups(accessToken?: string) {
+    if (!(await this.setupState.isRequired())) {
+      throw new UnauthorizedException(
+        'Public recovery is only available before administrator setup',
+      );
+    }
+    return this.dropbox.listRecoveryBackups(accessToken);
+  }
+
+  async authorizePublicRecovery(request: SessionRequest, response: Response): Promise<void> {
+    if (!(await this.setupState.isRequired())) {
+      throw new UnauthorizedException(
+        'Public recovery is only available before administrator setup',
+      );
+    }
+    return this.dropbox.authorize(request, response, '/');
   }
 
   async completeOnboarding(): Promise<SetupCompletionResponse> {
