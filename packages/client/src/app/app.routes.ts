@@ -9,6 +9,13 @@ export const appRoutes: Routes = [
       ),
   },
   {
+    path: 'account/password',
+    loadComponent: () =>
+      import('./features/authentication/components/change-password/change-password.component').then(
+        ({ ChangePasswordComponent }) => ChangePasswordComponent,
+      ),
+  },
+  {
     path: 'inbox',
     loadComponent: () =>
       import('./features/inbox/components/inbox/inbox.component').then(

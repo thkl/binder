@@ -11,8 +11,8 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChangePasswordComponent {
-  readonly title = input('Change your password');
-  readonly message = input('Choose a new password for your account.');
+  readonly title = input<string | null>(null);
+  readonly message = input<string | null>(null);
   readonly changed = output<void>();
 
   readonly oldPassword = signal('');

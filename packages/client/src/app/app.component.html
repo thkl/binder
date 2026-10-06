@@ -201,6 +201,9 @@
                   </button>
                 </div>
               </div>
+              <a class="account-menu-action" routerLink="/account/password" (click)="closeMenu()">{{
+                'nav.changePassword' | t
+              }}</a>
               <div class="account-menu-divider" aria-hidden="true"></div>
               <button class="account-menu-action" type="button" (click)="logout()">
                 {{ 'nav.signOut' | t }}

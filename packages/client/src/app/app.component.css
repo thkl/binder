@@ -201,6 +201,7 @@ h1 {
 }
 
 .account-menu-action {
+  display: block;
   width: 100%;
   min-height: 2.75rem;
   padding: 0.7rem 0.8rem;
@@ -210,6 +211,7 @@ h1 {
   background: transparent;
   font: inherit;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
   touch-action: manipulation;
 }
