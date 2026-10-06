@@ -1014,6 +1014,11 @@ export const RecoveryBackupListResponseSchema = z.object({
 });
 export type RecoveryBackupListResponse = z.infer<typeof RecoveryBackupListResponseSchema>;
 
+export const RecoveryBackupListInputSchema = z.object({
+  accessToken: z.string().trim().min(1).max(4096).optional(),
+});
+export type RecoveryBackupListInput = z.infer<typeof RecoveryBackupListInputSchema>;
+
 export const SetupCompletionResponseSchema = z.object({
   completed: z.literal(true),
   completedAt: z.iso.datetime(),

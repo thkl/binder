@@ -269,6 +269,16 @@
           <p>{{ 'setup.aiPrivacyCopy' | t }}</p>
         </div>
 
+        <label for="recovery-access-token">{{ 'setup.recoveryAccessToken' | t }}</label>
+        <input
+          id="recovery-access-token"
+          type="password"
+          autocomplete="off"
+          [value]="recoveryAccessToken()"
+          (input)="recoveryAccessToken.set(inputValue($event))"
+        />
+        <p class="field-hint">{{ 'setup.recoveryAccessTokenHint' | t }}</p>
+
         <div class="onboarding-provider-manager">
           <binder-ai-provider-manager />
         </div>
@@ -398,6 +408,9 @@
           </button>
           <button type="button" class="secondary-button" (click)="connectDropbox()">
             {{ 'setup.recoveryConnect' | t }}
+          </button>
+          <button type="button" class="secondary-button" (click)="refreshRecoveryBackups()">
+            {{ 'setup.recoveryList' | t }}
           </button>
           <button type="button" (click)="continueRecovery()">
             {{ 'setup.continue' | t }}

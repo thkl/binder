@@ -140,6 +140,10 @@ const EN: TranslationMap = {
   'setup.recoveryEmpty': 'No encrypted full backups were found in the configured Dropbox folder.',
   'setup.recoveryLoading': 'Loading available backups…',
   'setup.recoveryConnect': 'Connect Dropbox',
+  'setup.recoveryAccessToken': 'One-time Dropbox access token',
+  'setup.recoveryAccessTokenHint':
+    'Optional. The token is used only for this request and is never stored by Binder.',
+  'setup.recoveryList': 'List backups',
   'setup.secretKeepHint': 'Leave the field empty to keep the existing encrypted secret.',
   'setup.skipOptional': 'Skip optional step',
   'setup.backupTitle': 'Set up backups',
@@ -871,6 +875,10 @@ const DE: TranslationMap = {
     'Im konfigurierten Dropbox-Ordner wurden keine verschlüsselten vollständigen Backups gefunden.',
   'setup.recoveryLoading': 'Verfügbare Backups werden geladen…',
   'setup.recoveryConnect': 'Dropbox verbinden',
+  'setup.recoveryAccessToken': 'Einmaliger Dropbox-Zugriffstoken',
+  'setup.recoveryAccessTokenHint':
+    'Optional. Der Token wird nur für diese Anfrage verwendet und niemals von Binder gespeichert.',
+  'setup.recoveryList': 'Backups auflisten',
   'setup.secretKeepHint': 'Leer lassen, um das vorhandene verschlüsselte Geheimnis beizubehalten.',
   'setup.skipOptional': 'Optionalen Schritt überspringen',
   'setup.backupTitle': 'Backups einrichten',

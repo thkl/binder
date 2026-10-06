@@ -78,6 +78,7 @@ export class OnboardingComponent {
   readonly oidcSecretPreserved = signal(false);
   readonly oidcSkipped = signal(false);
   readonly stepError = signal<string | null>(null);
+  readonly recoveryAccessToken = signal('');
 
   readonly stepNumber = computed(() => STEP_ORDER.indexOf(this.step()) + 1);
   readonly canGoBack = computed(() => this.stepNumber() > 2);
@@ -145,8 +146,12 @@ export class OnboardingComponent {
   }
 
   async continueRecovery(): Promise<void> {
-    await this.setup.loadRecoveryBackups();
+    await this.setup.loadRecoveryBackups(this.recoveryAccessToken());
     this.goTo('backup');
+  }
+
+  async refreshRecoveryBackups(): Promise<void> {
+    await this.setup.loadRecoveryBackups(this.recoveryAccessToken());
   }
 
   connectDropbox(): void {

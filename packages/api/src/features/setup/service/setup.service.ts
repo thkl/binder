@@ -262,8 +262,8 @@ export class SetupService {
     return this.validationResult(checks);
   }
 
-  async listRecoveryBackups() {
-    return this.dropbox.listRecoveryBackups();
+  async listRecoveryBackups(accessToken?: string) {
+    return this.dropbox.listRecoveryBackups(accessToken);
   }
 
   async completeOnboarding(): Promise<SetupCompletionResponse> {

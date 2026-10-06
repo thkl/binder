@@ -3,6 +3,7 @@ import { Throttle } from '@nestjs/throttler';
 import {
   SetupAdminInputSchema,
   SetupCompletionResponseSchema,
+  RecoveryBackupListInputSchema,
   SetupStatusSchema,
   SetupValidationResponseSchema,
 } from '@binder/common';
@@ -78,8 +79,9 @@ export class SetupController {
   @UseGuards(AuthenticationGuard, ScopeGuard, RolesGuard)
   @Roles('admin')
   @Scopes(['web'])
-  async recoveryBackups() {
-    return { data: await this.setup.listRecoveryBackups() };
+  async recoveryBackups(@Body() body: unknown) {
+    const input = RecoveryBackupListInputSchema.parse(body ?? {});
+    return { data: await this.setup.listRecoveryBackups(input.accessToken) };
   }
 
   @Post('complete')

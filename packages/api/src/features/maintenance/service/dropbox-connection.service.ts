@@ -100,16 +100,17 @@ export class DropboxConnectionService {
     response.redirect(`${rootUri.replace(/\/$/, '')}${returnTo}?dropbox=connected`);
   }
 
-  async listRecoveryBackups(): Promise<RecoveryBackupListResponse> {
+  async listRecoveryBackups(oneTimeAccessToken?: string): Promise<RecoveryBackupListResponse> {
     const status = await this.status();
-    if (!status.configured || !status.connected) {
+    const accessTokenOverride = oneTimeAccessToken?.trim();
+    if (!accessTokenOverride && (!status.configured || !status.connected)) {
       return RecoveryBackupListResponseSchema.parse({ ...status, backups: [] });
     }
 
     const remoteFolder =
       (await this.settings.get('backup.remoteFolder', '/Binder backups'))?.trim() ||
       '/Binder backups';
-    const accessToken = await this.accessToken();
+    const accessToken = accessTokenOverride ?? (await this.accessToken());
     const entries: RecoveryBackup[] = [];
     let cursor: string | undefined;
     let hasMore = true;
@@ -177,6 +178,7 @@ export class DropboxConnectionService {
 
     return RecoveryBackupListResponseSchema.parse({
       ...status,
+      connected: Boolean(accessTokenOverride) || status.connected,
       backups: entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     });
   }
