@@ -51,6 +51,14 @@ interface RecoveryRequestPayload {
   accessTokenIv?: string;
 }
 
+interface TargetSettingSnapshot {
+  key: string;
+  value: string;
+  isEncrypted: boolean;
+  valueIv: string | null;
+  description: string | null;
+}
+
 const DEFAULT_SETTINGS: MaintenanceSettings = {
   root: path.resolve(process.env.APP_ROOT_PATH ?? process.cwd(), 'backup'),
   enabled: false,
@@ -115,6 +123,25 @@ export class MaintenanceScheduler {
          CHECK (job_key IN ('backup', 'restore'))`,
     );
     logger.info('Recovery schema verified');
+  }
+
+  private async captureTargetSettings(): Promise<TargetSettingSnapshot[]> {
+    const settings = await ApplicationSetting.findAll({ order: [['key', 'ASC']] });
+    return settings.map((setting) => ({
+      key: setting.key,
+      value: setting.value,
+      isEncrypted: setting.isEncrypted,
+      valueIv: setting.valueIv,
+      description: setting.description,
+    }));
+  }
+
+  private async restoreTargetSettings(settings: TargetSettingSnapshot[]): Promise<void> {
+    await ApplicationSetting.destroy({ where: {} });
+    if (settings.length > 0) await ApplicationSetting.bulkCreate(settings as never);
+    logger.info('Target installation settings reapplied after recovery', {
+      settingCount: settings.length,
+    });
   }
 
   async stop(): Promise<void> {
@@ -233,6 +260,7 @@ export class MaintenanceScheduler {
 
       const remoteFolder = payload.remoteFolder || '/';
       const remotePath = `${remoteFolder === '/' ? '' : remoteFolder.replace(/\/$/, '')}/${payload.filename}`;
+      const targetSettings = await this.captureTargetSettings();
       logger.info('Recovery restore started', { runUuid: run.uuid, remotePath });
       await this.recordRestoreProgress(run, 'Recovery started');
       const result = await this.fileBackup.restoreEncryptedBackup(
@@ -240,6 +268,13 @@ export class MaintenanceScheduler {
         remotePath,
         password,
         (message) => this.recordRestoreProgress(run, message),
+        async () => {
+          await this.ensureRecoverySchema();
+          await this.restoreTargetSettings(targetSettings);
+          logger.info('Target installation configuration reapplied after database restore', {
+            runUuid: run.uuid,
+          });
+        },
       );
       await this.ensureRecoverySchema();
       const progress = [
@@ -254,6 +289,11 @@ export class MaintenanceScheduler {
               },
             ]
           : []),
+        {
+          at: new Date().toISOString(),
+          level: 'info' as const,
+          message: 'Target installation configuration reapplied',
+        },
         {
           at: new Date().toISOString(),
           level: 'info' as const,
@@ -285,22 +325,42 @@ export class MaintenanceScheduler {
       // Let the container supervisor start a clean worker after the successful restore.
       setTimeout(() => process.kill(process.pid, 'SIGTERM'), 100);
     } catch (error) {
-      await this.recordRestoreProgress(run, this.errorMessage(error), 'error').catch(
-        () => undefined,
-      );
-      await run
-        .update({
+      const failure = this.errorMessage(error);
+      await this.recordRestoreProgress(run, failure, 'error').catch(() => undefined);
+      try {
+        await run.update({
           status: 'failed',
           finishedAt: new Date(),
           durationMs: Date.now() - started,
-          error: this.errorMessage(error),
-        })
-        .catch((updateError) =>
-          logger.warn('Recovery failure status could not be persisted', {
-            runUuid: run.uuid,
-            error: this.errorMessage(updateError),
+          error: failure,
+        });
+      } catch (updateError) {
+        logger.warn('Recovery failure status could not be persisted; recreating status record', {
+          runUuid: run.uuid,
+          error: this.errorMessage(updateError),
+        });
+        await this.ensureRecoverySchema().catch(() => undefined);
+        await MaintenanceRun.create({
+          uuid: randomUUID(),
+          jobKey: 'restore',
+          status: 'failed',
+          startedAt: run.startedAt,
+          finishedAt: new Date(),
+          nextRunAt: null,
+          durationMs: Date.now() - started,
+          artifactName: null,
+          sizeBytes: null,
+          deletedFiles: null,
+          checkedFiles: null,
+          issueCount: null,
+          error: failure,
+          progress: Array.isArray(run.progress) ? run.progress : [],
+        }).catch((createError) =>
+          logger.warn('Recovery failure status could not be recreated', {
+            error: this.errorMessage(createError),
           }),
         );
+      }
       logger.error('Recovery restore failed; no further restore steps were attempted', {
         runUuid: run.uuid,
         error: this.errorMessage(error),

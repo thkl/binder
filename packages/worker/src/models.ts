@@ -53,6 +53,9 @@ export class ApplicationSetting extends Model {
 
   @Column({ field: 'value_iv', type: DataType.STRING(32), allowNull: true })
   declare valueIv: string | null;
+
+  @Column({ type: DataType.STRING(500), allowNull: true })
+  declare description: string | null;
 }
 
 @Table({ tableName: 'email_import_configs', underscored: true, timestamps: true })

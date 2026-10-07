@@ -185,8 +185,11 @@ export class FileBackupService {
     remotePath: string,
     password: string,
     onProgress?: (message: string) => Promise<void> | void,
+    onDatabaseRestored?: () => Promise<void> | void,
   ): Promise<FileRestoreResult> {
-    const restoreRoot = await fs.mkdtemp(path.join(config.storageRoot, '.binder-restore-'));
+    const restoreRoot = await fs.mkdtemp(
+      path.join(path.dirname(config.storageRoot), '.binder-restore-'),
+    );
     const encryptedPath = path.join(restoreRoot, 'backup.tar.gz.age');
     const archivePath = path.join(restoreRoot, 'backup.tar.gz');
     const extractedRoot = path.join(restoreRoot, 'extracted');
@@ -258,6 +261,7 @@ export class FileBackupService {
         scope: manifest.scope,
       });
       await this.restoreDatabase(path.join(extractedRoot, 'database.dump'));
+      await onDatabaseRestored?.();
       if (stagedStorage) await this.replaceStorage(stagedStorage);
       logger.info('Recovery restore completed', {
         remotePath,
@@ -313,27 +317,21 @@ export class FileBackupService {
   }
 
   private async replaceStorage(stagedStorage: string): Promise<void> {
-    const parent = path.dirname(config.storageRoot);
-    await fs.mkdir(parent, { recursive: true });
-    const previousStorage = `${config.storageRoot}.before-restore-${Date.now()}`;
-    let movedPrevious = false;
-    try {
-      await fs.rename(config.storageRoot, previousStorage);
-      movedPrevious = true;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    await fs.mkdir(config.storageRoot, { recursive: true });
+    const existingEntries = await fs.readdir(config.storageRoot);
+    for (const entry of existingEntries) {
+      await fs.rm(path.join(config.storageRoot, entry), { recursive: true, force: true });
     }
-    try {
-      await fs.rename(stagedStorage, config.storageRoot);
-      logger.info('Recovery storage switched into place', { storageRoot: config.storageRoot });
-    } catch (error) {
-      if (movedPrevious)
-        await fs.rename(previousStorage, config.storageRoot).catch(() => undefined);
-      throw error;
+    const restoredEntries = await fs.readdir(stagedStorage);
+    for (const entry of restoredEntries) {
+      await fs.cp(path.join(stagedStorage, entry), path.join(config.storageRoot, entry), {
+        recursive: true,
+        force: true,
+      });
     }
-    if (movedPrevious) {
-      logger.warn('Previous storage retained after recovery', { previousStorage });
-    }
+    logger.info('Recovery storage copied into mounted storage volume', {
+      storageRoot: config.storageRoot,
+    });
   }
 
   private async createDatabaseDump(targetPath: string): Promise<void> {
