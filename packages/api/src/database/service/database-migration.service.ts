@@ -61,6 +61,7 @@ export class DatabaseMigrationService {
   }
 
   private async verifyRequiredSchema(): Promise<void> {
+    await this.repairRequiredSchema();
     const [rows] = await this.sequelize.query(
       `SELECT table_name, column_name
        FROM information_schema.columns
@@ -79,6 +80,25 @@ export class DatabaseMigrationService {
     if (missing.length > 0) {
       throw new Error(`Required database schema is incomplete: ${missing.join(', ')}`);
     }
+  }
+
+  private async repairRequiredSchema(): Promise<void> {
+    await this.sequelize.query(
+      `ALTER TABLE maintenance_requests
+         ADD COLUMN IF NOT EXISTS payload JSONB NOT NULL DEFAULT '{}'::jsonb`,
+    );
+    await this.sequelize.query(
+      `ALTER TABLE maintenance_runs
+         ADD COLUMN IF NOT EXISTS progress JSONB NOT NULL DEFAULT '[]'::jsonb`,
+    );
+    await this.sequelize.query(
+      'ALTER TABLE maintenance_requests DROP CONSTRAINT IF EXISTS maintenance_requests_job_check',
+    );
+    await this.sequelize.query(
+      `ALTER TABLE maintenance_requests
+         ADD CONSTRAINT maintenance_requests_job_check
+         CHECK (job_key IN ('backup', 'restore'))`,
+    );
   }
 
   findMigrationpath(): string {

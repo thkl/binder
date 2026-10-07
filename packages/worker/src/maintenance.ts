@@ -82,6 +82,7 @@ export class MaintenanceScheduler {
 
   async start(): Promise<void> {
     try {
+      await this.ensureRecoverySchema();
       await this.recoverInterruptedRuns();
       await this.triggerTick();
     } catch (error) {
@@ -94,6 +95,26 @@ export class MaintenanceScheduler {
     }
     this.timer = setInterval(() => void this.triggerTick(), 5_000);
     logger.info('Worker maintenance scheduler started');
+  }
+
+  private async ensureRecoverySchema(): Promise<void> {
+    await sequelize.query(
+      `ALTER TABLE maintenance_requests
+         ADD COLUMN IF NOT EXISTS payload JSONB NOT NULL DEFAULT '{}'::jsonb`,
+    );
+    await sequelize.query(
+      `ALTER TABLE maintenance_runs
+         ADD COLUMN IF NOT EXISTS progress JSONB NOT NULL DEFAULT '[]'::jsonb`,
+    );
+    await sequelize.query(
+      'ALTER TABLE maintenance_requests DROP CONSTRAINT IF EXISTS maintenance_requests_job_check',
+    );
+    await sequelize.query(
+      `ALTER TABLE maintenance_requests
+         ADD CONSTRAINT maintenance_requests_job_check
+         CHECK (job_key IN ('backup', 'restore'))`,
+    );
+    logger.info('Recovery schema verified');
   }
 
   async stop(): Promise<void> {
