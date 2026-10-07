@@ -13,6 +13,7 @@ COPY packages/api/package.json packages/api/package.json
 COPY packages/client/package.json packages/client/package.json
 COPY packages/common/package.json packages/common/package.json
 COPY packages/worker/package.json packages/worker/package.json
+COPY scripts ./scripts
 
 RUN pnpm install --frozen-lockfile
 
