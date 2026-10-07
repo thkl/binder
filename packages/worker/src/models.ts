@@ -182,7 +182,7 @@ export class MaintenanceRun extends Model {
   declare uuid: string;
 
   @Column({ field: 'job_key', type: DataType.STRING(64) })
-  declare jobKey: 'backup' | 'backup-retention' | 'storage-consistency';
+  declare jobKey: 'backup' | 'backup-retention' | 'storage-consistency' | 'restore';
 
   @Column({ type: DataType.STRING(32) })
   declare status: 'running' | 'succeeded' | 'failed';

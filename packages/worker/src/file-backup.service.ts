@@ -1,15 +1,16 @@
 import { execFile, spawn } from 'node:child_process';
 import * as fs from 'node:fs/promises';
-import { createWriteStream } from 'node:fs';
+import { createReadStream, createWriteStream } from 'node:fs';
 import * as path from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { promisify } from 'node:util';
-import { Encrypter } from 'age-encryption';
+import { Decrypter, Encrypter } from 'age-encryption';
 import { Op } from 'sequelize';
 import { ApplicationSetting } from './models.js';
 import { config, decryptSettingSecret, readRequiredEnvironment } from './config.js';
 import { FileProviderFactory } from './file-provider/file-provider-factory.js';
+import { FileProvider } from './file-provider/file-provider.js';
 import { logger } from './logger.js';
 
 const execFileAsync = promisify(execFile);
@@ -27,6 +28,12 @@ export interface FileBackupResult {
   artifactName: string;
   sizeBytes: number;
   uploaded: boolean;
+}
+
+export interface FileRestoreResult {
+  scope: 'database' | 'full';
+  artifactName: string;
+  storageRestored: boolean;
 }
 
 export class FileBackupService {
@@ -171,6 +178,159 @@ export class FileBackupService {
       });
     }
     return candidates.length;
+  }
+
+  async restoreEncryptedBackup(
+    provider: FileProvider,
+    remotePath: string,
+    password: string,
+  ): Promise<FileRestoreResult> {
+    const restoreRoot = await fs.mkdtemp(path.join(config.storageRoot, '.binder-restore-'));
+    const encryptedPath = path.join(restoreRoot, 'backup.tar.gz.age');
+    const archivePath = path.join(restoreRoot, 'backup.tar.gz');
+    const extractedRoot = path.join(restoreRoot, 'extracted');
+    await fs.mkdir(extractedRoot, { recursive: true });
+
+    try {
+      logger.info('Recovery download started', { remotePath });
+      await provider.readFile(remotePath, encryptedPath);
+      logger.info('Recovery download completed', { remotePath });
+
+      const encrypted = Readable.toWeb(
+        createReadStream(encryptedPath),
+      ) as unknown as ReadableStream<Uint8Array>;
+      const decrypter = new Decrypter();
+      decrypter.addPassphrase(password);
+      const decrypted = await decrypter.decrypt(encrypted);
+      await pipeline(Readable.fromWeb(decrypted as any), createWriteStream(archivePath));
+      logger.info('Recovery archive decrypted', { remotePath });
+
+      const listing = await execFileAsync('tar', ['-tzf', archivePath], {
+        maxBuffer: 4 * 1024 * 1024,
+      });
+      const entries = listing.stdout
+        .split('\n')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+      this.validateArchiveEntries(entries);
+      const detailedListing = await execFileAsync('tar', ['-tvzf', archivePath], {
+        maxBuffer: 4 * 1024 * 1024,
+      });
+      if (detailedListing.stdout.split('\n').some((entry) => /^[lh]/.test(entry))) {
+        throw new Error('Recovery archive contains a link and was rejected');
+      }
+      await execFileAsync(
+        'tar',
+        ['-xzf', archivePath, '--no-same-owner', '--no-absolute-names', '-C', extractedRoot],
+        { maxBuffer: 4 * 1024 * 1024 },
+      );
+
+      const manifestPath = path.join(extractedRoot, 'manifest.json');
+      const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as {
+        format?: string;
+        version?: number;
+        scope?: 'database' | 'full';
+      };
+      if (manifest.format !== 'age-encrypted-tar-gzip' || manifest.version !== 1) {
+        throw new Error('Unsupported recovery archive format');
+      }
+      if (manifest.scope !== 'database' && manifest.scope !== 'full') {
+        throw new Error('Recovery archive does not declare a valid scope');
+      }
+      await fs.access(path.join(extractedRoot, 'database.dump'));
+
+      let stagedStorage: string | undefined;
+      if (manifest.scope === 'full') {
+        const topLevel = entries
+          .map((entry) => entry.split('/')[0])
+          .find((entry) => entry !== 'database.dump' && entry !== 'manifest.json');
+        if (!topLevel) throw new Error('Full recovery archive does not contain document storage');
+        stagedStorage = path.join(extractedRoot, topLevel);
+        const stat = await fs.stat(stagedStorage);
+        if (!stat.isDirectory()) throw new Error('Recovery storage entry is not a directory');
+      }
+
+      logger.info('Recovery archive validated; restoring database', {
+        remotePath,
+        scope: manifest.scope,
+      });
+      await this.restoreDatabase(path.join(extractedRoot, 'database.dump'));
+      if (stagedStorage) await this.replaceStorage(stagedStorage);
+      logger.info('Recovery restore completed', {
+        remotePath,
+        scope: manifest.scope,
+        storageRestored: Boolean(stagedStorage),
+      });
+      return {
+        scope: manifest.scope,
+        artifactName: path.basename(remotePath),
+        storageRestored: Boolean(stagedStorage),
+      };
+    } finally {
+      await fs.rm(restoreRoot, { recursive: true, force: true });
+    }
+  }
+
+  private validateArchiveEntries(entries: string[]): void {
+    if (!entries.includes('database.dump') || !entries.includes('manifest.json')) {
+      throw new Error('Recovery archive is missing its database dump or manifest');
+    }
+    for (const entry of entries) {
+      if (entry.startsWith('/') || entry.split('/').includes('..')) {
+        throw new Error(`Recovery archive contains an unsafe path: ${entry}`);
+      }
+    }
+  }
+
+  private async restoreDatabase(dumpPath: string): Promise<void> {
+    const { stderr } = await execFileAsync(
+      process.env.PG_RESTORE_PATH ?? 'pg_restore',
+      [
+        '--clean',
+        '--if-exists',
+        '--exit-on-error',
+        '--no-owner',
+        '--host',
+        readRequiredEnvironment('DATABASE_HOST'),
+        '--port',
+        String(process.env.DATABASE_PORT ?? 5432),
+        '--username',
+        readRequiredEnvironment('DATABASE_USER'),
+        '--dbname',
+        readRequiredEnvironment('DATABASE_NAME'),
+        dumpPath,
+      ],
+      {
+        env: { ...process.env, PGPASSWORD: readRequiredEnvironment('DATABASE_PASSWORD') },
+        maxBuffer: 4 * 1024 * 1024,
+      },
+    );
+    if (stderr.trim())
+      logger.warn('pg_restore reported warnings', { stderr: stderr.trim().slice(0, 2000) });
+  }
+
+  private async replaceStorage(stagedStorage: string): Promise<void> {
+    const parent = path.dirname(config.storageRoot);
+    await fs.mkdir(parent, { recursive: true });
+    const previousStorage = `${config.storageRoot}.before-restore-${Date.now()}`;
+    let movedPrevious = false;
+    try {
+      await fs.rename(config.storageRoot, previousStorage);
+      movedPrevious = true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+    try {
+      await fs.rename(stagedStorage, config.storageRoot);
+      logger.info('Recovery storage switched into place', { storageRoot: config.storageRoot });
+    } catch (error) {
+      if (movedPrevious)
+        await fs.rename(previousStorage, config.storageRoot).catch(() => undefined);
+      throw error;
+    }
+    if (movedPrevious) {
+      logger.warn('Previous storage retained after recovery', { previousStorage });
+    }
   }
 
   private async createDatabaseDump(targetPath: string): Promise<void> {

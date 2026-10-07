@@ -23,9 +23,10 @@ interface DropboxListFolderResponse {
 
 export class DropboxFileProvider extends FileProvider {
   constructor(
-    private readonly refreshToken: string,
-    private readonly appKey: string,
-    private readonly appSecret: string,
+    private readonly refreshToken: string | null,
+    private readonly appKey: string | null,
+    private readonly appSecret: string | null,
+    private readonly oneTimeAccessToken?: string,
   ) {
     super();
   }
@@ -152,6 +153,10 @@ export class DropboxFileProvider extends FileProvider {
   }
 
   private async accessToken(): Promise<string> {
+    if (this.oneTimeAccessToken) return this.oneTimeAccessToken;
+    if (!this.refreshToken || !this.appKey || !this.appSecret) {
+      throw new Error('Dropbox credentials are incomplete');
+    }
     const response = await fetch('https://api.dropboxapi.com/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

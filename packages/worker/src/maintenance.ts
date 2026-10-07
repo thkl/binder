@@ -14,6 +14,8 @@ import {
 } from './models.js';
 import { sequelize } from './database.js';
 import { FileBackupService, FileBackupSettings } from './file-backup.service.js';
+import { FileProviderFactory } from './file-provider/file-provider-factory.js';
+import { decryptSettingSecret } from './config.js';
 import { logger } from './logger.js';
 import { CronSchedule } from './maintenance-cron.js';
 import { resolveStoragePath } from './storage.js';
@@ -40,6 +42,15 @@ interface StorageProblem {
   details: string;
 }
 
+interface RecoveryRequestPayload {
+  filename: string;
+  remoteFolder: string;
+  password: string;
+  passwordIv: string;
+  accessToken?: string;
+  accessTokenIv?: string;
+}
+
 const DEFAULT_SETTINGS: MaintenanceSettings = {
   root: path.resolve(process.env.APP_ROOT_PATH ?? process.cwd(), 'backup'),
   enabled: false,
@@ -61,6 +72,7 @@ const DEFAULT_SETTINGS: MaintenanceSettings = {
 
 export class MaintenanceScheduler {
   private readonly fileBackup = new FileBackupService();
+  private readonly providers = new FileProviderFactory();
   private timer?: NodeJS.Timeout;
   private readonly lastTriggeredMinutes = new Map<string, number>();
   private running = false;
@@ -105,6 +117,11 @@ export class MaintenanceScheduler {
 
     try {
       const settings = await this.loadSettings();
+      const restoreRun = await this.claimRestore();
+      if (restoreRun) {
+        await this.executeRestore(restoreRun);
+        return;
+      }
       await this.runPipelineJobRetention(settings.pipelineJobRetentionDays);
       const manualRun = await this.claimManualBackup();
       if (manualRun) {
@@ -173,6 +190,71 @@ export class MaintenanceScheduler {
       });
       logger.error('Backup failed', {
         scope: settings.backup.scope,
+        error: this.errorMessage(error),
+      });
+    }
+  }
+
+  private async executeRestore(run: MaintenanceRun): Promise<void> {
+    const started = Date.now();
+    const payload = run.getDataValue('restorePayload') as RecoveryRequestPayload | undefined;
+    try {
+      if (!payload?.filename || !payload.password || !payload.passwordIv) {
+        throw new Error('Recovery request payload is incomplete');
+      }
+      const password = decryptSettingSecret(payload.password, payload.passwordIv);
+      const provider = payload.accessToken
+        ? this.providers.createWithAccessToken(
+            decryptSettingSecret(payload.accessToken, payload.accessTokenIv ?? ''),
+          )
+        : await this.providers.create();
+      if (!provider) throw new Error('No Dropbox provider is configured for recovery');
+
+      const remoteFolder = payload.remoteFolder || '/';
+      const remotePath = `${remoteFolder === '/' ? '' : remoteFolder.replace(/\/$/, '')}/${payload.filename}`;
+      logger.info('Recovery restore started', { runUuid: run.uuid, remotePath });
+      const result = await this.fileBackup.restoreEncryptedBackup(provider, remotePath, password);
+      await run
+        .update({
+          status: 'succeeded',
+          finishedAt: new Date(),
+          durationMs: Date.now() - started,
+          artifactName: result.artifactName,
+          error: null,
+        })
+        .catch((error) =>
+          logger.warn(
+            'Recovery completed but its status could not be persisted after database restore',
+            {
+              runUuid: run.uuid,
+              error: this.errorMessage(error),
+            },
+          ),
+        );
+      logger.info('Recovery restore finished successfully; restart the API and worker', {
+        runUuid: run.uuid,
+        scope: result.scope,
+        storageRestored: result.storageRestored,
+      });
+      // The restored database can invalidate this process' ORM state and pipeline leases.
+      // Let the container supervisor start a clean worker after the successful restore.
+      setTimeout(() => process.kill(process.pid, 'SIGTERM'), 100);
+    } catch (error) {
+      await run
+        .update({
+          status: 'failed',
+          finishedAt: new Date(),
+          durationMs: Date.now() - started,
+          error: this.errorMessage(error),
+        })
+        .catch((updateError) =>
+          logger.warn('Recovery failure status could not be persisted', {
+            runUuid: run.uuid,
+            error: this.errorMessage(updateError),
+          }),
+        );
+      logger.error('Recovery restore failed; no further restore steps were attempted', {
+        runUuid: run.uuid,
         error: this.errorMessage(error),
       });
     }
@@ -489,9 +571,51 @@ export class MaintenanceScheduler {
   }
 
   private async hasRunning(
-    jobKey: 'backup' | 'backup-retention' | 'storage-consistency',
+    jobKey: 'backup' | 'backup-retention' | 'storage-consistency' | 'restore',
   ): Promise<boolean> {
     return Boolean(await MaintenanceRun.findOne({ where: { jobKey, status: 'running' } }));
+  }
+
+  private async claimRestore(): Promise<MaintenanceRun | null> {
+    return sequelize.transaction(async (transaction) => {
+      const request = await MaintenanceRequest.findOne({
+        where: { jobKey: 'restore' },
+        order: [['createdAt', 'ASC']],
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+        skipLocked: true,
+      });
+      if (!request) return null;
+
+      const run = await MaintenanceRun.create(
+        {
+          uuid: randomUUID(),
+          jobKey: 'restore',
+          status: 'running',
+          startedAt: new Date(),
+          finishedAt: null,
+          nextRunAt: null,
+          durationMs: null,
+          artifactName: null,
+          sizeBytes: null,
+          deletedFiles: null,
+          checkedFiles: null,
+          issueCount: null,
+          error: null,
+        },
+        { transaction },
+      );
+      // Keep the encrypted payload attached to the in-memory run only. It is never logged
+      // and is not persisted in maintenance_runs.
+      run.setDataValue('restorePayload', request.payload as unknown as RecoveryRequestPayload);
+      await request.destroy({ transaction });
+      logger.info('Claimed recovery restore request', {
+        requestUuid: request.uuid,
+        runUuid: run.uuid,
+        filename: request.payload?.filename,
+      });
+      return run;
+    });
   }
 
   private async claimManualBackup(): Promise<MaintenanceRun | null> {

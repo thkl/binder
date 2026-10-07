@@ -28,4 +28,9 @@ export class FileProviderFactory {
     }
     return new DropboxFileProvider(refreshToken, appKey, appSecret);
   }
+
+  createWithAccessToken(accessToken: string): FileProvider {
+    if (!accessToken.trim()) throw new Error('Dropbox access token is empty');
+    return new DropboxFileProvider(null, null, null, accessToken.trim());
+  }
 }
