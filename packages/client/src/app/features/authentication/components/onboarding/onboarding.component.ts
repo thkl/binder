@@ -212,6 +212,10 @@ export class OnboardingComponent {
     }
   }
 
+  goToLogin(): void {
+    window.location.assign(window.location.pathname);
+  }
+
   async refreshRecoveryBackups(): Promise<void> {
     await this.setup.loadRecoveryBackups(
       this.recoveryAccessToken(),

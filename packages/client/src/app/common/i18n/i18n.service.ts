@@ -158,6 +158,20 @@ const EN: TranslationMap = {
   'setup.restoreQueuedCopy':
     'The restore worker will download, validate, decrypt, and restore the selected backup. Follow the worker log for progress. Restart the API and worker after a successful restore.',
   'setup.restoreProgress': 'Recovery progress',
+  'setup.recoveryReviewTitle': 'Recovery completed — review these settings',
+  'setup.recoveryReviewCopy':
+    'The documents and database were restored. Check the target installation configuration before normal use.',
+  'setup.recoveryReviewDropbox':
+    'Dropbox: set the app key and secret, then reconnect the target account if needed.',
+  'setup.recoveryReviewOidc':
+    'OIDC / SSO: verify the issuer URL, client ID, secret, and redirect settings.',
+  'setup.recoveryReviewSmtp':
+    'SMTP: verify the server, security mode, sender address, and password.',
+  'setup.recoveryReviewAi': 'AI providers: verify endpoints, models, and API keys.',
+  'setup.recoveryReviewStorage': 'Storage and inbox: verify mounted paths and the import owner.',
+  'setup.recoveryReviewBackup':
+    'Backups: verify the destination, Dropbox folder, schedule, and encryption password.',
+  'setup.goToLogin': 'Go to Login',
   'setup.recoveryStart': 'Recover an existing installation',
   'setup.recoveryAccessToken': 'One-time Dropbox access token',
   'setup.recoveryAccessTokenHint':
@@ -916,6 +930,21 @@ const DE: TranslationMap = {
   'setup.restoreQueuedCopy':
     'Der Restore-Worker lädt das ausgewählte Backup herunter, prüft, entschlüsselt und stellt es wieder her. Den Fortschritt sehen Sie im Worker-Log. Starten Sie API und Worker nach erfolgreicher Wiederherstellung neu.',
   'setup.restoreProgress': 'Fortschritt der Wiederherstellung',
+  'setup.recoveryReviewTitle': 'Wiederherstellung abgeschlossen — Einstellungen prüfen',
+  'setup.recoveryReviewCopy':
+    'Dokumente und Datenbank wurden wiederhergestellt. Prüfen Sie die Konfiguration der Zielinstallation vor der normalen Nutzung.',
+  'setup.recoveryReviewDropbox':
+    'Dropbox: App-Key und Secret setzen und bei Bedarf das Zielkonto erneut verbinden.',
+  'setup.recoveryReviewOidc':
+    'OIDC / SSO: Aussteller-URL, Client-ID, Secret und Redirect-Einstellungen prüfen.',
+  'setup.recoveryReviewSmtp':
+    'SMTP: Server, Sicherheitsmodus, Absenderadresse und Passwort prüfen.',
+  'setup.recoveryReviewAi': 'KI-Anbieter: Endpunkte, Modelle und API-Schlüssel prüfen.',
+  'setup.recoveryReviewStorage':
+    'Speicher und Posteingang: gemountete Pfade und Importbesitzer prüfen.',
+  'setup.recoveryReviewBackup':
+    'Backups: Ziel, Dropbox-Ordner, Zeitplan und Verschlüsselungspasswort prüfen.',
+  'setup.goToLogin': 'Zum Login',
   'setup.recoveryStart': 'Vorhandene Installation wiederherstellen',
   'setup.recoveryAccessToken': 'Einmaliger Dropbox-Zugriffstoken',
   'setup.recoveryAccessTokenHint':

@@ -465,6 +465,25 @@
             @if (run.status === 'failed' && run.error) {
               <p class="error" role="alert">{{ run.error }}</p>
             }
+            @if (run.status === 'succeeded') {
+              <div class="ai-note" role="status">
+                <strong>{{ 'setup.recoveryReviewTitle' | t }}</strong>
+                <p>{{ 'setup.recoveryReviewCopy' | t }}</p>
+                <ul>
+                  <li>{{ 'setup.recoveryReviewDropbox' | t }}</li>
+                  <li>{{ 'setup.recoveryReviewOidc' | t }}</li>
+                  <li>{{ 'setup.recoveryReviewSmtp' | t }}</li>
+                  <li>{{ 'setup.recoveryReviewAi' | t }}</li>
+                  <li>{{ 'setup.recoveryReviewStorage' | t }}</li>
+                  <li>{{ 'setup.recoveryReviewBackup' | t }}</li>
+                </ul>
+              </div>
+              <div class="onboarding-actions">
+                <button type="button" (click)="goToLogin()">
+                  {{ 'setup.goToLogin' | t }}
+                </button>
+              </div>
+            }
           }
         } @else {
           <div class="setting-summary">
