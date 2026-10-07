@@ -16,6 +16,12 @@ packages/
 └── worker/   # Asynchronous document processing and maintenance jobs
 ```
 
+- `api` serves the REST API and Angular client.
+- `worker` handles document ingestion, malware scanning, OCR, extraction, indexing, email import, and maintenance jobs.
+- `postgres` stores metadata, jobs, users, and search data using `pgvector`.
+- `clamav` provides the malware-scanning daemon used by the worker.
+- Shared Docker volumes hold PostgreSQL data, document storage, backups, and logs.
+
 ## Features
 
 - Filesystem-backed document storage with PostgreSQL metadata and durable worker processing.
@@ -32,11 +38,6 @@ packages/
 
 The easiest way to install Binder is the included setup script. It creates the environment configuration, guides you through a new or recovery installation, and starts the Docker Compose stack:
 
-- `api` serves the REST API and Angular client.
-- `worker` handles document ingestion, malware scanning, OCR, extraction, indexing, email import, and maintenance jobs.
-- `postgres` stores metadata, jobs, users, and search data using `pgvector`.
-- `clamav` provides the malware-scanning daemon used by the worker.
-- Shared Docker volumes hold PostgreSQL data, document storage, backups, and logs.
 
 ```bash
 ./scripts/setup.sh
