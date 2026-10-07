@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
+import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { SettingsService } from '../../services/settings.service';
 
 @Component({
   selector: 'binder-api-token-manager',
   standalone: true,
-  imports: [ConfirmDialogComponent],
+  imports: [ConfirmDialogComponent, TranslatePipe],
   templateUrl: './api-token-manager.component.html',
   styleUrl: './api-token-manager.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

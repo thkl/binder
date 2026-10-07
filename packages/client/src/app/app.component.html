@@ -1,6 +1,6 @@
 @if (auth.loading()) {
   <main class="loading">
-    <div class="loading-mark">B</div>
+    <div class="loading-mark" aria-hidden="true">B</div>
     <p>{{ 'app.loading' | t }}</p>
   </main>
 } @else if (auth.setupRequired() || auth.onboardingActive()) {
@@ -15,15 +15,16 @@
     [message]="'password.firstMessage' | t"
   />
 } @else {
+  <a class="skip-link" href="#main-content">{{ 'common.skipToContent' | t }}</a>
   <main class="workspace">
     <header class="topbar">
-      <div class="brand-lockup click" routerLink="/">
-        <span class="brand-mark">B</span>
+      <a class="brand-lockup click" routerLink="/" aria-label="{{ 'app.vault' | t }}">
+        <span class="brand-mark" aria-hidden="true">B</span>
         <div>
           <div class="eyebrow">{{ 'app.privateCloud' | t }}</div>
           <h1>{{ 'app.vault' | t }}</h1>
         </div>
-      </div>
+      </a>
       <div class="topbar-actions">
         <div class="nav-menu" [class.is-open]="openMenu() === 'documents'">
           <button
@@ -213,6 +214,6 @@
         </div>
       </div>
     </header>
-    <router-outlet />
+    <div id="main-content" tabindex="-1"><router-outlet /></div>
   </main>
 }

@@ -5,7 +5,7 @@
       <h3>{{ 'aiProviders.title' | t }}</h3>
       <p class="provider-copy">{{ 'aiProviders.copy' | t }}</p>
     </div>
-    <span class="provider-type">OpenAI-compatible</span>
+    <span class="provider-type">{{ 'aiProviders.compatible' | t }}</span>
   </header>
 
   @if (aiProviders.loading()) {
@@ -165,7 +165,7 @@
           <input
             type="url"
             [value]="draft().assistantEndpoint"
-            placeholder="https://…/chat/completions"
+            [placeholder]="'aiProviders.assistantEndpointPlaceholder' | t"
             (input)="updateText('assistantEndpoint', $event)"
           />
         </label>
@@ -182,7 +182,7 @@
           <input
             type="url"
             [value]="draft().fileUploadEndpoint"
-            placeholder="https://…/files"
+            [placeholder]="'aiProviders.fileUploadEndpointPlaceholder' | t"
             (input)="updateText('fileUploadEndpoint', $event)"
           />
         </label>
@@ -191,7 +191,7 @@
           <input
             type="url"
             [value]="draft().fileAnalysisEndpoint"
-            placeholder="https://…/responses"
+            [placeholder]="'aiProviders.fileAnalysisEndpointPlaceholder' | t"
             (input)="updateText('fileAnalysisEndpoint', $event)"
           />
         </label>
@@ -208,7 +208,7 @@
           <input
             type="url"
             [value]="draft().embeddingEndpoint"
-            placeholder="https://…/embeddings"
+            [placeholder]="'aiProviders.embeddingEndpointPlaceholder' | t"
             (input)="updateText('embeddingEndpoint', $event)"
           />
         </label>

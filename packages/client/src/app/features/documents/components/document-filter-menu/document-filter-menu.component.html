@@ -15,7 +15,7 @@
   </button>
 
   @if (open()) {
-    <section class="filter-popover" role="dialog" [attr.aria-label]="label()">
+    <section class="filter-popover" role="dialog" aria-modal="true" [attr.aria-label]="label()">
       <div class="filter-popover-heading">
         <strong>{{ label() }}</strong>
         <button

@@ -14,7 +14,12 @@
           {{ documentUuids().length }} {{ 'documents.bulkMetadataSelected' | t }}
         </p>
       </div>
-      <button type="button" class="icon-button" (click)="closed.emit()" aria-label="Close">
+      <button
+        type="button"
+        class="icon-button"
+        (click)="closed.emit()"
+        [attr.aria-label]="'common.close' | t"
+      >
         ×
       </button>
     </header>

@@ -15,7 +15,7 @@
   }
 
   <div class="metadata-layout">
-    <aside class="library-nav glass-card" aria-label="Metadata categories">
+    <aside class="library-nav glass-card" [attr.aria-label]="'metadata.vocabulary' | t">
       <p class="sidebar-label">{{ 'metadata.vocabulary' | t }}</p>
       <button
         type="button"
@@ -61,7 +61,7 @@
         <span class="count-badge">{{ activeItems().length }} {{ 'metadata.entries' | t }}</span>
         @if (auth.user()?.isAdmin && this.activeKind() !== 'tags') {
           <div>
-            <div aria-label="scope" class="scope-switcher">
+            <div class="scope-switcher" [attr.aria-label]="'metadata.workspace' | t" role="group">
               <button
                 type="button"
                 [class.active]="currentScope() === 'system'"
@@ -114,7 +114,7 @@
                 [value]="translationEn()"
                 (input)="translationEn.set($any($event.target).value)"
                 maxlength="150"
-                placeholder="Invoice"
+                [placeholder]="'metadata.invoicePlaceholder' | t"
             /></label>
             <label
               ><span
@@ -123,7 +123,7 @@
                 [value]="translationDe()"
                 (input)="translationDe.set($any($event.target).value)"
                 maxlength="150"
-                placeholder="Rechnung"
+                [placeholder]="'metadata.invoiceGermanPlaceholder' | t"
             /></label>
           </div>
           @if (auth.user()?.isAdmin) {
@@ -322,14 +322,13 @@
         ><input
           [value]="definitionKey()"
           (input)="definitionKey.set($any($event.target).value)"
-          placeholder="issueDate"
+          [placeholder]="'metadata.issueDatePlaceholder' | t"
           pattern="[a-z][a-zA-Z0-9_]*"
-          title="Start with a lowercase letter; then use only letters, numbers, or underscores."
+          [attr.title]="'metadata.keyHint' | t"
           aria-describedby="metadata-key-help"
           required
         /><small id="metadata-key-help" class="field-help"
-          >Lowercase letter first; then letters, numbers, or underscores only. Example:
-          <code>issueDate</code></small
+          >{{ 'metadata.keyHintExample' | t }} <code>issueDate</code></small
         ></label
       >
       <label
@@ -337,7 +336,7 @@
         ><input
           [value]="definitionLabel()"
           (input)="definitionLabel.set($any($event.target).value)"
-          placeholder="Date of issue"
+          [placeholder]="'metadata.dateOfIssuePlaceholder' | t"
           required
       /></label>
       <label
@@ -346,8 +345,8 @@
           [value]="definitionType()"
           (change)="definitionType.set($any($event.target).value)"
         >
-          <option value="text">Text</option>
-          <option value="number">Number</option>
+          <option value="text">{{ 'metadata.typeText' | t }}</option>
+          <option value="number">{{ 'metadata.typeNumber' | t }}</option>
           <option value="date">{{ 'metadata.date' | t }}</option>
           <option value="datetime">{{ 'metadata.dateTime' | t }}</option>
           <option value="boolean">{{ 'metadata.yesNo' | t }}</option>
@@ -357,11 +356,12 @@
       >
       @if (definitionType() === 'select' || definitionType() === 'multi-select') {
         <label
-          ><span>Options <small>comma separated</small></span
+          ><span
+            >{{ 'metadata.options' | t }} <small>{{ 'metadata.commaSeparated' | t }}</small></span
           ><input
             [value]="definitionOptions()"
             (input)="definitionOptions.set($any($event.target).value)"
-            placeholder="Open, In progress, Done"
+            [placeholder]="'metadata.optionPlaceholder' | t"
             required
         /></label>
       }

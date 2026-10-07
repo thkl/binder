@@ -1,28 +1,30 @@
 <section class="api-token-manager glass-card settings-page">
   <header class="card-heading settings-heading">
     <div>
-      <p class="section-kicker">MCP ACCESS</p>
-      <h3>API tokens</h3>
-      <p class="muted">Create a user-scoped bearer token for remote MCP clients.</p>
+      <p class="section-kicker">{{ 'mcp.sectionKicker' | t }}</p>
+      <h3>{{ 'mcp.title' | t }}</h3>
+      <p class="muted">{{ 'mcp.copy' | t }}</p>
     </div>
   </header>
 
   @if (createdToken(); as token) {
     <div class="token-reveal" role="alert">
-      <strong>Copy this token now. It will not be shown again.</strong>
+      <strong>{{ 'mcp.copyToken' | t }}</strong>
       <code>{{ token }}</code>
-      <button type="button" class="secondary-button" (click)="createdToken.set(null)">Done</button>
+      <button type="button" class="secondary-button" (click)="createdToken.set(null)">
+        {{ 'mcp.done' | t }}
+      </button>
     </div>
   }
 
   <form class="token-form" (submit)="$event.preventDefault(); create()">
     <div class="fields">
       <label class="text-field">
-        <span class="field-label">Token name</span>
+        <span class="field-label">{{ 'mcp.tokenName' | t }}</span>
         <input
           [value]="name()"
           (input)="name.set($any($event.target).value)"
-          placeholder="Claude Binder"
+          [placeholder]="'mcp.tokenNamePlaceholder' | t"
           required
         />
       </label>
@@ -32,21 +34,21 @@
           [checked]="allowWrite()"
           (change)="allowWrite.set($any($event.target).checked)"
         />
-        <span class="checkbox-copy">Allow document writes</span>
+        <span class="checkbox-copy">{{ 'mcp.allowWrites' | t }}</span>
         <span class="toggle"><span></span></span>
       </label>
       <label class="text-field">
-        <span class="field-label">Token expiration</span>
+        <span class="field-label">{{ 'mcp.expiration' | t }}</span>
         <select
           [value]="expirationDays()"
           (change)="expirationDays.set(+$any($event.target).value === 180 ? 180 : 90)"
         >
-          <option [value]="90">90 days (default)</option>
-          <option [value]="180">180 days</option>
+          <option [value]="90">{{ 'mcp.expiration90' | t }}</option>
+          <option [value]="180">{{ 'mcp.expiration180' | t }}</option>
         </select>
       </label>
       <button class="primary-action" type="submit" [disabled]="saving() || !name().trim()">
-        Create token
+        {{ 'mcp.create' | t }}
       </button>
     </div>
   </form>
@@ -59,25 +61,25 @@
           <small>{{ token.tokenPrefix }} · {{ token.permissions.join(', ') }}</small>
         </div>
         @if (token.revokedAt) {
-          <span class="status-badge inactive">Revoked</span>
+          <span class="status-badge inactive">{{ 'mcp.revoked' | t }}</span>
         } @else {
           <button type="button" class="secondary-button" (click)="revoke(token.uuid)">
-            Revoke
+            {{ 'mcp.revoke' | t }}
           </button>
         }
       </div>
     } @empty {
-      <p class="muted">No API tokens have been created.</p>
+      <p class="muted">{{ 'mcp.empty' | t }}</p>
     }
   </div>
 </section>
 
 @if (pendingRevokeUuid()) {
   <binder-confirm-dialog
-    title="Revoke API token"
-    message="Revoke this token? Existing MCP connections will stop working."
-    confirmLabel="Revoke token"
-    cancelLabel="Cancel"
+    [title]="'mcp.confirmTitle' | t"
+    [message]="'mcp.confirmMessage' | t"
+    [confirmLabel]="'mcp.confirm' | t"
+    [cancelLabel]="'mcp.cancel' | t"
     (confirmed)="confirmRevoke()"
     (cancelled)="cancelRevoke()"
   />

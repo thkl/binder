@@ -11,7 +11,7 @@
       </div>
     </header>
     @if (activeSuggestion(); as pending) {
-      <section class="ai-suggestion" aria-label="AI metadata suggestions">
+      <section class="ai-suggestion" [attr.aria-label]="'editor.aiReview' | t">
         <div class="suggestion-heading">
           <div>
             <span class="section-kicker">{{ 'editor.aiReview' | t }}</span
@@ -266,13 +266,16 @@
     </div>
     @if (metadata.definitions().length > 0) {
       <div class="custom-fields">
-        <div class="tag-label"><span>Additional information</span><small>Custom fields</small></div>
+        <div class="tag-label">
+          <span>{{ 'editor.additional' | t }}</span
+          ><small>{{ 'editor.customFields' | t }}</small>
+        </div>
         @for (definition of metadata.definitions(); track definition.uuid) {
           <label class="field custom-field"
             ><span
               >{{ definition.label }}
               @if (definition.mandatory) {
-                <em>Required</em>
+                <em>{{ 'metadata.requiredShort' | t }}</em>
               }
             </span>
             @if (definition.type === 'boolean') {
@@ -286,7 +289,7 @@
                 [value]="customValue(definition.key)"
                 (change)="setCustomValue(definition.key, $any($event.target).value)"
               >
-                <option value="">Choose…</option>
+                <option value="">{{ 'editor.choose' | t }}</option>
                 @for (option of definition.options ?? []; track option) {
                   <option [value]="option">{{ option }}</option>
                 }
@@ -299,7 +302,7 @@
                     : ''
                 "
                 (change)="setMultiValue(definition.key, $event)"
-                placeholder="Comma separated values"
+                [placeholder]="'editor.comma' | t"
               />
             } @else {
               <input
@@ -391,7 +394,7 @@
                 class="extracted-text"
                 readonly
                 [value]="extractedText()"
-                aria-label="Extracted document text"
+                [attr.aria-label]="'editor.extractedText' | t"
               ></textarea>
             } @else {
               <p class="preview-empty">{{ 'editor.noExtractedText' | t }}</p>
@@ -402,7 +405,7 @@
     }
     <footer class="editor-footer">
       @if (saved()) {
-        <span class="saved">✓ Saved</span>
+        <span class="saved" role="status">✓ {{ 'editor.saved' | t }}</span>
       }
       <button type="button" class="save-button" [disabled]="metadata.saving()" (click)="save()">
         {{ metadata.saving() ? 'Saving…' : 'Save metadata' }}

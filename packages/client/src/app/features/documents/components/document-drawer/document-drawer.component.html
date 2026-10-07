@@ -204,9 +204,14 @@
     </main>
 
     @if (showClosePrompt()) {
-      <div class="unsaved-warning" role="alertdialog" aria-labelledby="drawer-unsaved-title">
+      <div
+        class="unsaved-warning"
+        role="alertdialog"
+        aria-labelledby="drawer-unsaved-title"
+        aria-describedby="drawer-unsaved-copy"
+      >
         <strong id="drawer-unsaved-title">{{ 'documents.unsavedTitle' | t }}</strong>
-        <p>{{ 'documents.unsavedCopy' | t }}</p>
+        <p id="drawer-unsaved-copy">{{ 'documents.unsavedCopy' | t }}</p>
         <div class="unsaved-actions">
           <button type="button" class="secondary-button" (click)="keepEditing()">
             {{ 'documents.keepEditing' | t }}

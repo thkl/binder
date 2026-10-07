@@ -28,6 +28,7 @@ export class ConfirmDialogComponent implements AfterViewInit, OnDestroy {
   readonly cancelled = output<void>();
 
   private readonly document = inject(DOCUMENT);
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly confirmButton =
     viewChild.required<ElementRef<HTMLButtonElement>>('confirmButton');
   private readonly previousActiveElement = this.document.activeElement;
@@ -45,6 +46,24 @@ export class ConfirmDialogComponent implements AfterViewInit, OnDestroy {
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.cancelled.emit();
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(
+      this.host.nativeElement.querySelectorAll('button:not([disabled])'),
+    ) as HTMLButtonElement[];
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && this.document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && this.document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   closeFromBackdrop(event: MouseEvent): void {

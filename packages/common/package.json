@@ -7,19 +7,19 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "import": "./dist/esm/index.mjs",
       "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "default": "./dist/esm/index.mjs"
     },
     "./secrets": {
       "types": "./dist/secrets.d.ts",
-      "import": "./dist/secrets.js",
+      "import": "./dist/esm/secrets.mjs",
       "require": "./dist/secrets.js",
-      "default": "./dist/secrets.js"
+      "default": "./dist/esm/secrets.mjs"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json && node ../../scripts/prepare-common-esm.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "pnpm build && node --test dist/index.spec.js",
     "coverage": "pnpm build && node --experimental-test-coverage --test dist/index.spec.js"

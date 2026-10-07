@@ -114,7 +114,7 @@
               [value]="row.folder.name"
               (blur)="finishRename(row.folder.uuid, $event)"
               (keydown)="handleRenameKeydown(row.folder.uuid, $event)"
-              aria-label="Folder name"
+              [attr.aria-label]="'folders.rename' | t"
             />
           } @else {
             <span class="folder-label" [attr.lang]="i18n.language()">{{ row.folder.name }}</span>

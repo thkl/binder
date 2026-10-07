@@ -11,13 +11,13 @@
     <binder-api-token-manager />
   } @else if (settingsService.loading()) {
     <div class="settings-status glass-card">
-      <span class="spinner"></span> Loading configuration…
+      <span class="spinner" aria-hidden="true"></span> {{ 'settings.loading' | t }}
     </div>
   } @else if (settingsService.error(); as error) {
     <div class="settings-status glass-card error" role="alert">{{ error }}</div>
   } @else if (settingsService.settings(); as settings) {
     <div class="settings-layout">
-      <aside class="section-sidebar glass-card" aria-label="Settings sections">
+      <aside class="section-sidebar glass-card" [attr.aria-label]="'settings.sections' | t">
         <p class="sidebar-label">{{ 'settings.sections' | t }}</p>
         <nav>
           @for (section of sections(); track section.key) {
@@ -135,7 +135,7 @@
                       <span class="field-label"
                         ><strong>{{ itemLabel(item) }}</strong>
                         @if (item.required) {
-                          <em>Required</em>
+                          <em>{{ 'settings.required' | t }}</em>
                         }
                       </span>
                       <small>{{ description(item) }}</small>
@@ -246,7 +246,7 @@
 
             <footer class="form-footer">
               @if (saved()) {
-                <span class="saved-message">✓ Settings saved</span>
+                <span class="saved-message" role="status">✓ {{ 'settings.saved' | t }}</span>
               }
               <button class="save-button" type="submit" [disabled]="settingsService.saving()">
                 {{ settingsService.saving() ? ('settings.saving' | t) : ('settings.save' | t) }}

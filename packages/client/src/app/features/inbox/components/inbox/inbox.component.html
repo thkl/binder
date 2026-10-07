@@ -47,7 +47,7 @@
     <div class="notice error" role="alert">{{ error }}</div>
   }
 
-  <div class="summary-grid" aria-label="Inbox summary">
+  <div class="summary-grid" [attr.aria-label]="'inbox.title' | t">
     <article class="summary-card glass-card">
       <span class="summary-label">{{ 'inbox.summary.new' | t }}</span
       ><strong>{{ newCount() }}</strong

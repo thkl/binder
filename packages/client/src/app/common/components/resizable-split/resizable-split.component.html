@@ -14,7 +14,7 @@
   <button
     type="button"
     class="resizable-split__divider"
-    aria-label="Resize panes"
+    [attr.aria-label]="'common.resizePanes' | t"
     role="separator"
     [attr.aria-orientation]="ariaOrientation()"
     [attr.aria-valuemin]="ariaValueMin()"
@@ -34,7 +34,7 @@
   <button
     type="button"
     class="resizable-split__height-divider"
-    aria-label="Resize split view height"
+    [attr.aria-label]="'common.resizeHeight' | t"
     role="separator"
     aria-orientation="horizontal"
     [attr.aria-valuemin]="ariaHeightValueMin()"

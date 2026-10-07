@@ -14,6 +14,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { TranslatePipe } from '../../i18n/i18n.service';
 
 export type ResizableSplitOrientation = 'vertical' | 'horizontal';
 export type ResizableSplitSizeUnit = 'px' | 'percent';
@@ -21,6 +22,7 @@ export type ResizableSplitSizeUnit = 'px' | 'percent';
 @Component({
   selector: 'resizable-split',
   standalone: true,
+  imports: [TranslatePipe],
   templateUrl: './resizable-split.component.html',
   styleUrl: './resizable-split.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
