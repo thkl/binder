@@ -3,6 +3,11 @@
   min-height: 100vh;
 }
 
+
+.white {
+  color: #e5f1ff;
+}
+
 .skip-link {
   position: fixed;
   z-index: 1000;
@@ -63,10 +68,12 @@
 .welcome-row {
   display: flex;
   align-items: center;
+
 }
 
 .brand-lockup {
   gap: 0.8rem;
+  text-decoration: none;
 }
 
 .brand-mark {

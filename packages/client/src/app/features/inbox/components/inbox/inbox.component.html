@@ -122,7 +122,12 @@
               }
             </div>
             @if (item.documentUuid) {
-              <a class="open-link" routerLink="/documents">{{ 'inbox.openDocuments' | t }} ↗</a>
+              <a
+                class="open-link"
+                routerLink="/documents"
+                [queryParams]="{ open: item.documentUuid }"
+                >{{ 'inbox.openDocuments' | t }} ↗</a
+              >
             }
             <button
               class="remove-link"

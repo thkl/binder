@@ -136,6 +136,13 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       distinctUntilChanged(),
     ),
   );
+  private readonly requestedDocumentUuid = toSignal(
+    this.activeRoute.queryParamMap.pipe(
+      map((params) => params.get('open')),
+      distinctUntilChanged(),
+    ),
+    { initialValue: null },
+  );
 
   private readonly folderPages = signal<Record<string, number>>({});
   private readonly allDocumentsFolderKey = '__all-documents__';
@@ -153,6 +160,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
     this.lastDocumentChangeRevision = revision;
     void this.refreshDocumentView();
+  });
+
+  private readonly requestedDocumentEffect = effect(() => {
+    const uuid = this.requestedDocumentUuid();
+    if (!uuid) return;
+    untracked(() => void this.openRequestedDocument(uuid));
   });
 
   readonly drawerDocument = computed(() => {
@@ -793,14 +806,27 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   openDocument(uuid: string): void {
+    const document = this.findDocument(uuid);
+    if (!document) return;
+    this.openDocumentRecord(document);
+  }
+
+  private async openRequestedDocument(uuid: string): Promise<void> {
+    if (!this.canLeaveMetadata()) return;
+    const document = await this.documents.loadDocument(uuid);
+    if (!document || this.requestedDocumentUuid() !== uuid) return;
+    this.openDocumentRecord(document);
+  }
+
+  private openDocumentRecord(document: Document): void {
     if (!this.canLeaveMetadata()) return;
     this.metadataClosePrompt.set(false);
     this.metadataDirty.set(false);
     this.drawerTab.set('preview');
     this.drawerMode.set('analysis');
-    this.drawerDocumentSnapshot.set(this.findDocument(uuid));
-    this.drawerDocumentUuid.set(uuid);
-    void this.documents.markOpened(uuid);
+    this.drawerDocumentSnapshot.set(document);
+    this.drawerDocumentUuid.set(document.uuid);
+    void this.documents.markOpened(document.uuid);
   }
 
   toggleMetadata(uuid: string): void {
