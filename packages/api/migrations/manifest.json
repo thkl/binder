@@ -432,6 +432,12 @@
                "required": [
                     "maintenance_runs"
                ]
+          },
+          "65": {
+               "required": [
+                    "maintenance_requests",
+                    "maintenance_runs"
+               ]
           }
      }
 }

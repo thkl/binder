@@ -41,6 +41,7 @@ services:
       NODE_ENV: production
       API_PORT: 3000
       APP_ROOT_PATH: /app
+      DATABASE_AUTOMIGRATE: 'true'
       SETUP_SECRET: ${SETUP_SECRET:?SETUP_SECRET is required}
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432

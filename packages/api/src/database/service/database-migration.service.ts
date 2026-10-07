@@ -14,13 +14,15 @@ export class DatabaseMigrationService {
   private isInitialized = false;
   private readonly initializationPromise: Promise<void>;
   private resolveInitialization!: () => void;
+  private rejectInitialization!: (error: Error) => void;
 
   constructor(
     private sequelize: Sequelize,
     private readonly configService: ConfigService<BinderConfig>,
   ) {
-    this.initializationPromise = new Promise<void>((resolve) => {
+    this.initializationPromise = new Promise<void>((resolve, reject) => {
       this.resolveInitialization = resolve;
+      this.rejectInitialization = reject;
     });
     this.logger.debug('DatabaseMigrationService initialized');
   }
@@ -41,16 +43,41 @@ export class DatabaseMigrationService {
       return;
     }
     try {
-      const autoMigrate = this.configService.get<string>('DATABASE_AUTOMIGRATE');
-      if (autoMigrate === 'true') {
-        this.logger.info('DATABASE_AUTOMIGRATE is active. Checking Versions');
-        await this.checkMigration();
-      } else {
-        this.logger.info('No DATABASE_AUTOMIGRATE set skipping migrations');
+      if (this.configService.get<string>('DATABASE_AUTOMIGRATE') !== 'true') {
+        this.logger.warn('DATABASE_AUTOMIGRATE is not enabled; running required migrations anyway');
       }
-    } finally {
+      if (!(await this.checkMigration())) {
+        throw new Error('Database migrations could not be completed');
+      }
+      await this.verifyRequiredSchema();
       this.isInitialized = true;
       this.resolveInitialization();
+    } catch (error) {
+      const failure = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Database initialization failed: ${failure.message}`);
+      this.rejectInitialization(failure);
+      throw failure;
+    }
+  }
+
+  private async verifyRequiredSchema(): Promise<void> {
+    const [rows] = await this.sequelize.query(
+      `SELECT table_name, column_name
+       FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND ((table_name = 'maintenance_requests' AND column_name = 'payload')
+           OR (table_name = 'maintenance_runs' AND column_name = 'progress'))`,
+    );
+    const columns = new Set(
+      (rows as Array<{ table_name: string; column_name: string }>).map(
+        (row) => `${row.table_name}.${row.column_name}`,
+      ),
+    );
+    const missing = ['maintenance_requests.payload', 'maintenance_runs.progress'].filter(
+      (column) => !columns.has(column),
+    );
+    if (missing.length > 0) {
+      throw new Error(`Required database schema is incomplete: ${missing.join(', ')}`);
     }
   }
 
