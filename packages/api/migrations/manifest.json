@@ -427,6 +427,11 @@
                "required": [
                     "maintenance_requests"
                ]
+          },
+          "64": {
+               "required": [
+                    "maintenance_runs"
+               ]
           }
      }
 }

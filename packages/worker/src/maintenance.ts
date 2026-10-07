@@ -213,7 +213,14 @@ export class MaintenanceScheduler {
       const remoteFolder = payload.remoteFolder || '/';
       const remotePath = `${remoteFolder === '/' ? '' : remoteFolder.replace(/\/$/, '')}/${payload.filename}`;
       logger.info('Recovery restore started', { runUuid: run.uuid, remotePath });
-      const result = await this.fileBackup.restoreEncryptedBackup(provider, remotePath, password);
+      await this.recordRestoreProgress(run, 'Recovery started');
+      const result = await this.fileBackup.restoreEncryptedBackup(
+        provider,
+        remotePath,
+        password,
+        (message) => this.recordRestoreProgress(run, message),
+      );
+      await this.recordRestoreProgress(run, 'Recovery completed successfully');
       await run
         .update({
           status: 'succeeded',
@@ -240,6 +247,9 @@ export class MaintenanceScheduler {
       // Let the container supervisor start a clean worker after the successful restore.
       setTimeout(() => process.kill(process.pid, 'SIGTERM'), 100);
     } catch (error) {
+      await this.recordRestoreProgress(run, this.errorMessage(error), 'error').catch(
+        () => undefined,
+      );
       await run
         .update({
           status: 'failed',
@@ -258,6 +268,18 @@ export class MaintenanceScheduler {
         error: this.errorMessage(error),
       });
     }
+  }
+
+  private async recordRestoreProgress(
+    run: MaintenanceRun,
+    message: string,
+    level: 'info' | 'error' | 'warning' = 'info',
+  ): Promise<void> {
+    const progress = Array.isArray(run.progress) ? run.progress : [];
+    const event = { at: new Date().toISOString(), level, message };
+    run.progress = [...progress, event];
+    await run.update({ progress: run.progress });
+    logger.info('Recovery progress', { runUuid: run.uuid, message });
   }
 
   private async runRetention(settings: MaintenanceSettings, nextRunAt: Date | null): Promise<void> {

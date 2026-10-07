@@ -22,6 +22,7 @@ import {
   SetupValidationResponseSchema,
   RecoveryRestoreInput,
   MaintenanceRequestResponseSchema,
+  RecoveryStatusResponseSchema,
 } from '@binder/common';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 import { SetupAlreadyCompletedError, SetupStateStore } from '../store/setup-state.store';
@@ -33,6 +34,7 @@ import { SecretsService } from '../../../shared/config/secrets.service';
 import { DropboxConnectionService } from '../../maintenance/service/dropbox-connection.service';
 import { SessionRequest } from '../../authentication/models/request.model';
 import { MaintenanceRequestStore } from '../../maintenance/store/maintenance-request.store';
+import { MaintenanceRunStore } from '../../maintenance/store/maintenance-run.store';
 import { EncryptionService } from '../../../shared/util/encryption.service';
 
 interface SetupPaths {
@@ -55,6 +57,7 @@ export class SetupService {
     private readonly secrets: SecretsService,
     private readonly dropbox: DropboxConnectionService,
     private readonly maintenanceRequests: MaintenanceRequestStore,
+    private readonly maintenanceRuns: MaintenanceRunStore,
     private readonly encryption: EncryptionService,
   ) {}
 
@@ -315,6 +318,32 @@ export class SetupService {
       },
     });
     return MaintenanceRequestResponseSchema.parse({ uuid: request.uuid });
+  }
+
+  async recoveryStatus() {
+    const run = await this.maintenanceRuns.findLatestRestore();
+    return RecoveryStatusResponseSchema.parse({
+      run: run
+        ? {
+            uuid: run.uuid,
+            jobKey: run.jobKey,
+            status: run.status,
+            startedAt: run.startedAt.toISOString(),
+            finishedAt: run.finishedAt?.toISOString() ?? null,
+            nextRunAt: run.nextRunAt?.toISOString() ?? null,
+            durationMs: run.durationMs,
+            artifactName: run.artifactName,
+            sizeBytes: run.sizeBytes === null ? null : Number(run.sizeBytes),
+            deletedFiles: run.deletedFiles,
+            checkedFiles: run.checkedFiles,
+            issueCount: run.issueCount,
+            error: run.error,
+            progress: run.progress ?? [],
+            createdAt: run.createdAt.toISOString(),
+            updatedAt: run.updatedAt.toISOString(),
+          }
+        : null,
+    });
   }
 
   async completeOnboarding(): Promise<SetupCompletionResponse> {

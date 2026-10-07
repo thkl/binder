@@ -217,6 +217,9 @@ export class MaintenanceRun extends Model {
   @Column({ type: DataType.TEXT, allowNull: true })
   declare error: string | null;
 
+  @Column({ type: DataType.JSONB, allowNull: false, defaultValue: [] })
+  declare progress: Array<{ at: string; level: 'info' | 'error' | 'warning'; message: string }>;
+
   @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
   @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
 }

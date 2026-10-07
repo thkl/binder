@@ -8,6 +8,8 @@ import {
   RecoveryBackupListResponseSchema,
   RecoveryRestoreInput,
   MaintenanceRequestResponseSchema,
+  RecoveryStatusResponse,
+  RecoveryStatusResponseSchema,
   SetupValidationResponse,
   SetupValidationResponseSchema,
 } from '@binder/common';
@@ -29,6 +31,7 @@ export class SetupService {
   readonly error = signal<string | null>(null);
   readonly recoveryBackups = signal<RecoveryBackupListResponse | null>(null);
   readonly recoveryLoading = signal(false);
+  readonly recoveryStatus = signal<RecoveryStatusResponse | null>(null);
 
   constructor(
     private readonly http: HttpClient,
@@ -131,6 +134,22 @@ export class SetupService {
       return null;
     } finally {
       this.recoveryLoading.set(false);
+    }
+  }
+
+  async loadRecoveryStatus(): Promise<RecoveryStatusResponse | null> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(
+          this.application.getApiUrl('v1', 'setup/recovery/public/status'),
+          { withCredentials: true },
+        ),
+      );
+      const status = RecoveryStatusResponseSchema.parse(response.data);
+      this.recoveryStatus.set(status);
+      return status;
+    } catch {
+      return null;
     }
   }
 

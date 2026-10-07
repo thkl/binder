@@ -184,6 +184,7 @@ export class FileBackupService {
     provider: FileProvider,
     remotePath: string,
     password: string,
+    onProgress?: (message: string) => Promise<void> | void,
   ): Promise<FileRestoreResult> {
     const restoreRoot = await fs.mkdtemp(path.join(config.storageRoot, '.binder-restore-'));
     const encryptedPath = path.join(restoreRoot, 'backup.tar.gz.age');
@@ -193,8 +194,10 @@ export class FileBackupService {
 
     try {
       logger.info('Recovery download started', { remotePath });
+      await onProgress?.('Downloading the encrypted backup');
       await provider.readFile(remotePath, encryptedPath);
       logger.info('Recovery download completed', { remotePath });
+      await onProgress?.('Download completed');
 
       const encrypted = Readable.toWeb(
         createReadStream(encryptedPath),
@@ -204,6 +207,7 @@ export class FileBackupService {
       const decrypted = await decrypter.decrypt(encrypted);
       await pipeline(Readable.fromWeb(decrypted as any), createWriteStream(archivePath));
       logger.info('Recovery archive decrypted', { remotePath });
+      await onProgress?.('Backup decrypted');
 
       const listing = await execFileAsync('tar', ['-tzf', archivePath], {
         maxBuffer: 4 * 1024 * 1024,
@@ -219,11 +223,10 @@ export class FileBackupService {
       if (detailedListing.stdout.split('\n').some((entry) => /^[lh]/.test(entry))) {
         throw new Error('Recovery archive contains a link and was rejected');
       }
-      await execFileAsync(
-        'tar',
-        ['-xzf', archivePath, '--no-same-owner', '--no-absolute-names', '-C', extractedRoot],
-        { maxBuffer: 4 * 1024 * 1024 },
-      );
+      await onProgress?.('Archive contents validated');
+      await execFileAsync('tar', ['-xzf', archivePath, '-C', extractedRoot], {
+        maxBuffer: 4 * 1024 * 1024,
+      });
 
       const manifestPath = path.join(extractedRoot, 'manifest.json');
       const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as {
@@ -255,7 +258,9 @@ export class FileBackupService {
         scope: manifest.scope,
       });
       await this.restoreDatabase(path.join(extractedRoot, 'database.dump'));
+      await onProgress?.('Database restored');
       if (stagedStorage) await this.replaceStorage(stagedStorage);
+      if (stagedStorage) await onProgress?.('Document storage restored');
       logger.info('Recovery restore completed', {
         remotePath,
         scope: manifest.scope,

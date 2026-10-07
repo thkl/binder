@@ -35,6 +35,7 @@ export class MaintenanceService {
         checkedFiles: item.checkedFiles,
         issueCount: item.issueCount,
         error: item.error,
+        progress: item.progress ?? [],
         createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString(),
       })),

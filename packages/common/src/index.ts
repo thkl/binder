@@ -32,6 +32,13 @@ export type MaintenanceJob = z.infer<typeof MaintenanceJobSchema>;
 export const MaintenanceRunStatusSchema = z.enum(['running', 'succeeded', 'failed']);
 export type MaintenanceRunStatus = z.infer<typeof MaintenanceRunStatusSchema>;
 
+export const MaintenanceProgressEventSchema = z.object({
+  at: z.iso.datetime(),
+  level: z.enum(['info', 'error', 'warning']),
+  message: z.string().min(1).max(500),
+});
+export type MaintenanceProgressEvent = z.infer<typeof MaintenanceProgressEventSchema>;
+
 export const MaintenanceRunSchema = z.object({
   uuid: z.uuid(),
   jobKey: MaintenanceJobSchema,
@@ -46,10 +53,16 @@ export const MaintenanceRunSchema = z.object({
   checkedFiles: z.number().int().nonnegative().nullable(),
   issueCount: z.number().int().nonnegative().nullable(),
   error: z.string().nullable(),
+  progress: z.array(MaintenanceProgressEventSchema),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
 export type MaintenanceRun = z.infer<typeof MaintenanceRunSchema>;
+
+export const RecoveryStatusResponseSchema = z.object({
+  run: MaintenanceRunSchema.nullable(),
+});
+export type RecoveryStatusResponse = z.infer<typeof RecoveryStatusResponseSchema>;
 
 export const MaintenanceStatusResponseSchema = z.object({
   backupRootConfigured: z.boolean(),

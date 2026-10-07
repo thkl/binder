@@ -12,10 +12,16 @@ export class MaintenanceRunStore extends BaseCrudStore<MaintenanceRun> {
 
   listRecent(limit = 50): Promise<MaintenanceRun[]> {
     return this.model.findAll({
-      where: { jobKey: { [Op.in]: ['backup', 'backup-retention', 'storage-consistency'] } },
+      where: {
+        jobKey: { [Op.in]: ['backup', 'backup-retention', 'storage-consistency', 'restore'] },
+      },
       order: [['createdAt', 'DESC']],
       limit,
     });
+  }
+
+  findLatestRestore(): Promise<MaintenanceRun | null> {
+    return this.model.findOne({ where: { jobKey: 'restore' }, order: [['createdAt', 'DESC']] });
   }
 
   findRunning(jobKey: MaintenanceRun['jobKey']): Promise<MaintenanceRun | null> {

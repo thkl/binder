@@ -86,6 +86,7 @@ export class OnboardingComponent {
   readonly recoveryPassword = signal('');
   readonly recoveryConfirmation = signal('');
   readonly recoveryQueued = signal(false);
+  private recoveryStatusTimer?: number;
 
   readonly stepNumber = computed(() => STEP_ORDER.indexOf(this.step()) + 1);
   readonly canGoBack = computed(() => this.stepNumber() > 2);
@@ -197,6 +198,17 @@ export class OnboardingComponent {
       this.recoveryPassword.set('');
       this.recoveryConfirmation.set('');
       this.recoveryQueued.set(true);
+      await this.refreshRecoveryStatus();
+      this.recoveryStatusTimer = window.setInterval(() => void this.refreshRecoveryStatus(), 2_000);
+    }
+  }
+
+  private async refreshRecoveryStatus(): Promise<void> {
+    const status = await this.setup.loadRecoveryStatus();
+    const run = status?.run;
+    if (run && run.status !== 'running' && this.recoveryStatusTimer) {
+      window.clearInterval(this.recoveryStatusTimer);
+      this.recoveryStatusTimer = undefined;
     }
   }
 

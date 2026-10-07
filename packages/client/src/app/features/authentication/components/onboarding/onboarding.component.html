@@ -453,6 +453,19 @@
             <strong>{{ 'setup.restoreQueuedTitle' | t }}</strong>
             <p>{{ 'setup.restoreQueuedCopy' | t }}</p>
           </div>
+          @if (setup.recoveryStatus()?.run; as run) {
+            <div class="check-list" aria-live="polite">
+              @for (event of run.progress; track event.at + event.message) {
+                <div class="check-row" [class]="'check-' + event.level">
+                  <span aria-hidden="true">{{ event.level === 'info' ? '✓' : '!' }}</span>
+                  <p>{{ event.message }}</p>
+                </div>
+              }
+            </div>
+            @if (run.status === 'failed' && run.error) {
+              <p class="error" role="alert">{{ run.error }}</p>
+            }
+          }
         } @else {
           <div class="setting-summary">
             <span>{{ 'setup.restoreSelected' | t }}</span>

@@ -95,6 +95,11 @@ export class SetupController {
     };
   }
 
+  @Get('recovery/public/status')
+  async publicRecoveryStatus() {
+    return { data: await this.setup.recoveryStatus() };
+  }
+
   @Get('recovery/public/dropbox/connect')
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async publicRecoveryDropboxConnect(@Req() request: SessionRequest, @Res() response: Response) {

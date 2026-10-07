@@ -157,6 +157,7 @@ const EN: TranslationMap = {
   'setup.restoreQueuedTitle': 'Restore queued',
   'setup.restoreQueuedCopy':
     'The restore worker will download, validate, decrypt, and restore the selected backup. Follow the worker log for progress. Restart the API and worker after a successful restore.',
+  'setup.restoreProgress': 'Recovery progress',
   'setup.recoveryStart': 'Recover an existing installation',
   'setup.recoveryAccessToken': 'One-time Dropbox access token',
   'setup.recoveryAccessTokenHint':
@@ -914,6 +915,7 @@ const DE: TranslationMap = {
   'setup.restoreQueuedTitle': 'Wiederherstellung eingereiht',
   'setup.restoreQueuedCopy':
     'Der Restore-Worker lädt das ausgewählte Backup herunter, prüft, entschlüsselt und stellt es wieder her. Den Fortschritt sehen Sie im Worker-Log. Starten Sie API und Worker nach erfolgreicher Wiederherstellung neu.',
+  'setup.restoreProgress': 'Fortschritt der Wiederherstellung',
   'setup.recoveryStart': 'Vorhandene Installation wiederherstellen',
   'setup.recoveryAccessToken': 'Einmaliger Dropbox-Zugriffstoken',
   'setup.recoveryAccessTokenHint':
