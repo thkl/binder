@@ -241,24 +241,41 @@ export class MaintenanceScheduler {
         password,
         (message) => this.recordRestoreProgress(run, message),
       );
-      await this.recordRestoreProgress(run, 'Recovery completed successfully');
-      await run
-        .update({
-          status: 'succeeded',
-          finishedAt: new Date(),
-          durationMs: Date.now() - started,
-          artifactName: result.artifactName,
-          error: null,
-        })
-        .catch((error) =>
-          logger.warn(
-            'Recovery completed but its status could not be persisted after database restore',
-            {
-              runUuid: run.uuid,
-              error: this.errorMessage(error),
-            },
-          ),
-        );
+      await this.ensureRecoverySchema();
+      const progress = [
+        ...(Array.isArray(run.progress) ? run.progress : []),
+        { at: new Date().toISOString(), level: 'info' as const, message: 'Database restored' },
+        ...(result.storageRestored
+          ? [
+              {
+                at: new Date().toISOString(),
+                level: 'info' as const,
+                message: 'Document storage restored',
+              },
+            ]
+          : []),
+        {
+          at: new Date().toISOString(),
+          level: 'info' as const,
+          message: 'Recovery completed successfully',
+        },
+      ];
+      await MaintenanceRun.create({
+        uuid: run.uuid,
+        jobKey: 'restore',
+        status: 'succeeded',
+        startedAt: run.startedAt,
+        finishedAt: new Date(),
+        nextRunAt: null,
+        durationMs: Date.now() - started,
+        artifactName: result.artifactName,
+        sizeBytes: null,
+        deletedFiles: null,
+        checkedFiles: null,
+        issueCount: null,
+        error: null,
+        progress,
+      });
       logger.info('Recovery restore finished successfully; restart the API and worker', {
         runUuid: run.uuid,
         scope: result.scope,

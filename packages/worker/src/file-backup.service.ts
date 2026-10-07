@@ -258,9 +258,7 @@ export class FileBackupService {
         scope: manifest.scope,
       });
       await this.restoreDatabase(path.join(extractedRoot, 'database.dump'));
-      await onProgress?.('Database restored');
       if (stagedStorage) await this.replaceStorage(stagedStorage);
-      if (stagedStorage) await onProgress?.('Document storage restored');
       logger.info('Recovery restore completed', {
         remotePath,
         scope: manifest.scope,
@@ -295,11 +293,6 @@ export class FileBackupService {
         '--if-exists',
         '--exit-on-error',
         '--no-owner',
-        '--exclude-table=maintenance_runs',
-        '--exclude-table=maintenance_requests',
-        '--exclude-table=db_version',
-        '--exclude-table=user_sessions',
-        '--exclude-table=pipeline_worker_heartbeats',
         '--host',
         readRequiredEnvironment('DATABASE_HOST'),
         '--port',
