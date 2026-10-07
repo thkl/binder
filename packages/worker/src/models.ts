@@ -56,6 +56,12 @@ export class ApplicationSetting extends Model {
 
   @Column({ type: DataType.STRING(500), allowNull: true })
   declare description: string | null;
+
+  @Column({ field: 'created_at', type: DataType.DATE, allowNull: false })
+  declare createdAt: Date;
+
+  @Column({ field: 'updated_at', type: DataType.DATE, allowNull: false })
+  declare updatedAt: Date;
 }
 
 @Table({ tableName: 'email_import_configs', underscored: true, timestamps: true })

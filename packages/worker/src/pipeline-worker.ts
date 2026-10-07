@@ -8,6 +8,7 @@ import {
   InboxItem,
   PipelineJob,
   PipelineJobEvent,
+  MaintenanceRequest,
   JobKind,
 } from './models.js';
 import { logger } from './logger.js';
@@ -20,6 +21,7 @@ import { importInboxDocuments } from './inbox-importer.js';
 import { matchDocumentIssuer } from './issuer-matcher.js';
 import { MalwareDetectedError, scanDocument } from './malware-scanner.js';
 import { importEmailMessages } from './email-importer.js';
+import { isRecoveryActive, setRecoveryActive } from './recovery-state.js';
 interface ClaimedJob {
   jobUuid: string;
   documentUuid: string;
@@ -36,14 +38,22 @@ export async function startPipelineWorker(): Promise<void> {
     storageRoot: config.storageRoot,
     inboxEnabled: config.inbox.enabled,
   });
-  await recoverStaleJobs();
-  await importInboxDocuments(true);
-  await importEmailMessages(true);
-  await reconcileUploadedDocuments();
-  await logQueueStatus();
+  if (await shouldPauseForRecovery()) {
+    logger.info('Pipeline worker paused because recovery is queued or running');
+  } else {
+    await recoverStaleJobs();
+    await importInboxDocuments(true);
+    await importEmailMessages(true);
+    await reconcileUploadedDocuments();
+    await logQueueStatus();
+  }
   let last = Date.now();
   while (!stopping) {
     try {
+      if (await shouldPauseForRecovery()) {
+        await delay(config.pollIntervalMs);
+        continue;
+      }
       await importInboxDocuments();
       await importEmailMessages();
       if (Date.now() - last >= config.reconcileIntervalMs) {
@@ -65,6 +75,16 @@ export async function startPipelineWorker(): Promise<void> {
     }
     await delay(config.pollIntervalMs);
   }
+}
+
+async function shouldPauseForRecovery(): Promise<boolean> {
+  if (isRecoveryActive()) return true;
+  const pending = await MaintenanceRequest.findOne({
+    where: { jobKey: 'restore' },
+    attributes: ['uuid'],
+  });
+  if (pending) setRecoveryActive(true);
+  return Boolean(pending);
 }
 export function requestShutdown(): void {
   stopping = true;

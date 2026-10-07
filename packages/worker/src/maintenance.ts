@@ -19,6 +19,7 @@ import { decryptSettingSecret } from './config.js';
 import { logger } from './logger.js';
 import { CronSchedule } from './maintenance-cron.js';
 import { resolveStoragePath } from './storage.js';
+import { setRecoveryActive } from './recovery-state.js';
 
 const BACKUP_NAME = /^binder-\d{8}-\d{6}\.dump$/;
 const ENCRYPTED_BACKUP_NAME = /^binder-\d{8}-\d{6}\.tar\.gz\.age$/;
@@ -57,6 +58,8 @@ interface TargetSettingSnapshot {
   isEncrypted: boolean;
   valueIv: string | null;
   description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const DEFAULT_SETTINGS: MaintenanceSettings = {
@@ -133,12 +136,29 @@ export class MaintenanceScheduler {
       isEncrypted: setting.isEncrypted,
       valueIv: setting.valueIv,
       description: setting.description,
+      createdAt: setting.createdAt,
+      updatedAt: setting.updatedAt,
     }));
   }
 
   private async restoreTargetSettings(settings: TargetSettingSnapshot[]): Promise<void> {
-    await ApplicationSetting.destroy({ where: {} });
-    if (settings.length > 0) await ApplicationSetting.bulkCreate(settings as never);
+    if (settings.length === 0) {
+      throw new Error(
+        'Target installation settings are empty; refusing to overwrite restored settings',
+      );
+    }
+    const now = new Date();
+    await sequelize.transaction(async (transaction) => {
+      await ApplicationSetting.destroy({ where: {}, transaction });
+      await ApplicationSetting.bulkCreate(
+        settings.map((setting) => ({
+          ...setting,
+          createdAt: setting.createdAt ?? now,
+          updatedAt: setting.updatedAt ?? now,
+        })) as never,
+        { transaction },
+      );
+    });
     logger.info('Target installation settings reapplied after recovery', {
       settingCount: settings.length,
     });
@@ -706,6 +726,7 @@ export class MaintenanceScheduler {
         skipLocked: true,
       });
       if (!request) return null;
+      setRecoveryActive(true);
 
       const run = await MaintenanceRun.create(
         {
