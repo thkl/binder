@@ -104,6 +104,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly deleteDialogUuid = signal<string | null>(null);
   readonly duplicateDocumentLoading = signal(false);
   readonly selectedDocumentUuids = signal<Set<string>>(new Set());
+  readonly selectedDocumentRecords = signal<Map<string, Document>>(new Map());
   readonly bulkActionInProgress = signal<DocumentBulkAction | null>(null);
   readonly bulkActionResult = signal<DocumentBulkActionResponse | null>(null);
   readonly folderActionInProgress = signal<'add' | 'remove' | null>(null);
@@ -176,6 +177,14 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   readonly selectedCount = computed(() => this.selectedDocumentUuids().size);
   readonly selectedDocumentUuidList = computed(() => [...this.selectedDocumentUuids()]);
+  readonly selectedVersionPair = computed(() => {
+    const selected = this.selectedDocumentUuidList()
+      .map((uuid) => this.selectedDocumentRecords().get(uuid))
+      .filter((document): document is Document => document !== undefined);
+    return selected.length === 2 ? { source: selected[0], target: selected[1] } : null;
+  });
+  readonly versionAssignment = signal<{ sourceUuid: string; targetUuid: string } | null>(null);
+  readonly versionAssignmentLoading = signal(false);
   readonly bulkDocumentTypes = computed(() => this.metadata.vocabulary()?.documentTypes ?? []);
   readonly bulkCategories = computed(() => this.metadata.vocabulary()?.categories ?? []);
   readonly bulkTags = computed(() => this.metadata.vocabulary()?.tags ?? []);
@@ -432,6 +441,31 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     await this.documents.load();
   }
 
+  requestVersionAssignment(): void {
+    const pair = this.selectedVersionPair();
+    if (!pair || this.versionAssignmentLoading()) return;
+    this.versionAssignment.set({ sourceUuid: pair.source.uuid, targetUuid: pair.target.uuid });
+  }
+
+  cancelVersionAssignment(): void {
+    this.versionAssignment.set(null);
+  }
+
+  async confirmVersionAssignment(): Promise<void> {
+    const assignment = this.versionAssignment();
+    this.versionAssignment.set(null);
+    if (!assignment || this.versionAssignmentLoading()) return;
+
+    this.versionAssignmentLoading.set(true);
+    try {
+      await this.documents.assignAsVersion(assignment.sourceUuid, assignment.targetUuid);
+      this.clearSelection();
+      await this.documents.load();
+    } finally {
+      this.versionAssignmentLoading.set(false);
+    }
+  }
+
   async fileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -529,6 +563,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   toggleDocumentSelection(uuid: string, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
+    const document = this.documents.page()?.items.find((item) => item.uuid === uuid);
     this.selectedDocumentUuids.update((selected) => {
       const next = new Set(selected);
       if (checked) {
@@ -538,6 +573,14 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       }
       return next;
     });
+    if (document) {
+      this.selectedDocumentRecords.update((records) => {
+        const next = new Map(records);
+        if (checked) next.set(uuid, document);
+        else next.delete(uuid);
+        return next;
+      });
+    }
     this.bulkActionResult.set(null);
   }
 
@@ -555,6 +598,14 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       }
       return next;
     });
+    this.selectedDocumentRecords.update((records) => {
+      const next = new Map(records);
+      for (const document of visible) {
+        if (allSelected) next.delete(document.uuid);
+        else next.set(document.uuid, document);
+      }
+      return next;
+    });
     this.bulkActionResult.set(null);
   }
 
@@ -564,6 +615,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   clearSelection(): void {
     this.selectedDocumentUuids.set(new Set());
+    this.selectedDocumentRecords.set(new Map());
     this.bulkActionResult.set(null);
   }
 
@@ -579,7 +631,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     });
     this.bulkActionInProgress.set(null);
     if (result) {
-      this.selectedDocumentUuids.set(new Set());
+      this.clearSelection();
       this.bulkActionResult.set(result);
       if (action === 'mark-reviewed') {
         await this.inbox.loadNewDocumentCount();

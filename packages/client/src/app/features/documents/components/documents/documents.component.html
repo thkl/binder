@@ -300,6 +300,20 @@
 
         @if (selectedCount() > 0) {
           <div class="bulk-actions" role="group" [attr.aria-label]="'documents.bulkActions' | t">
+            @if (selectedVersionPair(); as versionPair) {
+              <button
+                type="button"
+                class="bulk-action-button primary"
+                [disabled]="bulkActionInProgress() !== null || versionAssignmentLoading()"
+                (click)="requestVersionAssignment()"
+              >
+                {{ 'documents.assignVersion' | t }}
+              </button>
+              <span class="version-selection-hint" aria-live="polite">
+                {{ versionPair.source.originalFilename }} →
+                {{ versionPair.target.originalFilename }}
+              </span>
+            }
             <button
               type="button"
               class="bulk-action-button primary"
@@ -790,6 +804,23 @@
       [cancelLabel]="'common.cancel' | t"
       (confirmed)="confirmDeleteDocument()"
       (cancelled)="cancelDeleteDocument()"
+    />
+  }
+
+  @if (versionAssignment(); as assignment) {
+    <binder-confirm-dialog
+      [title]="'documents.assignVersionTitle' | t"
+      [message]="
+        ('documents.assignVersionMessage' | t) +
+        ' ' +
+        documentLabel(assignment.sourceUuid) +
+        ' → ' +
+        documentLabel(assignment.targetUuid)
+      "
+      [confirmLabel]="'documents.assignVersion' | t"
+      [cancelLabel]="'common.cancel' | t"
+      (confirmed)="confirmVersionAssignment()"
+      (cancelled)="cancelVersionAssignment()"
     />
   }
 </section>
