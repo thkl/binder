@@ -168,6 +168,19 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     void this.refreshDocumentView();
   });
 
+  private readonly thumbnailRefreshEffect = effect(() => {
+    const visibleUuids = new Set(
+      (this.documents.page()?.items ?? []).map((document) => document.uuid),
+    );
+    untracked(() => {
+      this.thumbnailFailed.update((failed) => {
+        const next = { ...failed };
+        for (const uuid of visibleUuids) delete next[uuid];
+        return next;
+      });
+    });
+  });
+
   private readonly requestedDocumentEffect = effect(() => {
     const uuid = this.requestedDocumentUuid();
     if (!uuid) return;

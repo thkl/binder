@@ -115,7 +115,7 @@ export class InboxService {
                 confidence: suggestion.confidence,
                 appliedFields: result.appliedFields,
               });
-              await this.documents.clearSuggestion(item.ownerUuid, item.documentUuid);
+              await this.documents.clearSuggestion(item.ownerUuid, item.documentUuid, false);
             } catch (error) {
               this.logger.warn(
                 `Unable to auto-apply inbox AI suggestion for ${item.uuid}: ${error instanceof Error ? error.message : String(error)}`,

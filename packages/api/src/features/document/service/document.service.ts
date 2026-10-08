@@ -1036,20 +1036,22 @@ export class DocumentService {
     return suggestion;
   }
 
-  async clearSuggestion(ownerUuid: string, uuid: string) {
+  async clearSuggestion(ownerUuid: string, uuid: string, recordDismissalAudit = true) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
     const cleared = document.aiSuggestion !== null;
     if (cleared) {
       await this.documents.update(uuid, { aiSuggestion: null });
-      await this.recordAudit({
-        documentUuid: uuid,
-        ownerUuid,
-        actorUuid: ownerUuid,
-        actorType: 'user',
-        eventType: 'ai-suggestion-cleared',
-        summary: 'AI metadata suggestion dismissed',
-      });
+      if (recordDismissalAudit) {
+        await this.recordAudit({
+          documentUuid: uuid,
+          ownerUuid,
+          actorUuid: ownerUuid,
+          actorType: 'user',
+          eventType: 'ai-suggestion-cleared',
+          summary: 'AI metadata suggestion dismissed',
+        });
+      }
     }
     return ClearDocumentSuggestionResponseSchema.parse({ cleared });
   }
