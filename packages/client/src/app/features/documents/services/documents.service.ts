@@ -24,6 +24,7 @@ import {
   DocumentStorageIssueListResponseSchema,
   Document as BinderDocument,
   DocumentSchema,
+  DocumentVersionListResponseSchema,
   SetDocumentTitleInputSchema,
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
@@ -62,6 +63,10 @@ export class DocumentsService {
     return this.currentQuery;
   }
 
+  fileUrl(documentUuid: string): string {
+    return this.appService.getApiUrl('v1', `documents/${documentUuid}/file`);
+  }
+
   async load(query: Partial<DocumentListQuery> = {}): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
@@ -85,6 +90,16 @@ export class DocumentsService {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  async loadVersions(documentUuid: string): Promise<BinderDocument[]> {
+    const response = await firstValueFrom(
+      this.http.get<ApiResponse<unknown>>(
+        this.appService.getApiUrl('v1', `documents/${documentUuid}/versions`),
+        { withCredentials: true },
+      ),
+    );
+    return DocumentVersionListResponseSchema.parse(response.data).items;
   }
 
   private async loadFacets(query: DocumentListQuery): Promise<void> {

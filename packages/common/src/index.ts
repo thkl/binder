@@ -160,6 +160,9 @@ export type CalendarEventListResponse = z.infer<typeof CalendarEventListResponse
 export const DocumentSchema = z.object({
   uuid: z.uuid(),
   ownerUuid: z.uuid(),
+  versionFamilyUuid: z.uuid(),
+  versionNumber: z.number().int().min(1),
+  versionParentUuid: z.uuid().nullable(),
   title: z.string().max(255).nullable(),
   originalFilename: z.string().min(1),
   mimeType: z.string().min(1),
@@ -183,6 +186,11 @@ export const DocumentSchema = z.object({
 });
 
 export type Document = z.infer<typeof DocumentSchema>;
+
+export const DocumentVersionListResponseSchema = z.object({
+  items: z.array(DocumentSchema),
+});
+export type DocumentVersionListResponse = z.infer<typeof DocumentVersionListResponseSchema>;
 
 export const DocumentDeleteResponseSchema = z.object({
   deleted: z.literal(true),

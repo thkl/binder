@@ -24,6 +24,9 @@ function createDocument(overrides: Partial<Document> = {}): Document {
   return {
     uuid: documentUuid,
     ownerUuid,
+    versionFamilyUuid: documentUuid,
+    versionNumber: 1,
+    versionParentUuid: null,
     title: 'Service report',
     originalFilename: 'service-report.pdf',
     mimeType: 'application/pdf',

@@ -15,6 +15,41 @@
     </button>
   </header>
 
+  @if (versions().length > 0) {
+    <section class="version-history" aria-labelledby="document-version-history-title">
+      <h4 id="document-version-history-title">{{ 'audit.versions' | t }}</h4>
+      <ol class="history-list">
+        @for (version of versions(); track version.uuid) {
+          <li class="history-entry">
+            <span class="history-dot" aria-hidden="true"></span>
+            <div class="history-entry-content">
+              <div class="history-entry-topline">
+                <strong>
+                  {{ 'audit.version' | t }} {{ version.versionNumber }}
+                  @if (version.uuid === documentUuid()) {
+                    <span>({{ 'audit.current' | t }})</span>
+                  }
+                </strong>
+                <time [attr.datetime]="version.createdAt">
+                  {{ version.createdAt | date: 'medium' }}
+                </time>
+              </div>
+              <span class="history-actor">{{ version.originalFilename }}</span>
+              <a
+                class="history-rollback"
+                [href]="documents.fileUrl(version.uuid)"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {{ 'audit.openVersion' | t }}
+              </a>
+            </div>
+          </li>
+        }
+      </ol>
+    </section>
+  }
+
   @if (loading() && !page()) {
     <p class="history-status">{{ 'audit.loading' | t }}</p>
   } @else if (error(); as message) {

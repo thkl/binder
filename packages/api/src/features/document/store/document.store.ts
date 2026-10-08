@@ -38,6 +38,13 @@ export class DocumentStore extends BaseCrudStore<Document> {
     return this.model.findAll({ where: { ownerUuid, uuid: { [Op.in]: uuids } } });
   }
 
+  async findOwnedVersionFamily(ownerUuid: string, versionFamilyUuid: string): Promise<Document[]> {
+    return this.model.findAll({
+      where: { ownerUuid, versionFamilyUuid },
+      order: [['versionNumber', 'ASC']],
+    });
+  }
+
   async findByChecksum(checksumSha256: string): Promise<Document | null> {
     return this.model.findOne({
       where: { checksumSha256 },

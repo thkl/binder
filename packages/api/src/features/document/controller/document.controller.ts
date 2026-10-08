@@ -162,6 +162,11 @@ export class DocumentController {
     return { data: await this.bulkMetadata.rollback(user.userId, user.userId, uuid) };
   }
 
+  @Get(':uuid/versions')
+  async versions(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.listVersions(user.userId, uuid) };
+  }
+
   @Get(':uuid/file')
   async file(
     @Param('uuid') uuid: string,

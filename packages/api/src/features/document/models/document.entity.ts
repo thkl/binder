@@ -17,6 +17,9 @@ export type DocumentArchiveStatus = 'not-requested' | 'queued' | 'processing' | 
 export interface DocumentAttributes {
   uuid: string;
   ownerUuid: string;
+  versionFamilyUuid: string;
+  versionNumber: number;
+  versionParentUuid: string | null;
   title: string | null;
   originalFilename: string;
   mimeType: string;
@@ -42,6 +45,9 @@ export type DocumentCreationAttributes = Omit<
   | 'createdAt'
   | 'updatedAt'
   | 'uuid'
+  | 'versionFamilyUuid'
+  | 'versionNumber'
+  | 'versionParentUuid'
   | 'status'
   | 'thumbnailKey'
   | 'archiveKey'
@@ -73,6 +79,16 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
 
   @Column({ field: 'owner_id', type: DataType.UUID, allowNull: false })
   declare ownerUuid: string;
+
+  @Column({ field: 'version_family_id', type: DataType.UUID, allowNull: false })
+  declare versionFamilyUuid: string;
+
+  @Column({ field: 'version_number', type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
+  declare versionNumber: number;
+
+  @AllowNull
+  @Column({ field: 'version_parent_id', type: DataType.UUID, allowNull: true })
+  declare versionParentUuid: string | null;
 
   @Column({ field: 'original_filename', type: DataType.STRING(255), allowNull: false })
   declare originalFilename: string;

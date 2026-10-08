@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import type { DocumentAuditEvent, DocumentAuditResponse } from '@binder/common';
+import type { Document, DocumentAuditEvent, DocumentAuditResponse } from '@binder/common';
 import { TranslatePipe, I18nService } from '../../../../common/i18n/i18n.service';
 import { DocumentAuditService } from '../../services/document-audit.service';
+import { DocumentsService } from '../../services/documents.service';
 
 @Component({
   selector: 'binder-document-audit-history',
@@ -20,8 +21,10 @@ export class DocumentAuditHistoryComponent {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly rollingBack = signal<string | null>(null);
+  readonly versions = signal<Document[]>([]);
 
   private readonly audit = inject(DocumentAuditService);
+  readonly documents = inject(DocumentsService);
   private readonly i18n = inject(I18nService);
 
   private readonly loadEffect = effect(() => {
@@ -35,7 +38,12 @@ export class DocumentAuditHistoryComponent {
     this.error.set(null);
 
     try {
-      this.page.set(await this.audit.load(documentUuid, page));
+      const [history, versions] = await Promise.all([
+        this.audit.load(documentUuid, page),
+        this.documents.loadVersions(documentUuid),
+      ]);
+      this.page.set(history);
+      this.versions.set(versions);
     } catch (error) {
       this.error.set(this.audit.errorMessage(error));
     } finally {

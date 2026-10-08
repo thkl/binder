@@ -139,6 +139,9 @@ export class DocumentService {
       const document = await this.documents.create({
         uuid,
         ownerUuid,
+        versionFamilyUuid: uuid,
+        versionNumber: 1,
+        versionParentUuid: null,
         title: file.originalname,
         ...input,
         storageKey: stored.storageKey,
@@ -755,6 +758,19 @@ export class DocumentService {
     return this.toDocumentResponse(updated ?? document);
   }
 
+  async listVersions(ownerUuid: string, uuid: string) {
+    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!document) throw new NotFoundException('Document not found');
+
+    return {
+      items: await Promise.all(
+        (await this.documents.findOwnedVersionFamily(ownerUuid, document.versionFamilyUuid)).map(
+          async (version) => this.toDocumentResponse(version),
+        ),
+      ),
+    };
+  }
+
   async suggestTitle(ownerUuid: string, uuid: string) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
@@ -1255,6 +1271,9 @@ export class DocumentService {
     return {
       uuid: document.uuid,
       ownerUuid: document.ownerUuid,
+      versionFamilyUuid: document.versionFamilyUuid,
+      versionNumber: document.versionNumber,
+      versionParentUuid: document.versionParentUuid,
       originalFilename: document.originalFilename,
       title: document.title,
       mimeType: document.mimeType,
