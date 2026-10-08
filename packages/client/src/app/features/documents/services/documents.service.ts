@@ -25,6 +25,7 @@ import {
   Document as BinderDocument,
   DocumentSchema,
   DocumentVersionListResponseSchema,
+  AssignDocumentVersionInputSchema,
   SetDocumentTitleInputSchema,
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
@@ -100,6 +101,18 @@ export class DocumentsService {
       ),
     );
     return DocumentVersionListResponseSchema.parse(response.data).items;
+  }
+
+  async assignAsVersion(documentUuid: string, targetDocumentUuid: string): Promise<BinderDocument> {
+    const input = AssignDocumentVersionInputSchema.parse({ targetDocumentUuid });
+    const response = await firstValueFrom(
+      this.http.post<ApiResponse<unknown>>(
+        this.appService.getApiUrl('v1', `documents/${documentUuid}/version`),
+        input,
+        { withCredentials: true },
+      ),
+    );
+    return DocumentSchema.parse(response.data);
   }
 
   private async loadFacets(query: DocumentListQuery): Promise<void> {

@@ -21,6 +21,7 @@ import {
   DocumentSearchQuerySchema,
   DocumentAnalysisFollowUpSchema,
   DocumentAnalysisPromptSchema,
+  AssignDocumentVersionInputSchema,
   DocumentAuditQuerySchema,
   BulkMetadataInputSchema,
   SetDocumentMetadataInputSchema,
@@ -165,6 +166,18 @@ export class DocumentController {
   @Get(':uuid/versions')
   async versions(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
     return { data: await this.documents.listVersions(user.userId, uuid) };
+  }
+
+  @Post(':uuid/version')
+  async assignVersion(
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    const input = AssignDocumentVersionInputSchema.parse(body);
+    return {
+      data: await this.documents.assignAsVersion(user.userId, uuid, input.targetDocumentUuid),
+    };
   }
 
   @Get(':uuid/file')

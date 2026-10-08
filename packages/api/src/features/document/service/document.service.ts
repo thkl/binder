@@ -771,6 +771,40 @@ export class DocumentService {
     };
   }
 
+  async assignAsVersion(ownerUuid: string, uuid: string, targetUuid: string) {
+    if (uuid === targetUuid) {
+      throw new BadRequestException('A document cannot be a version of itself');
+    }
+
+    const [source, target] = await Promise.all([
+      this.documents.findOwnedByUuid(ownerUuid, uuid),
+      this.documents.findOwnedByUuid(ownerUuid, targetUuid),
+    ]);
+    if (!source || !target) throw new NotFoundException('Document not found');
+
+    const family = await this.documents.findOwnedVersionFamily(ownerUuid, target.versionFamilyUuid);
+    const nextVersion = Math.max(...family.map((version) => version.versionNumber), 0) + 1;
+    const updated = await this.documents.assignVersion(
+      source.uuid,
+      target.versionFamilyUuid,
+      nextVersion,
+      target.uuid,
+    );
+    if (!updated) throw new NotFoundException('Document not found');
+
+    await this.recordAudit({
+      documentUuid: updated.uuid,
+      ownerUuid,
+      actorUuid: ownerUuid,
+      actorType: 'user',
+      eventType: 'version-assigned',
+      summary: `Document assigned as version ${nextVersion}`,
+      details: { targetDocumentUuid: target.uuid, versionNumber: nextVersion },
+    });
+
+    return this.toDocumentResponse(updated);
+  }
+
   async suggestTitle(ownerUuid: string, uuid: string) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');

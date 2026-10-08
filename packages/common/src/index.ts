@@ -192,6 +192,11 @@ export const DocumentVersionListResponseSchema = z.object({
 });
 export type DocumentVersionListResponse = z.infer<typeof DocumentVersionListResponseSchema>;
 
+export const AssignDocumentVersionInputSchema = z.object({
+  targetDocumentUuid: z.uuid(),
+});
+export type AssignDocumentVersionInput = z.infer<typeof AssignDocumentVersionInputSchema>;
+
 export const DocumentDeleteResponseSchema = z.object({
   deleted: z.literal(true),
   uuid: z.uuid(),
@@ -316,6 +321,7 @@ export const DocumentAuditEventTypeSchema = z.enum([
   'processing-succeeded',
   'processing-failed',
   'quarantined',
+  'version-assigned',
 ]);
 export type DocumentAuditEventType = z.infer<typeof DocumentAuditEventTypeSchema>;
 

@@ -257,6 +257,7 @@
     "audit.version": "Version",
     "audit.current": "current",
     "audit.openVersion": "Open version",
+    "audit.event.version-assigned": "Version assigned",
     "documents.open": "Open",
     "documents.previewOf": "Preview of",
     "documents.previous": "Previous",

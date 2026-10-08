@@ -45,6 +45,19 @@ export class DocumentStore extends BaseCrudStore<Document> {
     });
   }
 
+  async assignVersion(
+    uuid: string,
+    versionFamilyUuid: string,
+    versionNumber: number,
+    versionParentUuid: string,
+  ): Promise<Document | null> {
+    return this.update(uuid, {
+      versionFamilyUuid,
+      versionNumber,
+      versionParentUuid,
+    });
+  }
+
   async findByChecksum(checksumSha256: string): Promise<Document | null> {
     return this.model.findOne({
       where: { checksumSha256 },
