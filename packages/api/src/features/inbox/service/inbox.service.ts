@@ -43,6 +43,10 @@ export class InboxService {
     });
   }
 
+  async hasForcedAiCandidates(): Promise<boolean> {
+    return this.items.hasForcedAiCandidates();
+  }
+
   async processAllWithAi() {
     if (this.aiProcessing) {
       throw new ConflictException('Inbox AI processing is already running');
@@ -58,6 +62,10 @@ export class InboxService {
       await this.removeCompletedItems(completionStage);
       const candidates = await this.items.findAiCandidates();
       for (const item of candidates) {
+        if (!automaticApproval.enabled && !item.autoApplyAi) {
+          skipped += 1;
+          continue;
+        }
         if (!item.documentUuid) {
           skipped += 1;
           continue;
@@ -90,7 +98,7 @@ export class InboxService {
           const highConfidence = suggestion.confidence >= automaticApproval.confidence;
           const feedbackOnly = suggestion.feedbackFields.length > 0 && !highConfidence;
           if (
-            automaticApproval.enabled &&
+            (item.autoApplyAi || automaticApproval.enabled) &&
             (highConfidence || suggestion.feedbackFields.length > 0)
           ) {
             try {

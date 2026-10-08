@@ -49,7 +49,7 @@ export class AutomaticInboxAnalysisService
       const enabled =
         (await this.settings.get('ai.automaticAnalysis.enabled', 'false'))?.toLowerCase() ===
         'true';
-      if (!enabled) return;
+      if (!enabled && !(await this.inbox.hasForcedAiCandidates())) return;
 
       const result = await this.inbox.processAllWithAi();
       if (result.processed > 0 || result.failed > 0) {

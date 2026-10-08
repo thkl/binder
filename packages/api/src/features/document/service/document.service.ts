@@ -22,6 +22,8 @@ import {
   DocumentListResponseSchema,
   DocumentStorageIssueListResponseSchema,
   DocumentDeleteResponseSchema,
+  SplitDocumentInput,
+  SplitDocumentResponseSchema,
 } from '@binder/common';
 import {
   ClearDocumentSuggestionResponseSchema,
@@ -188,6 +190,7 @@ export class DocumentService {
     file: UploadedDocumentFile,
     checksumSha256: string,
     sizeBytes: number,
+    autoApplyAi = false,
   ): Promise<void> {
     try {
       await this.inboxItems.create({
@@ -200,6 +203,7 @@ export class DocumentService {
         aiStatus: 'pending',
         aiSuggestion: null,
         autoApplied: false,
+        autoApplyAi,
         lastError: null,
         aiError: null,
       });
@@ -784,11 +788,11 @@ export class DocumentService {
 
     const family = await this.documents.findOwnedVersionFamily(ownerUuid, target.versionFamilyUuid);
     const nextVersion = Math.max(...family.map((version) => version.versionNumber), 0) + 1;
-    const updated = await this.documents.assignVersion(
+    const updated = await this.documents.promoteVersion(
       source.uuid,
+      target.uuid,
       target.versionFamilyUuid,
       nextVersion,
-      target.uuid,
     );
     if (!updated) throw new NotFoundException('Document not found');
 
@@ -822,6 +826,171 @@ export class DocumentService {
     });
 
     return this.toDocumentResponse(updated);
+  }
+
+  async split(ownerUuid: string, uuid: string, input: SplitDocumentInput) {
+    const original = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!original) throw new NotFoundException('Document not found');
+    this.assertDocumentContentAvailable(original);
+
+    const [remainingBuffer, extractedBuffer] = await this.storage.splitPdf(
+      original.storageKey,
+      input.splitAfterPage,
+    );
+    const remainingUuid = randomUUID();
+    const extractedUuid = randomUUID();
+    const remainingName = this.splitFilename(original.originalFilename, 'remaining');
+    const extractedName = this.splitFilename(
+      original.originalFilename,
+      `pages-${input.splitAfterPage + 1}-to-${original.pageCount}`,
+    );
+    const [remainingStored, extractedStored] = await Promise.all([
+      this.storage.storePdf(remainingBuffer, remainingUuid, remainingName),
+      this.storage.storePdf(extractedBuffer, extractedUuid, extractedName),
+    ]);
+    const malwareScanRequired = await this.isMalwareScanRequired();
+    const family = await this.documents.findOwnedVersionFamily(
+      ownerUuid,
+      original.versionFamilyUuid,
+    );
+    const nextVersion = Math.max(...family.map((version) => version.versionNumber), 0) + 1;
+
+    try {
+      const remaining = await this.documents.create({
+        uuid: remainingUuid,
+        ownerUuid,
+        versionFamilyUuid: original.versionFamilyUuid,
+        versionNumber: nextVersion,
+        versionParentUuid: null,
+        title: original.title,
+        originalFilename: remainingName,
+        mimeType: 'application/pdf',
+        sizeBytes: remainingStored.sizeBytes,
+        checksumSha256: remainingStored.checksumSha256,
+        storageKey: remainingStored.storageKey,
+        thumbnailKey: null,
+        pageCount: input.splitAfterPage,
+        issuerUuid: original.issuerUuid,
+        isNew: true,
+        status: malwareScanRequired ? 'scanning' : 'processing',
+      });
+      const extracted = await this.documents.create({
+        uuid: extractedUuid,
+        ownerUuid,
+        versionFamilyUuid: extractedUuid,
+        versionNumber: 1,
+        versionParentUuid: null,
+        title: original.title,
+        originalFilename: extractedName,
+        mimeType: 'application/pdf',
+        sizeBytes: extractedStored.sizeBytes,
+        checksumSha256: extractedStored.checksumSha256,
+        storageKey: extractedStored.storageKey,
+        thumbnailKey: null,
+        pageCount: original.pageCount - input.splitAfterPage,
+        issuerUuid: original.issuerUuid,
+        isNew: true,
+        status: malwareScanRequired ? 'scanning' : 'processing',
+      });
+
+      await this.documents.update(original.uuid, { versionParentUuid: remaining.uuid });
+      const sourceMetadata = await this.metadata.getDocumentMetadata(ownerUuid, original.uuid);
+      const metadataInput = {
+        issuerUuid: sourceMetadata.issuer?.uuid ?? null,
+        documentTypeUuid: sourceMetadata.documentType?.uuid ?? null,
+        categoryUuid: sourceMetadata.category?.uuid ?? null,
+        tagUuids: sourceMetadata.tags.map((tag) => tag.uuid),
+        custom: sourceMetadata.custom,
+      };
+      await Promise.all([
+        this.metadata.setDocumentMetadata(ownerUuid, remaining.uuid, metadataInput),
+        this.metadata.setDocumentMetadata(ownerUuid, extracted.uuid, metadataInput),
+      ]);
+      const sourceFolders = await this.folders.listForDocument(ownerUuid, original.uuid);
+      await Promise.all(
+        sourceFolders.flatMap((folder) => [
+          this.folders.createLinks(folder.uuid, [remaining.uuid]),
+          this.folders.createLinks(folder.uuid, [extracted.uuid]),
+        ]),
+      );
+
+      await Promise.all([
+        this.addManualUploadToInbox(
+          remaining.uuid,
+          ownerUuid,
+          { buffer: remainingBuffer, mimetype: 'application/pdf', originalname: remainingName },
+          remainingStored.checksumSha256,
+          remainingStored.sizeBytes,
+          input.autoApplySuggestions,
+        ),
+        this.addManualUploadToInbox(
+          extracted.uuid,
+          ownerUuid,
+          { buffer: extractedBuffer, mimetype: 'application/pdf', originalname: extractedName },
+          extractedStored.checksumSha256,
+          extractedStored.sizeBytes,
+          input.autoApplySuggestions,
+        ),
+      ]);
+      await Promise.all([
+        this.pipeline.enqueue(
+          remaining.uuid,
+          ownerUuid,
+          malwareScanRequired ? 'malware-scan' : 'text-extraction',
+        ),
+        this.pipeline.enqueue(
+          extracted.uuid,
+          ownerUuid,
+          malwareScanRequired ? 'malware-scan' : 'text-extraction',
+        ),
+      ]);
+      await Promise.all([
+        this.recordAudit({
+          documentUuid: remaining.uuid,
+          ownerUuid,
+          actorUuid: ownerUuid,
+          actorType: 'user',
+          eventType: 'document-split',
+          summary: 'Document split; remaining pages became a new version',
+          details: {
+            sourceDocumentUuid: original.uuid,
+            extractedDocumentUuid: extracted.uuid,
+            splitAfterPage: input.splitAfterPage,
+            autoApplySuggestions: input.autoApplySuggestions,
+          },
+        }),
+        this.recordAudit({
+          documentUuid: extracted.uuid,
+          ownerUuid,
+          actorUuid: ownerUuid,
+          actorType: 'user',
+          eventType: 'document-split',
+          summary: 'Document split; pages became a new document',
+          details: {
+            sourceDocumentUuid: original.uuid,
+            remainingDocumentUuid: remaining.uuid,
+            splitAfterPage: input.splitAfterPage,
+            autoApplySuggestions: input.autoApplySuggestions,
+          },
+        }),
+      ]);
+
+      return SplitDocumentResponseSchema.parse({
+        remainingDocument: this.toDocumentResponse(remaining),
+        extractedDocument: this.toDocumentResponse(extracted),
+      });
+    } catch (error) {
+      await Promise.allSettled([
+        this.storage.remove(remainingStored.storageKey),
+        this.storage.remove(extractedStored.storageKey),
+      ]);
+      throw error;
+    }
+  }
+
+  private splitFilename(filename: string, suffix: string): string {
+    const extension = extname(filename) || '.pdf';
+    return `${filename.slice(0, -extension.length)} (${suffix})${extension}`.slice(0, 255);
   }
 
   async suggestTitle(ownerUuid: string, uuid: string) {

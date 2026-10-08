@@ -34,8 +34,12 @@ export class I18nService {
     void this.loadCatalog(language);
   }
 
-  t(key: string): string {
-    return this.catalogs()[this.language()]?.[key] ?? key;
+  t(key: string, parameters?: Record<string, string | number>): string {
+    const text = this.catalogs()[this.language()]?.[key] ?? key;
+    if (!parameters) return text;
+    return text.replace(/\{([a-zA-Z0-9_.-]+)\}/g, (match, name: string) =>
+      Object.prototype.hasOwnProperty.call(parameters, name) ? String(parameters[name]) : match,
+    );
   }
 
   name(item: Pick<VocabularyItem, 'name' | 'translations'>): string {
@@ -100,7 +104,7 @@ export class I18nService {
 export class TranslatePipe implements PipeTransform {
   constructor(private readonly i18n: I18nService) {}
 
-  transform(key: string): string {
-    return this.i18n.t(key);
+  transform(key: string, parameters?: Record<string, string | number>): string {
+    return this.i18n.t(key, parameters);
   }
 }

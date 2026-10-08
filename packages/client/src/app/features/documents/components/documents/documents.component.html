@@ -580,6 +580,7 @@
                     (metadata)="toggleMetadata(document.uuid)"
                     (suggest)="suggestTitle(document.uuid)"
                     (requeue)="requeueDocument(document.uuid)"
+                    (splitRequested)="requestSplitDocument(document.uuid)"
                     (deleteRequested)="requestDeleteDocument(document.uuid)"
                   />
                 </article>
@@ -737,6 +738,7 @@
                     (metadata)="toggleMetadata(document.uuid)"
                     (suggest)="suggestTitle(document.uuid)"
                     (requeue)="requeueDocument(document.uuid)"
+                    (splitRequested)="requestSplitDocument(document.uuid)"
                     (deleteRequested)="requestDeleteDocument(document.uuid)"
                   />
                 </article>
@@ -832,5 +834,19 @@
       (cancelled)="cancelVersionAssignment()"
       (optionChanged)="copyVersionMetadata.set($event)"
     />
+  }
+
+  @if (splitDocumentUuid(); as splitUuid) {
+    @if (
+      documents.page()?.items?.find((item) => item.uuid === splitUuid);
+      as selectedSplitDocument
+    ) {
+      <binder-document-split-dialog
+        [documentTitle]="selectedSplitDocument.title || selectedSplitDocument.originalFilename"
+        [pageCount]="selectedSplitDocument.pageCount"
+        (closed)="cancelSplitDocument()"
+        (submitted)="splitDocument($event)"
+      />
+    }
   }
 </section>

@@ -198,6 +198,18 @@ export const AssignDocumentVersionInputSchema = z.object({
 });
 export type AssignDocumentVersionInput = z.infer<typeof AssignDocumentVersionInputSchema>;
 
+export const SplitDocumentInputSchema = z.object({
+  splitAfterPage: z.number().int().min(1),
+  autoApplySuggestions: z.boolean().default(false),
+});
+export type SplitDocumentInput = z.infer<typeof SplitDocumentInputSchema>;
+
+export const SplitDocumentResponseSchema = z.object({
+  remainingDocument: DocumentSchema,
+  extractedDocument: DocumentSchema,
+});
+export type SplitDocumentResponse = z.infer<typeof SplitDocumentResponseSchema>;
+
 export const DocumentDeleteResponseSchema = z.object({
   deleted: z.literal(true),
   uuid: z.uuid(),
@@ -323,6 +335,7 @@ export const DocumentAuditEventTypeSchema = z.enum([
   'processing-failed',
   'quarantined',
   'version-assigned',
+  'document-split',
 ]);
 export type DocumentAuditEventType = z.infer<typeof DocumentAuditEventTypeSchema>;
 

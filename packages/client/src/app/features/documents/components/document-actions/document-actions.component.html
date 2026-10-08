@@ -146,6 +146,21 @@
     </button>
   }
 
+  @if (document().pageCount > 1) {
+    <button
+      type="button"
+      class="document-action"
+      (click)="splitRequested.emit()"
+      [attr.aria-label]="'documents.split' | t"
+      [title]="'documents.split' | t"
+    >
+      <span aria-hidden="true">✂</span>
+      @if (!compact()) {
+        <span>{{ 'documents.split' | t }}</span>
+      }
+    </button>
+  }
+
   <button
     type="button"
     class="document-action danger"

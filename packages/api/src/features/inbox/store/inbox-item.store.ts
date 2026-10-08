@@ -9,6 +9,7 @@ interface QueueDocumentForAnalysisInput {
   originalFilename: string;
   checksumSha256: string;
   sizeBytes: number;
+  autoApplyAi?: boolean;
 }
 
 @Injectable()
@@ -57,6 +58,7 @@ export class InboxItemStore extends BaseCrudStore<InboxItem> {
         aiStatus: 'pending',
         aiSuggestion: null,
         autoApplied: false,
+        autoApplyAi: input.autoApplyAi ?? false,
         lastError: null,
         aiError: null,
       });
@@ -72,6 +74,7 @@ export class InboxItemStore extends BaseCrudStore<InboxItem> {
       aiStatus: 'pending',
       aiSuggestion: null,
       autoApplied: false,
+      autoApplyAi: input.autoApplyAi ?? false,
       lastError: null,
       aiError: null,
     });
@@ -100,6 +103,18 @@ export class InboxItemStore extends BaseCrudStore<InboxItem> {
       },
       order: [['createdAt', 'ASC']],
     });
+  }
+
+  async hasForcedAiCandidates(): Promise<boolean> {
+    return (
+      (await this.model.count({
+        where: {
+          status: 'imported',
+          aiStatus: { [Op.in]: ['pending', 'failed'] },
+          autoApplyAi: true,
+        },
+      })) > 0
+    );
   }
 
   async findActiveSource(filename: string): Promise<InboxItem | null> {

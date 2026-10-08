@@ -26,6 +26,7 @@ import {
   BulkMetadataInputSchema,
   SetDocumentMetadataInputSchema,
   SetDocumentTitleInputSchema,
+  SplitDocumentInputSchema,
 } from '@binder/common';
 import type { Response } from 'express';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
@@ -182,6 +183,14 @@ export class DocumentController {
         input.targetDocumentUuid,
         input.copyMetadata,
       ),
+    };
+  }
+
+  @Post(':uuid/split')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async split(@Param('uuid') uuid: string, @Body() body: unknown, @CurrentUser() user: ScopedUser) {
+    return {
+      data: await this.documents.split(user.userId, uuid, SplitDocumentInputSchema.parse(body)),
     };
   }
 

@@ -60,6 +60,38 @@ export class DocumentStorageService {
     return { storageKey, absolutePath, checksumSha256, sizeBytes: buffer.length };
   }
 
+  async splitPdf(storageKey: string, splitAfterPage: number): Promise<[Buffer, Buffer]> {
+    const sourceBuffer = await fs.readFile(await this.resolveStoragePath(storageKey));
+    const mupdf = await import('mupdf');
+    const source = new mupdf.PDFDocument(sourceBuffer);
+    const pageCount = source.countPages();
+    if (splitAfterPage < 1 || splitAfterPage >= pageCount) {
+      source.destroy();
+      throw new BadRequestException('The split must leave at least one page in each document');
+    }
+
+    const createPart = (start: number, end: number): Buffer => {
+      const output = new mupdf.PDFDocument();
+      for (let pageNumber = start; pageNumber < end; pageNumber += 1) {
+        const page = source.loadPage(pageNumber);
+        const bounds = page.getBounds();
+        output.addPage(bounds, 0, null, new Uint8Array());
+        output.graftPage(pageNumber - start, source, pageNumber);
+        page.destroy();
+      }
+      const saved = output.saveToBuffer({ garbage: 4 });
+      const result = Buffer.from(saved.asUint8Array());
+      output.destroy();
+      return result;
+    };
+
+    try {
+      return [createPart(0, splitAfterPage), createPart(splitAfterPage, pageCount)];
+    } finally {
+      source.destroy();
+    }
+  }
+
   async validatePdf(buffer: Buffer): Promise<void> {
     const header = buffer.subarray(0, Math.min(buffer.length, 1024));
     if (!header.includes(Buffer.from('%PDF-'))) {

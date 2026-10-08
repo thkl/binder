@@ -31,6 +31,7 @@ export class DocumentActionsComponent {
   readonly suggest = output<void>();
   readonly requeue = output<void>();
   readonly deleteRequested = output<void>();
+  readonly splitRequested = output<void>();
 
   private readonly application = inject(ApplicationService);
   private readonly elementRef = inject(ElementRef<HTMLElement>);

@@ -26,6 +26,8 @@ import {
   DocumentSchema,
   DocumentVersionListResponseSchema,
   AssignDocumentVersionInputSchema,
+  SplitDocumentInputSchema,
+  SplitDocumentResponseSchema,
   SetDocumentTitleInputSchema,
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
@@ -117,6 +119,33 @@ export class DocumentsService {
       ),
     );
     return DocumentSchema.parse(response.data);
+  }
+
+  async splitDocument(
+    documentUuid: string,
+    splitAfterPage: number,
+    autoApplySuggestions: boolean,
+  ): Promise<{ remainingDocument: BinderDocument; extractedDocument: BinderDocument } | null> {
+    this.error.set(null);
+    try {
+      const input = SplitDocumentInputSchema.parse({
+        splitAfterPage,
+        autoApplySuggestions,
+      });
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/${documentUuid}/split`),
+          input,
+          { withCredentials: true },
+        ),
+      );
+      const result = SplitDocumentResponseSchema.parse(response.data);
+      await this.load();
+      return result;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
   }
 
   private async loadFacets(query: DocumentListQuery): Promise<void> {

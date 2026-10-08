@@ -39,6 +39,10 @@ import type {
 import { DocumentListQuerySchema } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
+import {
+  DocumentSplitDialogComponent,
+  DocumentSplitRequest,
+} from '../document-split-dialog/document-split-dialog.component';
 import { InboxService } from '../../../inbox/services/inbox.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -70,6 +74,7 @@ type DocumentFilterValues = {
     SavedSearchMenuComponent,
     BulkMetadataDialogComponent,
     ConfirmDialogComponent,
+    DocumentSplitDialogComponent,
     TranslatePipe,
   ],
   templateUrl: './documents.component.html',
@@ -186,6 +191,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly versionAssignment = signal<{ sourceUuid: string; targetUuid: string } | null>(null);
   readonly copyVersionMetadata = signal(true);
   readonly versionAssignmentLoading = signal(false);
+  readonly splitDocumentUuid = signal<string | null>(null);
+  readonly splitLoading = signal(false);
   readonly bulkDocumentTypes = computed(() => this.metadata.vocabulary()?.documentTypes ?? []);
   readonly bulkCategories = computed(() => this.metadata.vocabulary()?.categories ?? []);
   readonly bulkTags = computed(() => this.metadata.vocabulary()?.tags ?? []);
@@ -469,6 +476,35 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       await this.documents.load();
     } finally {
       this.versionAssignmentLoading.set(false);
+    }
+  }
+
+  requestSplitDocument(uuid: string): void {
+    const document = this.documents.page()?.items.find((item) => item.uuid === uuid);
+    if (!document || document.pageCount < 2) return;
+    this.splitDocumentUuid.set(uuid);
+  }
+
+  cancelSplitDocument(): void {
+    this.splitDocumentUuid.set(null);
+  }
+
+  async splitDocument(request: DocumentSplitRequest): Promise<void> {
+    const uuid = this.splitDocumentUuid();
+    if (!uuid || this.splitLoading()) return;
+    this.splitLoading.set(true);
+    try {
+      const result = await this.documents.splitDocument(
+        uuid,
+        request.splitAfterPage,
+        request.autoApplySuggestions,
+      );
+      if (result) {
+        this.splitDocumentUuid.set(null);
+        this.clearSelection();
+      }
+    } finally {
+      this.splitLoading.set(false);
     }
   }
 

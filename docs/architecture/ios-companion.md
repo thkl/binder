@@ -1,32 +1,40 @@
-# iOS companion app
+# Mobile companion app
 
 ## Goal
 
-The iOS companion is a P4 ingestion client for users who receive documents on
-their phone. It should make sending a PDF or image to Binder as simple as
-choosing Binder from the iOS Share Sheet. The existing Angular application
-remains the primary document-management UI.
+The mobile companion is a P4 ingestion client for users who receive documents
+on their phone. It should make sending a PDF or image to Binder as simple as
+choosing Binder from the iOS Share Sheet or Android Sharesheet. The preferred
+implementation is React Native so iOS and Android can share the upload queue,
+authentication screens, API client, and status UI. The existing Angular
+application remains the primary document-management UI.
 
 ## App shape
 
-The app has two parts:
+The app has a shared React Native core plus platform integrations:
 
-- A Swift/SwiftUI host application that can display the existing web UI in a
-  `WKWebView` and provides native upload-queue status and account settings.
+- A React Native host application that provides authentication, native
+  upload-queue status, account settings, and a route to the existing web UI.
 - An iOS Share Extension that accepts supported files from the system Share
   Sheet and hands them to the host application through an App Group container.
+- An Android share-target integration that accepts supported files from the
+  Android Sharesheet and hands them to the host application through protected
+  app storage.
 
-The Share Extension should hand off quickly and avoid depending on a live API
-connection. It must not own the complete document workflow.
+The platform share integrations should hand off quickly and avoid depending on
+a live API connection. They must not own the complete document workflow.
 
 ## Share and upload flow
 
-1. The user chooses Binder in the Share Sheet for a PDF or supported image.
-2. The Share Extension validates the type and size, copies the file into the
-   protected App Group inbox, and creates a durable pending-upload record.
-3. The extension reports that the file was accepted and closes promptly.
-4. The host app or a background `URLSession` uploads the pending item to the
-   versioned document-upload endpoint when connectivity is available.
+1. The user chooses Binder in the iOS Share Sheet or Android Sharesheet for a
+   PDF or supported image.
+2. The platform integration validates the type and size, copies the file into
+   protected app storage, and creates a durable pending-upload record.
+3. The share integration reports that the file was accepted and closes
+   promptly.
+4. The host app or platform background-transfer facility uploads the pending
+   item to the versioned document-upload endpoint when connectivity is
+   available.
 5. The API assigns ownership from the authenticated internal user and returns
    the normal document-processing response.
 6. After a confirmed upload, the app removes the local pending file. Failed
@@ -51,10 +59,11 @@ the same processing pipeline used by browser uploads.
 ## Offline and privacy requirements
 
 - No network must be required for accepting a shared file.
-- Pending files use iOS file protection and are stored only in the App Group
-  container until upload succeeds or the user removes them.
-- Background retry uses bounded exponential backoff and respects the user's
-  network and battery settings.
+- Pending files use iOS file protection or the Android equivalent and are
+  stored only in protected app storage until upload succeeds or the user
+  removes them.
+- Background retry uses bounded exponential backoff and respects each
+  platform's network and battery settings.
 - The app shows pending, uploading, uploaded, and failed states with the
   server-assigned document identifier when available.
 - The local queue must support explicit cleanup and must not silently delete a
@@ -62,7 +71,8 @@ the same processing pipeline used by browser uploads.
 
 ## Initial acceptance criteria
 
-- Binder appears as a Share Sheet target for PDFs and supported images.
+- Binder appears as a share target on iOS and Android for PDFs and supported
+  images.
 - A shared file is accepted while offline and appears in the pending queue.
 - The file uploads automatically after connectivity returns.
 - A retry cannot create a duplicate document.

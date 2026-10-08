@@ -1,0 +1,132 @@
+:host {
+  position: fixed;
+  z-index: 45;
+  inset: 0;
+}
+
+.split-backdrop {
+  display: grid;
+  min-height: 100%;
+  padding: 1rem;
+  place-items: center;
+  background: var(--palette-rgba-1-8-19-0-72);
+  backdrop-filter: blur(0.6rem);
+}
+
+.split-dialog {
+  width: min(34rem, 100%);
+  overflow: hidden;
+  border: 1px solid var(--palette-rgba-133-200-241-0-25);
+  border-radius: 1.1rem;
+  color: var(--palette-e7f3ff);
+  background: var(--palette-081a31);
+  box-shadow: 0 2rem 5rem var(--palette-rgba-0-0-0-0-35);
+}
+
+header,
+.split-body,
+footer {
+  padding: 1.1rem 1.25rem;
+}
+
+header,
+footer {
+  border-color: var(--palette-rgba-157-190-232-0-12);
+  border-style: solid;
+}
+
+header {
+  border-width: 0 0 1px;
+}
+
+footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  border-width: 1px 0 0;
+}
+
+h2,
+p {
+  margin: 0;
+}
+
+h2 {
+  margin-top: 0.3rem;
+  font-size: 1.15rem;
+}
+
+.split-kicker {
+  color: var(--cyan);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.split-copy,
+.split-hint {
+  margin-top: 0.45rem;
+  color: var(--palette-8fa8c4);
+  font-size: 0.75rem;
+}
+
+.split-body {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.split-field {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--palette-bfd4ea);
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.split-field input {
+  width: 8rem;
+  min-height: 2.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  color: var(--palette-e7f3ff);
+  background: var(--palette-rgba-157-190-232-0-08);
+  font: inherit;
+}
+
+.split-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  color: var(--palette-c7daee);
+  font-size: 0.75rem;
+}
+
+.split-error {
+  border-radius: 0.55rem;
+  padding: 0.65rem;
+  color: var(--palette-ffc0c0);
+  background: var(--palette-rgba-150-45-45-0-2);
+  font-size: 0.74rem;
+}
+
+button {
+  min-height: 2.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.8rem;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.split-cancel {
+  color: var(--palette-b6cde4);
+  background: transparent;
+}
+
+.split-primary {
+  border-color: var(--cyan);
+  color: var(--palette-06111f);
+  background: var(--cyan);
+}

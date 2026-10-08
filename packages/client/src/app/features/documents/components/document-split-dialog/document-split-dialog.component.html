@@ -1,0 +1,57 @@
+<div class="split-backdrop" role="presentation" (click)="closed.emit()">
+  <section
+    class="split-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="split-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header>
+      <p class="split-kicker">{{ 'documents.splitKicker' | t }}</p>
+      <h2 id="split-dialog-title">{{ 'documents.splitTitle' | t }}</h2>
+      <p class="split-copy">
+        {{ 'documents.splitMessage' | t }} <strong>{{ documentTitle() }}</strong>
+      </p>
+    </header>
+
+    <div class="split-body">
+      <label class="split-field">
+        <span>{{ 'documents.splitAfterPage' | t }}</span>
+        <input
+          type="number"
+          min="1"
+          [max]="pageCount() - 1"
+          [value]="splitAfterPage()"
+          (input)="setPage($event)"
+          [attr.aria-describedby]="error() ? 'split-dialog-error' : 'split-dialog-hint'"
+        />
+      </label>
+      <p id="split-dialog-hint" class="split-hint">
+        {{ 'documents.splitPageHint' | t: { pageCount: pageCount() } }}
+      </p>
+
+      <label class="split-option">
+        <input
+          type="checkbox"
+          [checked]="autoApplySuggestions()"
+          (change)="autoApplySuggestions.set($any($event.target).checked)"
+        />
+        <span>{{ 'documents.splitAutoApplySuggestions' | t }}</span>
+      </label>
+      <p class="split-hint">{{ 'documents.splitAutoApplyHint' | t }}</p>
+
+      @if (error(); as errorKey) {
+        <p id="split-dialog-error" class="split-error" role="alert">{{ errorKey | t }}</p>
+      }
+    </div>
+
+    <footer>
+      <button type="button" class="split-cancel" (click)="closed.emit()">
+        {{ 'common.cancel' | t }}
+      </button>
+      <button type="button" class="split-primary" (click)="submit()">
+        {{ 'documents.split' | t }}
+      </button>
+    </footer>
+  </section>
+</div>

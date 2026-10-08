@@ -25,6 +25,7 @@ export interface InboxItemAttributes {
   aiStatus: InboxAiStatus;
   aiSuggestion: Record<string, unknown> | null;
   autoApplied: boolean;
+  autoApplyAi: boolean;
   lastError: string | null;
   aiError: string | null;
   createdAt: Date;
@@ -43,6 +44,7 @@ export type InboxItemCreationAttributes = Omit<
   | 'aiSuggestion'
   | 'lastError'
   | 'aiError'
+  | 'autoApplyAi'
 > & {
   uuid?: string;
   documentUuid?: string | null;
@@ -51,6 +53,7 @@ export type InboxItemCreationAttributes = Omit<
   aiStatus?: InboxAiStatus;
   aiSuggestion?: Record<string, unknown> | null;
   autoApplied?: boolean;
+  autoApplyAi?: boolean;
   lastError?: string | null;
   aiError?: string | null;
 };
@@ -101,6 +104,14 @@ export class InboxItem extends Model<InboxItemAttributes, InboxItemCreationAttri
     defaultValue: false,
   })
   declare autoApplied: boolean;
+
+  @Column({
+    field: 'ai_auto_apply',
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
+  declare autoApplyAi: boolean;
 
   @AllowNull
   @Column({ field: 'last_error', type: DataType.STRING(2000), allowNull: true })
