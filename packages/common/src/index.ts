@@ -1203,6 +1203,26 @@ export type ManagedUserResponse = z.infer<typeof ManagedUserResponseSchema>;
 export const AppLanguageSchema = z.string().regex(/^[a-z]{2}(?:-[A-Z]{2})?$/);
 export type AppLanguage = z.infer<typeof AppLanguageSchema>;
 
+export const AvailableLanguageSchema = z.object({
+  code: AppLanguageSchema,
+  name: z.string().trim().min(1).max(100),
+  nativeName: z.string().trim().min(1).max(100),
+});
+export type AvailableLanguage = z.infer<typeof AvailableLanguageSchema>;
+
+export const AvailableLanguagesResponseSchema = z.object({
+  items: z.array(AvailableLanguageSchema).min(1),
+});
+export type AvailableLanguagesResponse = z.infer<typeof AvailableLanguagesResponseSchema>;
+
+export const LocalizationCatalogSchema = z.object({
+  code: AppLanguageSchema,
+  name: z.string().trim().min(1).max(100),
+  nativeName: z.string().trim().min(1).max(100),
+  translations: z.record(z.string().min(1), z.string()),
+});
+export type LocalizationCatalog = z.infer<typeof LocalizationCatalogSchema>;
+
 export const LocalizedTextSchema = z.record(AppLanguageSchema, z.string().trim().max(150));
 export type LocalizedText = z.infer<typeof LocalizedTextSchema>;
 

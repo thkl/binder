@@ -11,4 +11,4 @@ The contract is intentionally extensible:
 
 Migration V019 adds translations to document types, categories, and tags and seeds German labels for the built-in vocabulary. New personal or workspace vocabulary entries may provide English and German labels; missing languages fall back gracefully.
 
-The client dictionary currently contains the application UI in English and German. Adding another language requires adding its dictionary and exposing a language choice; the vocabulary storage and shared Zod contract do not need to change.
+The application UI is maintained as one JSON catalog per language under `packages/api/src/features/localization/catalogs/`. The API exposes `GET /api/v1/localization/languages` for the language registry and `GET /api/v1/localization/catalog/:language` for the selected catalog. The client loads the catalog at startup and on language changes; the server catalogs are the single source of truth. Adding a language now means adding a validated catalog and rebuilding the API, not changing the client language-switcher code.

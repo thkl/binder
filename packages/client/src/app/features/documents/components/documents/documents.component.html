@@ -475,7 +475,11 @@
                       <img
                         class="thumbnail"
                         [src]="thumbnailUrl(document.uuid)"
-                        [alt]="'Preview of ' + (document.title || document.originalFilename)"
+                        [alt]="
+                          ('documents.previewOf' | t) +
+                          ': ' +
+                          (document.title || document.originalFilename)
+                        "
                         loading="lazy"
                         (error)="markThumbnailFailed(document.uuid)"
                       />
@@ -589,7 +593,11 @@
                       <img
                         class="icon-preview"
                         [src]="thumbnailUrl(document.uuid)"
-                        [alt]="'Preview of ' + (document.title || document.originalFilename)"
+                        [alt]="
+                          ('documents.previewOf' | t) +
+                          ': ' +
+                          (document.title || document.originalFilename)
+                        "
                         loading="lazy"
                         (error)="markThumbnailFailed(document.uuid)"
                       />

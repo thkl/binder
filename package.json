@@ -14,6 +14,7 @@
     "lint": "pnpm -r --if-present run lint",
     "format": "prettier --write \"packages/*/src/**/*.{ts,html,css}\" \"scripts/**/*.mjs\"",
     "format:check": "prettier --check \"packages/*/src/**/*.{ts,html,css}\" \"scripts/**/*.mjs\"",
+    "check:client-a11y": "node scripts/check-client-a11y.mjs",
     "check:settings-i18n": "node scripts/check-settings-i18n.mjs",
     "test": "pnpm -r --if-present run test",
     "coverage": "pnpm -r --if-present run coverage",

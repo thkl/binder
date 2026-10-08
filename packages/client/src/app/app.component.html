@@ -186,20 +186,17 @@
               <div class="account-menu-section">
                 <span class="account-menu-label">{{ 'nav.language' | t }}</span>
                 <div class="language-switcher" [attr.aria-label]="'nav.language' | t">
-                  <button
-                    type="button"
-                    [class.active]="i18n.language() === 'en'"
-                    (click)="setLanguage('en')"
-                  >
-                    EN
-                  </button>
-                  <button
-                    type="button"
-                    [class.active]="i18n.language() === 'de'"
-                    (click)="setLanguage('de')"
-                  >
-                    DE
-                  </button>
+                  @for (language of i18n.availableLanguages(); track language.code) {
+                    <button
+                      type="button"
+                      [class.active]="i18n.language() === language.code"
+                      [attr.aria-pressed]="i18n.language() === language.code"
+                      [attr.aria-label]="language.nativeName"
+                      (click)="setLanguage(language.code)"
+                    >
+                      {{ language.code.toUpperCase() }}
+                    </button>
+                  }
                 </div>
               </div>
               <a class="account-menu-action" routerLink="/account/password" (click)="closeMenu()">{{

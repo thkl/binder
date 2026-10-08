@@ -3,7 +3,6 @@
   min-height: 100vh;
 }
 
-
 .white {
   color: #e5f1ff;
 }
@@ -68,7 +67,6 @@
 .welcome-row {
   display: flex;
   align-items: center;
-
 }
 
 .brand-lockup {

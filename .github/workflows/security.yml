@@ -36,6 +36,9 @@ jobs:
       - name: Check settings translations
         run: pnpm run check:settings-i18n
 
+      - name: Check client accessibility contracts
+        run: pnpm run check:client-a11y
+
       - name: Build shared contracts
         run: pnpm --filter @binder/common build
 

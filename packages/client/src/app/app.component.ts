@@ -16,6 +16,7 @@ import { OnboardingComponent } from './features/authentication/components/onboar
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { I18nService, TranslatePipe } from './common/i18n/i18n.service';
 import { InboxService } from './features/inbox/services/inbox.service';
+import type { AppLanguage } from '@binder/common';
 
 type NavigationMenu = 'documents' | 'settings' | 'account';
 
@@ -89,7 +90,7 @@ export class AppComponent implements OnInit {
     await this.auth.logout();
   }
 
-  setLanguage(language: 'en' | 'de'): void {
+  setLanguage(language: AppLanguage): void {
     this.i18n.setLanguage(language);
   }
 
