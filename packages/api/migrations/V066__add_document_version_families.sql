@@ -8,7 +8,7 @@ SET version_family_id = id
 WHERE version_family_id IS NULL;
 
 ALTER TABLE documents
-  ALTER COLUMN version_family_id SET NOT NULL,
+  ADD CONSTRAINT documents_version_family_check CHECK (version_family_id IS NOT NULL),
   ADD CONSTRAINT documents_version_number_check CHECK (version_number >= 1),
   ADD CONSTRAINT documents_version_parent_fk
     FOREIGN KEY (version_parent_id) REFERENCES documents(id) ON DELETE SET NULL;
