@@ -12,14 +12,10 @@
   max-height: calc(100vh - 3rem);
   overflow-x: hidden;
   overflow-y: auto;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 1.1rem;
-  background: linear-gradient(
-    145deg,
-    var(--palette-rgba-20-52-88-0-76),
-    var(--palette-rgba-7-22-41-0-86)
-  );
-  box-shadow: 0 1.5rem 4rem var(--palette-rgba-0-0-0-0-12);
+  background: linear-gradient(145deg, var(--color-accent), var(--color-accent));
+  box-shadow: 0 1.5rem 4rem var(--color-overlay);
 }
 
 .folder-tree-header {
@@ -31,7 +27,7 @@
 }
 
 .folder-tree-kicker {
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -39,7 +35,7 @@
 
 .folder-tree h3 {
   margin: 0.3rem 0 0;
-  color: var(--color-text-bright);
+  color: var(--color-text);
   font-size: 1rem;
   letter-spacing: -0.02em;
 }
@@ -47,7 +43,7 @@
 .folder-tree-copy {
   margin: 0;
   padding: 0 1rem 0.9rem;
-  color: var(--palette-8da4bf);
+  color: var(--color-text);
   font-size: 0.7rem;
   line-height: 1.5;
 }
@@ -56,42 +52,42 @@
   width: 2.4rem;
   height: 2.4rem;
   padding: 0.5rem 0.5rem;
-  border: 1px solid var(--palette-rgba-97-215-244-0-3);
+  border: 1px solid var(--color-accent);
   border-radius: 0.55rem;
-  color: var(--cyan);
-  background: var(--color-accent-surface-soft);
+  color: var(--color-accent);
+  background: var(--color-accent);
   cursor: pointer;
   font-size: 1.25rem;
 }
 
 .folder-icon-button:hover,
 .folder-icon-button:focus-visible {
-  border-color: var(--cyan);
+  border-color: var(--color-accent);
   outline: none;
 }
 
 .folder-tree-error {
   margin: 0 1rem 0.75rem;
   padding: 0.55rem 0.65rem;
-  border: 1px solid var(--palette-rgba-255-120-120-0-25);
+  border: 1px solid var(--color-danger);
   border-radius: 0.45rem;
-  color: var(--color-status-danger);
-  background: var(--color-danger-surface);
+  color: var(--color-danger);
+  background: var(--color-danger);
   font-size: 0.68rem;
 }
 
 .folder-create-form {
   margin: 0 0.75rem 0.75rem;
   padding: 0.65rem;
-  border: 1px solid var(--palette-rgba-97-215-244-0-2);
+  border: 1px solid var(--color-accent);
   border-radius: 0.65rem;
-  background: var(--palette-rgba-5-18-35-0-45);
+  background: var(--color-accent);
 }
 
 .folder-create-form label {
   display: block;
   margin-bottom: 0.35rem;
-  color: var(--palette-cfe0f5);
+  color: var(--color-text);
   font-size: 0.68rem;
   font-weight: 700;
 }
@@ -106,11 +102,11 @@
   flex: 1 1 8rem;
   min-width: 0;
   min-height: 2.35rem;
-  border: 1px solid var(--palette-rgba-157-190-232-0-22);
+  border: 1px solid var(--color-text);
   border-radius: 0.4rem;
   padding: 0.4rem 0.5rem;
-  color: var(--color-text-bright);
-  background: var(--palette-rgba-5-18-35-0-75);
+  color: var(--color-text);
+  background: var(--color-accent);
   font: inherit;
   font-size: 0.75rem;
 }
@@ -119,11 +115,11 @@
   flex: 1 1 8rem;
   min-width: 0;
   min-height: 2.35rem;
-  border: 1px solid var(--palette-rgba-157-190-232-0-22);
+  border: 1px solid var(--color-text);
   border-radius: 0.4rem;
   padding: 0.4rem 0.5rem;
-  color: var(--color-text-bright);
-  background: var(--palette-rgba-5-18-35-0-75);
+  color: var(--color-text);
+  background: var(--color-accent);
   font: inherit;
   font-size: 0.75rem;
 }
@@ -131,11 +127,11 @@
 .folder-form-row button,
 .folder-actions button {
   min-height: 2.35rem;
-  border: 1px solid var(--palette-rgba-97-215-244-0-22);
+  border: 1px solid var(--color-accent);
   border-radius: 0.4rem;
   padding: 0.35rem 0.55rem;
-  color: var(--cyan);
-  background: var(--color-accent-surface-soft);
+  color: var(--color-accent);
+  background: var(--color-accent);
   cursor: pointer;
   font: inherit;
   font-size: 0.68rem;
@@ -147,7 +143,7 @@
 .folder-form-row button:focus-visible,
 .folder-actions button:hover,
 .folder-actions button:focus-visible {
-  border-color: var(--cyan);
+  border-color: var(--color-accent);
   outline: none;
 }
 
@@ -158,7 +154,7 @@
 
 .folder-form-row button.quiet {
   border-color: transparent;
-  color: var(--palette-8da4bf);
+  color: var(--color-text);
   background: transparent;
 }
 
@@ -176,7 +172,7 @@
   gap: 0.2rem;
   border: 0;
   border-radius: 0.5rem;
-  color: var(--palette-a9bfd8);
+  color: var(--color-text);
   background: transparent;
   font: inherit;
   font-size: 0.75rem;
@@ -192,13 +188,13 @@
 .folder-row:hover,
 .folder-root-row:focus-within,
 .folder-row:focus-within {
-  background: var(--palette-rgba-97-215-244-0-07);
+  background: var(--color-accent);
 }
 
 .folder-root-row.selected,
 .folder-select.selected {
-  color: var(--color-text-bright);
-  background: var(--palette-rgba-97-215-244-0-13);
+  color: var(--color-text);
+  background: var(--color-accent);
 }
 
 .folder-disclosure {
@@ -208,7 +204,7 @@
   height: 2.35rem;
   place-items: center;
   border: 0;
-  color: var(--palette-8da4bf);
+  color: var(--color-text);
   background: transparent;
   cursor: pointer;
   font-size: 1.15rem;
@@ -249,7 +245,7 @@
 
 .folder-glyph {
   flex: 0 0 auto;
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.85rem;
 }
 
@@ -278,9 +274,9 @@
   z-index: 1;
   gap: 0.1rem;
   padding: 0.1rem;
-  border: 1px solid var(--palette-rgba-97-215-244-0-16);
+  border: 1px solid var(--color-accent);
   border-radius: 0.5rem;
-  background: var(--palette-rgba-7-22-41-0-92);
+  background: var(--color-accent);
   backdrop-filter: blur(8px);
   opacity: 0;
   pointer-events: none;
@@ -298,29 +294,29 @@
   width: 2.1rem;
   min-height: 2.1rem;
   padding: 0;
-  color: var(--palette-8da4bf);
+  color: var(--color-text);
   background: transparent;
 }
 
 .folder-actions button:hover,
 .folder-actions button:focus-visible {
-  color: var(--cyan);
-  background: var(--color-accent-surface-soft);
+  color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .folder-actions button.danger:hover,
 .folder-actions button.danger:focus-visible {
-  border-color: var(--palette-rgba-255-120-120-0-45);
-  color: var(--color-status-danger);
-  background: var(--palette-rgba-255-120-120-0-08);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--color-danger);
 }
 
 .folder-editor {
   min-width: 0;
   width: 100%;
   border: 0;
-  border-bottom: 1px solid var(--cyan);
-  color: var(--color-text-bright);
+  border-bottom: 1px solid var(--color-accent);
+  color: var(--color-text);
   background: transparent;
   font: inherit;
   outline: none;
@@ -335,7 +331,7 @@
 .folder-tree-divider {
   height: 1px;
   margin: 0.65rem 0.5rem;
-  background: var(--palette-rgba-157-190-232-0-14);
+  background: var(--color-text);
 }
 
 .virtual-folder-row {
@@ -347,7 +343,7 @@
   border: 0;
   border-radius: 0.5rem;
   padding: 0.25rem 0.4rem;
-  color: var(--palette-a9bfd8);
+  color: var(--color-text);
   background: transparent;
   cursor: pointer;
   font: inherit;
@@ -358,8 +354,8 @@
 .virtual-folder-row:hover,
 .virtual-folder-row:focus-visible,
 .virtual-folder-row.selected {
-  color: var(--color-text-bright);
-  background: var(--palette-rgba-97-215-244-0-13);
+  color: var(--color-text);
+  background: var(--color-accent);
   outline: none;
 }
 
@@ -369,7 +365,7 @@
   width: 1.55rem;
   height: 1.55rem;
   place-items: center;
-  color: var(--cyan);
+  color: var(--color-accent);
 }
 
 .folder-new-icon {
@@ -378,7 +374,7 @@
   width: 1.55rem;
   height: 1.55rem;
   place-items: center;
-  color: var(--palette-f2ca78);
+  color: var(--color-warning);
 }
 
 .folder-unassigned-icon svg,
@@ -393,7 +389,7 @@
 }
 
 .folder-row-root select {
-  background-color: var(--palette-rgba-97-215-244-0-13);
+  background-color: var(--color-accent);
 }
 
 @media (prefers-reduced-motion: reduce) {

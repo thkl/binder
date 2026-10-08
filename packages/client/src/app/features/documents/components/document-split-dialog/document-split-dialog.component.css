@@ -9,18 +9,18 @@
   min-height: 100%;
   padding: 1rem;
   place-items: center;
-  background: var(--palette-rgba-1-8-19-0-72);
+  background: var(--color-accent);
   backdrop-filter: blur(0.6rem);
 }
 
 .split-dialog {
   width: min(34rem, 100%);
   overflow: hidden;
-  border: 1px solid var(--palette-rgba-133-200-241-0-25);
+  border: 1px solid var(--color-accent);
   border-radius: 1.1rem;
-  color: var(--palette-e7f3ff);
-  background: var(--palette-081a31);
-  box-shadow: 0 2rem 5rem var(--palette-rgba-0-0-0-0-35);
+  color: var(--color-border);
+  background: var(--color-accent);
+  box-shadow: 0 2rem 5rem var(--color-overlay);
 }
 
 header,
@@ -31,7 +31,7 @@ footer {
 
 header,
 footer {
-  border-color: var(--palette-rgba-157-190-232-0-12);
+  border-color: var(--color-text);
   border-style: solid;
 }
 
@@ -57,7 +57,7 @@ h2 {
 }
 
 .split-kicker {
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.15em;
@@ -66,7 +66,7 @@ h2 {
 .split-copy,
 .split-hint {
   margin-top: 0.45rem;
-  color: var(--palette-8fa8c4);
+  color: var(--color-text);
   font-size: 0.75rem;
 }
 
@@ -78,7 +78,7 @@ h2 {
 .split-field {
   display: grid;
   gap: 0.45rem;
-  color: var(--palette-bfd4ea);
+  color: var(--color-text);
   font-size: 0.75rem;
   font-weight: 750;
 }
@@ -89,8 +89,8 @@ h2 {
   border: 1px solid var(--color-border);
   border-radius: 0.55rem;
   padding: 0.45rem 0.6rem;
-  color: var(--palette-e7f3ff);
-  background: var(--palette-rgba-157-190-232-0-08);
+  color: var(--color-border);
+  background: var(--color-text);
   font: inherit;
 }
 
@@ -98,15 +98,15 @@ h2 {
   display: flex;
   align-items: flex-start;
   gap: 0.55rem;
-  color: var(--palette-c7daee);
+  color: var(--color-text);
   font-size: 0.75rem;
 }
 
 .split-error {
   border-radius: 0.55rem;
   padding: 0.65rem;
-  color: var(--palette-ffc0c0);
-  background: var(--palette-rgba-150-45-45-0-2);
+  color: var(--color-danger);
+  background: var(--color-danger);
   font-size: 0.74rem;
 }
 
@@ -121,12 +121,12 @@ button {
 }
 
 .split-cancel {
-  color: var(--palette-b6cde4);
+  color: var(--color-text);
   background: transparent;
 }
 
 .split-primary {
-  border-color: var(--cyan);
-  color: var(--palette-06111f);
-  background: var(--cyan);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+  background: var(--color-accent);
 }

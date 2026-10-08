@@ -4,7 +4,7 @@
 }
 
 .white {
-  color: var(--color-text-bright);
+  color: var(--color-text);
 }
 
 .skip-link {
@@ -15,8 +15,8 @@
   transform: translateY(-200%);
   padding: 0.7rem 1rem;
   border-radius: 0.5rem;
-  color: var(--navy);
-  background: var(--cyan);
+  color: var(--color-bg);
+  background: var(--color-accent);
   font-weight: 700;
 }
 
@@ -30,8 +30,8 @@
   place-items: center;
   align-content: center;
   gap: 1rem;
-  color: var(--muted);
-  background: radial-gradient(circle at 50% 40%, var(--palette-12365b), var(--navy) 60%);
+  color: var(--color-text-muted);
+  background: radial-gradient(circle at 50% 40%, var(--color-accent), var(--color-bg) 60%);
 }
 
 .loading-mark,
@@ -41,10 +41,10 @@
   width: 2.8rem;
   height: 2.8rem;
   border-radius: 0.85rem;
-  color: var(--color-text-on-accent);
-  background: var(--cyan);
+  color: var(--color-bg);
+  background: var(--color-accent);
   font-weight: 900;
-  box-shadow: 0 0 2rem var(--palette-rgba-97-215-244-0-3);
+  box-shadow: 0 0 2rem var(--color-accent);
 }
 
 .workspace {
@@ -82,7 +82,7 @@
 
 .eyebrow,
 .section-kicker {
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.67rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -106,23 +106,23 @@ h1 {
   gap: 0.15rem;
   padding: 0.15rem;
   height: 3em;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 0.55rem;
-  background: var(--palette-rgba-255-255-255-0-04);
+  background: var(--color-border);
 }
 
 .language-switcher button {
   min-width: 2.25rem;
   padding: 0.4rem 0.45rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   background: transparent;
   font-size: 0.68rem;
 }
 
 .language-switcher button.active,
 .language-switcher button:hover {
-  color: var(--color-text-on-accent);
-  background: var(--cyan);
+  color: var(--color-bg);
+  background: var(--color-accent);
 }
 
 .account-menu {
@@ -136,10 +136,10 @@ h1 {
   min-height: 3.65em;
   padding: 0.35rem 0.55rem;
   max-width: 12rem;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 0.65rem;
-  color: var(--muted);
-  background: var(--palette-ffffff0a);
+  color: var(--color-text-muted);
+  background: var(--color-border);
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
@@ -148,8 +148,8 @@ h1 {
 
 .account-toggle:hover,
 .account-menu.is-open .account-toggle {
-  color: var(--cyan);
-  background: var(--color-accent-surface-soft);
+  color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .user-avatar {
@@ -157,17 +157,17 @@ h1 {
   width: 2.15rem;
   height: 2.15rem;
   flex: 0 0 2.15rem;
-  border: 1px solid var(--palette-rgba-154-226-245-0-45);
+  border: 1px solid var(--color-accent);
   border-radius: 50%;
   object-fit: cover;
-  background: var(--palette-rgba-97-215-244-0-12);
+  background: var(--color-accent);
 }
 
 .user-avatar-fallback {
   display: grid;
   place-items: center;
-  color: var(--color-text-on-accent);
-  background: var(--cyan);
+  color: var(--color-bg);
+  background: var(--color-accent);
   font-size: 0.82rem;
   font-weight: 850;
 }
@@ -185,10 +185,10 @@ h1 {
   right: 0;
   min-width: 13rem;
   padding: 0.55rem;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 0.8rem;
-  background: var(--palette-rgba-9-27-50-0-97);
-  box-shadow: 0 1rem 2.5rem var(--palette-rgba-0-0-0-0-28);
+  background: var(--color-accent);
+  box-shadow: 0 1rem 2.5rem var(--color-overlay);
   backdrop-filter: blur(18px);
 }
 
@@ -199,7 +199,7 @@ h1 {
 }
 
 .account-menu-label {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -219,7 +219,7 @@ h1 {
 .account-menu-divider {
   height: 1px;
   margin: 0.45rem 0;
-  background: var(--glass-border);
+  background: var(--color-border);
 }
 
 .account-menu-action {
@@ -229,7 +229,7 @@ h1 {
   padding: 0.7rem 0.8rem;
   border: 0;
   border-radius: 0.55rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   background: transparent;
   font: inherit;
   text-align: left;
@@ -239,14 +239,14 @@ h1 {
 }
 
 .account-menu-action:hover {
-  color: var(--cyan);
-  background: var(--color-accent-surface);
+  color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .nav-link {
   padding: 0.55rem 0.7rem;
   border-radius: 0.55rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   text-decoration: none;
   font-size: 0.83rem;
   font-weight: 700;
@@ -254,8 +254,8 @@ h1 {
 
 .nav-link:hover,
 .nav-link.active {
-  color: var(--cyan);
-  background: var(--color-accent-surface-soft);
+  color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .nav-menu {
@@ -267,9 +267,9 @@ h1 {
   align-items: center;
   gap: 0.15rem;
   padding: 0.55rem 0.45rem;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 0.55rem;
-  background: var(--palette-ffffff0a);
+  background: var(--color-border);
   cursor: pointer;
   height: 3.65em;
 }
@@ -282,8 +282,8 @@ h1 {
   margin-left: 0.2rem;
   padding: 0 0.3rem;
   border-radius: 999px;
-  color: var(--color-text-on-accent);
-  background: var(--palette-f2ca78);
+  color: var(--color-bg);
+  background: var(--color-warning);
   font-size: 0.64rem;
   font-weight: 850;
   line-height: 1;
@@ -295,13 +295,13 @@ h1 {
 .secondary:focus-visible,
 .account-toggle:focus-visible,
 .account-menu-action:focus-visible {
-  outline: 2px solid var(--cyan);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
 .nav-menu.is-open .nav-menu-toggle {
-  color: var(--cyan);
-  background: var(--color-accent-surface-soft);
+  color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .menu-caret {
@@ -322,10 +322,10 @@ h1 {
   right: 0;
   min-width: 12rem;
   padding: 0.4rem;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 0.8rem;
-  background: var(--palette-rgba-9-27-50-0-97);
-  box-shadow: 0 1rem 2.5rem var(--palette-rgba-0-0-0-0-28);
+  background: var(--color-accent);
+  box-shadow: 0 1rem 2.5rem var(--color-overlay);
   backdrop-filter: blur(18px);
 }
 
@@ -333,7 +333,7 @@ h1 {
   display: block;
   padding: 0.7rem 0.8rem;
   border-radius: 0.55rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   text-decoration: none;
   font-size: 0.8rem;
   font-weight: 700;
@@ -342,12 +342,12 @@ h1 {
 
 .nav-menu-link:hover,
 .nav-menu-link.active {
-  color: var(--cyan);
-  background: var(--color-accent-surface);
+  color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .secure-badge {
-  color: var(--palette-a8d9cd);
+  color: var(--color-success);
   font-size: 0.78rem;
 }
 
@@ -357,8 +357,8 @@ h1 {
   height: 0.45rem;
   margin-right: 0.35rem;
   border-radius: 50%;
-  background: var(--color-status-success);
-  box-shadow: 0 0 0.6rem var(--color-status-success);
+  background: var(--color-success);
+  box-shadow: 0 0 0.6rem var(--color-success);
 }
 
 .welcome-row {
@@ -376,11 +376,11 @@ h1 {
 }
 
 .welcome-row h2 span {
-  color: var(--cyan);
+  color: var(--color-accent);
 }
 
 .muted {
-  color: var(--muted);
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
@@ -395,20 +395,20 @@ button {
 }
 
 .primary-action {
-  color: var(--color-text-on-accent);
-  background: var(--cyan);
-  box-shadow: 0 0.75rem 1.75rem var(--palette-rgba-33-185-223-0-18);
+  color: var(--color-bg);
+  background: var(--color-accent);
+  box-shadow: 0 0.75rem 1.75rem var(--color-accent);
   white-space: nowrap;
 }
 
 .primary-action:hover {
-  background: var(--color-accent-bright);
+  background: var(--color-accent);
 }
 
 .secondary {
-  color: var(--ink);
-  background: var(--palette-rgba-255-255-255-0-08);
-  border: 1px solid var(--glass-border);
+  color: var(--color-text);
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
 }
 
 .dashboard-grid {
@@ -420,26 +420,21 @@ button {
 .dashboard-card {
   min-height: 15rem;
   padding: 1.5rem;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 1.25rem;
-  background: linear-gradient(
-    135deg,
-    var(--palette-rgba-20-52-88-0-82),
-    var(--palette-rgba-10-27-50-0-7)
-  );
-  box-shadow: 0 1.5rem 4rem var(--palette-rgba-0-0-0-0-18);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent));
+  box-shadow: 0 1.5rem 4rem var(--color-overlay);
   backdrop-filter: blur(18px);
 }
 
 .vault-card {
   background:
-    radial-gradient(circle at 100% 0%, var(--palette-rgba-33-185-223-0-17), transparent 38%),
-    var(--glass);
+    radial-gradient(circle at 100% 0%, var(--color-accent), transparent 38%), var(--color-surface);
 }
 
 .card-heading {
   gap: 0.6rem;
-  color: var(--palette-bbcae0);
+  color: var(--color-text);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -450,14 +445,14 @@ button {
   width: 2rem;
   height: 2rem;
   border-radius: 0.6rem;
-  color: var(--cyan);
-  background: var(--palette-rgba-97-215-244-0-12);
+  color: var(--color-accent);
+  background: var(--color-accent);
   font-size: 1.1rem;
 }
 
 .card-arrow {
   margin-left: auto;
-  color: var(--cyan);
+  color: var(--color-accent);
 }
 
 .dashboard-card strong {
@@ -477,18 +472,18 @@ button {
   margin-bottom: 0.7rem;
   overflow: hidden;
   border-radius: 1rem;
-  background: var(--palette-rgba-255-255-255-0-1);
+  background: var(--color-border);
 }
 
 .progress-line span {
   display: block;
   width: 8%;
   height: 100%;
-  background: var(--cyan);
+  background: var(--color-accent);
 }
 
 .dashboard-card small {
-  color: var(--palette-738ba9);
+  color: var(--color-text-muted);
 }
 
 .security-card strong {
@@ -497,13 +492,13 @@ button {
 
 .security-list {
   margin-top: 0.7rem;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: 0.88rem;
 }
 
 .security-list span {
   margin-right: 0.45rem;
-  color: var(--color-status-success);
+  color: var(--color-success);
 }
 
 .click {

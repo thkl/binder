@@ -191,6 +191,7 @@ export class DocumentService {
     checksumSha256: string,
     sizeBytes: number,
     autoApplyAi = false,
+    aiAutoApplyOverride: boolean | null = null,
   ): Promise<void> {
     try {
       await this.inboxItems.create({
@@ -204,6 +205,7 @@ export class DocumentService {
         aiSuggestion: null,
         autoApplied: false,
         autoApplyAi,
+        aiAutoApplyOverride,
         lastError: null,
         aiError: null,
       });
@@ -930,6 +932,7 @@ export class DocumentService {
           remainingStored.checksumSha256,
           remainingStored.sizeBytes,
           input.autoApplySuggestions,
+          input.autoApplySuggestions,
         ),
         this.addManualUploadToInbox(
           extracted.uuid,
@@ -937,6 +940,7 @@ export class DocumentService {
           { buffer: extractedBuffer, mimetype: 'application/pdf', originalname: extractedName },
           extractedStored.checksumSha256,
           extractedStored.sizeBytes,
+          input.autoApplySuggestions,
           input.autoApplySuggestions,
         ),
       ]);

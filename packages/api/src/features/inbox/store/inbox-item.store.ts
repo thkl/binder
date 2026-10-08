@@ -10,6 +10,7 @@ interface QueueDocumentForAnalysisInput {
   checksumSha256: string;
   sizeBytes: number;
   autoApplyAi?: boolean;
+  aiAutoApplyOverride?: boolean | null;
 }
 
 @Injectable()
@@ -59,6 +60,7 @@ export class InboxItemStore extends BaseCrudStore<InboxItem> {
         aiSuggestion: null,
         autoApplied: false,
         autoApplyAi: input.autoApplyAi ?? false,
+        aiAutoApplyOverride: input.aiAutoApplyOverride ?? null,
         lastError: null,
         aiError: null,
       });
@@ -75,6 +77,7 @@ export class InboxItemStore extends BaseCrudStore<InboxItem> {
       aiSuggestion: null,
       autoApplied: false,
       autoApplyAi: input.autoApplyAi ?? false,
+      aiAutoApplyOverride: input.aiAutoApplyOverride ?? null,
       lastError: null,
       aiError: null,
     });

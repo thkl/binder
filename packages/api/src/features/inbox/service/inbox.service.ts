@@ -97,10 +97,9 @@ export class InboxService {
           let autoApplied = item.autoApplied;
           const highConfidence = suggestion.confidence >= automaticApproval.confidence;
           const feedbackOnly = suggestion.feedbackFields.length > 0 && !highConfidence;
-          if (
-            (item.autoApplyAi || automaticApproval.enabled) &&
-            (highConfidence || suggestion.feedbackFields.length > 0)
-          ) {
+          const applyAutomatically =
+            item.aiAutoApplyOverride ?? (item.autoApplyAi || automaticApproval.enabled);
+          if (applyAutomatically && (highConfidence || suggestion.feedbackFields.length > 0)) {
             try {
               const result = await this.documents.applySuggestionToEmptyFields(
                 item.ownerUuid,
@@ -108,14 +107,22 @@ export class InboxService {
                 suggestion,
                 feedbackOnly ? suggestion.feedbackFields : undefined,
               );
-              autoApplied = autoApplied || result.appliedFields.length > 0;
-              this.logger.info('Automatically applied inbox AI suggestion', {
-                inboxItemUuid: item.uuid,
-                documentUuid: item.documentUuid,
-                confidence: suggestion.confidence,
-                appliedFields: result.appliedFields,
-              });
-              await this.documents.clearSuggestion(item.ownerUuid, item.documentUuid, false);
+              if (result.appliedFields.length > 0) {
+                autoApplied = true;
+                this.logger.info('Automatically applied inbox AI suggestion', {
+                  inboxItemUuid: item.uuid,
+                  documentUuid: item.documentUuid,
+                  confidence: suggestion.confidence,
+                  appliedFields: result.appliedFields,
+                });
+                await this.documents.clearSuggestion(item.ownerUuid, item.documentUuid, false);
+              } else {
+                this.logger.info('Inbox AI suggestion kept for manual review', {
+                  inboxItemUuid: item.uuid,
+                  documentUuid: item.documentUuid,
+                  confidence: suggestion.confidence,
+                });
+              }
             } catch (error) {
               this.logger.warn(
                 `Unable to auto-apply inbox AI suggestion for ${item.uuid}: ${error instanceof Error ? error.message : String(error)}`,

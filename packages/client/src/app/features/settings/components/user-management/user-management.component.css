@@ -15,7 +15,7 @@
 .management-heading h3,
 .card-heading h4 {
   margin: 0.25rem 0 0;
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 .management-heading h3 {
@@ -25,7 +25,7 @@
 .muted {
   max-width: 42rem;
   margin: 0.55rem 0 0;
-  color: var(--muted);
+  color: var(--color-text-muted);
   line-height: 1.55;
 }
 
@@ -43,7 +43,7 @@
 
 .card-heading {
   padding: 1.1rem 1.35rem;
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .count-badge,
@@ -52,8 +52,8 @@
   align-items: center;
   border-radius: 999px;
   padding: 0.3rem 0.55rem;
-  color: var(--palette-9fb8d5);
-  background: var(--color-border-subtle);
+  color: var(--color-text);
+  background: var(--color-border);
   font-size: 0.68rem;
   font-weight: 800;
 }
@@ -70,7 +70,7 @@
   width: 100%;
   padding: 0.85rem 1.35rem;
   border: 0;
-  border-bottom: 1px solid var(--palette-rgba-157-190-232-0-08);
+  border-bottom: 1px solid var(--color-text);
   border-radius: 0;
   color: inherit;
   text-align: left;
@@ -79,7 +79,7 @@
 
 .user-row:hover,
 .user-row.selected {
-  background: var(--color-accent-surface-soft);
+  background: var(--color-accent);
 }
 
 .user-avatar {
@@ -88,8 +88,8 @@
   height: 2rem;
   place-items: center;
   border-radius: 0.65rem;
-  color: var(--color-text-on-accent);
-  background: var(--cyan);
+  color: var(--color-bg);
+  background: var(--color-accent);
   font-size: 0.8rem;
   font-weight: 900;
 }
@@ -102,7 +102,7 @@
 
 .user-summary strong {
   overflow: hidden;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -123,13 +123,13 @@
 }
 
 .status-badge.admin {
-  color: var(--color-text-on-accent);
-  background: var(--palette-f2ca78);
+  color: var(--color-bg);
+  background: var(--color-warning);
 }
 
 .status-badge.inactive {
-  color: var(--palette-e9a1a1);
-  background: var(--palette-rgba-212-94-94-0-15);
+  color: var(--color-danger);
+  background: var(--color-danger);
 }
 
 .editor-fields {
@@ -141,7 +141,7 @@
 .editor-fields label {
   display: grid;
   gap: 0.4rem;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
   font-weight: 750;
 }
@@ -158,19 +158,19 @@
 
 .password-generate {
   margin-top: 0.1rem;
-  border: 1px solid var(--palette-rgba-97-215-244-0-35);
+  border: 1px solid var(--color-accent);
   border-radius: 0.45rem;
   padding: 0.45rem 0.65rem;
-  color: var(--cyan);
-  background: var(--color-accent-surface-soft);
+  color: var(--color-accent);
+  background: var(--color-accent);
   font-size: 0.7rem;
   font-weight: 750;
 }
 
 .password-generate:hover,
 .password-generate:focus-visible {
-  border-color: var(--cyan);
-  background: var(--palette-rgba-97-215-244-0-14);
+  border-color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .editor-fields input {
@@ -179,13 +179,13 @@
   border: 1px solid var(--color-border);
   border-radius: 0.55rem;
   padding: 0.7rem 0.75rem;
-  color: var(--color-text-primary);
-  background: var(--color-surface-raised);
+  color: var(--color-text);
+  background: var(--color-surface);
   outline: none;
 }
 
 .editor-fields input:focus {
-  border-color: var(--cyan);
+  border-color: var(--color-accent);
 }
 
 .editor-options {
@@ -199,12 +199,12 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
 }
 
 .checkbox-field input {
-  accent-color: var(--cyan);
+  accent-color: var(--color-accent);
 }
 
 .editor-hint {
@@ -219,20 +219,20 @@
 
 .saved-message {
   margin-right: auto;
-  color: var(--color-status-success);
+  color: var(--color-success);
   font-size: 0.75rem;
   font-weight: 750;
 }
 
 .secondary-button {
   border: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   background: transparent;
 }
 
 .secondary-button:hover {
-  border-color: var(--cyan);
-  color: var(--cyan);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .management-status,
@@ -242,15 +242,15 @@
 }
 
 .management-status.error {
-  color: var(--palette-e9a1a1);
+  color: var(--color-danger);
 }
 
 button {
   border: 0;
   border-radius: 0.65rem;
   padding: 0.8rem 1rem;
-  color: var(--color-text-on-accent);
-  background: var(--cyan);
+  color: var(--color-bg);
+  background: var(--color-accent);
   cursor: pointer;
   font: inherit;
   font-size: 0.8rem;

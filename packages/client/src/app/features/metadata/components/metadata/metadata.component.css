@@ -12,7 +12,7 @@
 
 .section-kicker {
   margin: 0;
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.67rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -32,19 +32,15 @@ h3 {
 
 .muted {
   margin: 0;
-  color: var(--muted);
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
 .glass-card {
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 1.1rem;
-  background: linear-gradient(
-    135deg,
-    var(--palette-rgba-20-52-88-0-78),
-    var(--palette-rgba-10-27-50-0-72)
-  );
-  box-shadow: 0 1.5rem 4rem var(--palette-rgba-0-0-0-0-16);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent));
+  box-shadow: 0 1.5rem 4rem var(--color-overlay);
   backdrop-filter: blur(18px);
 }
 
@@ -77,7 +73,7 @@ h3 {
   padding: 0.65rem 0.7rem;
   border: 0;
   border-radius: 0.65rem;
-  color: var(--color-text-secondary-soft);
+  color: var(--color-text-muted);
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -88,8 +84,8 @@ h3 {
 
 .nav-item:hover,
 .nav-item.active {
-  color: var(--cyan);
-  background: var(--color-accent-surface);
+  color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .nav-item small {
@@ -103,18 +99,18 @@ h3 {
   width: 1.45rem;
   height: 1.45rem;
   border-radius: 0.42rem;
-  color: var(--palette-07182b);
-  background: var(--palette-85d7ef);
+  color: var(--color-accent);
+  background: var(--color-accent);
   font-size: 0.7rem;
   font-weight: 900;
 }
 
 .category-icon {
-  background: var(--palette-b8a6ff);
+  background: var(--color-text);
 }
 
 .tag-icon {
-  background: var(--palette-75dfaa);
+  background: var(--color-success);
 }
 
 .nav-note {
@@ -130,8 +126,8 @@ h3 {
   height: 0.4rem;
   margin-right: 0.35rem;
   border-radius: 50%;
-  background: var(--color-status-success);
-  box-shadow: 0 0 0.6rem var(--color-status-success);
+  background: var(--color-success);
+  box-shadow: 0 0 0.6rem var(--color-success);
 }
 
 .library-content {
@@ -157,7 +153,7 @@ h3 {
 }
 
 .feedback-list {
-  border-top: 1px solid var(--color-border-subtle);
+  border-top: 1px solid var(--color-border);
 }
 
 .feedback-row {
@@ -166,7 +162,7 @@ h3 {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.8rem 1.6rem;
-  border-bottom: 1px solid var(--palette-rgba-157-190-232-0-08);
+  border-bottom: 1px solid var(--color-text);
 }
 
 .feedback-row > div {
@@ -176,7 +172,7 @@ h3 {
 }
 
 .feedback-row strong {
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 .feedback-row small {
@@ -194,7 +190,7 @@ h3 {
 
 .definition-lifecycle {
   margin: 0.45rem 1.6rem 0;
-  color: var(--palette-8fa8c3);
+  color: var(--color-text);
   font-size: 0.7rem;
   line-height: 1.45;
 }
@@ -209,7 +205,7 @@ h3 {
 .definition-form label {
   display: grid;
   gap: 0.35rem;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -221,18 +217,18 @@ h3 {
   border: 1px solid var(--color-border);
   border-radius: 0.55rem;
   padding: 0.7rem 0.75rem;
-  color: var(--color-text-primary);
-  background: var(--color-surface-raised);
+  color: var(--color-text);
+  background: var(--color-surface);
   outline: none;
 }
 
 .definition-form select {
-  background: var(--color-surface-raised);
+  background: var(--color-surface);
 }
 
 .definition-form input:focus,
 .definition-form select:focus {
-  border-color: var(--cyan);
+  border-color: var(--color-accent);
 }
 
 .definition-form small {
@@ -251,7 +247,7 @@ h3 {
 }
 
 .definition-list {
-  border-top: 1px solid var(--color-border-subtle);
+  border-top: 1px solid var(--color-border);
 }
 
 .definition-row {
@@ -260,17 +256,17 @@ h3 {
   gap: 1rem;
   align-items: center;
   padding: 0.8rem 1.6rem;
-  border-bottom: 1px solid var(--palette-rgba-157-190-232-0-08);
-  color: var(--color-text-secondary-soft);
+  border-bottom: 1px solid var(--color-text);
+  color: var(--color-text-muted);
   font-size: 0.72rem;
 }
 
 .definition-row strong {
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 .definition-row code {
-  color: var(--palette-79c9d8);
+  color: var(--color-accent);
 }
 
 .definition-row span {
@@ -279,11 +275,11 @@ h3 {
 
 .definition-label-input {
   min-width: 0;
-  border: 1px solid var(--palette-rgba-97-215-244-0-45);
+  border: 1px solid var(--color-accent);
   border-radius: 0.45rem;
   padding: 0.45rem 0.55rem;
-  color: var(--color-text-primary);
-  background: var(--color-field-surface);
+  color: var(--color-text);
+  background: var(--color-surface);
   font: inherit;
 }
 
@@ -306,18 +302,18 @@ h3 {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.5rem 1.6rem;
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .count-badge,
 .scope-badge {
-  color: var(--palette-9bb1c9);
+  color: var(--color-text);
   font-size: 0.68rem;
 }
 
 .count-badge {
   padding: 0.35rem 0.6rem;
-  border: 1px solid var(--palette-rgba-157-190-232-0-16);
+  border: 1px solid var(--color-text);
   border-radius: 2rem;
 }
 
@@ -331,7 +327,7 @@ h3 {
   gap: 0.8rem;
   min-height: 4.2rem;
   padding: 0.8rem 1.6rem;
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .value-row:last-child {
@@ -339,12 +335,12 @@ h3 {
 }
 
 .value-mark {
-  color: var(--palette-8fa6bf);
+  color: var(--color-text);
   font-size: 0.68rem;
 }
 
 .value-mark.system {
-  color: var(--cyan);
+  color: var(--color-accent);
 }
 
 .value-copy {
@@ -355,7 +351,7 @@ h3 {
 }
 
 .value-copy strong {
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 0.82rem;
 }
 
@@ -375,7 +371,7 @@ h3 {
 .value-edit label {
   display: grid;
   gap: 0.3rem;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: 0.7rem;
   font-weight: 700;
 }
@@ -387,19 +383,19 @@ h3 {
   border: 1px solid var(--color-border);
   border-radius: 0.55rem;
   padding: 0.55rem 0.65rem;
-  color: var(--color-text-primary);
-  background: var(--color-surface-raised);
+  color: var(--color-text);
+  background: var(--color-surface);
   outline: none;
 }
 
 .value-edit input:focus,
 .value-edit select:focus {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px var(--palette-rgba-97-215-244-0-12);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent);
 }
 
 .value-edit em {
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.6rem;
   font-style: normal;
   font-weight: 800;
@@ -432,7 +428,7 @@ h3 {
 
 .row-action {
   border: 0;
-  color: var(--cyan);
+  color: var(--color-accent);
   background: transparent;
   cursor: pointer;
   font: inherit;
@@ -452,18 +448,18 @@ h3 {
 }
 
 .danger-action {
-  color: var(--palette-ff9eaa);
+  color: var(--color-danger);
 }
 
 .scope-badge {
   padding: 0.35rem 0.55rem;
   border-radius: 2rem;
-  background: var(--palette-rgba-157-190-232-0-08);
+  background: var(--color-text);
 }
 
 .scope-badge.system {
-  color: var(--palette-9ee8f6);
-  background: var(--color-accent-surface);
+  color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .create-form {
@@ -471,8 +467,8 @@ h3 {
   grid-template-columns: 1fr 1.4fr;
   gap: 1rem;
   padding: 1.2rem 1.6rem;
-  border-bottom: 1px solid var(--glass-border);
-  background: var(--palette-rgba-5-18-35-0-2);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-accent);
 }
 
 .form-title {
@@ -482,7 +478,7 @@ h3 {
 }
 
 .form-title strong {
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 0.82rem;
 }
 
@@ -495,7 +491,7 @@ label small {
 .create-form label:not(.scope-toggle) {
   display: grid;
   gap: 0.35rem;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -506,14 +502,14 @@ label small {
   border: 1px solid var(--color-border);
   border-radius: 0.6rem;
   padding: 0.7rem 0.75rem;
-  color: var(--ink);
-  background: var(--color-field-surface);
+  color: var(--color-text);
+  background: var(--color-surface);
   outline: none;
 }
 
 .create-form input:focus {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px var(--palette-rgba-97-215-244-0-13);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent);
 }
 
 .translation-fields {
@@ -524,7 +520,7 @@ label small {
 }
 
 .create-form em {
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.62rem;
   font-style: normal;
   font-weight: 800;
@@ -536,7 +532,7 @@ label small {
   align-items: center;
   gap: 0.6rem;
   grid-column: 1 / -1;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 0.76rem;
   cursor: pointer;
 }
@@ -547,7 +543,7 @@ label small {
 }
 
 .scope-toggle input {
-  accent-color: var(--cyan);
+  accent-color: var(--color-accent);
 }
 
 .form-actions {
@@ -570,12 +566,12 @@ label small {
 
 .primary-button {
   border: 0;
-  color: var(--color-text-on-accent);
-  background: var(--cyan);
+  color: var(--color-bg);
+  background: var(--color-accent);
 }
 
 .primary-button:hover:not(:disabled) {
-  background: var(--color-accent-bright);
+  background: var(--color-accent);
 }
 
 .primary-button:disabled {
@@ -585,13 +581,13 @@ label small {
 
 .secondary-button {
   border: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   background: transparent;
 }
 
 .secondary-button:hover {
-  border-color: var(--cyan);
-  color: var(--cyan);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .notice {
@@ -602,9 +598,9 @@ label small {
 }
 
 .notice.error {
-  color: var(--color-status-danger);
-  border: 1px solid var(--palette-rgba-255-120-120-0-2);
-  background: var(--color-danger-surface);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  background: var(--color-danger);
 }
 
 .empty-state {
@@ -613,7 +609,7 @@ label small {
   gap: 0.55rem;
   min-height: 18rem;
   padding: 2rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   text-align: center;
 }
 
@@ -623,7 +619,7 @@ label small {
 }
 
 .empty-state h4 {
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 1rem;
 }
 
@@ -634,15 +630,15 @@ label small {
 }
 
 .empty-symbol {
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 2rem;
 }
 
 .spinner {
   width: 0.8rem;
   height: 0.8rem;
-  border: 2px solid var(--palette-rgba-97-215-244-0-25);
-  border-top-color: var(--cyan);
+  border: 2px solid var(--color-accent);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -652,15 +648,15 @@ label small {
   gap: 0.15rem;
   padding: 0.15rem;
   height: 3em;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 0.55rem;
-  background: var(--palette-ffffff0a);
+  background: var(--color-border);
 }
 
 .scope-switcher button {
   min-width: 2.25rem;
   padding: 0.4rem 0.45rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   background: transparent;
   border: 0;
   border-radius: 0.7rem;
@@ -671,8 +667,8 @@ label small {
 }
 
 .scope-switcher button.active {
-  color: var(--color-text-on-accent);
-  background: var(--cyan);
+  color: var(--color-bg);
+  background: var(--color-accent);
 }
 
 @keyframes spin {

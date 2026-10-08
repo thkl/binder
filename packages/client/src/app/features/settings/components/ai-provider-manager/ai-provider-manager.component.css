@@ -1,10 +1,10 @@
 .provider-manager {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 1.1rem;
-  background: var(--glass-card-background-color);
-  box-shadow: 0 1.5rem 4rem var(--palette-rgba-0-0-0-0-16);
+  background: var(--color-surface);
+  box-shadow: 0 1.5rem 4rem var(--color-overlay);
   backdrop-filter: blur(18px);
 }
 
@@ -20,12 +20,12 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .section-kicker {
   margin: 0;
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.67rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -39,12 +39,12 @@ p {
 
 h3 {
   margin-top: 0.4rem;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 1.25rem;
 }
 
 h4 {
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 0.95rem;
 }
 
@@ -66,10 +66,10 @@ h4 {
 .provider-type,
 .key-badge {
   flex: 0 0 auto;
-  border: 1px solid var(--palette-rgba-97-215-244-0-22);
+  border: 1px solid var(--color-accent);
   border-radius: 999px;
   padding: 0.35rem 0.65rem;
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -80,7 +80,7 @@ h4 {
   grid-template-columns: minmax(12rem, 0.75fr) repeat(2, minmax(12rem, 1fr));
   align-items: end;
   gap: 1rem;
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .selection-heading {
@@ -92,12 +92,12 @@ h4 {
   display: grid;
   gap: 0.4rem;
   min-width: 0;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
 }
 
 .provider-field span {
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -109,16 +109,16 @@ h4 {
   border: 1px solid var(--color-border);
   border-radius: 0.65rem;
   padding: 0.7rem 0.75rem;
-  color: var(--ink);
-  background: var(--color-field-surface);
+  color: var(--color-text);
+  background: var(--color-surface);
   outline: none;
   font: inherit;
 }
 
 .provider-field input:focus,
 .provider-field select:focus {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px var(--palette-rgba-97-215-244-0-13);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent);
 }
 
 .provider-list {
@@ -138,7 +138,7 @@ h4 {
 }
 
 .list-heading {
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 0.8rem;
 }
 
@@ -149,10 +149,10 @@ h4 {
 .provider-card {
   display: grid;
   gap: 0.75rem;
-  border: 1px solid var(--palette-rgba-157-190-232-0-14);
+  border: 1px solid var(--color-text);
   border-radius: 0.85rem;
   padding: 1rem;
-  background: var(--palette-rgba-8-25-47-0-42);
+  background: var(--color-accent);
 }
 
 .provider-card-heading > div {
@@ -175,7 +175,7 @@ h4 {
 .capabilities span {
   border-radius: 999px;
   padding: 0.3rem 0.55rem;
-  background: var(--color-accent-surface-soft);
+  background: var(--color-accent);
 }
 
 .provider-actions {
@@ -184,7 +184,7 @@ h4 {
 }
 
 .provider-form {
-  border-top: 1px solid var(--glass-border);
+  border-top: 1px solid var(--color-border);
 }
 
 .form-heading {
@@ -211,23 +211,23 @@ h4 {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
 }
 
 .enabled-field input {
-  accent-color: var(--cyan);
+  accent-color: var(--color-accent);
 }
 
 .provider-message {
   margin: 0 1.6rem;
   padding: 0.7rem 0;
-  color: var(--color-status-success);
+  color: var(--color-success);
   font-size: 0.75rem;
 }
 
 .provider-message.error {
-  color: var(--palette-ff9c9c);
+  color: var(--color-danger);
 }
 
 .form-footer {

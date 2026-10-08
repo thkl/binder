@@ -4,16 +4,15 @@
   place-items: center;
   padding: 1.5rem;
   background:
-    radial-gradient(circle at 15% 15%, var(--palette-rgba-28-83-133-0-5), transparent 35%),
-    radial-gradient(circle at 90% 85%, var(--palette-rgba-17-105-133-0-22), transparent 32%),
-    var(--color-surface-page);
+    radial-gradient(circle at 15% 15%, var(--color-accent), transparent 35%),
+    radial-gradient(circle at 90% 85%, var(--color-accent), transparent 32%), var(--color-bg);
 }
 
 .card {
-  background: var(--palette-rgba-12-31-57-0-72);
-  border: 1px solid var(--palette-rgba-157-190-232-0-18);
+  background: var(--color-accent);
+  border: 1px solid var(--color-text);
   border-radius: 1.25rem;
-  box-shadow: 0 2rem 5rem var(--palette-rgba-0-0-0-0-3);
+  box-shadow: 0 2rem 5rem var(--color-overlay);
   backdrop-filter: blur(20px);
 }
 
@@ -21,11 +20,11 @@
   display: grid;
   grid-template-columns: minmax(18rem, 1fr) minmax(21rem, 27rem);
   width: min(100%, 60rem);
-  border: 1px solid var(--palette-rgba-157-190-232-0-18);
+  border: 1px solid var(--color-text);
   border-radius: 1.5rem;
   overflow: hidden;
-  background: var(--palette-rgba-8-24-45-0-5);
-  box-shadow: 0 2rem 6rem var(--palette-rgba-0-0-0-0-3);
+  background: var(--color-accent);
+  box-shadow: 0 2rem 6rem var(--color-overlay);
 }
 .brand-panel {
   display: flex;
@@ -34,14 +33,14 @@
   min-height: 38rem;
   padding: 2.6rem;
   background:
-    radial-gradient(circle at 70% 35%, var(--palette-rgba-33-185-223-0-17), transparent 35%),
-    linear-gradient(155deg, var(--palette-rgba-19-53-92-0-86), var(--palette-rgba-7-20-38-0-94));
+    radial-gradient(circle at 70% 35%, var(--color-accent), transparent 35%),
+    linear-gradient(155deg, var(--color-accent), var(--color-accent));
 }
 .brand-line {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 0.8rem;
   font-weight: 850;
   letter-spacing: 0.18em;
@@ -52,17 +51,17 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 0.7rem;
-  color: var(--color-text-on-accent);
-  background: var(--cyan);
+  color: var(--color-bg);
+  background: var(--color-accent);
   font-size: 1.1rem;
   font-weight: 900;
-  box-shadow: 0 0 2rem var(--palette-rgba-97-215-244-0-3);
+  box-shadow: 0 0 2rem var(--color-accent);
 }
 .brand-copy {
   margin: auto 0;
 }
 .eyebrow {
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -74,7 +73,7 @@ h1 {
   letter-spacing: -0.065em;
 }
 h1 span {
-  color: var(--cyan);
+  color: var(--color-accent);
 }
 h2 {
   margin: 0 0 0.6rem;
@@ -83,7 +82,7 @@ h2 {
 }
 .panel-copy,
 .muted {
-  color: var(--muted);
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 .panel-copy {
@@ -94,13 +93,13 @@ h2 {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 0.85rem;
 }
 .trust-row small {
   display: block;
   margin-top: 0.25rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
 }
 .shield {
@@ -109,8 +108,8 @@ h2 {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 0.7rem;
-  color: var(--color-status-success);
-  background: var(--palette-rgba-103-224-172-0-1);
+  color: var(--color-success);
+  background: var(--color-success);
   font-size: 1.1rem;
 }
 .auth-card {
@@ -118,7 +117,7 @@ h2 {
   padding: 3rem 2.5rem;
   border: 0;
   border-radius: 0;
-  background: var(--palette-rgba-13-32-58-0-7);
+  background: var(--color-accent);
   box-shadow: none;
 }
 form {
@@ -129,7 +128,7 @@ form {
 label {
   display: grid;
   gap: 0.45rem;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: 0.8rem;
   font-weight: 650;
 }
@@ -138,30 +137,30 @@ input {
   border: 1px solid var(--color-border);
   border-radius: 0.65rem;
   padding: 0.85rem 0.9rem;
-  color: var(--ink);
-  background: var(--color-field-surface);
+  color: var(--color-text);
+  background: var(--color-surface);
   outline: none;
 }
 input:focus {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px var(--palette-rgba-97-215-244-0-13);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent);
 }
 .submit-button {
   border: 0;
   border-radius: 0.65rem;
   padding: 0.9rem 1rem;
-  color: var(--color-text-on-accent);
-  background: var(--cyan);
+  color: var(--color-bg);
+  background: var(--color-accent);
   cursor: pointer;
   font-weight: 800;
 }
 .submit-button:hover:not(:disabled) {
-  background: var(--color-accent-bright);
+  background: var(--color-accent);
 }
 .password-reset-link {
   display: block;
   margin-top: -0.35rem;
-  color: var(--cyan);
+  color: var(--color-accent);
   text-align: right;
   font-size: 0.78rem;
   text-decoration: none;
@@ -185,29 +184,29 @@ button:disabled {
   content: '';
   height: 1px;
   flex: 1;
-  background: var(--palette-rgba-157-190-232-0-18);
+  background: var(--color-text);
 }
 .oidc-button {
   display: block;
-  border: 1px solid var(--palette-rgba-157-190-232-0-25);
+  border: 1px solid var(--color-text);
   border-radius: 0.65rem;
   padding: 0.85rem 1rem;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   text-align: center;
   text-decoration: none;
   font-size: 0.88rem;
   font-weight: 750;
 }
 .oidc-button:hover {
-  background: var(--color-accent-surface-soft);
-  border-color: var(--palette-rgba-97-215-244-0-55);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 .error {
   margin: 0;
   padding: 0.7rem 0.8rem;
   border-radius: 0.6rem;
-  color: var(--danger);
-  background: var(--color-danger-surface);
+  color: var(--color-danger);
+  background: var(--color-danger);
   font-size: 0.82rem;
 }
 .login-footnote {
@@ -217,7 +216,7 @@ button:disabled {
   font-size: 0.72rem;
 }
 .login-footnote span {
-  color: var(--color-status-success);
+  color: var(--color-success);
 }
 @media (max-width: 720px) {
   .login-shell {

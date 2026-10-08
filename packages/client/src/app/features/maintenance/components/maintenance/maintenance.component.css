@@ -7,10 +7,10 @@
 .notice.success {
   margin: 0 0 1rem;
   padding: 0.8rem 1rem;
-  border: 1px solid var(--palette-rgba-103-224-172-0-22);
+  border: 1px solid var(--color-success);
   border-radius: 0.65rem;
-  color: var(--palette-a8efd2);
-  background: var(--palette-rgba-103-224-172-0-1);
+  color: var(--color-success);
+  background: var(--color-success);
   font-size: 0.8rem;
 }
 .maintenance-heading {
@@ -28,38 +28,38 @@
 }
 .maintenance-heading h2 {
   margin: 0.5rem 0 0.4rem;
-  color: var(--color-text-bright);
+  color: var(--color-text);
   font-size: clamp(2rem, 5vw, 3.2rem);
   letter-spacing: -0.06em;
 }
 .muted {
   max-width: 38rem;
   margin: 0;
-  color: var(--muted);
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 .glass-card {
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 1.1rem;
-  background: var(--glass-card-background-color);
-  box-shadow: 0 1.5rem 4rem var(--palette-rgba-0-0-0-0-16);
+  background: var(--color-surface);
+  box-shadow: 0 1.5rem 4rem var(--color-overlay);
   backdrop-filter: blur(18px);
 }
 .refresh-button {
   min-height: 2.8rem;
-  border: 1px solid var(--palette-rgba-157-190-232-0-22);
+  border: 1px solid var(--color-text);
   border-radius: 0.65rem;
   padding: 0.8rem 1rem;
-  color: var(--color-text-primary);
-  background: var(--palette-rgba-5-18-35-0-46);
+  color: var(--color-text);
+  background: var(--color-accent);
   cursor: pointer;
   font: inherit;
   font-size: 0.8rem;
   font-weight: 800;
 }
 .refresh-button:hover:not(:disabled) {
-  border-color: var(--cyan);
-  color: var(--cyan);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 .refresh-button:disabled {
   cursor: wait;
@@ -67,19 +67,19 @@
 }
 .run-button {
   min-height: 2.8rem;
-  border: 1px solid var(--palette-rgba-97-215-244-0-35);
+  border: 1px solid var(--color-accent);
   border-radius: 0.65rem;
   padding: 0.8rem 1rem;
-  color: var(--palette-07182b);
-  background: var(--cyan);
+  color: var(--color-accent);
+  background: var(--color-accent);
   cursor: pointer;
   font: inherit;
   font-size: 0.8rem;
   font-weight: 850;
-  box-shadow: 0 0.7rem 1.5rem var(--palette-rgba-33-185-223-0-16);
+  box-shadow: 0 0.7rem 1.5rem var(--color-accent);
 }
 .run-button:hover:not(:disabled) {
-  background: var(--color-accent-bright);
+  background: var(--color-accent);
 }
 .run-button:disabled {
   cursor: wait;
@@ -98,17 +98,17 @@
 }
 .status-label,
 .section-kicker {
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 0.67rem;
   font-weight: 800;
   letter-spacing: 0.16em;
 }
 .status-card strong {
-  color: var(--palette-e2efff);
+  color: var(--color-border);
   font-size: 1.1rem;
 }
 .status-card strong.warning {
-  color: var(--palette-ffbd9e);
+  color: var(--color-danger);
 }
 .status-card small,
 .run-copy small,
@@ -122,11 +122,11 @@
 }
 .card-header {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--color-border);
 }
 .card-header h3 {
   margin: 0.3rem 0 0;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 1.05rem;
 }
 .run-list {
@@ -138,7 +138,7 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-border);
 }
 .run-row:last-child {
   border-bottom: 0;
@@ -148,21 +148,21 @@
   width: 2rem;
   height: 2rem;
   place-items: center;
-  border: 1px solid var(--palette-rgba-103-224-172-0-25);
+  border: 1px solid var(--color-success);
   border-radius: 0.55rem;
-  color: var(--color-status-success);
-  background: var(--palette-rgba-80-190-145-0-1);
+  color: var(--color-success);
+  background: var(--color-success);
   font-weight: 900;
 }
 .run-mark.failed {
-  border-color: var(--palette-rgba-255-120-120-0-3);
-  color: var(--color-status-danger);
-  background: var(--palette-rgba-255-100-100-0-1);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--color-danger);
 }
 .run-mark.running {
-  border-color: var(--palette-rgba-97-215-244-0-3);
-  color: var(--palette-a9dfee);
-  background: var(--color-accent-surface);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent);
 }
 .run-copy {
   display: grid;
@@ -171,11 +171,11 @@
 }
 .run-copy strong {
   overflow-wrap: anywhere;
-  color: var(--palette-e0efff);
+  color: var(--color-border);
   font-size: 0.84rem;
 }
 .run-error {
-  color: var(--color-status-danger);
+  color: var(--color-danger);
   font-size: 0.72rem;
   overflow-wrap: anywhere;
 }
@@ -183,7 +183,7 @@
   display: grid;
   justify-items: end;
   gap: 0.25rem;
-  color: var(--palette-b8cae0);
+  color: var(--color-text);
   font-size: 0.75rem;
   text-align: right;
 }
@@ -199,11 +199,11 @@
   gap: 0.55rem;
   min-height: 13rem;
   padding: 2rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   text-align: center;
 }
 .empty-state span {
-  color: var(--cyan);
+  color: var(--color-accent);
   font-size: 2rem;
 }
 .empty-state p {
@@ -222,17 +222,17 @@
   font-size: 0.8rem;
 }
 .notice.error {
-  color: var(--color-status-danger);
-  border: 1px solid var(--palette-rgba-255-120-120-0-2);
-  background: var(--color-danger-surface);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  background: var(--color-danger);
 }
 .spinner {
   display: inline-block;
   width: 0.8rem;
   height: 0.8rem;
   margin-right: 0.3rem;
-  border: 2px solid var(--palette-rgba-6-19-38-0-22);
-  border-top-color: var(--cyan);
+  border: 2px solid var(--color-accent);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   vertical-align: -0.1rem;
@@ -245,14 +245,14 @@
 .restore-note {
   margin: 1rem 0 0;
   padding: 1rem 1.15rem;
-  border: 1px solid var(--palette-rgba-157-190-232-0-16);
+  border: 1px solid var(--color-text);
   border-radius: 0.8rem;
-  color: var(--palette-a9bdd5);
-  background: var(--palette-rgba-5-18-35-0-24);
+  color: var(--color-text);
+  background: var(--color-accent);
 }
 .restore-note h3 {
   margin: 0.35rem 0 0.4rem;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 0.9rem;
 }
 .restore-note p:last-child {
@@ -281,5 +281,5 @@
   }
 }
 .run-issues {
-  color: var(--palette-ffc397);
+  color: var(--color-danger);
 }

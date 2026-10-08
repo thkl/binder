@@ -23,11 +23,11 @@
   align-items: center;
   gap: 1rem;
   padding: 0.9rem 0;
-  border-top: 1px solid var(--border-subtle, var(--palette-rgba-255-255-255-0-12));
+  border-top: 1px solid var(--border-subtle, var(--color-border));
 }
 .token-row small {
   display: block;
-  color: var(--text-muted, var(--palette-8b93a7));
+  color: var(--text-muted, var(--color-text-muted));
   margin-top: 0.25rem;
 }
 .token-row.revoked {
@@ -38,13 +38,13 @@
   gap: 0.7rem;
   padding: 1rem;
   margin: 1rem 0;
-  border: 1px solid var(--accent, var(--palette-8bd3ff));
+  border: 1px solid var(--accent, var(--color-accent));
   border-radius: 0.8rem;
 }
 .token-reveal code {
   display: block;
   overflow-wrap: anywhere;
   padding: 0.7rem;
-  background: var(--palette-rgba-0-0-0-0-2);
+  background: var(--color-overlay);
   border-radius: 0.5rem;
 }
