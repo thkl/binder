@@ -58,6 +58,22 @@ h2 {
   line-height: 1.55;
 }
 
+.confirm-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+  color: var(--palette-d5e5f5);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.confirm-option input {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  accent-color: var(--cyan);
+}
+
 .confirm-actions {
   display: flex;
   grid-column: 1 / -1;

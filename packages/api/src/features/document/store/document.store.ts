@@ -221,7 +221,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
     query: DocumentListQuery,
     excludedFacet?: DocumentFacetKey,
   ): Promise<WhereOptions<Document>> {
-    const where: WhereOptions<Document> = { ownerUuid };
+    const where: WhereOptions<Document> = { ownerUuid, versionParentUuid: null };
 
     if (query.folderUuid && query.unassigned) {
       this.restrictToDocumentUuids(where, []);
@@ -570,6 +570,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
     if (allowedUuids && allowedUuids.length === 0) return [];
     const documentWhere: WhereOptions<Document> = {
       ownerUuid,
+      versionParentUuid: null,
       status: query.status ? query.status : { [Op.notIn]: blockedStatuses },
       ...(allowedUuids ? { uuid: { [Op.in]: allowedUuids } } : {}),
     };
@@ -630,7 +631,11 @@ export class DocumentStore extends BaseCrudStore<Document> {
     );
     if (!hasFilters) return null;
     const documents = await this.model.findAll({
-      where: { ownerUuid, status: query.status ? query.status : { [Op.notIn]: blockedStatuses } },
+      where: {
+        ownerUuid,
+        versionParentUuid: null,
+        status: query.status ? query.status : { [Op.notIn]: blockedStatuses },
+      },
       attributes: ['uuid', 'issuerUuid', 'documentTypeUuid', 'categoryUuid'],
     });
     let allowed = new Set(documents.map((document) => document.uuid));

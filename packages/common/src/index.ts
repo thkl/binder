@@ -194,6 +194,7 @@ export type DocumentVersionListResponse = z.infer<typeof DocumentVersionListResp
 
 export const AssignDocumentVersionInputSchema = z.object({
   targetDocumentUuid: z.uuid(),
+  copyMetadata: z.boolean().default(false),
 });
 export type AssignDocumentVersionInput = z.infer<typeof AssignDocumentVersionInputSchema>;
 

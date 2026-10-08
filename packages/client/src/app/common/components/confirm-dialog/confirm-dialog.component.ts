@@ -24,8 +24,11 @@ export class ConfirmDialogComponent implements AfterViewInit, OnDestroy {
   readonly message = input.required<string>();
   readonly confirmLabel = input.required<string>();
   readonly cancelLabel = input.required<string>();
+  readonly optionLabel = input<string | null>(null);
+  readonly optionChecked = input(false);
   readonly confirmed = output<void>();
   readonly cancelled = output<void>();
+  readonly optionChanged = output<boolean>();
 
   private readonly document = inject(DOCUMENT);
   private readonly host = inject(ElementRef<HTMLElement>);

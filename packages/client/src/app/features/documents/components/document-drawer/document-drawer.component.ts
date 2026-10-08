@@ -17,6 +17,7 @@ import { ApplicationService } from '../../../../common/application.service';
 import { DocumentAnalysisComponent } from '../document-analysis/document-analysis.component';
 import { DocumentAuditHistoryComponent } from '../document-audit-history/document-audit-history.component';
 import { CalendarService } from '../../services/calendar.service';
+import { DocumentsService } from '../../services/documents.service';
 import { ResizableSplitComponent } from '../../../../common/components/resizable-split/resizable-split.component';
 
 export type DocumentDrawerTab = 'preview' | 'metadata' | 'history';
@@ -59,6 +60,8 @@ export class DocumentDrawerComponent {
   readonly deleteRequested = output<void>();
   readonly suggestionRequested = output<void>();
   readonly requeueRequested = output<void>();
+  readonly versionSelected = output<string>();
+  readonly versions = signal<Document[]>([]);
 
   readonly activeTab = signal<DocumentDrawerTab>('preview');
   readonly dirty = signal(false);
@@ -86,13 +89,26 @@ export class DocumentDrawerComponent {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly application = inject(ApplicationService);
   private readonly calendar = inject(CalendarService);
+  private readonly documents = inject(DocumentsService);
   private readonly i18n = inject(I18nService);
   private readonly initialTabEffect = effect(() => {
     this.activeTab.set(this.initialTab());
   });
+  private readonly versionsEffect = effect(() => {
+    const uuid = this.documentUuid();
+    void this.loadVersions(uuid);
+  });
 
   constructor() {
     this.activeTab.set(this.initialTab());
+  }
+
+  private async loadVersions(uuid: string): Promise<void> {
+    try {
+      this.versions.set(await this.documents.loadVersions(uuid));
+    } catch {
+      this.versions.set([]);
+    }
   }
 
   selectTab(tab: DocumentDrawerTab): void {

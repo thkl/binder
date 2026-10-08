@@ -176,7 +176,12 @@ export class DocumentController {
   ) {
     const input = AssignDocumentVersionInputSchema.parse(body);
     return {
-      data: await this.documents.assignAsVersion(user.userId, uuid, input.targetDocumentUuid),
+      data: await this.documents.assignAsVersion(
+        user.userId,
+        uuid,
+        input.targetDocumentUuid,
+        input.copyMetadata,
+      ),
     };
   }
 

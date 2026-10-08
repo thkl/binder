@@ -10,6 +10,16 @@
     <div class="confirm-content">
       <h2 id="confirm-dialog-title">{{ title() }}</h2>
       <p id="confirm-dialog-message">{{ message() }}</p>
+      @if (optionLabel(); as label) {
+        <label class="confirm-option">
+          <input
+            type="checkbox"
+            [checked]="optionChecked()"
+            (change)="optionChanged.emit($any($event.target).checked)"
+          />
+          <span>{{ label }}</span>
+        </label>
+      }
     </div>
     <footer class="confirm-actions">
       <button type="button" class="confirm-cancel" (click)="cancelled.emit()">

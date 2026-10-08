@@ -103,8 +103,12 @@ export class DocumentsService {
     return DocumentVersionListResponseSchema.parse(response.data).items;
   }
 
-  async assignAsVersion(documentUuid: string, targetDocumentUuid: string): Promise<BinderDocument> {
-    const input = AssignDocumentVersionInputSchema.parse({ targetDocumentUuid });
+  async assignAsVersion(
+    documentUuid: string,
+    targetDocumentUuid: string,
+    copyMetadata = false,
+  ): Promise<BinderDocument> {
+    const input = AssignDocumentVersionInputSchema.parse({ targetDocumentUuid, copyMetadata });
     const response = await firstValueFrom(
       this.http.post<ApiResponse<unknown>>(
         this.appService.getApiUrl('v1', `documents/${documentUuid}/version`),

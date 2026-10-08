@@ -184,6 +184,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     return selected.length === 2 ? { source: selected[0], target: selected[1] } : null;
   });
   readonly versionAssignment = signal<{ sourceUuid: string; targetUuid: string } | null>(null);
+  readonly copyVersionMetadata = signal(true);
   readonly versionAssignmentLoading = signal(false);
   readonly bulkDocumentTypes = computed(() => this.metadata.vocabulary()?.documentTypes ?? []);
   readonly bulkCategories = computed(() => this.metadata.vocabulary()?.categories ?? []);
@@ -444,6 +445,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   requestVersionAssignment(): void {
     const pair = this.selectedVersionPair();
     if (!pair || this.versionAssignmentLoading()) return;
+    this.copyVersionMetadata.set(true);
     this.versionAssignment.set({ sourceUuid: pair.source.uuid, targetUuid: pair.target.uuid });
   }
 
@@ -458,7 +460,11 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
     this.versionAssignmentLoading.set(true);
     try {
-      await this.documents.assignAsVersion(assignment.sourceUuid, assignment.targetUuid);
+      await this.documents.assignAsVersion(
+        assignment.sourceUuid,
+        assignment.targetUuid,
+        this.copyVersionMetadata(),
+      );
       this.clearSelection();
       await this.documents.load();
     } finally {
@@ -861,6 +867,14 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     const document = this.findDocument(uuid);
     if (!document) return;
     this.openDocumentRecord(document);
+  }
+
+  async selectDrawerVersion(uuid: string): Promise<void> {
+    const document = await this.documents.loadDocument(uuid);
+    if (!document) return;
+    this.drawerDocumentSnapshot.set(document);
+    this.drawerDocumentUuid.set(uuid);
+    void this.documents.markOpened(uuid);
   }
 
   private async openRequestedDocument(uuid: string): Promise<void> {

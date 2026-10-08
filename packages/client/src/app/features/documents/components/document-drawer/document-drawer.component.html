@@ -140,6 +140,21 @@
       </button>
     </nav>
 
+    @if (versions().length > 1) {
+      <nav class="drawer-version-tabs" aria-label="{{ 'documents.versions' | t }}">
+        @for (version of versions(); track version.uuid) {
+          <button
+            type="button"
+            [class.active]="version.uuid === documentUuid()"
+            [attr.aria-current]="version.uuid === documentUuid() ? 'page' : null"
+            (click)="versionSelected.emit(version.uuid)"
+          >
+            V{{ version.versionNumber }}
+          </button>
+        }
+      </nav>
+    }
+
     <main class="drawer-content">
       <section
         id="document-drawer-preview"

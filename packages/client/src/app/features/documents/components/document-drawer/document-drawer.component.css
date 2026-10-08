@@ -187,6 +187,37 @@
   color: var(--cyan);
 }
 
+.drawer-version-tabs {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  min-height: 2.45rem;
+  padding: 0.35rem 1.4rem;
+  border-bottom: 1px solid var(--palette-rgba-157-190-232-0-1);
+  background: var(--palette-rgba-5-18-35-0-24);
+}
+
+.drawer-version-tabs button {
+  min-width: 2.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.45rem;
+  color: var(--palette-9db2ca);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.drawer-version-tabs button:hover,
+.drawer-version-tabs button:focus-visible,
+.drawer-version-tabs button.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  outline: none;
+}
+
 .drawer-content {
   min-height: 0;
   flex: 1;

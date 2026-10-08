@@ -771,7 +771,7 @@ export class DocumentService {
     };
   }
 
-  async assignAsVersion(ownerUuid: string, uuid: string, targetUuid: string) {
+  async assignAsVersion(ownerUuid: string, uuid: string, targetUuid: string, copyMetadata = false) {
     if (uuid === targetUuid) {
       throw new BadRequestException('A document cannot be a version of itself');
     }
@@ -792,6 +792,21 @@ export class DocumentService {
     );
     if (!updated) throw new NotFoundException('Document not found');
 
+    if (copyMetadata) {
+      const sourceMetadata = await this.metadata.getDocumentMetadata(ownerUuid, target.uuid);
+      await this.metadata.setDocumentMetadata(ownerUuid, updated.uuid, {
+        issuerUuid: sourceMetadata.issuer?.uuid ?? null,
+        documentTypeUuid: sourceMetadata.documentType?.uuid ?? null,
+        categoryUuid: sourceMetadata.category?.uuid ?? null,
+        tagUuids: sourceMetadata.tags.map((tag) => tag.uuid),
+        custom: sourceMetadata.custom,
+      });
+      const sourceFolders = await this.folders.listForDocument(ownerUuid, target.uuid);
+      await Promise.all(
+        sourceFolders.map((folder) => this.folders.createLinks(folder.uuid, [updated.uuid])),
+      );
+    }
+
     await this.recordAudit({
       documentUuid: updated.uuid,
       ownerUuid,
@@ -799,7 +814,11 @@ export class DocumentService {
       actorType: 'user',
       eventType: 'version-assigned',
       summary: `Document assigned as version ${nextVersion}`,
-      details: { targetDocumentUuid: target.uuid, versionNumber: nextVersion },
+      details: {
+        targetDocumentUuid: target.uuid,
+        versionNumber: nextVersion,
+        copiedMetadata: copyMetadata,
+      },
     });
 
     return this.toDocumentResponse(updated);

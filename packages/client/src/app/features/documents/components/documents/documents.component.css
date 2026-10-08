@@ -699,6 +699,17 @@ h2 {
   text-transform: uppercase;
 }
 
+.version-indicator {
+  flex: 0 0 auto;
+  border: 1px solid var(--color-accent);
+  border-radius: 2rem;
+  padding: 0.18rem 0.38rem;
+  color: var(--color-accent-bright);
+  font-size: 0.58rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+}
+
 .title-suggestion {
   display: flex;
   align-items: center;
