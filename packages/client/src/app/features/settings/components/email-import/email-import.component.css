@@ -64,7 +64,7 @@ h2 {
 
 .saved-message {
   margin-right: auto;
-  color: #67e0ac;
+  color: var(--color-status-success);
   font-size: 0.78rem;
 }
 
@@ -72,7 +72,7 @@ h2 {
   border: 0;
   border-radius: 0.65rem;
   padding: 0.8rem 1rem;
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
   cursor: pointer;
   font: inherit;

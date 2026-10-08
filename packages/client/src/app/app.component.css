@@ -4,7 +4,7 @@
 }
 
 .white {
-  color: #e5f1ff;
+  color: var(--color-text-bright);
 }
 
 .skip-link {
@@ -31,7 +31,7 @@
   align-content: center;
   gap: 1rem;
   color: var(--muted);
-  background: radial-gradient(circle at 50% 40%, #12365b, var(--navy) 60%);
+  background: radial-gradient(circle at 50% 40%, var(--palette-12365b), var(--navy) 60%);
 }
 
 .loading-mark,
@@ -41,10 +41,10 @@
   width: 2.8rem;
   height: 2.8rem;
   border-radius: 0.85rem;
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
   font-weight: 900;
-  box-shadow: 0 0 2rem rgba(97, 215, 244, 0.3);
+  box-shadow: 0 0 2rem var(--palette-rgba-97-215-244-0-3);
 }
 
 .workspace {
@@ -108,7 +108,7 @@ h1 {
   height: 3em;
   border: 1px solid var(--glass-border);
   border-radius: 0.55rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--palette-rgba-255-255-255-0-04);
 }
 
 .language-switcher button {
@@ -121,7 +121,7 @@ h1 {
 
 .language-switcher button.active,
 .language-switcher button:hover {
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
 }
 
@@ -139,7 +139,7 @@ h1 {
   border: 1px solid var(--glass-border);
   border-radius: 0.65rem;
   color: var(--muted);
-  background: #ffffff0a;
+  background: var(--palette-ffffff0a);
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
@@ -149,7 +149,7 @@ h1 {
 .account-toggle:hover,
 .account-menu.is-open .account-toggle {
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.08);
+  background: var(--color-accent-surface-soft);
 }
 
 .user-avatar {
@@ -157,16 +157,16 @@ h1 {
   width: 2.15rem;
   height: 2.15rem;
   flex: 0 0 2.15rem;
-  border: 1px solid rgba(154, 226, 245, 0.45);
+  border: 1px solid var(--palette-rgba-154-226-245-0-45);
   border-radius: 50%;
   object-fit: cover;
-  background: rgba(97, 215, 244, 0.12);
+  background: var(--palette-rgba-97-215-244-0-12);
 }
 
 .user-avatar-fallback {
   display: grid;
   place-items: center;
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
   font-size: 0.82rem;
   font-weight: 850;
@@ -187,8 +187,8 @@ h1 {
   padding: 0.55rem;
   border: 1px solid var(--glass-border);
   border-radius: 0.8rem;
-  background: rgba(9, 27, 50, 0.97);
-  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.28);
+  background: var(--palette-rgba-9-27-50-0-97);
+  box-shadow: 0 1rem 2.5rem var(--palette-rgba-0-0-0-0-28);
   backdrop-filter: blur(18px);
 }
 
@@ -240,7 +240,7 @@ h1 {
 
 .account-menu-action:hover {
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.1);
+  background: var(--color-accent-surface);
 }
 
 .nav-link {
@@ -255,7 +255,7 @@ h1 {
 .nav-link:hover,
 .nav-link.active {
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.08);
+  background: var(--color-accent-surface-soft);
 }
 
 .nav-menu {
@@ -269,7 +269,7 @@ h1 {
   padding: 0.55rem 0.45rem;
   border: 1px solid var(--glass-border);
   border-radius: 0.55rem;
-  background: #ffffff0a;
+  background: var(--palette-ffffff0a);
   cursor: pointer;
   height: 3.65em;
 }
@@ -282,8 +282,8 @@ h1 {
   margin-left: 0.2rem;
   padding: 0 0.3rem;
   border-radius: 999px;
-  color: #061326;
-  background: #f2ca78;
+  color: var(--color-text-on-accent);
+  background: var(--palette-f2ca78);
   font-size: 0.64rem;
   font-weight: 850;
   line-height: 1;
@@ -301,7 +301,7 @@ h1 {
 
 .nav-menu.is-open .nav-menu-toggle {
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.08);
+  background: var(--color-accent-surface-soft);
 }
 
 .menu-caret {
@@ -324,8 +324,8 @@ h1 {
   padding: 0.4rem;
   border: 1px solid var(--glass-border);
   border-radius: 0.8rem;
-  background: rgba(9, 27, 50, 0.97);
-  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.28);
+  background: var(--palette-rgba-9-27-50-0-97);
+  box-shadow: 0 1rem 2.5rem var(--palette-rgba-0-0-0-0-28);
   backdrop-filter: blur(18px);
 }
 
@@ -343,11 +343,11 @@ h1 {
 .nav-menu-link:hover,
 .nav-menu-link.active {
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.1);
+  background: var(--color-accent-surface);
 }
 
 .secure-badge {
-  color: #a8d9cd;
+  color: var(--palette-a8d9cd);
   font-size: 0.78rem;
 }
 
@@ -357,8 +357,8 @@ h1 {
   height: 0.45rem;
   margin-right: 0.35rem;
   border-radius: 50%;
-  background: #67e0ac;
-  box-shadow: 0 0 0.6rem #67e0ac;
+  background: var(--color-status-success);
+  box-shadow: 0 0 0.6rem var(--color-status-success);
 }
 
 .welcome-row {
@@ -395,19 +395,19 @@ button {
 }
 
 .primary-action {
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
-  box-shadow: 0 0.75rem 1.75rem rgba(33, 185, 223, 0.18);
+  box-shadow: 0 0.75rem 1.75rem var(--palette-rgba-33-185-223-0-18);
   white-space: nowrap;
 }
 
 .primary-action:hover {
-  background: #8be7fa;
+  background: var(--color-accent-bright);
 }
 
 .secondary {
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--palette-rgba-255-255-255-0-08);
   border: 1px solid var(--glass-border);
 }
 
@@ -422,19 +422,24 @@ button {
   padding: 1.5rem;
   border: 1px solid var(--glass-border);
   border-radius: 1.25rem;
-  background: linear-gradient(135deg, rgba(20, 52, 88, 0.82), rgba(10, 27, 50, 0.7));
-  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.18);
+  background: linear-gradient(
+    135deg,
+    var(--palette-rgba-20-52-88-0-82),
+    var(--palette-rgba-10-27-50-0-7)
+  );
+  box-shadow: 0 1.5rem 4rem var(--palette-rgba-0-0-0-0-18);
   backdrop-filter: blur(18px);
 }
 
 .vault-card {
   background:
-    radial-gradient(circle at 100% 0%, rgba(33, 185, 223, 0.17), transparent 38%), var(--glass);
+    radial-gradient(circle at 100% 0%, var(--palette-rgba-33-185-223-0-17), transparent 38%),
+    var(--glass);
 }
 
 .card-heading {
   gap: 0.6rem;
-  color: #bbcae0;
+  color: var(--palette-bbcae0);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -446,7 +451,7 @@ button {
   height: 2rem;
   border-radius: 0.6rem;
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.12);
+  background: var(--palette-rgba-97-215-244-0-12);
   font-size: 1.1rem;
 }
 
@@ -472,7 +477,7 @@ button {
   margin-bottom: 0.7rem;
   overflow: hidden;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--palette-rgba-255-255-255-0-1);
 }
 
 .progress-line span {
@@ -483,7 +488,7 @@ button {
 }
 
 .dashboard-card small {
-  color: #738ba9;
+  color: var(--palette-738ba9);
 }
 
 .security-card strong {
@@ -492,13 +497,13 @@ button {
 
 .security-list {
   margin-top: 0.7rem;
-  color: #b9c9dc;
+  color: var(--color-text-secondary);
   font-size: 0.88rem;
 }
 
 .security-list span {
   margin-right: 0.45rem;
-  color: #67e0ac;
+  color: var(--color-status-success);
 }
 
 .click {

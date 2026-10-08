@@ -1,7 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Pipe, PipeTransform } from '@angular/core';
 import type { Document } from '@binder/common';
 import { describe, expect, it, beforeEach } from 'vitest';
+import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { DocumentActionsComponent } from './document-actions.component';
+
+@Pipe({ name: 't', standalone: true })
+class TestTranslatePipe implements PipeTransform {
+  transform(key: string): string {
+    return (
+      {
+        'documents.originalVersion': 'Original document',
+        'documents.downloadArchive': 'Download PDF/A archive',
+      }[key] ?? key
+    );
+  }
+}
 
 const documentUuid = '11111111-1111-4111-8111-111111111111';
 const ownerUuid = '22222222-2222-4222-8222-222222222222';
@@ -45,7 +59,12 @@ describe('DocumentActionsComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DocumentActionsComponent],
-    }).compileComponents();
+    })
+      .overrideComponent(DocumentActionsComponent, {
+        remove: { imports: [TranslatePipe] },
+        add: { imports: [TestTranslatePipe] },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(DocumentActionsComponent);
     fixture.componentRef.setInput('document', createDocument());

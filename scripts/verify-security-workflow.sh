@@ -27,6 +27,8 @@ run_step() {
 run_step 'Install dependencies' pnpm_run install --frozen-lockfile
 run_step 'Check source formatting' pnpm_run run format:check
 run_step 'Check settings translations' pnpm_run run check:settings-i18n
+run_step 'Check client accessibility contracts' pnpm_run run check:client-a11y
+run_step 'Check client color tokens' pnpm_run run check:client-colors
 run_step 'Build shared contracts' pnpm_run --filter @binder/common build
 run_step 'Build API' pnpm_run --filter @binder/api build
 run_step 'Build worker' pnpm_run --filter @binder/worker build

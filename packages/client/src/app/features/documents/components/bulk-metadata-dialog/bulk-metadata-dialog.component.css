@@ -10,7 +10,7 @@
   min-height: 100%;
   padding: 1rem;
   place-items: center;
-  background: rgba(1, 8, 19, 0.72);
+  background: var(--palette-rgba-1-8-19-0-72);
   backdrop-filter: blur(0.6rem);
 }
 
@@ -19,11 +19,11 @@
   width: min(44rem, 100%);
   max-height: calc(100vh - 2rem);
   overflow: hidden;
-  border: 1px solid rgba(133, 200, 241, 0.25);
+  border: 1px solid var(--palette-rgba-133-200-241-0-25);
   border-radius: 1.1rem;
-  color: #e7f3ff;
-  background: #081a31;
-  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.35);
+  color: var(--palette-e7f3ff);
+  background: var(--palette-081a31);
+  box-shadow: 0 2rem 5rem var(--palette-rgba-0-0-0-0-35);
 }
 
 .dialog-header,
@@ -36,7 +36,7 @@
 }
 
 .dialog-header {
-  border-bottom: 1px solid rgba(157, 190, 232, 0.12);
+  border-bottom: 1px solid var(--palette-rgba-157-190-232-0-12);
 }
 
 .dialog-kicker {
@@ -60,13 +60,13 @@ h2 {
 .dialog-copy,
 .hint {
   margin-top: 0.35rem;
-  color: #8fa8c4;
+  color: var(--palette-8fa8c4);
   font-size: 0.74rem;
 }
 
 .icon-button {
   border: 0;
-  color: #b6cde4;
+  color: var(--palette-b6cde4);
   background: transparent;
   cursor: pointer;
   font-size: 1.5rem;
@@ -90,7 +90,7 @@ h2 {
 .field > span,
 .choice-field > span,
 legend {
-  color: #bfd4ea;
+  color: var(--palette-bfd4ea);
   font-size: 0.73rem;
   font-weight: 750;
 }
@@ -101,11 +101,11 @@ select,
 .choice-field input[type='date'] {
   min-height: 2.25rem;
   width: 100%;
-  border: 1px solid rgba(157, 190, 232, 0.2);
+  border: 1px solid var(--color-border);
   border-radius: 0.55rem;
   padding: 0.45rem 0.6rem;
-  color: #e7f3ff;
-  background: rgba(157, 190, 232, 0.08);
+  color: var(--palette-e7f3ff);
+  background: var(--palette-rgba-157-190-232-0-08);
   font: inherit;
   font-size: 0.76rem;
 }
@@ -132,7 +132,7 @@ select:disabled,
 
 fieldset {
   min-width: 0;
-  border: 1px solid rgba(157, 190, 232, 0.15);
+  border: 1px solid var(--palette-rgba-157-190-232-0-15);
   border-radius: 0.75rem;
   padding: 0.75rem;
 }
@@ -149,11 +149,11 @@ legend {
 }
 
 .tag-options label {
-  border: 1px solid rgba(157, 190, 232, 0.18);
+  border: 1px solid var(--palette-rgba-157-190-232-0-18);
   border-radius: 999px;
   padding: 0.35rem 0.55rem;
-  color: #c7daee;
-  background: rgba(157, 190, 232, 0.06);
+  color: var(--palette-c7daee);
+  background: var(--palette-rgba-157-190-232-0-06);
   font-size: 0.7rem;
 }
 
@@ -170,23 +170,23 @@ legend {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 0.8rem;
-  border: 1px solid rgba(97, 215, 244, 0.24);
+  border: 1px solid var(--palette-rgba-97-215-244-0-24);
   border-radius: 0.7rem;
   padding: 0.75rem;
-  color: #c9eaff;
-  background: rgba(97, 215, 244, 0.08);
+  color: var(--palette-c9eaff);
+  background: var(--color-accent-surface-soft);
   font-size: 0.72rem;
 }
 
 .preview-summary strong {
   width: 100%;
-  color: #f0fbff;
+  color: var(--palette-f0fbff);
 }
 
 .preview-warning {
   width: 100%;
   margin: 0.2rem 0 0;
-  color: #ffd6a8;
+  color: var(--palette-ffd6a8);
   font-size: 0.72rem;
 }
 
@@ -198,25 +198,25 @@ legend {
   overflow: auto;
   margin: 0;
   padding-left: 1rem;
-  color: #e6c7a3;
+  color: var(--palette-e6c7a3);
   font-size: 0.7rem;
 }
 
 .conflict-list small {
-  color: #b99b7b;
+  color: var(--palette-b99b7b);
 }
 
 .error {
   border-radius: 0.55rem;
   padding: 0.65rem;
-  color: #ffc0c0;
-  background: rgba(150, 45, 45, 0.2);
+  color: var(--palette-ffc0c0);
+  background: var(--palette-rgba-150-45-45-0-2);
   font-size: 0.74rem;
 }
 
 .dialog-footer {
   justify-content: flex-end;
-  border-top: 1px solid rgba(157, 190, 232, 0.12);
+  border-top: 1px solid var(--palette-rgba-157-190-232-0-12);
 }
 
 .secondary-button,
@@ -231,14 +231,14 @@ legend {
 }
 
 .secondary-button {
-  border: 1px solid rgba(157, 190, 232, 0.22);
-  color: #cfe1f5;
+  border: 1px solid var(--palette-rgba-157-190-232-0-22);
+  color: var(--palette-cfe1f5);
   background: transparent;
 }
 
 .primary-button {
   border: 1px solid var(--cyan);
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
 }
 

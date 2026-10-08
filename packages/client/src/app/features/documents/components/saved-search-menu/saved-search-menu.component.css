@@ -8,16 +8,16 @@
   flex-wrap: wrap;
   gap: 0.55rem;
   padding: 0.7rem 0.85rem;
-  border: 1px solid rgba(157, 190, 232, 0.14);
+  border: 1px solid var(--palette-rgba-157-190-232-0-14);
   border-radius: 0.8rem;
-  background: rgba(6, 20, 38, 0.36);
+  background: var(--palette-rgba-6-20-38-0-36);
 }
 
 .saved-search-select {
   display: grid;
   gap: 0.25rem;
   min-width: min(15rem, 100%);
-  color: #a9bad0;
+  color: var(--color-text-secondary-soft);
   font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -34,10 +34,10 @@ button {
 
 select,
 input {
-  border: 1px solid rgba(157, 190, 232, 0.2);
+  border: 1px solid var(--color-border);
   padding: 0.45rem 0.6rem;
-  color: #dceaff;
-  background: #102b4c;
+  color: var(--color-text-primary);
+  background: var(--palette-102b4c);
 }
 
 input {
@@ -53,7 +53,7 @@ input {
 
 .saved-search-dialog-hint {
   align-self: center;
-  color: #9eb5cf;
+  color: var(--palette-9eb5cf);
   font-size: 0.72rem;
 }
 
@@ -78,20 +78,20 @@ button:disabled {
 }
 
 .saved-search-primary {
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
 }
 
 .saved-search-secondary {
-  color: #c3d6eb;
-  border-color: rgba(157, 190, 232, 0.2);
+  color: var(--palette-c3d6eb);
+  border-color: var(--color-border);
   background: transparent;
 }
 
 .saved-search-danger {
-  color: #ffb9b9;
-  border-color: rgba(255, 120, 120, 0.24);
-  background: rgba(255, 120, 120, 0.08);
+  color: var(--palette-ffb9b9);
+  border-color: var(--palette-rgba-255-120-120-0-24);
+  background: var(--palette-rgba-255-120-120-0-08);
 }
 
 .saved-search-dialog-backdrop {
@@ -101,7 +101,7 @@ button:disabled {
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgba(2, 10, 22, 0.64);
+  background: var(--palette-rgba-2-10-22-0-64);
   backdrop-filter: blur(5px);
 }
 
@@ -109,12 +109,12 @@ button:disabled {
   width: min(36rem, 100%);
   max-height: min(42rem, calc(100dvh - 2rem));
   overflow: auto;
-  border: 1px solid rgba(157, 190, 232, 0.24);
+  border: 1px solid var(--palette-rgba-157-190-232-0-24);
   border-radius: 1rem;
   padding: 1.2rem;
-  color: #dceaff;
-  background: #0b203a;
-  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.38);
+  color: var(--color-text-primary);
+  background: var(--palette-0b203a);
+  box-shadow: 0 2rem 5rem var(--palette-rgba-0-0-0-0-38);
 }
 
 .saved-search-dialog-header {
@@ -135,7 +135,7 @@ button:disabled {
 
 .saved-search-dialog h2 {
   margin: 0;
-  color: #eff7ff;
+  color: var(--palette-eff7ff);
   font-size: 1.2rem;
 }
 
@@ -145,15 +145,15 @@ button:disabled {
   min-height: 2.4rem;
   place-items: center;
   padding: 0;
-  border: 1px solid rgba(157, 190, 232, 0.2);
-  color: #c3d6eb;
+  border: 1px solid var(--color-border);
+  color: var(--palette-c3d6eb);
   background: transparent;
   font-size: 1.25rem;
 }
 
 .saved-search-dialog-copy {
   margin: 0.8rem 0 0;
-  color: #a9bad0;
+  color: var(--color-text-secondary-soft);
   font-size: 0.78rem;
   line-height: 1.55;
 }
@@ -163,16 +163,16 @@ button:disabled {
   gap: 0.7rem;
   margin: 1rem 0;
   padding: 0.85rem;
-  border: 1px solid rgba(157, 190, 232, 0.14);
+  border: 1px solid var(--palette-rgba-157-190-232-0-14);
   border-radius: 0.75rem;
-  background: rgba(6, 20, 38, 0.38);
+  background: var(--palette-rgba-6-20-38-0-38);
 }
 
 .saved-search-parameters-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #cfe1f3;
+  color: var(--palette-cfe1f3);
   font-size: 0.76rem;
 }
 
@@ -182,7 +182,7 @@ button:disabled {
   min-height: 1.45rem;
   place-items: center;
   border-radius: 999px;
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
   font-size: 0.68rem;
   font-weight: 800;
@@ -200,11 +200,11 @@ button:disabled {
   gap: 0.7rem;
   padding: 0.45rem 0.55rem;
   border-radius: 0.45rem;
-  background: rgba(157, 190, 232, 0.05);
+  background: var(--palette-rgba-157-190-232-0-05);
 }
 
 .saved-search-parameter dt {
-  color: #8fa8c3;
+  color: var(--palette-8fa8c3);
   font-size: 0.7rem;
   font-weight: 700;
 }
@@ -213,14 +213,14 @@ button:disabled {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
-  color: #e3effb;
+  color: var(--palette-e3effb);
   font-size: 0.74rem;
 }
 
 .saved-search-name-field {
   display: grid;
   gap: 0.35rem;
-  color: #cfe1f3;
+  color: var(--palette-cfe1f3);
   font-size: 0.72rem;
   font-weight: 700;
 }

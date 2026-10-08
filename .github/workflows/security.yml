@@ -39,6 +39,9 @@ jobs:
       - name: Check client accessibility contracts
         run: pnpm run check:client-a11y
 
+      - name: Check client color tokens
+        run: pnpm run check:client-colors
+
       - name: Build shared contracts
         run: pnpm --filter @binder/common build
 

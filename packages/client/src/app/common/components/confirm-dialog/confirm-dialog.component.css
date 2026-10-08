@@ -9,7 +9,7 @@
   min-height: 100%;
   padding: 1rem;
   place-items: center;
-  background: rgba(2, 10, 22, 0.76);
+  background: var(--palette-rgba-2-10-22-0-76);
   backdrop-filter: blur(0.5rem);
 }
 
@@ -18,12 +18,12 @@
   width: min(31rem, 100%);
   grid-template-columns: auto minmax(0, 1fr);
   gap: 1rem;
-  border: 1px solid rgba(255, 133, 133, 0.3);
+  border: 1px solid var(--palette-rgba-255-133-133-0-3);
   border-radius: 1rem;
   padding: 1.35rem;
-  color: #e7f3ff;
-  background: linear-gradient(145deg, #17304e 0%, #08182e 78%);
-  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.45);
+  color: var(--palette-e7f3ff);
+  background: linear-gradient(145deg, var(--palette-17304e) 0%, var(--palette-08182e) 78%);
+  box-shadow: 0 2rem 5rem var(--palette-rgba-0-0-0-0-45);
   animation: confirm-dialog-in 0.16s ease-out;
 }
 
@@ -32,10 +32,10 @@
   width: 2.5rem;
   height: 2.5rem;
   place-items: center;
-  border: 1px solid rgba(255, 133, 133, 0.35);
+  border: 1px solid var(--palette-rgba-255-133-133-0-35);
   border-radius: 50%;
-  color: #ffd1d1;
-  background: rgba(255, 102, 102, 0.14);
+  color: var(--palette-ffd1d1);
+  background: var(--palette-rgba-255-102-102-0-14);
   font-size: 1.35rem;
   font-weight: 850;
 }
@@ -46,14 +46,14 @@ p {
 }
 
 h2 {
-  color: #f0f8ff;
+  color: var(--palette-f0f8ff);
   font-size: 1.08rem;
   letter-spacing: -0.02em;
 }
 
 .confirm-content p {
   margin-top: 0.45rem;
-  color: #b8cde2;
+  color: var(--palette-b8cde2);
   font-size: 0.82rem;
   line-height: 1.55;
 }
@@ -78,31 +78,31 @@ h2 {
 }
 
 .confirm-cancel {
-  border: 1px solid rgba(157, 190, 232, 0.25);
-  color: #d5e5f5;
-  background: rgba(157, 190, 232, 0.07);
+  border: 1px solid var(--palette-rgba-157-190-232-0-25);
+  color: var(--palette-d5e5f5);
+  background: var(--palette-rgba-157-190-232-0-07);
 }
 
 .confirm-primary {
-  border: 1px solid #ff8585;
-  color: #250d13;
-  background: #ffaaa8;
+  border: 1px solid var(--palette-ff8585);
+  color: var(--palette-250d13);
+  background: var(--palette-ffaaa8);
 }
 
 .confirm-cancel:hover,
 .confirm-cancel:focus-visible,
 .confirm-primary:hover,
 .confirm-primary:focus-visible {
-  outline: 2px solid rgba(223, 248, 255, 0.85);
+  outline: 2px solid var(--palette-rgba-223-248-255-0-85);
   outline-offset: 2px;
 }
 
 .confirm-cancel:hover {
-  background: rgba(157, 190, 232, 0.14);
+  background: var(--palette-rgba-157-190-232-0-14);
 }
 
 .confirm-primary:hover {
-  background: #ffc4c1;
+  background: var(--palette-ffc4c1);
 }
 
 @keyframes confirm-dialog-in {

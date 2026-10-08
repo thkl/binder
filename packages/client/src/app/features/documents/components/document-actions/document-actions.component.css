@@ -12,11 +12,11 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  border: 1px solid rgba(157, 190, 232, 0.2);
+  border: 1px solid var(--color-border);
   border-radius: 0.5rem;
   padding: 0.4rem 0.55rem;
-  color: #a9dfee;
-  background: rgba(97, 215, 244, 0.05);
+  color: var(--palette-a9dfee);
+  background: var(--palette-rgba-97-215-244-0-05);
   cursor: pointer;
   font: inherit;
   font-size: 0.68rem;
@@ -32,7 +32,7 @@
 .document-action:focus-visible {
   border-color: var(--cyan);
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.12);
+  background: var(--palette-rgba-97-215-244-0-12);
   outline: none;
 }
 
@@ -42,14 +42,14 @@
 }
 
 .document-action.danger {
-  color: #ffb0b0;
+  color: var(--color-status-danger);
 }
 
 .document-action.danger:hover,
 .document-action.danger:focus-visible {
-  border-color: #ff8585;
-  color: #ffd1d1;
-  background: rgba(255, 102, 102, 0.12);
+  border-color: var(--palette-ff8585);
+  color: var(--palette-ffd1d1);
+  background: var(--palette-rgba-255-102-102-0-12);
 }
 
 .document-action svg {
@@ -75,10 +75,10 @@
   display: grid;
   min-width: 14rem;
   padding: 0.35rem;
-  border: 1px solid rgba(157, 190, 232, 0.28);
+  border: 1px solid var(--palette-rgba-157-190-232-0-28);
   border-radius: 0.65rem;
-  background: rgba(8, 24, 44, 0.98);
-  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.3);
+  background: var(--palette-rgba-8-24-44-0-98);
+  box-shadow: 0 0.8rem 2rem var(--palette-rgba-0-0-0-0-3);
 }
 
 .download-version-option {
@@ -86,14 +86,14 @@
   gap: 0.18rem;
   padding: 0.55rem 0.65rem;
   border-radius: 0.4rem;
-  color: #d8edf4;
+  color: var(--palette-d8edf4);
   text-decoration: none;
 }
 
 .download-version-option:hover,
 .download-version-option:focus-visible {
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.12);
+  background: var(--palette-rgba-97-215-244-0-12);
   outline: none;
 }
 

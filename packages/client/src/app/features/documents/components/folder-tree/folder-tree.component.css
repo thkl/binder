@@ -14,8 +14,12 @@
   overflow-y: auto;
   border: 1px solid var(--glass-border);
   border-radius: 1.1rem;
-  background: linear-gradient(145deg, rgba(20, 52, 88, 0.76), rgba(7, 22, 41, 0.86));
-  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.12);
+  background: linear-gradient(
+    145deg,
+    var(--palette-rgba-20-52-88-0-76),
+    var(--palette-rgba-7-22-41-0-86)
+  );
+  box-shadow: 0 1.5rem 4rem var(--palette-rgba-0-0-0-0-12);
 }
 
 .folder-tree-header {
@@ -35,7 +39,7 @@
 
 .folder-tree h3 {
   margin: 0.3rem 0 0;
-  color: #e5f1ff;
+  color: var(--color-text-bright);
   font-size: 1rem;
   letter-spacing: -0.02em;
 }
@@ -43,7 +47,7 @@
 .folder-tree-copy {
   margin: 0;
   padding: 0 1rem 0.9rem;
-  color: #8da4bf;
+  color: var(--palette-8da4bf);
   font-size: 0.7rem;
   line-height: 1.5;
 }
@@ -52,10 +56,10 @@
   width: 2.4rem;
   height: 2.4rem;
   padding: 0.5rem 0.5rem;
-  border: 1px solid rgba(97, 215, 244, 0.3);
+  border: 1px solid var(--palette-rgba-97-215-244-0-3);
   border-radius: 0.55rem;
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.08);
+  background: var(--color-accent-surface-soft);
   cursor: pointer;
   font-size: 1.25rem;
 }
@@ -69,25 +73,25 @@
 .folder-tree-error {
   margin: 0 1rem 0.75rem;
   padding: 0.55rem 0.65rem;
-  border: 1px solid rgba(255, 120, 120, 0.25);
+  border: 1px solid var(--palette-rgba-255-120-120-0-25);
   border-radius: 0.45rem;
-  color: #ffb0b0;
-  background: rgba(255, 120, 120, 0.1);
+  color: var(--color-status-danger);
+  background: var(--color-danger-surface);
   font-size: 0.68rem;
 }
 
 .folder-create-form {
   margin: 0 0.75rem 0.75rem;
   padding: 0.65rem;
-  border: 1px solid rgba(97, 215, 244, 0.2);
+  border: 1px solid var(--palette-rgba-97-215-244-0-2);
   border-radius: 0.65rem;
-  background: rgba(5, 18, 35, 0.45);
+  background: var(--palette-rgba-5-18-35-0-45);
 }
 
 .folder-create-form label {
   display: block;
   margin-bottom: 0.35rem;
-  color: #cfe0f5;
+  color: var(--palette-cfe0f5);
   font-size: 0.68rem;
   font-weight: 700;
 }
@@ -102,11 +106,11 @@
   flex: 1 1 8rem;
   min-width: 0;
   min-height: 2.35rem;
-  border: 1px solid rgba(157, 190, 232, 0.22);
+  border: 1px solid var(--palette-rgba-157-190-232-0-22);
   border-radius: 0.4rem;
   padding: 0.4rem 0.5rem;
-  color: #e5f1ff;
-  background: rgba(5, 18, 35, 0.75);
+  color: var(--color-text-bright);
+  background: var(--palette-rgba-5-18-35-0-75);
   font: inherit;
   font-size: 0.75rem;
 }
@@ -115,11 +119,11 @@
   flex: 1 1 8rem;
   min-width: 0;
   min-height: 2.35rem;
-  border: 1px solid rgba(157, 190, 232, 0.22);
+  border: 1px solid var(--palette-rgba-157-190-232-0-22);
   border-radius: 0.4rem;
   padding: 0.4rem 0.5rem;
-  color: #e5f1ff;
-  background: rgba(5, 18, 35, 0.75);
+  color: var(--color-text-bright);
+  background: var(--palette-rgba-5-18-35-0-75);
   font: inherit;
   font-size: 0.75rem;
 }
@@ -127,11 +131,11 @@
 .folder-form-row button,
 .folder-actions button {
   min-height: 2.35rem;
-  border: 1px solid rgba(97, 215, 244, 0.22);
+  border: 1px solid var(--palette-rgba-97-215-244-0-22);
   border-radius: 0.4rem;
   padding: 0.35rem 0.55rem;
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.08);
+  background: var(--color-accent-surface-soft);
   cursor: pointer;
   font: inherit;
   font-size: 0.68rem;
@@ -154,7 +158,7 @@
 
 .folder-form-row button.quiet {
   border-color: transparent;
-  color: #8da4bf;
+  color: var(--palette-8da4bf);
   background: transparent;
 }
 
@@ -172,7 +176,7 @@
   gap: 0.2rem;
   border: 0;
   border-radius: 0.5rem;
-  color: #a9bfd8;
+  color: var(--palette-a9bfd8);
   background: transparent;
   font: inherit;
   font-size: 0.75rem;
@@ -188,13 +192,13 @@
 .folder-row:hover,
 .folder-root-row:focus-within,
 .folder-row:focus-within {
-  background: rgba(97, 215, 244, 0.07);
+  background: var(--palette-rgba-97-215-244-0-07);
 }
 
 .folder-root-row.selected,
 .folder-select.selected {
-  color: #e5f1ff;
-  background: rgba(97, 215, 244, 0.13);
+  color: var(--color-text-bright);
+  background: var(--palette-rgba-97-215-244-0-13);
 }
 
 .folder-disclosure {
@@ -204,7 +208,7 @@
   height: 2.35rem;
   place-items: center;
   border: 0;
-  color: #8da4bf;
+  color: var(--palette-8da4bf);
   background: transparent;
   cursor: pointer;
   font-size: 1.15rem;
@@ -262,7 +266,7 @@
 .folder-count {
   flex: 0 0 auto;
   margin-left: auto;
-  color: #7188a5;
+  color: var(--color-text-muted);
   font-size: 0.65rem;
 }
 
@@ -274,9 +278,9 @@
   z-index: 1;
   gap: 0.1rem;
   padding: 0.1rem;
-  border: 1px solid rgba(97, 215, 244, 0.16);
+  border: 1px solid var(--palette-rgba-97-215-244-0-16);
   border-radius: 0.5rem;
-  background: rgba(7, 22, 41, 0.92);
+  background: var(--palette-rgba-7-22-41-0-92);
   backdrop-filter: blur(8px);
   opacity: 0;
   pointer-events: none;
@@ -294,21 +298,21 @@
   width: 2.1rem;
   min-height: 2.1rem;
   padding: 0;
-  color: #8da4bf;
+  color: var(--palette-8da4bf);
   background: transparent;
 }
 
 .folder-actions button:hover,
 .folder-actions button:focus-visible {
   color: var(--cyan);
-  background: rgba(97, 215, 244, 0.08);
+  background: var(--color-accent-surface-soft);
 }
 
 .folder-actions button.danger:hover,
 .folder-actions button.danger:focus-visible {
-  border-color: rgba(255, 120, 120, 0.45);
-  color: #ffb0b0;
-  background: rgba(255, 120, 120, 0.08);
+  border-color: var(--palette-rgba-255-120-120-0-45);
+  color: var(--color-status-danger);
+  background: var(--palette-rgba-255-120-120-0-08);
 }
 
 .folder-editor {
@@ -316,7 +320,7 @@
   width: 100%;
   border: 0;
   border-bottom: 1px solid var(--cyan);
-  color: #e5f1ff;
+  color: var(--color-text-bright);
   background: transparent;
   font: inherit;
   outline: none;
@@ -324,14 +328,14 @@
 
 .folder-empty {
   margin: 0.8rem 0.75rem;
-  color: #7188a5;
+  color: var(--color-text-muted);
   font-size: 0.72rem;
 }
 
 .folder-tree-divider {
   height: 1px;
   margin: 0.65rem 0.5rem;
-  background: rgba(157, 190, 232, 0.14);
+  background: var(--palette-rgba-157-190-232-0-14);
 }
 
 .virtual-folder-row {
@@ -343,7 +347,7 @@
   border: 0;
   border-radius: 0.5rem;
   padding: 0.25rem 0.4rem;
-  color: #a9bfd8;
+  color: var(--palette-a9bfd8);
   background: transparent;
   cursor: pointer;
   font: inherit;
@@ -354,8 +358,8 @@
 .virtual-folder-row:hover,
 .virtual-folder-row:focus-visible,
 .virtual-folder-row.selected {
-  color: #e5f1ff;
-  background: rgba(97, 215, 244, 0.13);
+  color: var(--color-text-bright);
+  background: var(--palette-rgba-97-215-244-0-13);
   outline: none;
 }
 
@@ -374,7 +378,7 @@
   width: 1.55rem;
   height: 1.55rem;
   place-items: center;
-  color: #f2ca78;
+  color: var(--palette-f2ca78);
 }
 
 .folder-unassigned-icon svg,
@@ -389,7 +393,7 @@
 }
 
 .folder-row-root select {
-  background-color: rgba(97, 215, 244, 0.13);
+  background-color: var(--palette-rgba-97-215-244-0-13);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -16,7 +16,7 @@
 
 .inbox-heading h2 {
   margin: 0.55rem 0 0.7rem;
-  color: #e5f1ff;
+  color: var(--color-text-bright);
   font-size: clamp(2rem, 5vw, 3.3rem);
   letter-spacing: -0.06em;
 }
@@ -45,14 +45,14 @@
 }
 
 .danger-action {
-  color: #ffd2d2;
-  border-color: rgba(255, 120, 120, 0.28);
-  background: rgba(255, 100, 100, 0.1);
+  color: var(--palette-ffd2d2);
+  border-color: var(--palette-rgba-255-120-120-0-28);
+  background: var(--palette-rgba-255-100-100-0-1);
 }
 
 .danger-action:hover:not(:disabled) {
-  border-color: rgba(255, 150, 150, 0.5);
-  background: rgba(255, 100, 100, 0.18);
+  border-color: var(--palette-rgba-255-150-150-0-5);
+  background: var(--palette-rgba-255-100-100-0-18);
 }
 
 .summary-grid {
@@ -69,7 +69,7 @@
 }
 
 .summary-label {
-  color: #a9bad0;
+  color: var(--color-text-secondary-soft);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -77,13 +77,13 @@
 }
 
 .summary-card strong {
-  color: #e8f6ff;
+  color: var(--palette-e8f6ff);
   font-size: 1.65rem;
   letter-spacing: -0.04em;
 }
 
 .summary-card small {
-  color: #7188a5;
+  color: var(--color-text-muted);
   font-size: 0.7rem;
 }
 
@@ -102,7 +102,7 @@
 
 .queue-header h3 {
   margin: 0.3rem 0 0;
-  color: #dceaff;
+  color: var(--color-text-primary);
   font-size: 1.05rem;
 }
 
@@ -112,7 +112,7 @@
   min-height: 2rem;
   place-items: center;
   border-radius: 50%;
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
   font-size: 0.78rem;
   font-weight: 900;
@@ -129,7 +129,7 @@
   gap: 0.9rem;
   min-width: 0;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(157, 190, 232, 0.1);
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .queue-row:last-child {
@@ -141,10 +141,10 @@
   width: 2rem;
   height: 2.35rem;
   place-items: center;
-  border: 1px solid rgba(255, 150, 150, 0.25);
+  border: 1px solid var(--palette-rgba-255-150-150-0-25);
   border-radius: 0.35rem;
-  color: #ffb2b2;
-  background: rgba(255, 120, 120, 0.1);
+  color: var(--color-status-danger);
+  background: var(--color-danger-surface);
   font-size: 0.53rem;
   font-weight: 900;
 }
@@ -157,7 +157,7 @@
 
 .file-copy strong {
   overflow: hidden;
-  color: #e0efff;
+  color: var(--palette-e0efff);
   font-size: 0.84rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -165,23 +165,23 @@
 
 .file-copy small {
   overflow-wrap: anywhere;
-  color: #7188a5;
+  color: var(--color-text-muted);
   font-size: 0.67rem;
 }
 
 .suggestion {
   overflow-wrap: anywhere;
-  color: #a8e8d1;
+  color: var(--palette-a8e8d1);
   font-size: 0.7rem;
   line-height: 1.4;
 }
 
 .suggestion > span {
-  color: #67e0ac;
+  color: var(--color-status-success);
 }
 
 .auto-applied {
-  color: #a8e8d1;
+  color: var(--palette-a8e8d1);
   font-size: 0.68rem;
 }
 
@@ -213,58 +213,58 @@
 }
 
 .status-new {
-  color: #b7d9ff;
-  border-color: rgba(120, 180, 255, 0.25);
-  background: rgba(80, 140, 220, 0.12);
+  color: var(--palette-b7d9ff);
+  border-color: var(--palette-rgba-120-180-255-0-25);
+  background: var(--palette-rgba-80-140-220-0-12);
 }
 
 .status-processing {
-  color: #ffe0a6;
-  border-color: rgba(255, 194, 94, 0.28);
-  background: rgba(255, 170, 60, 0.12);
+  color: var(--palette-ffe0a6);
+  border-color: var(--palette-rgba-255-194-94-0-28);
+  background: var(--palette-rgba-255-170-60-0-12);
 }
 
 .status-imported {
-  color: #a8e8d1;
-  border-color: rgba(103, 224, 172, 0.25);
-  background: rgba(80, 190, 145, 0.12);
+  color: var(--palette-a8e8d1);
+  border-color: var(--palette-rgba-103-224-172-0-25);
+  background: var(--palette-rgba-80-190-145-0-12);
 }
 
 .status-duplicate {
-  color: #c9c5ff;
-  border-color: rgba(160, 145, 255, 0.25);
-  background: rgba(120, 100, 230, 0.12);
+  color: var(--palette-c9c5ff);
+  border-color: var(--palette-rgba-160-145-255-0-25);
+  background: var(--palette-rgba-120-100-230-0-12);
 }
 
 .status-rejected,
 .status-failed {
-  color: #ffb2b2;
-  border-color: rgba(255, 120, 120, 0.25);
-  background: rgba(255, 100, 100, 0.12);
+  color: var(--color-status-danger);
+  border-color: var(--palette-rgba-255-120-120-0-25);
+  background: var(--palette-rgba-255-100-100-0-12);
 }
 
 .ai-pill {
-  color: #9db2ca;
-  border-color: rgba(157, 190, 232, 0.18);
-  background: rgba(157, 190, 232, 0.08);
+  color: var(--palette-9db2ca);
+  border-color: var(--palette-rgba-157-190-232-0-18);
+  background: var(--palette-rgba-157-190-232-0-08);
 }
 
 .ai-ready {
-  color: #a8e8d1;
-  border-color: rgba(103, 224, 172, 0.25);
-  background: rgba(80, 190, 145, 0.12);
+  color: var(--palette-a8e8d1);
+  border-color: var(--palette-rgba-103-224-172-0-25);
+  background: var(--palette-rgba-80-190-145-0-12);
 }
 
 .ai-processing {
-  color: #ffe0a6;
-  border-color: rgba(255, 194, 94, 0.28);
-  background: rgba(255, 170, 60, 0.12);
+  color: var(--palette-ffe0a6);
+  border-color: var(--palette-rgba-255-194-94-0-28);
+  background: var(--palette-rgba-255-170-60-0-12);
 }
 
 .ai-failed {
-  color: #ffb2b2;
-  border-color: rgba(255, 120, 120, 0.25);
-  background: rgba(255, 100, 100, 0.12);
+  color: var(--color-status-danger);
+  border-color: var(--palette-rgba-255-120-120-0-25);
+  background: var(--palette-rgba-255-100-100-0-12);
 }
 
 .open-link {
@@ -282,7 +282,7 @@
 .remove-link {
   border: 0;
   padding: 0.35rem 0.15rem;
-  color: #ffb2b2;
+  color: var(--color-status-danger);
   background: transparent;
   cursor: pointer;
   font: inherit;
@@ -291,7 +291,7 @@
 }
 
 .remove-link:hover {
-  color: #ffd2d2;
+  color: var(--palette-ffd2d2);
   text-decoration: underline;
 }
 
@@ -311,7 +311,7 @@
 }
 
 .queue-state h4 {
-  color: #dceaff;
+  color: var(--color-text-primary);
   font-size: 1rem;
 }
 
@@ -331,8 +331,8 @@
   width: 0.8rem;
   height: 0.8rem;
   margin-right: 0.3rem;
-  border: 2px solid rgba(6, 19, 38, 0.22);
-  border-top-color: #061326;
+  border: 2px solid var(--palette-rgba-6-19-38-0-22);
+  border-top-color: var(--color-text-on-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   vertical-align: -0.1rem;
@@ -344,7 +344,7 @@ button {
   gap: 0.45rem;
   border-radius: 0.65rem;
   padding: 0.85rem 1rem;
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
   cursor: pointer;
   font-size: 0.8rem;

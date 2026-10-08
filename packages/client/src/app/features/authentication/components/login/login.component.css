@@ -4,15 +4,16 @@
   place-items: center;
   padding: 1.5rem;
   background:
-    radial-gradient(circle at 15% 15%, rgba(28, 83, 133, 0.5), transparent 35%),
-    radial-gradient(circle at 90% 85%, rgba(17, 105, 133, 0.22), transparent 32%), #071426;
+    radial-gradient(circle at 15% 15%, var(--palette-rgba-28-83-133-0-5), transparent 35%),
+    radial-gradient(circle at 90% 85%, var(--palette-rgba-17-105-133-0-22), transparent 32%),
+    var(--color-surface-page);
 }
 
 .card {
-  background: rgba(12, 31, 57, 0.72);
-  border: 1px solid rgba(157, 190, 232, 0.18);
+  background: var(--palette-rgba-12-31-57-0-72);
+  border: 1px solid var(--palette-rgba-157-190-232-0-18);
   border-radius: 1.25rem;
-  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2rem 5rem var(--palette-rgba-0-0-0-0-3);
   backdrop-filter: blur(20px);
 }
 
@@ -20,11 +21,11 @@
   display: grid;
   grid-template-columns: minmax(18rem, 1fr) minmax(21rem, 27rem);
   width: min(100%, 60rem);
-  border: 1px solid rgba(157, 190, 232, 0.18);
+  border: 1px solid var(--palette-rgba-157-190-232-0-18);
   border-radius: 1.5rem;
   overflow: hidden;
-  background: rgba(8, 24, 45, 0.5);
-  box-shadow: 0 2rem 6rem rgba(0, 0, 0, 0.3);
+  background: var(--palette-rgba-8-24-45-0-5);
+  box-shadow: 0 2rem 6rem var(--palette-rgba-0-0-0-0-3);
 }
 .brand-panel {
   display: flex;
@@ -33,14 +34,14 @@
   min-height: 38rem;
   padding: 2.6rem;
   background:
-    radial-gradient(circle at 70% 35%, rgba(33, 185, 223, 0.17), transparent 35%),
-    linear-gradient(155deg, rgba(19, 53, 92, 0.86), rgba(7, 20, 38, 0.94));
+    radial-gradient(circle at 70% 35%, var(--palette-rgba-33-185-223-0-17), transparent 35%),
+    linear-gradient(155deg, var(--palette-rgba-19-53-92-0-86), var(--palette-rgba-7-20-38-0-94));
 }
 .brand-line {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  color: #dceaff;
+  color: var(--color-text-primary);
   font-size: 0.8rem;
   font-weight: 850;
   letter-spacing: 0.18em;
@@ -51,11 +52,11 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 0.7rem;
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
   font-size: 1.1rem;
   font-weight: 900;
-  box-shadow: 0 0 2rem rgba(97, 215, 244, 0.3);
+  box-shadow: 0 0 2rem var(--palette-rgba-97-215-244-0-3);
 }
 .brand-copy {
   margin: auto 0;
@@ -93,7 +94,7 @@ h2 {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #dceaff;
+  color: var(--color-text-primary);
   font-size: 0.85rem;
 }
 .trust-row small {
@@ -108,8 +109,8 @@ h2 {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 0.7rem;
-  color: #67e0ac;
-  background: rgba(103, 224, 172, 0.1);
+  color: var(--color-status-success);
+  background: var(--palette-rgba-103-224-172-0-1);
   font-size: 1.1rem;
 }
 .auth-card {
@@ -117,7 +118,7 @@ h2 {
   padding: 3rem 2.5rem;
   border: 0;
   border-radius: 0;
-  background: rgba(13, 32, 58, 0.7);
+  background: var(--palette-rgba-13-32-58-0-7);
   box-shadow: none;
 }
 form {
@@ -128,34 +129,34 @@ form {
 label {
   display: grid;
   gap: 0.45rem;
-  color: #b9c9dc;
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
   font-weight: 650;
 }
 input {
   width: 100%;
-  border: 1px solid rgba(157, 190, 232, 0.2);
+  border: 1px solid var(--color-border);
   border-radius: 0.65rem;
   padding: 0.85rem 0.9rem;
   color: var(--ink);
-  background: rgba(5, 18, 35, 0.55);
+  background: var(--color-field-surface);
   outline: none;
 }
 input:focus {
   border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(97, 215, 244, 0.13);
+  box-shadow: 0 0 0 3px var(--palette-rgba-97-215-244-0-13);
 }
 .submit-button {
   border: 0;
   border-radius: 0.65rem;
   padding: 0.9rem 1rem;
-  color: #061326;
+  color: var(--color-text-on-accent);
   background: var(--cyan);
   cursor: pointer;
   font-weight: 800;
 }
 .submit-button:hover:not(:disabled) {
-  background: #8be7fa;
+  background: var(--color-accent-bright);
 }
 .password-reset-link {
   display: block;
@@ -176,7 +177,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #7188a5;
+  color: var(--color-text-muted);
   font-size: 0.75rem;
 }
 .separator::before,
@@ -184,39 +185,39 @@ button:disabled {
   content: '';
   height: 1px;
   flex: 1;
-  background: rgba(157, 190, 232, 0.18);
+  background: var(--palette-rgba-157-190-232-0-18);
 }
 .oidc-button {
   display: block;
-  border: 1px solid rgba(157, 190, 232, 0.25);
+  border: 1px solid var(--palette-rgba-157-190-232-0-25);
   border-radius: 0.65rem;
   padding: 0.85rem 1rem;
-  color: #dceaff;
+  color: var(--color-text-primary);
   text-align: center;
   text-decoration: none;
   font-size: 0.88rem;
   font-weight: 750;
 }
 .oidc-button:hover {
-  background: rgba(97, 215, 244, 0.08);
-  border-color: rgba(97, 215, 244, 0.55);
+  background: var(--color-accent-surface-soft);
+  border-color: var(--palette-rgba-97-215-244-0-55);
 }
 .error {
   margin: 0;
   padding: 0.7rem 0.8rem;
   border-radius: 0.6rem;
   color: var(--danger);
-  background: rgba(255, 120, 120, 0.1);
+  background: var(--color-danger-surface);
   font-size: 0.82rem;
 }
 .login-footnote {
   margin: 2rem 0 0;
-  color: #7188a5;
+  color: var(--color-text-muted);
   text-align: center;
   font-size: 0.72rem;
 }
 .login-footnote span {
-  color: #67e0ac;
+  color: var(--color-status-success);
 }
 @media (max-width: 720px) {
   .login-shell {
