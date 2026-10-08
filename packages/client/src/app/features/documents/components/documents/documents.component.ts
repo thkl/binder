@@ -482,6 +482,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   requestSplitDocument(uuid: string): void {
     const document = this.documents.page()?.items.find((item) => item.uuid === uuid);
     if (!document || document.pageCount < 2) return;
+    this.documents.error.set(null);
     this.splitDocumentUuid.set(uuid);
   }
 
@@ -492,6 +493,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   async splitDocument(request: DocumentSplitRequest): Promise<void> {
     const uuid = this.splitDocumentUuid();
     if (!uuid || this.splitLoading()) return;
+    const wasOpenInDrawer = this.drawerDocumentUuid() === uuid;
     this.splitLoading.set(true);
     try {
       const result = await this.documents.splitDocument(
@@ -502,6 +504,10 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       if (result) {
         this.splitDocumentUuid.set(null);
         this.clearSelection();
+        if (wasOpenInDrawer) {
+          this.drawerDocumentUuid.set(result.remainingDocument.uuid);
+          this.drawerDocumentSnapshot.set(result.remainingDocument);
+        }
       }
     } finally {
       this.splitLoading.set(false);

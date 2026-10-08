@@ -829,6 +829,12 @@ export class DocumentService {
   }
 
   async split(ownerUuid: string, uuid: string, input: SplitDocumentInput) {
+    this.logger.info('Splitting document', {
+      documentUuid: uuid,
+      ownerUuid,
+      splitAfterPage: input.splitAfterPage,
+      autoApplySuggestions: input.autoApplySuggestions,
+    });
     const original = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!original) throw new NotFoundException('Document not found');
     this.assertDocumentContentAvailable(original);
@@ -855,6 +861,7 @@ export class DocumentService {
     );
     const nextVersion = Math.max(...family.map((version) => version.versionNumber), 0) + 1;
 
+    let documentsCreated = false;
     try {
       const remaining = await this.documents.create({
         uuid: remainingUuid,
@@ -874,6 +881,7 @@ export class DocumentService {
         isNew: true,
         status: malwareScanRequired ? 'scanning' : 'processing',
       });
+      documentsCreated = true;
       const extracted = await this.documents.create({
         uuid: extractedUuid,
         ownerUuid,
@@ -980,10 +988,28 @@ export class DocumentService {
         extractedDocument: this.toDocumentResponse(extracted),
       });
     } catch (error) {
-      await Promise.allSettled([
-        this.storage.remove(remainingStored.storageKey),
-        this.storage.remove(extractedStored.storageKey),
-      ]);
+      if (!documentsCreated) {
+        await Promise.allSettled([
+          this.storage.remove(remainingStored.storageKey),
+          this.storage.remove(extractedStored.storageKey),
+        ]);
+      } else {
+        this.logger.error(
+          'Document split failed after output documents were created; files retained for recovery',
+          {
+            sourceDocumentUuid: original.uuid,
+            remainingDocumentUuid: remainingUuid,
+            extractedDocumentUuid: extractedUuid,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        );
+      }
+      this.logger.error('Document split failed', {
+        documentUuid: original.uuid,
+        splitAfterPage: input.splitAfterPage,
+        documentsCreated,
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }

@@ -1,4 +1,4 @@
-<div class="split-backdrop" role="presentation" (click)="closed.emit()">
+<div class="split-backdrop" role="presentation">
   <section
     class="split-dialog"
     role="dialog"
@@ -39,6 +39,10 @@
         <span>{{ 'documents.splitAutoApplySuggestions' | t }}</span>
       </label>
       <p class="split-hint">{{ 'documents.splitAutoApplyHint' | t }}</p>
+
+      @if (errorMessage(); as message) {
+        <p class="split-error" role="alert">{{ message }}</p>
+      }
 
       @if (error(); as errorKey) {
         <p id="split-dialog-error" class="split-error" role="alert">{{ errorKey | t }}</p>

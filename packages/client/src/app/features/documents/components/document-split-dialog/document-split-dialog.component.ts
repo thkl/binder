@@ -17,6 +17,7 @@ export type DocumentSplitRequest = {
 export class DocumentSplitDialogComponent {
   readonly documentTitle = input.required<string>();
   readonly pageCount = input.required<number>();
+  readonly errorMessage = input<string | null>(null);
   readonly closed = output<void>();
   readonly submitted = output<DocumentSplitRequest>();
   readonly splitAfterPage = signal(1);

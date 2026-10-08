@@ -785,6 +785,7 @@
         (suggestionRequested)="suggestTitle(drawerUuid)"
         (requeueRequested)="requeueDocument(drawerUuid)"
         (archiveRequested)="generateArchive(drawerUuid)"
+        (splitRequested)="requestSplitDocument(drawerUuid)"
         (deleteRequested)="requestDeleteDocument(drawerUuid)"
         (versionSelected)="selectDrawerVersion($event)"
       />
@@ -844,6 +845,7 @@
       <binder-document-split-dialog
         [documentTitle]="selectedSplitDocument.title || selectedSplitDocument.originalFilename"
         [pageCount]="selectedSplitDocument.pageCount"
+        [errorMessage]="documents.error()"
         (closed)="cancelSplitDocument()"
         (submitted)="splitDocument($event)"
       />
