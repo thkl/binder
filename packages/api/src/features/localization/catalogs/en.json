@@ -149,6 +149,7 @@
     "setup.recoveryEmpty": "No encrypted full backups were found in the configured Dropbox folder.",
     "setup.recoveryLoading": "Loading available backups…",
     "setup.recoveryConnect": "Connect Dropbox",
+    "setup.skipRecovery": "Skip recovery",
     "setup.recoverySelectRequired": "Select a backup before continuing.",
     "setup.stepProgressRestore": "STEP 7 OF 9",
     "setup.restoreTitle": "Confirm recovery",

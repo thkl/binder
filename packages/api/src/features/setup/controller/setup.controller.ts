@@ -24,7 +24,7 @@ export class SetupController {
 
   @Get('status')
   async status() {
-    return { data: SetupStatusSchema.parse(await this.setup.status()) };
+     return { data: SetupStatusSchema.parse(await this.setup.status()) };
   }
 
   @Post('admin')

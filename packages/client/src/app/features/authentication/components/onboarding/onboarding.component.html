@@ -437,6 +437,11 @@
           <button type="button" class="secondary-button" (click)="refreshRecoveryBackups()">
             {{ 'setup.recoveryList' | t }}
           </button>
+          @if (!recoveryMode()) {
+            <button type="button" class="secondary-button" (click)="skipRecovery()">
+              {{ 'setup.skipRecovery' | t }}
+            </button>
+          }
           <button type="button" (click)="continueRecovery()">
             {{ 'setup.continue' | t }}
           </button>

@@ -144,6 +144,7 @@
     "setup.recoveryEmpty": "Im konfigurierten Dropbox-Ordner wurden keine verschlüsselten vollständigen Backups gefunden.",
     "setup.recoveryLoading": "Verfügbare Backups werden geladen…",
     "setup.recoveryConnect": "Dropbox verbinden",
+    "setup.skipRecovery": "Wiederherstellung überspringen",
     "setup.recoverySelectRequired": "Wählen Sie ein Backup aus, bevor Sie fortfahren.",
     "setup.stepProgressRestore": "SCHRITT 7 VON 9",
     "setup.restoreTitle": "Wiederherstellung bestätigen",

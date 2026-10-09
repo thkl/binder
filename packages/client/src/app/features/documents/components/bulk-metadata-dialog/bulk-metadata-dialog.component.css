@@ -10,7 +10,7 @@
   min-height: 100%;
   padding: 1rem;
   place-items: center;
-  background: var(--color-overlay);
+  background: var(--color-bg-backdrop);
   backdrop-filter: blur(0.6rem);
 }
 

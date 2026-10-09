@@ -4,7 +4,7 @@
   place-items: center;
   padding: 1.5rem;
   background:
-    radial-gradient(circle at 16% 12%, var(--color-accent), transparent 40%), var(--color-bg);
+    radial-gradient(circle at 16% 12%, var(--color-surface), transparent 40%), var(--color-bg);
 }
 
 .onboarding-shell {
@@ -12,7 +12,7 @@
   grid-template-columns: minmax(18rem, 0.9fr) minmax(22rem, 1.1fr);
   width: 90vw;
   overflow: hidden;
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 1.5rem;
   background: var(--color-surface);
   box-shadow: 0 2rem 6rem var(--color-overlay);
@@ -40,7 +40,7 @@
   color: var(--color-bg);
   background: var(--color-accent);
   font-weight: 900;
-  box-shadow: 0 0 2rem var(--color-accent);
+  box-shadow: 0 0 2rem var(--color-surface);
 }
 
 .eyebrow {
@@ -79,7 +79,7 @@ h2 {
   padding: 0.95rem;
   border: 1px solid var(--color-success);
   border-radius: 0.8rem;
-  background: var(--color-success);
+  background: var(--color-surface);
 }
 
 .note-icon {
@@ -96,12 +96,12 @@ h2 {
   stroke-width: 1.5;
 }
 .security-note strong {
-  color: var(--color-border);
+  color: var(--color-text-muted);
   font-size: 0.85rem;
 }
 .security-note p {
   margin: 0.25rem 0 0;
-  color: var(--color-border);
+  color: var(--color-text-muted);
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -130,7 +130,7 @@ h2 {
   font-size: 0.7rem;
 }
 .step-list .active {
-  color: var(--color-border);
+  color: var(--color-text);
 }
 .step-list .active span {
   color: var(--color-bg);
@@ -138,7 +138,7 @@ h2 {
   background: var(--color-accent);
 }
 .step-list .complete {
-  color: var(--color-border);
+  color: var(--color-success);
 }
 .step-list .complete span {
   color: var(--color-bg);
@@ -171,7 +171,7 @@ h2 {
   padding: 0.9rem 1rem;
   border: 1px solid var(--color-accent);
   border-radius: 0.75rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 .ai-note strong {
   color: var(--color-text);
@@ -210,17 +210,11 @@ label {
 input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--color-border);
   border-radius: 0.7rem;
   padding: 0.78rem 0.85rem;
-  color: var(--color-text);
-  background: var(--color-accent);
   outline: none;
 }
-input:focus {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px var(--color-accent);
-}
+
 .checkbox-field {
   display: flex;
   align-items: center;
@@ -228,16 +222,19 @@ input:focus {
   min-height: 2.75rem;
   margin-top: 0.7rem;
   cursor: pointer;
+
 }
 .checkbox-field input {
   width: 1.15rem;
   height: 1.15rem;
   flex: 0 0 auto;
+  opacity: 1;
   accent-color: var(--color-accent);
 }
 .checkbox-field span {
   color: var(--color-text-muted);
   font-size: 0.88rem;
+  margin-left:2em;
 }
 .setting-summary {
   display: flex;
@@ -245,11 +242,11 @@ input:focus {
   justify-content: space-between;
   gap: 1rem;
   margin-top: 0.7rem;
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 0.65rem;
   padding: 0.7rem 0.8rem;
   color: var(--color-text);
-  background: var(--color-accent);
+  background: var(--color-surface);
   font-size: 0.8rem;
 }
 .setting-summary strong {
@@ -267,10 +264,10 @@ input:focus {
   display: flex;
   align-items: flex-start;
   gap: 0.55rem;
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 0.65rem;
   padding: 0.65rem 0.75rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 .check-row > span {
   display: grid;
@@ -288,6 +285,10 @@ input:focus {
   font-size: 0.78rem;
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.check-error {
+    border: 1px solid var(--color-danger);
 }
 .recovery-option {
   width: 100%;
@@ -308,7 +309,7 @@ input:focus {
   background: var(--color-warning);
 }
 .check-error > span {
-  color: var(--color-danger);
+  color: var(--color-bg);
   background: var(--color-danger);
 }
 .loading-state {
@@ -354,9 +355,10 @@ button {
 button:hover:not(:disabled) {
   background: var(--color-accent);
 }
+
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 1px solid var(--color-accent);
   outline-offset: 2px;
 }
 button:disabled {
@@ -368,7 +370,7 @@ button:disabled {
   margin: 0.8rem 0 0;
   padding: 0.75rem 0.8rem;
   border-radius: 0.6rem;
-  color: var(--color-danger);
+  color: var(--color-bg);
   background: var(--color-danger);
   font-size: 0.88rem;
   line-height: 1.45;

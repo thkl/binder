@@ -171,6 +171,11 @@ export class OnboardingComponent {
     this.goTo('restore');
   }
 
+  skipRecovery(): void {
+    this.stepError.set(null);
+    this.goTo('backup');
+  }
+
   selectRecoveryBackup(filename: string): void {
     this.selectedRecoveryBackup.set(filename);
     this.stepError.set(null);
