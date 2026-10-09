@@ -135,7 +135,7 @@
             {{ 'emailImport.deleteSettings' | t }}
           </button>
         }
-        <button class="save-button" type="submit" [disabled]="service.saving()">
+        <button class="primary-button" type="submit" [disabled]="service.saving()">
           {{ service.saving() ? ('settings.saving' | t) : ('settings.save' | t) }}
         </button>
       </footer>

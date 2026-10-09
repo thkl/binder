@@ -7,7 +7,7 @@
     </div>
     <div class="heading-actions">
       <button
-        class="run-button"
+        class="secondary-button"
         type="button"
         (click)="requestBackup()"
         [disabled]="requestingBackup()"
@@ -18,7 +18,7 @@
         {{ requestingBackup() ? ('maintenance.requesting' | t) : ('maintenance.runNow' | t) }}
       </button>
       <button
-        class="refresh-button"
+        class="secondary-button"
         type="button"
         (click)="maintenance.load()"
         [disabled]="maintenance.loading()"

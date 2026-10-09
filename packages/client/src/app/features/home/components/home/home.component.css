@@ -37,7 +37,7 @@
   inset: 0;
   place-items: center;
   border-radius: inherit;
-  background: var(--color-accent);
+  background: var(--color-overlay);
   pointer-events: none;
 }
 
@@ -50,7 +50,7 @@
   border: 1px solid var(--color-accent);
   border-radius: 1rem;
   color: var(--color-text);
-  background: var(--color-accent);
+  background: var(--color-overlay);
   box-shadow: 0 1.5rem 4rem var(--color-overlay);
   text-align: center;
 }
@@ -74,7 +74,7 @@
   border: 1px solid var(--color-accent);
   border-radius: 0.9rem;
   color: var(--color-accent);
-  background: var(--color-accent);
+  background: var(--color-overlay);
 }
 
 .home-drop-overlay-icon svg {
@@ -122,19 +122,19 @@ h2 {
   max-width: 54rem;
   margin: 2rem auto 0;
   padding: 0.45rem 0.5rem 0.45rem 1rem;
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--color-border);
   border-radius: 1rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
   box-shadow:
     0 1.5rem 3rem var(--color-overlay),
-    0 0 0 5px var(--color-accent);
+    0 0 0 5px var(--color-border);
 }
 
 .search-form:focus-within {
   border-color: var(--color-accent);
   box-shadow:
     0 1.5rem 3rem var(--color-overlay),
-    0 0 0 5px var(--color-accent);
+    0 0 0 5px var(--color-border);
 }
 
 .search-icon {
@@ -148,7 +148,7 @@ h2 {
   flex: 1;
   border: 0;
   color: var(--color-text);
-  background: transparent;
+  background: var(--color-surface);
   outline: none;
   font: inherit;
   font-size: 0.86rem;
@@ -164,7 +164,7 @@ h2 {
   border-radius: 0.65rem;
   padding: 0.65rem 1rem;
   color: var(--color-bg);
-  background: var(--color-accent);
+  background: var(--color-surface);
   cursor: pointer;
   font: inherit;
   font-size: 0.76rem;
@@ -173,7 +173,7 @@ h2 {
 }
 
 .search-form button:hover:not(:disabled) {
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .search-form button:disabled {
@@ -190,10 +190,10 @@ h2 {
   max-width: 54rem;
   margin: 2rem auto 0;
   padding: 1rem 1.1rem;
-  border: 1px dashed var(--color-text);
+  border: 1px dashed var(--color-border);
   border-radius: 0.9rem;
   color: var(--color-text);
-  background: var(--color-accent);
+  background: var(--color-surface);
   text-align: left;
   transition:
     border-color 0.16s ease,
@@ -203,7 +203,7 @@ h2 {
 
 .home-upload-card.drag-active {
   border-color: var(--color-accent);
-  background: var(--color-accent);
+  background: var(--color-surface);
   box-shadow: 0 0 0 4px var(--color-accent);
 }
 
@@ -234,7 +234,7 @@ h2 {
   width: 1.25rem;
   height: 1.25rem;
   fill: none;
-  stroke: currentColor;
+  stroke: var(--color-surface);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.7;
@@ -293,7 +293,7 @@ h2 {
   margin: 0;
   padding: 0.2rem 0.45rem;
   border-radius: 0.35rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
   font-size: 0.65rem;
 }
 
@@ -428,9 +428,9 @@ h2 {
 .search-options {
   max-width: 54rem;
   margin: 1rem auto 0;
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 0.9rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
   text-align: left;
 }
 
@@ -477,7 +477,7 @@ h2 {
 }
 
 .search-options-content {
-  border-top: 1px solid var(--color-text);
+  border-top: 1px solid var(--color-border);
   padding: 1rem 1.1rem 1.1rem;
 }
 
@@ -509,11 +509,11 @@ h2 {
 .search-filter-field select {
   width: 100%;
   min-height: 2.55rem;
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 0.55rem;
   padding: 0.55rem 0.65rem;
   color: var(--color-text);
-  background: var(--color-accent);
+  background: var(--color-surface);
   font: inherit;
   font-size: 0.7rem;
 }
@@ -548,7 +548,7 @@ h2 {
   border: 1px solid var(--color-border);
   border-radius: 0.55rem;
   padding: 0.2rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .segmented-control button {
@@ -556,7 +556,7 @@ h2 {
   border: 0;
   border-radius: 0.4rem;
   color: var(--color-text);
-  background: transparent;
+  background: var(--color-surface);
   cursor: pointer;
   font: inherit;
   font-size: 0.7rem;
@@ -565,7 +565,7 @@ h2 {
 
 .segmented-control button.active {
   color: var(--color-bg);
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .threshold-description {
@@ -602,7 +602,7 @@ h2 {
   gap: 1rem;
   margin-top: 1rem;
   padding-top: 0.9rem;
-  border-top: 1px solid var(--color-text);
+  border-top: 1px solid var(--color-border);
 }
 
 .search-options-footer p {
@@ -610,59 +610,6 @@ h2 {
   color: var(--color-text-muted);
   font-size: 0.68rem;
   line-height: 1.45;
-}
-
-.text-button,
-.secondary-button,
-.primary-button {
-  min-height: 2.45rem;
-  border-radius: 0.55rem;
-  padding: 0.55rem 0.75rem;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.7rem;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.text-button {
-  border: 0;
-  color: var(--color-accent);
-  background: transparent;
-}
-
-.text-button:hover,
-.text-button:focus-visible {
-  color: var(--color-border);
-  text-decoration: underline;
-}
-
-.secondary-button {
-  border: 1px solid var(--color-text);
-  color: var(--color-text);
-  background: var(--color-text);
-}
-
-.secondary-button:hover {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
-}
-
-.primary-button {
-  border: 1px solid var(--color-accent);
-  color: var(--color-bg);
-  background: var(--color-accent);
-}
-
-.primary-button:hover:not(:disabled) {
-  background: var(--color-accent);
-}
-
-.primary-button:disabled,
-.secondary-button:disabled,
-.text-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .notice {
@@ -683,7 +630,7 @@ h2 {
   margin-top: 3rem;
   border: 1px solid var(--color-border);
   border-radius: 1.1rem;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent));
+  background: var(--color-surface);
   box-shadow: 0 1.5rem 4rem var(--color-overlay);
   backdrop-filter: blur(18px);
 }

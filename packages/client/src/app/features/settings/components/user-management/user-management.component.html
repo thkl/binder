@@ -5,7 +5,7 @@
       <h3>{{ 'users.title' | t }}</h3>
       <p class="muted">{{ 'users.copy' | t }}</p>
     </div>
-    <button class="primary-action" type="button" (click)="startCreate()">
+    <button class="primary-button" type="button" (click)="startCreate()">
       {{ 'users.create' | t }}
     </button>
   </header>
@@ -100,12 +100,12 @@
               [required]="!editingUser() && !email()"
             />
             <div class="password-actions">
-              <button type="button" class="password-generate" (click)="generatePassword()">
+              <button type="button" class="secondary-button password-generate" (click)="generatePassword()">
                 Generate password
               </button>
               <button
                 type="button"
-                class="password-generate"
+                class="secondary-button password-generate"
                 (click)="togglePasswordVisibility()"
                 [attr.aria-pressed]="passwordVisible()"
               >
@@ -152,7 +152,7 @@
           <button class="secondary-button" type="button" (click)="startCreate()">
             {{ editingUser() ? ('users.new' | t) : ('users.clear' | t) }}
           </button>
-          <button class="primary-action" type="submit" [disabled]="management.saving()">
+          <button class="primary-button" type="submit" [disabled]="management.saving()">
             {{ management.saving() ? ('users.saving' | t) : ('users.save' | t) }}
           </button>
         </footer>

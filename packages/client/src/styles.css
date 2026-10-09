@@ -12,11 +12,15 @@
   background: var(--color-bg);
   --color-bg: #071426;
   --color-surface: #0b213d;
+  --color-surface-transparent: rgba(11, 37, 71, 0.914);
+  --color-bg-backdrop: rgba(11, 37, 71, 0.394);
   --color-text: #e5f1ff;
+  --color-text-secondary: #a7b4c2;
   --color-text-muted: #8fa8c4;
   --color-border: rgba(157, 190, 232, 0.2);
   --color-accent: #61d7f4;
   --color-success: #67e0ac;
+  --color-pill: #0b9d5e;
   --color-warning: #f2ca78;
   --color-danger: #ff9a9a;
   --color-overlay: rgba(1, 8, 19, 0.72);
@@ -255,4 +259,87 @@ button {
   background: var(--glass-card-background-color);
   box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.16);
   backdrop-filter: blur(18px);
+}
+
+.text-button,
+.secondary-button,
+.primary-button {
+  min-height: 2.45rem;
+  border-radius: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.text-button {
+  border: 0;
+  color: var(--color-accent);
+  background: transparent;
+}
+
+.text-button:hover,
+.text-button:focus-visible {
+  color: var(--color-border);
+  text-decoration: underline;
+}
+
+.secondary-button {
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.secondary-button:hover {
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+  background: var(--color-accent);
+}
+
+.primary-button {
+  border: 1px solid var(--color-accent);
+  color: var(--color-bg);
+  background: var(--color-accent);
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+
+.danger-button {
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  background: var(--color-surface);
+}
+
+.danger-button:hover {
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+  background-color: var(--color-danger);
+}
+
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.text-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+input, 
+select {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+input:focus {
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+select:focus {
+    box-shadow: 0 0 0 1px var(--color-accent);
 }

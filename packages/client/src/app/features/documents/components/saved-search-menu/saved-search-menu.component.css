@@ -8,9 +8,9 @@
   flex-wrap: wrap;
   gap: 0.55rem;
   padding: 0.7rem 0.85rem;
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 0.8rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .saved-search-select {
@@ -37,7 +37,7 @@ input {
   border: 1px solid var(--color-border);
   padding: 0.45rem 0.6rem;
   color: var(--color-text);
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 input {
@@ -77,17 +77,6 @@ button:disabled {
   opacity: 0.5;
 }
 
-.saved-search-primary {
-  color: var(--color-bg);
-  background: var(--color-accent);
-}
-
-.saved-search-secondary {
-  color: var(--color-text);
-  border-color: var(--color-border);
-  background: transparent;
-}
-
 .saved-search-danger {
   color: var(--color-danger);
   border-color: var(--color-danger);
@@ -101,7 +90,7 @@ button:disabled {
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: var(--color-accent);
+  background: var(--color-overlay);
   backdrop-filter: blur(5px);
 }
 
@@ -113,7 +102,7 @@ button:disabled {
   border-radius: 1rem;
   padding: 1.2rem;
   color: var(--color-text);
-  background: var(--color-accent);
+  background: var(--color-surface);
   box-shadow: 0 2rem 5rem var(--color-overlay);
 }
 
@@ -165,7 +154,7 @@ button:disabled {
   padding: 0.85rem;
   border: 1px solid var(--color-text);
   border-radius: 0.75rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .saved-search-parameters-heading {
@@ -183,7 +172,7 @@ button:disabled {
   place-items: center;
   border-radius: 999px;
   color: var(--color-bg);
-  background: var(--color-accent);
+  background: var(--color-surface);
   font-size: 0.68rem;
   font-weight: 800;
 }

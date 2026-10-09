@@ -92,7 +92,7 @@ h2 {
 .section-link:hover,
 .section-link.active {
   color: var(--color-accent);
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .section-symbol {
@@ -155,7 +155,7 @@ h3 {
   border-radius: 0.65rem;
   padding: 0.65rem 0.75rem;
   color: var(--color-success);
-  background: var(--color-success);
+  background: var(--color-surface);
   font-size: 0.72rem;
 }
 
@@ -185,39 +185,6 @@ h3 {
   margin-right: auto;
   color: var(--color-success);
   font-size: 0.78rem;
-}
-
-.save-button {
-  border: 0;
-  border-radius: 0.65rem;
-  padding: 0.8rem 1rem;
-  color: var(--color-bg);
-  background: var(--color-accent);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 800;
-}
-
-.secondary-button {
-  border-radius: 0.65rem;
-  padding: 0.8rem 1rem;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 800;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  background: transparent;
-}
-
-.save-button:hover:not(:disabled) {
-  background: var(--color-accent);
-}
-
-.save-button:disabled {
-  cursor: wait;
-  opacity: 0.6;
 }
 
 .settings-status {

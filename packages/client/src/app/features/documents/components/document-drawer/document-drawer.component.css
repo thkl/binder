@@ -9,7 +9,7 @@
   display: grid;
   place-items: center;
   padding: 1.25rem;
-  background: var(--color-accent);
+  background: var(--color-overlay);
   backdrop-filter: blur(5px);
 }
 
@@ -26,9 +26,9 @@
   min-width: 0;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--color-border);
   border-radius: 1rem;
-  background: linear-gradient(160deg, var(--color-accent) 0%, var(--color-accent) 72%);
+  background: var(--color-surface);
   box-shadow: 0 2rem 6rem var(--color-overlay);
   animation: drawer-in 0.2s ease-out;
 }
@@ -86,7 +86,7 @@
   border-radius: 0.45rem;
   padding: 0.35rem 0.55rem;
   color: var(--color-accent);
-  background: var(--color-accent);
+  background: var(--color-surface);
   cursor: pointer;
   font: inherit;
   font-size: 0.68rem;
@@ -117,7 +117,7 @@
   border-radius: 0.45rem;
   padding: 0.35rem 0.55rem;
   color: var(--color-danger);
-  background: var(--color-danger);
+  background: var(--color-surface);
   cursor: pointer;
   font: inherit;
   font-size: 0.68rem;
@@ -141,7 +141,7 @@
   border: 1px solid var(--color-border);
   border-radius: 0.6rem;
   color: var(--color-text-muted);
-  background: var(--color-text);
+  background: var(--color-surface);
   cursor: pointer;
   font-size: 1.5rem;
   line-height: 1;
@@ -152,7 +152,7 @@
 .drawer-close:focus-visible {
   border-color: var(--color-accent);
   color: var(--color-accent);
-  background: var(--color-accent);
+  background: var(--color-surface);
   outline: none;
 }
 
@@ -160,7 +160,7 @@
   display: flex;
   gap: 0.25rem;
   padding: 0 1.4rem;
-  border-bottom: 1px solid var(--color-text);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .drawer-tabs button {
@@ -178,7 +178,7 @@
 
 .drawer-tabs button:hover,
 .drawer-tabs button:focus-visible {
-  color: var(--color-border);
+  color: var(--color-accent);
   outline: none;
 }
 
@@ -194,7 +194,7 @@
   min-height: 2.45rem;
   padding: 0.35rem 1.4rem;
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .drawer-version-tabs button {
@@ -258,9 +258,9 @@
 .analysis-pane {
   min-height: 0;
   overflow: hidden;
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 0.8rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .pdf-pane {
@@ -299,7 +299,7 @@
   border-radius: 0.7rem;
   padding: 0.9rem;
   color: var(--color-text);
-  background: var(--color-accent);
+  background: var(--color-surface);
   font-size: 0.75rem;
 }
 
@@ -331,24 +331,6 @@
   font: inherit;
   font-size: 0.7rem;
   font-weight: 800;
-}
-
-.secondary-button {
-  border: 1px solid var(--color-text);
-  color: var(--color-text);
-  background: var(--color-text);
-}
-
-.danger-button {
-  border: 1px solid var(--color-danger);
-  color: var(--color-danger);
-  background: var(--color-danger);
-}
-
-.secondary-button:hover,
-.danger-button:hover {
-  border-color: var(--color-accent);
-  color: var(--color-border);
 }
 
 @keyframes drawer-in {

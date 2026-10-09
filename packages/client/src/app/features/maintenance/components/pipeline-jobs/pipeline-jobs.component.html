@@ -27,7 +27,7 @@
         }
       </select>
     </label>
-    <button class="refresh-button" type="button" (click)="load()" [disabled]="pipeline.loading()">
+    <button class="secondary-button" type="button" (click)="load()" [disabled]="pipeline.loading()">
       {{ pipeline.loading() ? ('maintenance.loading' | t) : ('maintenance.refresh' | t) }}
     </button>
   </div>
@@ -103,6 +103,7 @@
       <footer class="pagination">
         <button
           type="button"
+          class="secondary-button"
           (click)="changePage(page() - 1)"
           [disabled]="page() <= 1 || pipeline.loading()"
         >
@@ -110,7 +111,7 @@
         </button>
         <span>{{ page() }} / {{ pageMeta.totalPages || 1 }}</span>
         <button
-          type="button"
+          type="button" class="secondary-button"
           (click)="changePage(page() + 1)"
           [disabled]="
             pageMeta.totalPages === 0 || page() >= pageMeta.totalPages || pipeline.loading()

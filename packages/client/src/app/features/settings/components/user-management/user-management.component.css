@@ -70,7 +70,7 @@
   width: 100%;
   padding: 0.85rem 1.35rem;
   border: 0;
-  border-bottom: 1px solid var(--color-text);
+  border-bottom: 1px solid var(--color-border);
   border-radius: 0;
   color: inherit;
   text-align: left;
@@ -79,7 +79,7 @@
 
 .user-row:hover,
 .user-row.selected {
-  background: var(--color-accent);
+  background: var(--color-bg);
 }
 
 .user-avatar {
@@ -158,20 +158,11 @@
 
 .password-generate {
   margin-top: 0.1rem;
-  border: 1px solid var(--color-accent);
-  border-radius: 0.45rem;
   padding: 0.45rem 0.65rem;
-  color: var(--color-accent);
-  background: var(--color-accent);
   font-size: 0.7rem;
   font-weight: 750;
 }
 
-.password-generate:hover,
-.password-generate:focus-visible {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
-}
 
 .editor-fields input {
   box-sizing: border-box;
@@ -224,17 +215,6 @@
   font-weight: 750;
 }
 
-.secondary-button {
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  background: transparent;
-}
-
-.secondary-button:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
 .management-status,
 .empty-list {
   padding: 1rem 1.35rem;
@@ -243,18 +223,6 @@
 
 .management-status.error {
   color: var(--color-danger);
-}
-
-button {
-  border: 0;
-  border-radius: 0.65rem;
-  padding: 0.8rem 1rem;
-  color: var(--color-bg);
-  background: var(--color-accent);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 800;
 }
 
 @media (max-width: 900px) {

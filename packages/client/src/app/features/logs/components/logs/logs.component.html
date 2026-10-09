@@ -5,7 +5,7 @@
       <h2>{{ 'logs.title' | t }}</h2>
       <p class="muted">{{ 'logs.copy' | t }}</p>
     </div>
-    <button class="refresh-button" type="button" (click)="logs.refresh()" [disabled]="logs.loading() || logs.previewLoading()">
+    <button class="primary-button" type="button" (click)="logs.refresh()" [disabled]="logs.loading() || logs.previewLoading()">
       @if (logs.loading() || logs.previewLoading()) {
         <span class="spinner"></span>
       }
@@ -48,7 +48,7 @@
               }
             </select>
           </label>
-          <button class="clear-button" type="button" (click)="clearFilters()">
+          <button class="secondary-button" type="button" (click)="clearFilters()">
             {{ 'logs.clearFilters' | t }}
           </button>
         </div>
@@ -128,7 +128,7 @@
           </div>
           <div class="preview-actions">
             <button
-              class="copy-button"
+              class="secondary-button"
               type="button"
               (click)="copyPreview()"
               [disabled]="filteredPreviewText() === null"
@@ -138,7 +138,7 @@
             <a class="download-link" [href]="logs.downloadUrl(filename)" [attr.download]="filename">
               {{ 'logs.download' | t }}
             </a>
-            <button class="close-button" type="button" (click)="logs.closePreview()">
+            <button class="secondary-button" type="button" (click)="logs.closePreview()">
               {{ 'logs.close' | t }}
             </button>
           </div>

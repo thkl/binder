@@ -49,7 +49,7 @@
           <p class="error" role="alert">{{ error }}</p>
         }
 
-        <button class="submit-button" type="submit" [disabled]="auth.submitting()">
+        <button class="submit-button primary-button" type="submit" [disabled]="auth.submitting()">
           {{ auth.submitting() ? ('login.signingIn' | t) : ('login.signIn' | t) }}
         </button>
         <a class="password-reset-link" routerLink="/reset-password">{{

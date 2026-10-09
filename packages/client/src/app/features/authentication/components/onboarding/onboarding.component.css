@@ -14,7 +14,7 @@
   overflow: hidden;
   border: 1px solid var(--color-text);
   border-radius: 1.5rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
   box-shadow: 0 2rem 6rem var(--color-overlay);
   backdrop-filter: blur(22px);
 }
@@ -27,7 +27,7 @@
 .intro-panel {
   display: flex;
   flex-direction: column;
-  background: linear-gradient(160deg, var(--color-accent), var(--color-accent));
+  background: var(--color-surface);
 }
 
 .brand-mark {
@@ -147,7 +147,7 @@ h2 {
 }
 
 .form-panel {
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 .progress-row {
   display: flex;
@@ -195,15 +195,6 @@ h2 {
 }
 .onboarding-actions button {
   margin-top: 0;
-}
-.onboarding-actions .secondary-button {
-  border: 1px solid var(--color-text);
-  color: var(--color-text-muted);
-  background: var(--color-text);
-}
-.onboarding-actions .secondary-button:hover:not(:disabled) {
-  color: var(--color-border);
-  background: var(--color-text);
 }
 form {
   display: grid;

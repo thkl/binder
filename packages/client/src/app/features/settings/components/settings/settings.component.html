@@ -248,7 +248,7 @@
               @if (saved()) {
                 <span class="saved-message" role="status">✓ {{ 'settings.saved' | t }}</span>
               }
-              <button class="save-button" type="submit" [disabled]="settingsService.saving()">
+              <button class="primary-button" type="submit" [disabled]="settingsService.saving()">
                 {{ settingsService.saving() ? ('settings.saving' | t) : ('settings.save' | t) }}
               </button>
             </footer>

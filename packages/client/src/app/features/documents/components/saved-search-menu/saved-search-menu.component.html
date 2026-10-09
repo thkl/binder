@@ -17,7 +17,7 @@
     @if (isNaming()) {
       <span class="saved-search-dialog-hint">{{ 'documents.savedSearchDialogHint' | t }}</span>
     } @else {
-      <button type="button" class="saved-search-primary" [disabled]="busy()" (click)="beginSave()">
+      <button type="button" class="primary-button saved-search-primary" [disabled]="busy()" (click)="beginSave()">
         {{ 'documents.savedSearchSave' | t }}
       </button>
       @if (selectedSearch()) {
@@ -31,7 +31,7 @@
         </button>
         <button
           type="button"
-          class="saved-search-danger"
+          class="secondary-button saved-search-danger"
           [disabled]="removing()"
           [attr.aria-label]="'documents.savedSearchDelete' | t"
           (click)="remove()"
@@ -72,7 +72,7 @@
           </div>
           <button
             type="button"
-            class="saved-search-dialog-close"
+            class="secondary-button saved-search-dialog-close"
             [attr.aria-label]="'documents.savedSearchCancel' | t"
             (click)="cancelSave()"
           >
@@ -115,7 +115,7 @@
         <footer class="saved-search-dialog-actions">
           <button
             type="button"
-            class="saved-search-secondary"
+            class="secondary-button saved-search-secondary"
             [disabled]="busy()"
             (click)="cancelSave()"
           >
@@ -123,7 +123,7 @@
           </button>
           <button
             type="button"
-            class="saved-search-primary"
+            class="primary-button saved-search-primary"
             [disabled]="busy() || !name().trim()"
             (click)="save()"
           >

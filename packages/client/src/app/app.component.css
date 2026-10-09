@@ -44,7 +44,7 @@
   color: var(--color-bg);
   background: var(--color-accent);
   font-weight: 900;
-  box-shadow: 0 0 2rem var(--color-accent);
+  box-shadow: 0 0 2rem var(--color-bg);
 }
 
 .workspace {
@@ -148,7 +148,7 @@ h1 {
 
 .account-toggle:hover,
 .account-menu.is-open .account-toggle {
-  color: var(--color-accent);
+  color: var(--color-bg);
   background: var(--color-accent);
 }
 
@@ -187,7 +187,7 @@ h1 {
   padding: 0.55rem;
   border: 1px solid var(--color-border);
   border-radius: 0.8rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
   box-shadow: 0 1rem 2.5rem var(--color-overlay);
   backdrop-filter: blur(18px);
 }
@@ -254,7 +254,7 @@ h1 {
 
 .nav-link:hover,
 .nav-link.active {
-  color: var(--color-accent);
+  color: var(--color-bg);
   background: var(--color-accent);
 }
 
@@ -300,7 +300,7 @@ h1 {
 }
 
 .nav-menu.is-open .nav-menu-toggle {
-  color: var(--color-accent);
+  color: var(--color-bg);
   background: var(--color-accent);
 }
 
@@ -324,7 +324,7 @@ h1 {
   padding: 0.4rem;
   border: 1px solid var(--color-border);
   border-radius: 0.8rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
   box-shadow: 0 1rem 2.5rem var(--color-overlay);
   backdrop-filter: blur(18px);
 }
@@ -342,7 +342,7 @@ h1 {
 
 .nav-menu-link:hover,
 .nav-menu-link.active {
-  color: var(--color-accent);
+  color: var(--color-bg);
   background: var(--color-accent);
 }
 
@@ -422,7 +422,7 @@ button {
   padding: 1.5rem;
   border: 1px solid var(--color-border);
   border-radius: 1.25rem;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent));
+  background: var(--color-surface);
   box-shadow: 0 1.5rem 4rem var(--color-overlay);
   backdrop-filter: blur(18px);
 }
@@ -446,7 +446,7 @@ button {
   height: 2rem;
   border-radius: 0.6rem;
   color: var(--color-accent);
-  background: var(--color-accent);
+  background: var(--color-surface);
   font-size: 1.1rem;
 }
 

@@ -20,11 +20,11 @@ button {
   min-height: 2.25rem;
   align-items: center;
   gap: 0.4rem;
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 0.45rem;
   padding: 0.3rem 0.55rem;
   color: var(--color-text);
-  background: var(--color-accent);
+  background: var(--color-surface);
   font-size: 0.68rem;
   font-weight: 750;
   white-space: nowrap;
