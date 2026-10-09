@@ -222,7 +222,6 @@ input {
   min-height: 2.75rem;
   margin-top: 0.7rem;
   cursor: pointer;
-
 }
 .checkbox-field input {
   width: 1.15rem;
@@ -234,7 +233,7 @@ input {
 .checkbox-field span {
   color: var(--color-text-muted);
   font-size: 0.88rem;
-  margin-left:2em;
+  margin-left: 2em;
 }
 .setting-summary {
   display: flex;
@@ -288,7 +287,7 @@ input {
 }
 
 .check-error {
-    border: 1px solid var(--color-danger);
+  border: 1px solid var(--color-danger);
 }
 .recovery-option {
   width: 100%;
