@@ -55,6 +55,9 @@
         <a class="password-reset-link" routerLink="/reset-password">{{
           'login.forgotPassword' | t
         }}</a>
+        @if (application.isNativeMobile()) {
+          <a class="password-reset-link" routerLink="/mobile-connection">Connection settings</a>
+        }
         @if (ssoActive()) {
           <div class="separator">
             <span>{{ 'login.or' | t }}</span>

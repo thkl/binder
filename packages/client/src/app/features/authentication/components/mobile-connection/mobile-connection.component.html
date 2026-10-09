@@ -1,0 +1,49 @@
+<main class="centered mobile-connection-page">
+  <section class="card mobile-connection-card" aria-labelledby="mobile-connection-title">
+    <div class="brand-line">
+      <span class="brand-mark" aria-hidden="true">B</span><span>BINDER</span>
+    </div>
+    <p class="eyebrow">MOBILE APP</p>
+    <h1 id="mobile-connection-title">Connect to your Binder</h1>
+    <p class="muted">
+      Enter the address where your Binder server is reachable. Use HTTPS except for local
+      development.
+    </p>
+
+    <form (submit)="save($event)">
+      <label for="mobile-server-url">Binder server address</label>
+      <input
+        id="mobile-server-url"
+        name="serverUrl"
+        type="url"
+        inputmode="url"
+        autocomplete="url"
+        autocapitalize="none"
+        spellcheck="false"
+        placeholder="https://binder.example.com"
+        [value]="serverUrl()"
+        (input)="updateInput($event)"
+        required
+      />
+      <p class="muted mobile-connection-hint">
+        Enter the site address without <code>/api</code>. On a phone, localhost refers to the phone
+        itself.
+      </p>
+
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+
+      <div class="mobile-connection-actions">
+        @if (application.getMobileServerUrl()) {
+          <button class="secondary-button" type="button" (click)="cancel()" [disabled]="saving()">
+            Cancel
+          </button>
+        }
+        <button class="primary-button" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Connecting…' : 'Connect' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</main>

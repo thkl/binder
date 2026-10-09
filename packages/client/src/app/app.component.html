@@ -1,4 +1,6 @@
-@if (auth.loading()) {
+@if (mobileConnectionRoute()) {
+  <router-outlet />
+} @else if (auth.loading()) {
   <main class="loading">
     <div class="loading-mark" aria-hidden="true">B</div>
     <p>{{ 'app.loading' | t }}</p>
@@ -202,6 +204,11 @@
               <a class="account-menu-action" routerLink="/account/password" (click)="closeMenu()">{{
                 'nav.changePassword' | t
               }}</a>
+              @if (application.isNativeMobile()) {
+                <a class="account-menu-action" routerLink="/mobile-connection" (click)="closeMenu()"
+                  >Connection settings</a
+                >
+              }
               <div class="account-menu-divider" aria-hidden="true"></div>
               <button class="account-menu-action" type="button" (click)="logout()">
                 {{ 'nav.signOut' | t }}

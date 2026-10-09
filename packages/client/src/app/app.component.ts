@@ -10,6 +10,7 @@ import {
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from './features/authentication/services/auth.service';
+import { ApplicationService } from './common/application.service';
 import { ChangePasswordComponent } from './features/authentication/components/change-password/change-password.component';
 import { LoginComponent } from './features/authentication/components/login/login.component';
 import { OnboardingComponent } from './features/authentication/components/onboarding/onboarding.component';
@@ -39,6 +40,7 @@ type NavigationMenu = 'documents' | 'settings' | 'account';
 export class AppComponent implements OnInit {
   readonly openMenu = signal<NavigationMenu | null>(null);
   readonly passwordResetRoute = signal(false);
+  readonly mobileConnectionRoute = signal(false);
   private readonly avatarFailedFor = signal<string | null>(null);
   readonly gravatarUrl = computed(() => {
     const user = this.auth.user();
@@ -51,13 +53,16 @@ export class AppComponent implements OnInit {
     readonly i18n: I18nService,
     readonly inbox: InboxService,
     readonly router: Router,
+    readonly application: ApplicationService,
   ) {
     this.passwordResetRoute.set(this.isPasswordResetUrl(this.router.url));
+    this.mobileConnectionRoute.set(this.isMobileConnectionUrl(this.router.url));
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) =>
-        this.passwordResetRoute.set(this.isPasswordResetUrl(event.urlAfterRedirects)),
-      );
+      .subscribe((event) => {
+        this.passwordResetRoute.set(this.isPasswordResetUrl(event.urlAfterRedirects));
+        this.mobileConnectionRoute.set(this.isMobileConnectionUrl(event.urlAfterRedirects));
+      });
 
     effect(() => {
       const user = this.auth.user();
@@ -81,7 +86,15 @@ export class AppComponent implements OnInit {
     return url === '/reset-password' || url.startsWith('/reset-password?');
   }
 
+  private isMobileConnectionUrl(url: string): boolean {
+    return url === '/mobile-connection';
+  }
+
   ngOnInit(): void {
+    if (this.application.isNativeMobile() && !this.application.getMobileServerUrl()) {
+      void this.router.navigateByUrl('/mobile-connection');
+      return;
+    }
     void this.auth.restoreSession();
   }
 

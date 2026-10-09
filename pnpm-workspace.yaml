@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - apps/*
 allowBuilds:
   '@parcel/watcher': true
   argon2: true

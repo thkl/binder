@@ -5,6 +5,7 @@ import type { Request } from 'express';
 import { BinderConfig, ConfigKeys } from '../config/config.keys';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const TRUSTED_NATIVE_ORIGINS = new Set(['capacitor://localhost', 'https://localhost']);
 
 @Injectable()
 export class CsrfGuard implements CanActivate {
@@ -54,9 +55,12 @@ export class CsrfGuard implements CanActivate {
     }
 
     const origin = this.headerValue(request.headers.origin);
-    if (origin) return origin === expectedOrigin;
+    if (origin) return origin === expectedOrigin || TRUSTED_NATIVE_ORIGINS.has(origin);
 
     const referer = this.headerValue(request.headers.referer);
+    if (!referer && this.headerValue(request.headers['x-binder-mobile-app']) === 'capacitor') {
+      return true;
+    }
     if (!referer) return false;
     try {
       return new URL(referer).origin === expectedOrigin;

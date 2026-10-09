@@ -1,0 +1,52 @@
+.mobile-connection-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.mobile-connection-card {
+  width: min(100%, 34rem);
+  padding: clamp(1.5rem, 6vw, 2.5rem);
+}
+
+.mobile-connection-card h1 {
+  margin: 1rem 0 0.75rem;
+  font-size: clamp(1.8rem, 7vw, 2.5rem);
+  line-height: 1.1;
+}
+
+.mobile-connection-card .brand-line {
+  margin-bottom: 2rem;
+}
+
+.mobile-connection-card form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.mobile-connection-card label {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.mobile-connection-card input {
+  min-height: 3rem;
+  font-size: 1rem;
+}
+
+.mobile-connection-hint {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.mobile-connection-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.mobile-connection-actions button {
+  min-height: 2.75rem;
+}

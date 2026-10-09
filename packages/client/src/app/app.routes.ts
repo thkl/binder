@@ -2,6 +2,13 @@ import { Routes } from '@angular/router';
 
 export const appRoutes: Routes = [
   {
+    path: 'mobile-connection',
+    loadComponent: () =>
+      import('./features/authentication/components/mobile-connection/mobile-connection.component').then(
+        ({ MobileConnectionComponent }) => MobileConnectionComponent,
+      ),
+  },
+  {
     path: 'reset-password',
     loadComponent: () =>
       import('./features/authentication/components/password-reset/password-reset.component').then(

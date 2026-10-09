@@ -52,7 +52,7 @@ test('allows bearer-authenticated API mutations without a browser CSRF token', (
   );
 });
 
-test('requires the configured browser origin for login', () => {
+test('accepts the configured web origin and native app origins for login', () => {
   assert.equal(
     guard().canActivate(
       context(
@@ -60,6 +60,32 @@ test('requires the configured browser origin for login', () => {
           path: '/api/v1/auth/login',
           session: {},
           headers: { origin: 'https://binder.example.test' },
+        }),
+      ),
+    ),
+    true,
+  );
+
+  assert.equal(
+    guard().canActivate(
+      context(
+        request({
+          path: '/api/v1/auth/login',
+          session: {},
+          headers: { 'x-binder-mobile-app': 'capacitor' },
+        }),
+      ),
+    ),
+    true,
+  );
+
+  assert.equal(
+    guard().canActivate(
+      context(
+        request({
+          path: '/api/v1/auth/login',
+          session: {},
+          headers: { origin: 'capacitor://localhost' },
         }),
       ),
     ),

@@ -56,17 +56,26 @@ async function bootstrap(): Promise<void> {
     app.getHttpAdapter().getInstance().set('trust proxy', true);
   }
 
+  const trustedNativeOrigins = new Set(['capacitor://localhost', 'https://localhost']);
+  const developmentOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+  const rootOrigin = new URL(rootUri).origin;
+  const isDevelopment = nestConfigService.get<string>(ConfigKeys.NODE_ENV) === 'development';
   const corsOptions = {
-    origin: rootUri,
+    origin: (
+      origin: string | undefined,
+      callback: (error: Error | null, allow?: boolean) => void,
+    ) => {
+      const allowed =
+        !origin ||
+        origin === rootOrigin ||
+        trustedNativeOrigins.has(origin) ||
+        (isDevelopment && developmentOrigin.test(origin));
+      callback(null, allowed);
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   };
-
-  if (nestConfigService.get<string>(ConfigKeys.NODE_ENV) !== 'development') {
-    app.enableCors(corsOptions);
-  } else {
-    logger.debug!('Skip Cors');
-  }
+  app.enableCors(corsOptions);
 
   const sessionSecret = secrets.require(ConfigKeys.SESSION_SECRET);
 
@@ -92,7 +101,7 @@ async function bootstrap(): Promise<void> {
       cookie: {
         httpOnly: true,
         secure: secureCookies,
-        sameSite: 'lax',
+        sameSite: secureCookies ? 'none' : 'lax',
         maxAge: Number(nestConfigService.get<string>(ConfigKeys.SESSION_TTL_MS) ?? 86_400_000),
       },
     }),

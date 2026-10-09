@@ -1,57 +1,52 @@
 # Mobile companion app
 
-## Goal
+## Goal and implementation
 
-The mobile companion is a P4 ingestion client for users who receive documents
-on their phone. It should make sending a PDF or image to Binder as simple as
-choosing Binder from the iOS Share Sheet or Android Sharesheet. The preferred
-implementation is React Native so iOS and Android can share the upload queue,
-authentication screens, API client, and status UI. The existing Angular
-application remains the primary document-management UI.
+The mobile app packages the existing Angular client with Capacitor for iOS and
+Android. It avoids a second document-management UI while retaining native
+platform entry points for future share-sheet ingestion. The web bundle is
+included in each app; users configure the Binder server address on first launch.
 
-## App shape
-
-The app has a shared React Native core plus platform integrations:
-
-- A React Native host application that provides authentication, native
-  upload-queue status, account settings, and a route to the existing web UI.
-- An iOS Share Extension that accepts supported files from the system Share
-  Sheet and hands them to the host application through an App Group container.
-- An Android share-target integration that accepts supported files from the
-  Android Sharesheet and hands them to the host application through protected
-  app storage.
-
-The platform share integrations should hand off quickly and avoid depending on
-a live API connection. They must not own the complete document workflow.
+Capacitor is the chosen native runtime. The Angular client continues to own
+login, document browsing, and ordinary browser uploads. The API allows the
+fixed Capacitor origins for credentialed requests, and secure deployments use
+cross-site session cookies. Native app builds remain separate from server images.
 
 ## Share and upload flow
 
+The planned native ingestion flow is:
+
 1. The user chooses Binder in the iOS Share Sheet or Android Sharesheet for a
    PDF or supported image.
-2. The platform integration validates the type and size, copies the file into
-   protected app storage, and creates a durable pending-upload record.
-3. The share integration reports that the file was accepted and closes
-   promptly.
-4. The host app or platform background-transfer facility uploads the pending
-   item to the versioned document-upload endpoint when connectivity is
-   available.
-5. The API assigns ownership from the authenticated internal user and returns
-   the normal document-processing response.
+2. A native share extension/intent integration validates the type and size,
+   copies the file into protected app storage, and creates a durable
+   pending-upload record.
+3. The share UI reports that the file was accepted and closes promptly.
+4. The app uploads pending items when connectivity is available.
+5. The API assigns ownership from the authenticated internal user and uses the
+   normal document-processing pipeline.
 6. After a confirmed upload, the app removes the local pending file. Failed
    items remain visible with retry and removal actions.
 
-The queue must use a checksum and client-generated idempotency key so retries
+The queue should use a checksum and client-generated idempotency key so retries
 cannot create duplicate documents. Upload state should be persisted separately
-from the file so an interrupted transfer can resume or retry safely.
+from the file so an interrupted transfer can retry safely.
 
-## Authentication
+## Authentication and security
 
-The web UI can continue to use the existing Express session inside the
-`WKWebView`. Native uploads must use an explicitly designed authenticated API
-flow rather than copying raw session data into the Share Extension. The
-preferred design is a short-lived, revocable upload credential scoped to the
-current internal user and upload operation. It must not grant arbitrary API
-access.
+The Angular app uses Binder's existing session login. The API's CORS and CSRF
+checks allow the iOS Capacitor origin (`capacitor://localhost`) and Android
+origin (`https://localhost`), in addition to the configured `ROOT_URI`. HTTPS
+is required for production so cross-origin session cookies remain secure. If
+Capacitor's native HTTP transport omits `Origin`, the client marks mutations
+with a Capacitor header; the API accepts that marker only when no `Origin` or
+`Referer` is present. Browser-originated requests still require the configured
+or native origin.
+
+Native share uploads must use an explicitly designed authenticated API flow
+rather than copying raw session data into a share extension. Prefer a short-lived,
+revocable upload credential scoped to the current internal user and upload
+operation. It must not grant arbitrary API access.
 
 The API must continue to enforce ownership, file validation, rate limits, and
 the same processing pipeline used by browser uploads.
@@ -66,16 +61,12 @@ the same processing pipeline used by browser uploads.
   platform's network and battery settings.
 - The app shows pending, uploading, uploaded, and failed states with the
   server-assigned document identifier when available.
-- The local queue must support explicit cleanup and must not silently delete a
+- The local queue supports explicit cleanup and does not silently delete a
   file after a failed upload.
 
-## Initial acceptance criteria
+## Current status
 
-- Binder appears as a share target on iOS and Android for PDFs and supported
-  images.
-- A shared file is accepted while offline and appears in the pending queue.
-- The file uploads automatically after connectivity returns.
-- A retry cannot create a duplicate document.
-- Upload ownership matches the authenticated Binder user.
-- The app can open the existing web UI without creating a second document
-  management implementation.
+The Capacitor iOS and Android projects now bundle the Angular client, and the
+mobile app has a Binder server-address screen. Native share extensions/targets,
+secure automatic credential storage, and offline upload queueing remain future
+work. The mobile web file picker can be used for uploads in the meantime.
