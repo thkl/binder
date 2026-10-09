@@ -157,7 +157,7 @@
 
 .file-copy strong {
   overflow: hidden;
-  color: var(--color-border);
+  color: var(--color-text-muted);
   font-size: 0.84rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -215,56 +215,56 @@
 .status-new {
   color: var(--color-text);
   border-color: var(--color-accent);
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .status-processing {
   color: var(--color-text);
   border-color: var(--color-danger);
-  background: var(--color-danger);
+  background: var(--color-surface);
 }
 
 .status-imported {
   color: var(--color-success);
   border-color: var(--color-success);
-  background: var(--color-success);
+  background: var(--color-surface);
 }
 
 .status-duplicate {
   color: var(--color-text);
   border-color: var(--color-text);
-  background: var(--color-text-muted);
+  background: var(--color-surface);
 }
 
 .status-rejected,
 .status-failed {
   color: var(--color-danger);
   border-color: var(--color-danger);
-  background: var(--color-danger);
+  background: var(--color-surface);
 }
 
 .ai-pill {
   color: var(--color-text);
   border-color: var(--color-text);
-  background: var(--color-text);
+  background: var(--color-surface);
 }
 
 .ai-ready {
   color: var(--color-success);
   border-color: var(--color-success);
-  background: var(--color-success);
+  background: var(--color-surface);
 }
 
 .ai-processing {
   color: var(--color-text);
   border-color: var(--color-danger);
-  background: var(--color-danger);
+  background: var(--color-surface);
 }
 
 .ai-failed {
   color: var(--color-danger);
   border-color: var(--color-danger);
-  background: var(--color-danger);
+  background: var(--color-surface);
 }
 
 .open-link {

@@ -188,6 +188,9 @@ async function importFile(
           {
             uuid: documentUuid,
             ownerUuid,
+            versionFamilyUuid: documentUuid,
+            versionNumber: 1,
+            versionParentUuid: null,
             originalFilename: safeFilename(filename),
             title: safeFilename(filename),
             mimeType: 'application/pdf',

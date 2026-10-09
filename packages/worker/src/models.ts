@@ -453,6 +453,15 @@ export class Document extends Model {
   @Column({ field: 'owner_id', type: DataType.UUID })
   declare ownerUuid: string;
 
+  @Column({ field: 'version_family_id', type: DataType.UUID, allowNull: false })
+  declare versionFamilyUuid: string;
+
+  @Column({ field: 'version_number', type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
+  declare versionNumber: number;
+
+  @Column({ field: 'version_parent_id', type: DataType.UUID, allowNull: true })
+  declare versionParentUuid: string | null;
+
   @Column({ field: 'original_filename', type: DataType.STRING(255) })
   declare originalFilename: string;
 

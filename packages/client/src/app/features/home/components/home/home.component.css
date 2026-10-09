@@ -149,6 +149,7 @@ h2 {
   border: 0;
   color: var(--color-text);
   background: var(--color-surface);
+ 
   outline: none;
   font: inherit;
   font-size: 0.86rem;
@@ -156,6 +157,11 @@ h2 {
 
 .search-form input::placeholder {
   color: var(--color-text-muted);
+}
+
+.search-form input:focus {
+  border: 0;
+  box-shadow: none;
 }
 
 .search-form button {
@@ -685,7 +691,7 @@ h2 {
   width: 1.8rem;
   height: 1.8rem;
   border-radius: 0.5rem;
-  color: var(--color-accent);
+  color: var(--color-bg);
   background: var(--color-accent);
   font-size: 0.75rem;
   font-weight: 900;
@@ -696,7 +702,7 @@ h2 {
 }
 
 .result-copy a {
-  color: var(--color-border);
+  color: var(--color-text-muted);
   font-size: 0.88rem;
   font-weight: 800;
   text-decoration: none;
@@ -723,7 +729,7 @@ h2 {
   border: 1px solid var(--color-accent);
   border-radius: 2rem;
   padding: 0.18rem 0.4rem;
-  color: var(--color-accent);
+  color: var(--color-bg);
   background: var(--color-accent);
   font-size: 0.62rem;
   font-weight: 750;
@@ -756,11 +762,11 @@ h2 {
 }
 
 .metadata-result {
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--color-text-muted);
   border-radius: 0.45rem;
   padding: 0.4rem 0.55rem;
   color: var(--color-text-muted);
-  background: var(--color-text);
+  background: var(--color-surface);
   cursor: pointer;
   font: inherit;
   font-size: 0.68rem;
@@ -789,7 +795,7 @@ h2 {
   border-radius: 2rem;
   padding: 0.2rem 0.48rem;
   overflow: hidden;
-  color: var(--color-text);
+  color: var(--color-bg);
   background: var(--color-text);
   font-size: 0.62rem;
   font-weight: 750;
@@ -799,29 +805,29 @@ h2 {
 
 .type-pill {
   border-color: var(--color-accent);
-  color: var(--color-accent);
+  color: var(--color-bg);
   background: var(--color-accent);
 }
 
 .category-pill {
   border-color: var(--color-text);
-  color: var(--color-text);
+  color: var(--color-bg);
   background: var(--color-text);
 }
 
 .issuer-pill {
   border-color: var(--color-success);
-  color: var(--color-success);
+  color: var(--color-bg);
   background: var(--color-success);
 }
 
 .tag-pill {
-  color: var(--color-border);
+  color: var(--color-bg);
 }
 
 .custom-pill {
   border-color: var(--color-danger);
-  color: var(--color-warning);
+  color: var(--color-bg);
   background: var(--color-danger);
 }
 
