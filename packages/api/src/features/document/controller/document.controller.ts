@@ -22,6 +22,7 @@ import {
   DocumentAnalysisFollowUpSchema,
   DocumentAnalysisPromptSchema,
   AssignDocumentVersionInputSchema,
+  ComposeDocumentInputSchema,
   DocumentAuditQuerySchema,
   BulkMetadataInputSchema,
   SetDocumentMetadataInputSchema,
@@ -191,6 +192,18 @@ export class DocumentController {
   async split(@Param('uuid') uuid: string, @Body() body: unknown, @CurrentUser() user: ScopedUser) {
     return {
       data: await this.documents.split(user.userId, uuid, SplitDocumentInputSchema.parse(body)),
+    };
+  }
+
+  @Post(':uuid/compose')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async compose(
+    @Param('uuid') uuid: string,
+    @Body() body: unknown,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    return {
+      data: await this.documents.compose(user.userId, uuid, ComposeDocumentInputSchema.parse(body)),
     };
   }
 

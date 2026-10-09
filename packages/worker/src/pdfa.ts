@@ -3,7 +3,7 @@ import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { logger } from './logger.js';
 import { runExternalCommand } from './ocr.js';
-import { resolveStoragePath, storageExists } from './storage.js';
+import { derivedDirectory, resolveStoragePath, storageExists } from './storage.js';
 
 const PDF_A_PROFILE = 'pdfa-2b';
 const OCRMY_PDF_OUTPUT_TYPE = 'pdfa-2';
@@ -13,11 +13,15 @@ const OCRMY_PDF_OUTPUT_TYPE = 'pdfa-2';
  * The original upload is never replaced. If OCR already produced a derived
  * PDF, it is used as the source so the archive keeps its searchable text.
  */
-export async function runPdfa(originalStorageKey: string, documentUuid: string): Promise<string> {
-  const ocrKey = `derived/${documentUuid}/ocr.pdf`;
+export async function runPdfa(
+  originalStorageKey: string,
+  documentUuid: string,
+  createdAt: Date,
+): Promise<string> {
+  const ocrKey = `${derivedDirectory(documentUuid, createdAt)}/ocr.pdf`;
   const sourceKey = (await storageExists(ocrKey)) ? ocrKey : originalStorageKey;
   const sourcePath = resolveStoragePath(sourceKey);
-  const archiveKey = `derived/${documentUuid}/archive.pdf`;
+  const archiveKey = `${derivedDirectory(documentUuid, createdAt)}/archive.pdf`;
   const archivePath = resolveStoragePath(archiveKey);
   const temporaryPath = `${archivePath}.${randomUUID()}.tmp.pdf`;
 

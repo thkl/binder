@@ -26,6 +26,8 @@ import {
   DocumentSchema,
   DocumentVersionListResponseSchema,
   AssignDocumentVersionInputSchema,
+  ComposeDocumentInputSchema,
+  ComposeDocumentResponseSchema,
   SplitDocumentInputSchema,
   SplitDocumentResponseSchema,
   SetDocumentTitleInputSchema,
@@ -142,6 +144,37 @@ export class DocumentsService {
       const result = SplitDocumentResponseSchema.parse(response.data);
       await this.load();
       return result;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  async composeDocument(
+    targetDocumentUuid: string,
+    sourceDocumentUuid: string,
+    insertAfterPage: number,
+    copyMetadata: boolean,
+    autoApplySuggestions: boolean,
+  ): Promise<BinderDocument | null> {
+    this.error.set(null);
+    try {
+      const input = ComposeDocumentInputSchema.parse({
+        sourceDocumentUuid,
+        insertAfterPage,
+        copyMetadata,
+        autoApplySuggestions,
+      });
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/${targetDocumentUuid}/compose`),
+          input,
+          { withCredentials: true },
+        ),
+      );
+      const result = ComposeDocumentResponseSchema.parse(response.data);
+      await this.load();
+      return result.document;
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
       return null;

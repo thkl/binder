@@ -12,7 +12,7 @@ import {
   JobKind,
 } from './models.js';
 import { logger } from './logger.js';
-import { createThumbnail, writeDerivedText } from './storage.js';
+import { createThumbnail, migrateLegacyDerivedStorage, writeDerivedText } from './storage.js';
 import { extractPdfPages } from './extraction.js';
 import { runOcr } from './ocr.js';
 import { runPdfa } from './pdfa.js';
@@ -30,6 +30,7 @@ interface ClaimedJob {
   attempts: number;
   maxAttempts: number;
   storageKey: string;
+  createdAt: Date;
 }
 let stopping = false;
 export async function startPipelineWorker(): Promise<void> {
@@ -42,6 +43,7 @@ export async function startPipelineWorker(): Promise<void> {
     logger.info('Pipeline worker paused because recovery is queued or running');
   } else {
     await recoverStaleJobs();
+    await migrateLegacyDerivedStorage();
     await importInboxDocuments(true);
     await importEmailMessages(true);
     await reconcileUploadedDocuments();
@@ -277,6 +279,7 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
       attempts,
       maxAttempts: job.maxAttempts,
       storageKey: job.document?.storageKey ?? '',
+      createdAt: job.document?.createdAt ?? new Date(),
     };
   });
 }
@@ -310,13 +313,13 @@ async function processJob(job: ClaimedJob): Promise<void> {
             documentUuid: job.documentUuid,
             jobUuid: job.jobUuid,
           });
-          await writeDerivedText(job.documentUuid, '');
+          await writeDerivedText(job.documentUuid, '', job.createdAt);
           await persistPages(job.documentUuid, []);
           await completeJob(job, true);
           break;
         }
 
-        await writeDerivedText(job.documentUuid, extracted.text);
+        await writeDerivedText(job.documentUuid, extracted.text, job.createdAt);
         await persistPages(job.documentUuid, extracted.pages);
         await matchDocumentIssuer(job.documentUuid, job.ownerUuid, extracted.text);
         await completeJob(job, false);
@@ -324,12 +327,12 @@ async function processJob(job: ClaimedJob): Promise<void> {
       }
 
       case 'thumbnail':
-        await createThumbnail(job.storageKey, job.documentUuid);
+        await createThumbnail(job.storageKey, job.documentUuid, job.createdAt);
         await completeJob(job, false);
         break;
 
       case 'ocr': {
-        const key = await runOcr(job.storageKey, job.documentUuid);
+        const key = await runOcr(job.storageKey, job.documentUuid, job.createdAt);
         let extracted = await extractPdfPages(key);
 
         if (extracted.requiresOcr) {
@@ -337,7 +340,7 @@ async function processJob(job: ClaimedJob): Promise<void> {
             documentUuid: job.documentUuid,
             jobUuid: job.jobUuid,
           });
-          await runOcr(job.storageKey, job.documentUuid, { forceOcr: true });
+          await runOcr(job.storageKey, job.documentUuid, job.createdAt, { forceOcr: true });
           extracted = await extractPdfPages(key);
         }
 
@@ -345,7 +348,7 @@ async function processJob(job: ClaimedJob): Promise<void> {
           throw new Error('OCR completed but produced no usable searchable text');
         }
 
-        await writeDerivedText(job.documentUuid, extracted.text);
+        await writeDerivedText(job.documentUuid, extracted.text, job.createdAt);
         await persistPages(job.documentUuid, extracted.pages);
         await matchDocumentIssuer(job.documentUuid, job.ownerUuid, extracted.text);
         await completeJob(job, false);
@@ -358,7 +361,7 @@ async function processJob(job: ClaimedJob): Promise<void> {
         break;
 
       case 'pdfa': {
-        const archiveKey = await runPdfa(job.storageKey, job.documentUuid);
+        const archiveKey = await runPdfa(job.storageKey, job.documentUuid, job.createdAt);
         await completePdfaJob(job, archiveKey);
         break;
       }

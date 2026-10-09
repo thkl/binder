@@ -309,6 +309,14 @@
               >
                 {{ 'documents.assignVersion' | t }}
               </button>
+              <button
+                type="button"
+                class="primary-button"
+                [disabled]="bulkActionInProgress() !== null || composeLoading()"
+                (click)="requestComposeDocuments()"
+              >
+                {{ 'documents.compose' | t }}
+              </button>
               <span class="version-selection-hint" aria-live="polite">
                 {{ versionPair.source.originalFilename }} →
                 {{ versionPair.target.originalFilename }}
@@ -835,6 +843,22 @@
       (cancelled)="cancelVersionAssignment()"
       (optionChanged)="copyVersionMetadata.set($event)"
     />
+  }
+
+  @if (composeDocuments(); as composition) {
+    @if (selectedDocumentRecords().get(composition.targetUuid); as targetDocument) {
+      @if (selectedDocumentRecords().get(composition.sourceUuid); as sourceDocument) {
+        <binder-document-compose-dialog
+          [targetTitle]="targetDocument.title || targetDocument.originalFilename"
+          [sourceTitle]="sourceDocument.title || sourceDocument.originalFilename"
+          [targetPageCount]="targetDocument.pageCount"
+          [sourcePageCount]="sourceDocument.pageCount"
+          [errorMessage]="documents.error()"
+          (closed)="cancelComposeDocuments()"
+          (submitted)="composeDocumentsFromRequest($event)"
+        />
+      }
+    }
   }
 
   @if (splitDocumentUuid(); as splitUuid) {

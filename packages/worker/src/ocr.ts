@@ -13,10 +13,11 @@ export interface OcrOptions {
 export async function runOcr(
   storageKey: string,
   documentUuid: string,
+  createdAt: Date,
   options: OcrOptions = {},
 ): Promise<string> {
   const input = resolveStoragePath(storageKey);
-  const key = `derived/${documentUuid}/ocr.pdf`;
+  const key = `derived/${createdAt.getUTCFullYear()}/${String(createdAt.getUTCMonth() + 1).padStart(2, '0')}/${documentUuid}/ocr.pdf`;
   const output = resolveStoragePath(key);
   const temporary = `${output}.${randomUUID()}.tmp.pdf`;
 

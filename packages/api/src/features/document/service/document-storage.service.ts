@@ -92,6 +92,53 @@ export class DocumentStorageService {
     }
   }
 
+  async composePdf(
+    targetStorageKey: string,
+    sourceStorageKey: string,
+    insertAfterPage: number,
+  ): Promise<{ buffer: Buffer; pageCount: number }> {
+    const [targetBuffer, sourceBuffer] = await Promise.all([
+      fs.readFile(await this.resolveStoragePath(targetStorageKey)),
+      fs.readFile(await this.resolveStoragePath(sourceStorageKey)),
+    ]);
+    const mupdf = await import('mupdf');
+    const target = new mupdf.PDFDocument(targetBuffer);
+    const source = new mupdf.PDFDocument(sourceBuffer);
+    const targetPageCount = target.countPages();
+    if (insertAfterPage < 0 || insertAfterPage > targetPageCount) {
+      target.destroy();
+      source.destroy();
+      throw new BadRequestException(
+        `The insertion point must be between page 0 and page ${targetPageCount}`,
+      );
+    }
+
+    const output = new mupdf.PDFDocument();
+    let outputPage = 0;
+    const graftPages = (document: typeof target, start: number, end: number): void => {
+      for (let pageNumber = start; pageNumber < end; pageNumber += 1) {
+        const page = document.loadPage(pageNumber);
+        const bounds = page.getBounds();
+        output.addPage(bounds, 0, null, new Uint8Array());
+        output.graftPage(outputPage, document, pageNumber);
+        outputPage += 1;
+        page.destroy();
+      }
+    };
+
+    try {
+      graftPages(target, 0, insertAfterPage);
+      graftPages(source, 0, source.countPages());
+      graftPages(target, insertAfterPage, targetPageCount);
+      const saved = output.saveToBuffer({ garbage: 4 });
+      return { buffer: Buffer.from(saved.asUint8Array()), pageCount: outputPage };
+    } finally {
+      output.destroy();
+      target.destroy();
+      source.destroy();
+    }
+  }
+
   async validatePdf(buffer: Buffer): Promise<void> {
     const header = buffer.subarray(0, Math.min(buffer.length, 1024));
     if (!header.includes(Buffer.from('%PDF-'))) {
@@ -114,9 +161,9 @@ export class DocumentStorageService {
     }
   }
 
-  async createThumbnail(storageKey: string, uuid: string): Promise<string> {
+  async createThumbnail(storageKey: string, uuid: string, createdAt = new Date()): Promise<string> {
     const pdfBuffer = await fs.readFile(await this.resolveStoragePath(storageKey));
-    const thumbnailKey = `derived/${uuid}/thumbnail.png`;
+    const thumbnailKey = `${this.derivedDirectory(uuid, createdAt)}/thumbnail.png`;
     const thumbnailPath = await this.resolveStoragePath(thumbnailKey);
     const temporaryPath = `${thumbnailPath}.${randomUUID()}.tmp`;
     const mupdf = await import('mupdf');
@@ -154,11 +201,18 @@ export class DocumentStorageService {
     await fs.rm(await this.resolveStoragePath(storageKey), { force: true });
   }
 
-  async removeDerived(uuid: string): Promise<void> {
-    await fs.rm(await this.resolveStoragePath(`derived/${uuid}`), {
-      recursive: true,
-      force: true,
-    });
+  async removeDerived(uuid: string, createdAt: Date): Promise<void> {
+    await Promise.all(
+      [this.derivedDirectory(uuid, createdAt), `derived/${uuid}`].map((key) =>
+        this.resolveStoragePath(key).then((path) => fs.rm(path, { recursive: true, force: true })),
+      ),
+    );
+  }
+
+  private derivedDirectory(uuid: string, createdAt: Date): string {
+    const year = createdAt.getUTCFullYear();
+    const month = String(createdAt.getUTCMonth() + 1).padStart(2, '0');
+    return `derived/${year}/${month}/${uuid}`;
   }
 
   async exists(storageKey: string): Promise<boolean> {

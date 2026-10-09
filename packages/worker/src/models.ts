@@ -508,6 +508,10 @@ export class Document extends Model {
 
   @Column({ type: DataType.STRING })
   declare status: DocumentStatus;
+
+  @CreatedAt
+  @Column({ field: 'created_at', type: DataType.DATE })
+  declare createdAt: Date;
 }
 
 @Table({ tableName: 'document_embeddings', underscored: true, timestamps: true })

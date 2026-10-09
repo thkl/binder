@@ -22,6 +22,8 @@ import {
   DocumentListResponseSchema,
   DocumentStorageIssueListResponseSchema,
   DocumentDeleteResponseSchema,
+  ComposeDocumentInput,
+  ComposeDocumentResponseSchema,
   SplitDocumentInput,
   SplitDocumentResponseSchema,
 } from '@binder/common';
@@ -682,7 +684,7 @@ export class DocumentService {
       ),
     );
     await this.storage
-      .removeDerived(uuid)
+      .removeDerived(uuid, document.createdAt)
       .catch((error: unknown) =>
         this.logger.warn(
           `Unable to remove derived files for deleted document ${uuid}: ${error instanceof Error ? error.message : String(error)}`,
@@ -1018,9 +1020,122 @@ export class DocumentService {
     }
   }
 
+  async compose(ownerUuid: string, uuid: string, input: ComposeDocumentInput) {
+    if (uuid === input.sourceDocumentUuid) {
+      throw new BadRequestException('A document cannot be inserted into itself');
+    }
+
+    const [target, source] = await Promise.all([
+      this.documents.findOwnedByUuid(ownerUuid, uuid),
+      this.documents.findOwnedByUuid(ownerUuid, input.sourceDocumentUuid),
+    ]);
+    if (!target || !source) throw new NotFoundException('Document not found');
+    this.assertDocumentContentAvailable(target);
+    this.assertDocumentContentAvailable(source);
+
+    const composed = await this.storage.composePdf(
+      target.storageKey,
+      source.storageKey,
+      input.insertAfterPage,
+    );
+    const composedUuid = randomUUID();
+    const composedName = this.composeFilename(target.originalFilename, source.originalFilename);
+    const stored = await this.storage.storePdf(composed.buffer, composedUuid, composedName);
+    const malwareScanRequired = await this.isMalwareScanRequired();
+    const family = await this.documents.findOwnedVersionFamily(ownerUuid, target.versionFamilyUuid);
+    const nextVersion = Math.max(...family.map((version) => version.versionNumber), 0) + 1;
+    let documentCreated = false;
+
+    try {
+      const created = await this.documents.create({
+        uuid: composedUuid,
+        ownerUuid,
+        versionFamilyUuid: target.versionFamilyUuid,
+        versionNumber: nextVersion,
+        versionParentUuid: null,
+        title: target.title,
+        originalFilename: composedName,
+        mimeType: 'application/pdf',
+        sizeBytes: stored.sizeBytes,
+        checksumSha256: stored.checksumSha256,
+        storageKey: stored.storageKey,
+        thumbnailKey: null,
+        pageCount: composed.pageCount,
+        issuerUuid: input.copyMetadata ? target.issuerUuid : null,
+        isNew: true,
+        status: malwareScanRequired ? 'scanning' : 'processing',
+      });
+      documentCreated = true;
+
+      if (input.copyMetadata) {
+        const sourceMetadata = await this.metadata.getDocumentMetadata(ownerUuid, target.uuid);
+        await this.metadata.setDocumentMetadata(ownerUuid, created.uuid, {
+          issuerUuid: sourceMetadata.issuer?.uuid ?? null,
+          documentTypeUuid: sourceMetadata.documentType?.uuid ?? null,
+          categoryUuid: sourceMetadata.category?.uuid ?? null,
+          tagUuids: sourceMetadata.tags.map((tag) => tag.uuid),
+          custom: sourceMetadata.custom,
+        });
+        const targetFolders = await this.folders.listForDocument(ownerUuid, target.uuid);
+        await Promise.all(
+          targetFolders.map((folder) => this.folders.createLinks(folder.uuid, [created.uuid])),
+        );
+      }
+
+      await this.documents.update(target.uuid, { versionParentUuid: created.uuid });
+      await this.addManualUploadToInbox(
+        created.uuid,
+        ownerUuid,
+        { buffer: composed.buffer, mimetype: 'application/pdf', originalname: composedName },
+        stored.checksumSha256,
+        stored.sizeBytes,
+        input.autoApplySuggestions,
+        input.autoApplySuggestions,
+      );
+      await this.pipeline.enqueue(
+        created.uuid,
+        ownerUuid,
+        malwareScanRequired ? 'malware-scan' : 'text-extraction',
+      );
+      await this.recordAudit({
+        documentUuid: created.uuid,
+        ownerUuid,
+        actorUuid: ownerUuid,
+        actorType: 'user',
+        eventType: 'document-composed',
+        summary: 'Document composed from another document',
+        details: {
+          targetDocumentUuid: target.uuid,
+          sourceDocumentUuid: source.uuid,
+          insertAfterPage: input.insertAfterPage,
+          copyMetadata: input.copyMetadata,
+          autoApplySuggestions: input.autoApplySuggestions,
+        },
+      });
+
+      return ComposeDocumentResponseSchema.parse({ document: this.toDocumentResponse(created) });
+    } catch (error) {
+      if (!documentCreated) await this.storage.remove(stored.storageKey).catch(() => undefined);
+      this.logger.error('Document composition failed', {
+        targetDocumentUuid: target.uuid,
+        sourceDocumentUuid: source.uuid,
+        composedDocumentUuid: composedUuid,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
   private splitFilename(filename: string, suffix: string): string {
     const extension = extname(filename) || '.pdf';
     return `${filename.slice(0, -extension.length)} (${suffix})${extension}`.slice(0, 255);
+  }
+
+  private composeFilename(targetFilename: string, sourceFilename: string): string {
+    const extension = extname(targetFilename) || '.pdf';
+    const targetBase = targetFilename.slice(0, -extension.length);
+    const sourceBase = sourceFilename.slice(0, -extname(sourceFilename).length);
+    return `${targetBase} + ${sourceBase}${extension}`.slice(0, 255);
   }
 
   async suggestTitle(ownerUuid: string, uuid: string) {
@@ -1222,7 +1337,11 @@ export class DocumentService {
         return document.thumbnailKey;
       }
 
-      const thumbnailKey = await this.storage.createThumbnail(document.storageKey, document.uuid);
+      const thumbnailKey = await this.storage.createThumbnail(
+        document.storageKey,
+        document.uuid,
+        document.createdAt,
+      );
       await this.documents.update(document.uuid, { thumbnailKey });
       document.thumbnailKey = thumbnailKey;
       return thumbnailKey;

@@ -204,6 +204,19 @@ export const SplitDocumentInputSchema = z.object({
 });
 export type SplitDocumentInput = z.infer<typeof SplitDocumentInputSchema>;
 
+export const ComposeDocumentInputSchema = z.object({
+  sourceDocumentUuid: z.uuid(),
+  insertAfterPage: z.number().int().min(0),
+  copyMetadata: z.boolean().default(true),
+  autoApplySuggestions: z.boolean().default(false),
+});
+export type ComposeDocumentInput = z.infer<typeof ComposeDocumentInputSchema>;
+
+export const ComposeDocumentResponseSchema = z.object({
+  document: DocumentSchema,
+});
+export type ComposeDocumentResponse = z.infer<typeof ComposeDocumentResponseSchema>;
+
 export const SplitDocumentResponseSchema = z.object({
   remainingDocument: DocumentSchema,
   extractedDocument: DocumentSchema,
@@ -336,6 +349,7 @@ export const DocumentAuditEventTypeSchema = z.enum([
   'quarantined',
   'version-assigned',
   'document-split',
+  'document-composed',
 ]);
 export type DocumentAuditEventType = z.infer<typeof DocumentAuditEventTypeSchema>;
 

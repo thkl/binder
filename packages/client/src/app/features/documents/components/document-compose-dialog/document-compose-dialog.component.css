@@ -1,0 +1,76 @@
+.compose-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: var(--color-overlay);
+}
+
+.compose-dialog {
+  width: min(100%, 40rem);
+  max-height: min(90vh, 44rem);
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-surface);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 30%);
+}
+
+.compose-header,
+.compose-body,
+.compose-actions {
+  padding: 1.25rem;
+}
+
+.compose-header {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.compose-header h2,
+.compose-header p {
+  margin: 0;
+}
+
+.compose-header h2 {
+  margin-top: 0.35rem;
+}
+
+.compose-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.compose-documents {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.7rem;
+}
+
+.compose-documents div {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.compose-documents strong {
+  overflow-wrap: anywhere;
+}
+
+.compose-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 36rem) {
+  .compose-documents {
+    grid-template-columns: 1fr;
+  }
+}

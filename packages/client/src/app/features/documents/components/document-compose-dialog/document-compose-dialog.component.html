@@ -1,0 +1,83 @@
+<div class="compose-backdrop" role="presentation">
+  <section
+    class="compose-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="compose-dialog-title"
+  >
+    <header class="compose-header">
+      <p class="section-kicker">{{ 'documents.composeKicker' | t }}</p>
+      <h2 id="compose-dialog-title">{{ 'documents.composeTitle' | t }}</h2>
+      <p class="muted">
+        {{ 'documents.composeMessage' | t }}
+      </p>
+    </header>
+
+    <div class="compose-body">
+      <div class="compose-documents" aria-live="polite">
+        <div>
+          <span class="field-label">{{ 'documents.composeTarget' | t }}</span>
+          <strong>{{ targetTitle() }}</strong>
+        </div>
+        <span aria-hidden="true">＋</span>
+        <div>
+          <span class="field-label">{{ 'documents.composeSource' | t }}</span>
+          <strong>{{ sourceTitle() }}</strong>
+        </div>
+      </div>
+
+      <label class="text-field" for="compose-insert-page">
+        <span class="field-label">{{ 'documents.composeInsertAfter' | t }}</span>
+        <input
+          id="compose-insert-page"
+          type="number"
+          min="0"
+          [max]="targetPageCount()"
+          [value]="insertAfterPage()"
+          (input)="setPage($event)"
+          [attr.aria-describedby]="error() ? 'compose-dialog-error' : 'compose-dialog-hint'"
+        />
+        <small id="compose-dialog-hint">
+          {{
+            'documents.composePageHint'
+              | t: { pageCount: targetPageCount(), sourcePages: sourcePageCount() }
+          }}
+        </small>
+      </label>
+
+      <label class="checkbox-copy">
+        <input
+          type="checkbox"
+          [checked]="copyMetadata()"
+          (change)="copyMetadata.set($any($event.target).checked)"
+        />
+        <span>{{ 'documents.composeCopyMetadata' | t }}</span>
+      </label>
+
+      <label class="checkbox-copy">
+        <input
+          type="checkbox"
+          [checked]="autoApplySuggestions()"
+          (change)="autoApplySuggestions.set($any($event.target).checked)"
+        />
+        <span>{{ 'documents.composeAutoApplySuggestions' | t }}</span>
+      </label>
+
+      @if (error(); as errorKey) {
+        <p id="compose-dialog-error" class="error" role="alert">{{ errorKey | t }}</p>
+      }
+      @if (errorMessage(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+    </div>
+
+    <footer class="compose-actions">
+      <button type="button" class="secondary-button" (click)="closed.emit()">
+        {{ 'common.cancel' | t }}
+      </button>
+      <button type="button" class="primary-button" (click)="submit()">
+        {{ 'documents.compose' | t }}
+      </button>
+    </footer>
+  </section>
+</div>

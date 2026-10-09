@@ -43,6 +43,10 @@ import {
   DocumentSplitDialogComponent,
   DocumentSplitRequest,
 } from '../document-split-dialog/document-split-dialog.component';
+import {
+  DocumentComposeDialogComponent,
+  DocumentComposeRequest,
+} from '../document-compose-dialog/document-compose-dialog.component';
 import { InboxService } from '../../../inbox/services/inbox.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -75,6 +79,7 @@ type DocumentFilterValues = {
     BulkMetadataDialogComponent,
     ConfirmDialogComponent,
     DocumentSplitDialogComponent,
+    DocumentComposeDialogComponent,
     TranslatePipe,
   ],
   templateUrl: './documents.component.html',
@@ -206,6 +211,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly versionAssignmentLoading = signal(false);
   readonly splitDocumentUuid = signal<string | null>(null);
   readonly splitLoading = signal(false);
+  readonly composeDocuments = signal<{ targetUuid: string; sourceUuid: string } | null>(null);
+  readonly composeLoading = signal(false);
   readonly bulkDocumentTypes = computed(() => this.metadata.vocabulary()?.documentTypes ?? []);
   readonly bulkCategories = computed(() => this.metadata.vocabulary()?.categories ?? []);
   readonly bulkTags = computed(() => this.metadata.vocabulary()?.tags ?? []);
@@ -467,6 +474,41 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     if (!pair || this.versionAssignmentLoading()) return;
     this.copyVersionMetadata.set(true);
     this.versionAssignment.set({ sourceUuid: pair.source.uuid, targetUuid: pair.target.uuid });
+  }
+
+  requestComposeDocuments(): void {
+    const pair = this.selectedVersionPair();
+    if (!pair || this.composeLoading()) return;
+    this.composeDocuments.set({ targetUuid: pair.target.uuid, sourceUuid: pair.source.uuid });
+  }
+
+  cancelComposeDocuments(): void {
+    this.composeDocuments.set(null);
+  }
+
+  async composeDocumentsFromRequest(request: DocumentComposeRequest): Promise<void> {
+    const composition = this.composeDocuments();
+    if (!composition || this.composeLoading()) return;
+    this.composeLoading.set(true);
+    try {
+      const result = await this.documents.composeDocument(
+        composition.targetUuid,
+        composition.sourceUuid,
+        request.insertAfterPage,
+        request.copyMetadata,
+        request.autoApplySuggestions,
+      );
+      if (result) {
+        this.composeDocuments.set(null);
+        this.clearSelection();
+        if (this.drawerDocumentUuid() === composition.targetUuid) {
+          this.drawerDocumentUuid.set(result.uuid);
+          this.drawerDocumentSnapshot.set(result);
+        }
+      }
+    } finally {
+      this.composeLoading.set(false);
+    }
   }
 
   cancelVersionAssignment(): void {
