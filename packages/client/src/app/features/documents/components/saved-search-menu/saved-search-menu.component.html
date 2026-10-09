@@ -17,7 +17,12 @@
     @if (isNaming()) {
       <span class="saved-search-dialog-hint">{{ 'documents.savedSearchDialogHint' | t }}</span>
     } @else {
-      <button type="button" class="primary-button saved-search-primary" [disabled]="busy()" (click)="beginSave()">
+      <button
+        type="button"
+        class="primary-button saved-search-primary"
+        [disabled]="busy()"
+        (click)="beginSave()"
+      >
         {{ 'documents.savedSearchSave' | t }}
       </button>
       @if (selectedSearch()) {

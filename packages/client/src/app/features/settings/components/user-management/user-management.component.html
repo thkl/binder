@@ -100,7 +100,11 @@
               [required]="!editingUser() && !email()"
             />
             <div class="password-actions">
-              <button type="button" class="secondary-button password-generate" (click)="generatePassword()">
+              <button
+                type="button"
+                class="secondary-button password-generate"
+                (click)="generatePassword()"
+              >
                 Generate password
               </button>
               <button

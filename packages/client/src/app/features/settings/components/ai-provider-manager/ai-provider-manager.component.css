@@ -113,7 +113,6 @@ h4 {
   font: inherit;
 }
 
-
 .provider-list {
   display: grid;
   gap: 0.75rem;
@@ -163,7 +162,6 @@ h4 {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-
 }
 
 .capabilities span {

@@ -832,7 +832,7 @@ h2 {
   grid-template-rows: auto 1fr auto;
   border: 1px solid var(--color-border);
   border-radius: 0.9rem;
-  background: linear-gradient(135deg,  var(--color-bg),var(--color-surface));
+  background: linear-gradient(135deg, var(--color-bg), var(--color-surface));
   transition:
     border-color 0.16s ease,
     transform 0.16s ease,

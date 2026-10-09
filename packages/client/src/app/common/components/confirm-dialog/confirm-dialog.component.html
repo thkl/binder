@@ -25,7 +25,12 @@
       <button type="button" class="confirm-cancel secondary-button" (click)="cancelled.emit()">
         {{ cancelLabel() }}
       </button>
-      <button #confirmButton type="button" class="confirm-primary danger-button" (click)="confirmed.emit()">
+      <button
+        #confirmButton
+        type="button"
+        class="confirm-primary danger-button"
+        (click)="confirmed.emit()"
+      >
         {{ confirmLabel() }}
       </button>
     </footer>

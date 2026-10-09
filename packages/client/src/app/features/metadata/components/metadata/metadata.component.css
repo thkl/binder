@@ -455,8 +455,8 @@ h3 {
 .scope-badge {
   padding: 0.35rem 0.55rem;
   border-radius: 2rem;
-    color: var(--color-accent);
-  border: 1px solid var(--color-success)
+  color: var(--color-accent);
+  border: 1px solid var(--color-success);
 }
 
 .scope-badge.system {

@@ -80,9 +80,17 @@
           ></label
         >
         <div class="suggestion-actions">
-          <button type="button" class="accept-all-button primary-button" (click)="acceptAllSuggestion()">
+          <button
+            type="button"
+            class="accept-all-button primary-button"
+            (click)="acceptAllSuggestion()"
+          >
             ✓ {{ 'editor.acceptAll' | t }}</button
-          ><button type="button" class="dismiss-suggestion-button secondary-button" (click)="dismissSuggestion()">
+          ><button
+            type="button"
+            class="dismiss-suggestion-button secondary-button"
+            (click)="dismissSuggestion()"
+          >
             {{ 'editor.dismissSuggestion' | t }}
           </button>
         </div>

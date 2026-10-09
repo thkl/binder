@@ -111,7 +111,8 @@
         </button>
         <span>{{ page() }} / {{ pageMeta.totalPages || 1 }}</span>
         <button
-          type="button" class="secondary-button"
+          type="button"
+          class="secondary-button"
           (click)="changePage(page() + 1)"
           [disabled]="
             pageMeta.totalPages === 0 || page() >= pageMeta.totalPages || pipeline.loading()

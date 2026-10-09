@@ -309,7 +309,6 @@ button {
   color: var(--color-text);
 }
 
-
 .danger-button {
   border: 1px solid var(--color-danger);
   color: var(--color-danger);
@@ -322,7 +321,6 @@ button {
   background-color: var(--color-danger);
 }
 
-
 .primary-button:disabled,
 .secondary-button:disabled,
 .text-button:disabled {
@@ -330,7 +328,7 @@ button {
   opacity: 0.5;
 }
 
-input, 
+input,
 select {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -341,5 +339,5 @@ input:focus {
 }
 
 select:focus {
-    box-shadow: 0 0 0 1px var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
 }

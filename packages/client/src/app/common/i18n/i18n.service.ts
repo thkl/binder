@@ -100,7 +100,9 @@ export class I18nService {
   }
 }
 
-@Pipe({ name: 't', standalone: true })
+// The catalog is loaded asynchronously. The pipe must be impure so Angular
+// evaluates it again when the service's signal receives the server response.
+@Pipe({ name: 't', standalone: true, pure: false })
 export class TranslatePipe implements PipeTransform {
   constructor(private readonly i18n: I18nService) {}
 
