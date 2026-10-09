@@ -315,7 +315,7 @@
   place-items: center;
   border: 1px solid var(--color-success);
   border-radius: 0.35rem;
-  color: var(--color-success);
+  color: var(--color-bg);
   background: var(--color-success);
   font-size: 0.68rem;
   font-weight: 900;
@@ -323,7 +323,7 @@
 
 .tree-file-icon.error-log {
   border-color: var(--color-danger);
-  color: var(--color-danger);
+  color: var(--color-bg);
   background: var(--color-danger);
 }
 

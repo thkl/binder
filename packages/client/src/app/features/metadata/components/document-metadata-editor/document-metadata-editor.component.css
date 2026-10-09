@@ -465,7 +465,7 @@ h3 {
   padding: 0.8rem;
   border: 1px solid var(--color-accent);
   border-radius: 0.7rem;
-  background: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .suggestion-heading {
@@ -474,7 +474,7 @@ h3 {
   justify-content: space-between;
   gap: 0.5rem;
   margin-bottom: 0.65rem;
-  color: var(--color-border);
+  color: var(--color-text-muted);
 }
 
 .suggestion-heading strong {
@@ -520,28 +520,6 @@ h3 {
   font: inherit;
   font-size: 0.72rem;
   font-weight: 800;
-}
-
-.accept-all-button {
-  border: 1px solid var(--color-accent);
-  color: var(--color-bg);
-  background: var(--color-accent);
-}
-
-.accept-all-button:hover {
-  background: var(--color-accent);
-}
-
-.dismiss-suggestion-button {
-  border: 1px solid var(--color-text);
-  color: var(--color-text);
-  background: var(--color-text);
-}
-
-.dismiss-suggestion-button:hover {
-  border-color: var(--color-danger);
-  color: var(--color-text);
-  background: var(--color-danger);
 }
 
 .previewImage {

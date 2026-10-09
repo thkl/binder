@@ -331,7 +331,7 @@
 .folder-tree-divider {
   height: 1px;
   margin: 0.65rem 0.5rem;
-  background: var(--color-text);
+  background: var(--color-border);
 }
 
 .virtual-folder-row {
