@@ -30,9 +30,13 @@ export class MobileConnectionComponent {
     this.error.set(null);
 
     try {
-      this.application.saveMobileServerUrl(this.serverUrl());
-      await this.auth.restoreSession();
-      await this.router.navigateByUrl('/');
+      const serverUrl = await this.application.saveMobileServerUrl(this.serverUrl());
+      if (this.application.isNativeMobile()) {
+        window.location.replace(serverUrl);
+      } else {
+        await this.auth.restoreSession();
+        await this.router.navigateByUrl('/');
+      }
     } catch (error) {
       this.error.set(
         error instanceof Error

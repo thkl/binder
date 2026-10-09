@@ -16,7 +16,7 @@
     "@angular/core": "22.2.1",
     "@angular/platform-browser": "22.2.1",
     "@angular/router": "22.2.1",
-    "@capacitor/core": "8.5.0",
+    "@capacitor/core": "8.5.1",
     "@binder/common": "workspace:*",
     "rxjs": "7.8.2",
     "zod": "4.6.5",

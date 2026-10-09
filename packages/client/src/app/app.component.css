@@ -53,6 +53,27 @@
   padding: 2.25rem 1.5rem 4rem;
 }
 
+.mobile-share-notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: -3.5rem 0 2rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.65rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.mobile-share-notice span {
+  flex: 1 1 16rem;
+}
+
+.mobile-share-notice.is-error {
+  border-color: var(--color-danger);
+}
+
 .topbar {
   display: flex;
   align-items: center;

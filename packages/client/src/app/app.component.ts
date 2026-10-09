@@ -17,6 +17,7 @@ import { OnboardingComponent } from './features/authentication/components/onboar
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { I18nService, TranslatePipe } from './common/i18n/i18n.service';
 import { InboxService } from './features/inbox/services/inbox.service';
+import { MobileShareImportService } from './features/documents/services/mobile-share-import.service';
 import type { AppLanguage } from '@binder/common';
 
 type NavigationMenu = 'documents' | 'settings' | 'account';
@@ -54,6 +55,7 @@ export class AppComponent implements OnInit {
     readonly inbox: InboxService,
     readonly router: Router,
     readonly application: ApplicationService,
+    readonly mobileShare: MobileShareImportService,
   ) {
     this.passwordResetRoute.set(this.isPasswordResetUrl(this.router.url));
     this.mobileConnectionRoute.set(this.isMobileConnectionUrl(this.router.url));
@@ -67,6 +69,10 @@ export class AppComponent implements OnInit {
     effect(() => {
       const user = this.auth.user();
       if (this.auth.loading()) return;
+
+      if (user && this.application.isNativeMobile()) {
+        void this.mobileShare.processPending();
+      }
 
       if (user) {
         void this.inbox.loadNewDocumentCount();
@@ -90,17 +96,30 @@ export class AppComponent implements OnInit {
     return url === '/mobile-connection';
   }
 
-  ngOnInit(): void {
-    if (this.application.isNativeMobile() && !this.application.getMobileServerUrl()) {
-      void this.router.navigateByUrl('/mobile-connection');
+  async ngOnInit(): Promise<void> {
+    if (this.application.isMobileBootstrapOrigin()) {
+      const serverUrl = await this.application.restoreNativeMobileServerUrl();
+      if (serverUrl) {
+        window.location.replace(serverUrl);
+      } else {
+        await this.router.navigateByUrl('/mobile-connection');
+      }
       return;
     }
+    if (this.application.isNativeMobile()) await this.application.restoreNativeMobileServerUrl();
     void this.auth.restoreSession();
   }
 
   async logout(): Promise<void> {
     this.closeMenu();
     await this.auth.logout();
+  }
+
+  @HostListener('document:visibilitychange')
+  onVisibilityChange(): void {
+    if (document.visibilityState === 'visible' && this.auth.user()) {
+      void this.mobileShare.processPending();
+    }
   }
 
   setLanguage(language: AppLanguage): void {

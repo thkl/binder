@@ -52,7 +52,7 @@ test('allows bearer-authenticated API mutations without a browser CSRF token', (
   );
 });
 
-test('accepts the configured web origin and native app origins for login', () => {
+test('accepts login requests from the configured web origin', () => {
   assert.equal(
     guard().canActivate(
       context(
@@ -60,32 +60,6 @@ test('accepts the configured web origin and native app origins for login', () =>
           path: '/api/v1/auth/login',
           session: {},
           headers: { origin: 'https://binder.example.test' },
-        }),
-      ),
-    ),
-    true,
-  );
-
-  assert.equal(
-    guard().canActivate(
-      context(
-        request({
-          path: '/api/v1/auth/login',
-          session: {},
-          headers: { 'x-binder-mobile-app': 'capacitor' },
-        }),
-      ),
-    ),
-    true,
-  );
-
-  assert.equal(
-    guard().canActivate(
-      context(
-        request({
-          path: '/api/v1/auth/login',
-          session: {},
-          headers: { origin: 'capacitor://localhost' },
         }),
       ),
     ),
@@ -105,4 +79,18 @@ test('accepts the configured web origin and native app origins for login', () =>
       ),
     (error: unknown) => error instanceof ForbiddenException,
   );
+});
+
+test('does not trust the old Capacitor origin or marker for login', () => {
+  for (const headers of [
+    { origin: 'capacitor://localhost' },
+    { origin: 'https://localhost' },
+    { 'x-binder-mobile-app': 'capacitor' },
+  ]) {
+    assert.throws(
+      () =>
+        guard().canActivate(context(request({ path: '/api/v1/auth/login', session: {}, headers }))),
+      (error: unknown) => error instanceof ForbiddenException,
+    );
+  }
 });

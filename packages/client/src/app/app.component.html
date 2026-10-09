@@ -218,6 +218,28 @@
         </div>
       </div>
     </header>
+    @if (mobileShare.notice(); as shareNotice) {
+      <div
+        class="mobile-share-notice"
+        [class.is-error]="shareNotice.kind === 'error'"
+        [attr.role]="shareNotice.kind === 'error' ? 'alert' : 'status'"
+      >
+        <span>{{ shareNotice.message }}</span>
+        @if (shareNotice.kind === 'error') {
+          <button class="text-button" type="button" (click)="mobileShare.processPending()">
+            {{ 'mobileShare.retry' | t }}
+          </button>
+        }
+        <button
+          class="text-button"
+          type="button"
+          [attr.aria-label]="'mobileShare.dismiss' | t"
+          (click)="mobileShare.dismissNotice()"
+        >
+          {{ 'common.close' | t }}
+        </button>
+      </div>
+    }
     <div id="main-content" tabindex="-1"><router-outlet /></div>
   </main>
 }

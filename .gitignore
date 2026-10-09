@@ -19,3 +19,4 @@ docs/security-findings.md
 product-plan.md
 docs/int/
 apps/
+.pnpm-store/

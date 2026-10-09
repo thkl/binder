@@ -56,7 +56,6 @@ async function bootstrap(): Promise<void> {
     app.getHttpAdapter().getInstance().set('trust proxy', true);
   }
 
-  const trustedNativeOrigins = new Set(['capacitor://localhost', 'https://localhost']);
   const developmentOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
   const rootOrigin = new URL(rootUri).origin;
   const isDevelopment = nestConfigService.get<string>(ConfigKeys.NODE_ENV) === 'development';
@@ -66,10 +65,7 @@ async function bootstrap(): Promise<void> {
       callback: (error: Error | null, allow?: boolean) => void,
     ) => {
       const allowed =
-        !origin ||
-        origin === rootOrigin ||
-        trustedNativeOrigins.has(origin) ||
-        (isDevelopment && developmentOrigin.test(origin));
+        !origin || origin === rootOrigin || (isDevelopment && developmentOrigin.test(origin));
       callback(null, allowed);
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
