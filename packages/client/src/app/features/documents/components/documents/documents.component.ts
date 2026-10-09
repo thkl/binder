@@ -478,7 +478,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   requestComposeDocuments(): void {
     const pair = this.selectedVersionPair();
-    if (!pair || this.composeLoading()) return;
+    if (!pair || this.composeLoading() || !this.canLeaveMetadata()) return;
     this.composeDocuments.set({ targetUuid: pair.target.uuid, sourceUuid: pair.source.uuid });
   }
 
@@ -501,10 +501,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       if (result) {
         this.composeDocuments.set(null);
         this.clearSelection();
-        if (this.drawerDocumentUuid() === composition.targetUuid) {
-          this.drawerDocumentUuid.set(result.uuid);
-          this.drawerDocumentSnapshot.set(result);
-        }
+        this.openDocumentRecord(result);
       }
     } finally {
       this.composeLoading.set(false);
