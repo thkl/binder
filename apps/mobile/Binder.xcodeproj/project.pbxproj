@@ -24,7 +24,35 @@
 		A10000000000000000000015 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* AppSettings.swift */; };
 		A10000000000000000000016 /* BinderShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* BinderShare.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A10000000000000000000017 /* DocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* DocumentScanner.swift */; };
+		A10000000000000000000018 /* DocumentListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000020 /* DocumentListRow.swift */; };
+		A10000000000000000000019 /* BrowseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000021 /* BrowseView.swift */; };
+		A1000000000000000000001A /* DocumentMetadataEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000022 /* DocumentMetadataEditorView.swift */; };
+		F75494FF307A69AC00908E01 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F75494FD307A68EB00908E01 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A90000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A60000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000000000000000000002;
+			remoteInfo = BinderShare;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A30000000000000000000008 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A10000000000000000000016 /* BinderShare.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A20000000000000000000001 /* BinderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinderApp.swift; sourceTree = "<group>"; };
@@ -42,9 +70,13 @@
 		A20000000000000000000014 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		A20000000000000000000015 /* SharedPDFQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedPDFQueue.swift; sourceTree = "<group>"; };
 		A20000000000000000000016 /* ShareExtension-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "ShareExtension-Info.plist"; sourceTree = "<group>"; };
-		A20000000000000000000017 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ShareExtension.entitlements"; sourceTree = "<group>"; };
-		A20000000000000000000018 /* BinderShare.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = BinderShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000017 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
+		A20000000000000000000018 /* BinderShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BinderShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000019 /* DocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScanner.swift; sourceTree = "<group>"; };
+		A20000000000000000000020 /* DocumentListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentListRow.swift; sourceTree = "<group>"; };
+		A20000000000000000000021 /* BrowseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseView.swift; sourceTree = "<group>"; };
+		A20000000000000000000022 /* DocumentMetadataEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentMetadataEditorView.swift; sourceTree = "<group>"; };
+		F75494FD307A68EB00908E01 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,7 +87,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A30000000000000000000005 /* BinderShare Frameworks */ = {
+		A30000000000000000000005 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -76,6 +108,7 @@
 		A40000000000000000000002 /* Binder */ = {
 			isa = PBXGroup;
 			children = (
+				F75494FD307A68EB00908E01 /* Assets.xcassets */,
 				A20000000000000000000001 /* BinderApp.swift */,
 				A20000000000000000000002 /* LoginView.swift */,
 				A20000000000000000000003 /* AuthViewModel.swift */,
@@ -86,6 +119,9 @@
 				A20000000000000000000011 /* SignedInView.swift */,
 				A20000000000000000000012 /* DocumentPDFView.swift */,
 				A20000000000000000000019 /* DocumentScanner.swift */,
+				A20000000000000000000020 /* DocumentListRow.swift */,
+				A20000000000000000000021 /* BrowseView.swift */,
+				A20000000000000000000022 /* DocumentMetadataEditorView.swift */,
 				A20000000000000000000014 /* ShareViewController.swift */,
 				A20000000000000000000015 /* SharedPDFQueue.swift */,
 				A20000000000000000000016 /* ShareExtension-Info.plist */,
@@ -117,10 +153,10 @@
 				A30000000000000000000003 /* Resources */,
 				A30000000000000000000008 /* Embed App Extensions */,
 			);
+			buildRules = (
+			);
 			dependencies = (
 				A90000000000000000000002 /* PBXTargetDependency */,
-			);
-			buildRules = (
 			);
 			name = Binder;
 			productName = Binder;
@@ -131,9 +167,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A80000000000000000000003 /* Build configuration list for PBXNativeTarget "BinderShare" */;
 			buildPhases = (
-				A30000000000000000000007 /* BinderShare Sources */,
-				A30000000000000000000005 /* BinderShare Frameworks */,
-				A30000000000000000000006 /* BinderShare Resources */,
+				A30000000000000000000007 /* Sources */,
+				A30000000000000000000005 /* Frameworks */,
+				A30000000000000000000006 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -185,6 +221,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F75494FF307A69AC00908E01 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A30000000000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -206,17 +250,13 @@
 				A10000000000000000000009 /* DocumentPDFView.swift in Sources */,
 				A10000000000000000000010 /* SharedPDFQueue.swift in Sources */,
 				A10000000000000000000017 /* DocumentScanner.swift in Sources */,
+				A10000000000000000000018 /* DocumentListRow.swift in Sources */,
+				A10000000000000000000019 /* BrowseView.swift in Sources */,
+				A1000000000000000000001A /* DocumentMetadataEditorView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A30000000000000000000006 /* BinderShare Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A30000000000000000000007 /* BinderShare Sources */ = {
+		A30000000000000000000007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -228,28 +268,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A30000000000000000000008 /* Embed App Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				A10000000000000000000016 /* BinderShare.appex in Embed App Extensions */,
-			);
-			name = "Embed App Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXContainerItemProxy section */
-		A90000000000000000000001 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A60000000000000000000001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = A50000000000000000000002;
-			remoteInfo = BinderShare;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXTargetDependency section */
 		A90000000000000000000002 /* PBXTargetDependency */ = {
@@ -285,6 +304,8 @@
 		A70000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Binder/Binder.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -309,6 +330,8 @@
 		A70000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Binder/Binder.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -339,7 +362,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H5NZA7GY3K;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Binder/ShareExtension-Info.plist;
+				INFOPLIST_FILE = "Binder/ShareExtension-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -364,7 +387,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H5NZA7GY3K;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Binder/ShareExtension-Info.plist;
+				INFOPLIST_FILE = "Binder/ShareExtension-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -18,6 +18,21 @@ struct SignedInView: View {
     @State private var scannerError: String?
 
     var body: some View {
+        TabView {
+            searchTab
+                .tabItem { Label("Search", systemImage: "magnifyingglass") }
+
+            BrowseView(model: model)
+                .tabItem { Label("Browse", systemImage: "folder") }
+        }
+        .task { await uploadQueuedPDFs() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await uploadQueuedPDFs() } }
+        }
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+    }
+
+    private var searchTab: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 searchBar
@@ -76,9 +91,14 @@ struct SignedInView: View {
                             Section("\(resultCount) results for “\(searchedQuery)”") {
                                 ForEach(results) { result in
                                     NavigationLink {
-                                        DocumentPDFView(result: result, serverURL: model.serverURL)
+                                        DocumentPDFView(document: result.document, serverURL: model.serverURL)
                                     } label: {
-                                        BinderSearchResultRow(result: result, serverURL: model.serverURL)
+                                        DocumentListRow(
+                                            document: result.document,
+                                            serverURL: model.serverURL,
+                                            snippet: result.snippet.nilIfBlank,
+                                            footer: result.pageNumber.map { "Page \($0)" } ?? "Title match"
+                                        )
                                     }
                                     .buttonStyle(.plain)
                                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
@@ -122,10 +142,6 @@ struct SignedInView: View {
                 Button("OK", role: .cancel) { scannerError = nil }
             } message: {
                 Text(scannerError ?? "")
-            }
-            .task { await uploadQueuedPDFs() }
-            .onChange(of: scenePhase) { _, phase in
-                if phase == .active { Task { await uploadQueuedPDFs() } }
             }
             .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         }
@@ -236,86 +252,6 @@ struct SignedInView: View {
         }
     }
 
-}
-
-private struct BinderSearchResultRow: View {
-    let result: BinderSearchResult
-    let serverURL: String
-    @State private var thumbnail: UIImage?
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Group {
-                if let thumbnail {
-                    Image(uiImage: thumbnail)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(uiColor: .tertiarySystemGroupedBackground))
-                        Image(systemName: "doc.richtext")
-                            .font(.system(size: 26))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .frame(width: 66, height: 88)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text(displayTitle)
-                    .font(.headline)
-                    .lineLimit(2)
-                    .foregroundStyle(.primary)
-                Text(result.document.originalFilename)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-
-                if let snippet = result.snippet.nilIfBlank {
-                    Text(snippet)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-
-                let metadata = [
-                    result.document.metadataSummary?.documentType?.name,
-                    result.document.metadataSummary?.category?.name,
-                    result.document.metadataSummary?.issuer?.name
-                ].compactMap { $0?.nilIfBlank }
-                if !metadata.isEmpty {
-                    Text(metadata.joined(separator: " · "))
-                        .font(.caption)
-                        .foregroundStyle(Color.accentColor)
-                        .lineLimit(1)
-                }
-
-                Text(result.pageNumber.map { "Page \($0)" } ?? "Title match")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .task(id: "\(serverURL)-\(result.document.uuid)") {
-            do {
-                let data = try await BinderAPI.shared.thumbnail(
-                    serverURL: serverURL,
-                    documentUUID: result.document.uuid
-                )
-                thumbnail = UIImage(data: data)
-            } catch {
-                // Some documents do not have a generated thumbnail yet.
-            }
-        }
-    }
-
-    private var displayTitle: String {
-        guard let title = result.document.title?.nilIfBlank else { return result.document.originalFilename }
-        return title
-    }
 }
 
 private extension String {

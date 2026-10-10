@@ -21,30 +21,257 @@ struct BinderSearchResult: Decodable, Identifiable {
     var id: String { document.uuid }
 }
 
-struct BinderSearchDocument: Decodable {
+struct BinderDocumentSummary: Decodable, Identifiable {
     let uuid: String
     let title: String?
     let originalFilename: String
     let pageCount: Int?
     let metadataSummary: BinderDocumentMetadataSummary?
+    let status: String?
+    let isNew: Bool?
+
+    var id: String { uuid }
+}
+
+typealias BinderSearchDocument = BinderDocumentSummary
+
+struct BinderFolder: Decodable, Identifiable {
+    let uuid: String
+    let parentUuid: String?
+    let name: String
+    let childCount: Int
+    let documentCount: Int
+    let hasChildren: Bool
+
+    var id: String { uuid }
+}
+
+extension BinderFolder {
+    func path(in folders: [BinderFolder]) -> String {
+        let byUUID = Dictionary(uniqueKeysWithValues: folders.map { ($0.uuid, $0) })
+        var parts = [name]
+        var visited: Set<String> = [uuid]
+        var parent = parentUuid
+        while let parentUUID = parent,
+              let folder = byUUID[parentUUID],
+              visited.insert(folder.uuid).inserted {
+            parts.insert(folder.name, at: 0)
+            parent = folder.parentUuid
+        }
+        return parts.joined(separator: " / ")
+    }
+}
+
+struct BinderFolderDocumentPage: Decodable {
+    let items: [BinderDocumentSummary]
+    let page: Int
+    let total: Int
+    let hasNext: Bool
 }
 
 struct BinderDocumentMetadataSummary: Decodable {
     let documentType: BinderVocabularyValue?
     let category: BinderVocabularyValue?
     let issuer: BinderIssuerValue?
+    let tags: [BinderVocabularyValue]?
+    let custom: [BinderCustomMetadataSummary]?
+}
+
+struct BinderCustomMetadataSummary: Decodable, Identifiable {
+    let key: String
+    let label: String
+    let value: BinderMetadataValue
+
+    var id: String { key }
+}
+
+enum BinderMetadataValue: Codable {
+    case string(String)
+    case number(Double)
+    case boolean(Bool)
+    case object([String: BinderMetadataValue])
+    case array([BinderMetadataValue])
+    case null
+
+    init(from decoder: Decoder) throws {
+        let value = try decoder.singleValueContainer()
+        if value.decodeNil() {
+            self = .null
+        } else if let boolean = try? value.decode(Bool.self) {
+            self = .boolean(boolean)
+        } else if let string = try? value.decode(String.self) {
+            self = .string(string)
+        } else if let number = try? value.decode(Double.self) {
+            self = .number(number)
+        } else if let object = try? value.decode([String: BinderMetadataValue].self) {
+            self = .object(object)
+        } else if let array = try? value.decode([BinderMetadataValue].self) {
+            self = .array(array)
+        } else {
+            throw DecodingError.dataCorruptedError(in: value, debugDescription: "Unsupported metadata value")
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var value = encoder.singleValueContainer()
+        switch self {
+        case .string(let string): try value.encode(string)
+        case .number(let number): try value.encode(number)
+        case .boolean(let boolean): try value.encode(boolean)
+        case .object(let object): try value.encode(object)
+        case .array(let array): try value.encode(array)
+        case .null: try value.encodeNil()
+        }
+    }
+
+    var displayText: String {
+        switch self {
+        case .string(let value): value
+        case .number(let value): value.formatted()
+        case .boolean(let value): value ? "Yes" : "No"
+        case .object(let values):
+            values.keys.sorted().map { "\($0): \(values[$0]?.displayText ?? "")" }.joined(separator: ", ")
+        case .array(let values): values.map(\.displayText).joined(separator: ", ")
+        case .null: "—"
+        }
+    }
+}
+
+struct BinderMetadataVocabulary: Decodable {
+    let documentTypes: [BinderMetadataOption]
+    let categories: [BinderMetadataOption]
+    let tags: [BinderMetadataOption]
+}
+
+struct BinderMetadataOption: Decodable, Identifiable {
+    let uuid: String
+    let name: String
+    let folderUuid: String?
+
+    var id: String { uuid }
+}
+
+struct BinderIssuerOption: Decodable, Identifiable {
+    let uuid: String
+    let name: String
+    let city: String?
+    let folderUuid: String?
+
+    var id: String { uuid }
+}
+
+struct BinderMetadataDefinition: Decodable, Identifiable {
+    let uuid: String
+    let key: String
+    let label: String
+    let type: String
+    let options: [String]?
+    let active: Bool
+
+    var id: String { key }
+}
+
+struct BinderMetadataEditorOptions: Decodable {
+    let vocabulary: BinderMetadataVocabulary
+    let issuers: [BinderIssuerOption]
+    let definitions: [BinderMetadataDefinition]
 }
 
 struct BinderVocabularyValue: Decodable {
+    let uuid: String?
     let name: String
 }
 
 struct BinderIssuerValue: Decodable {
+    let uuid: String?
     let name: String
+}
+
+enum BinderSortDirection: String, CaseIterable, Identifiable, Codable {
+    case asc
+    case desc
+
+    var id: String { rawValue }
+    var label: String { self == .asc ? "Ascending" : "Descending" }
+}
+
+enum BinderGroupMode: String, CaseIterable, Identifiable, Codable {
+    case none
+    case documentType
+    case category
+    case issuer
+    case tag
+    case status
+    case isNew
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .none: "None"
+        case .documentType: "Document type"
+        case .category: "Category"
+        case .issuer: "Issuer"
+        case .tag: "Tag"
+        case .status: "Status"
+        case .isNew: "Review state"
+        }
+    }
+}
+
+struct BinderFolderSortOptions: Codable, Equatable {
+    var direction: BinderSortDirection = .desc
+    var groupBy: BinderGroupMode = .none
+    var groupDirection: BinderSortDirection = .asc
 }
 
 private struct SearchEnvelope: Decodable {
     let data: BinderSearchResponse
+}
+
+private struct FolderListEnvelope: Decodable {
+    let data: FolderList
+
+    struct FolderList: Decodable {
+        let items: [BinderFolder]
+    }
+}
+
+private struct DocumentListEnvelope: Decodable {
+    let data: BinderFolderDocumentPage
+}
+
+private struct DocumentSummaryEnvelope: Decodable {
+    let data: BinderDocumentSummary
+}
+
+private struct MetadataVocabularyEnvelope: Decodable {
+    let data: BinderMetadataVocabulary
+}
+
+private struct IssuerListEnvelope: Decodable {
+    let data: Items
+    struct Items: Decodable { let items: [BinderIssuerOption] }
+}
+
+private struct MetadataDefinitionsEnvelope: Decodable {
+    let data: Items
+    struct Items: Decodable { let items: [BinderMetadataDefinition] }
+}
+
+private struct SetDocumentMetadataPayload: Encodable {
+    let issuerUuid: String?
+    let documentTypeUuid: String?
+    let categoryUuid: String?
+    let tagUuids: [String]
+    let custom: [String: BinderMetadataValue]
+}
+
+private struct SetDocumentTitlePayload: Encodable {
+    let title: String
+}
+
+private struct FolderDocumentLinkPayload: Encodable {
+    let documentUuids: [String]
 }
 
 private struct LoginEnvelope: Decodable {
@@ -86,6 +313,174 @@ final class BinderAPI {
     func isSSOActive(serverURL: String) async throws -> Bool {
         let (data, _) = try await request(path: "ssoauth/active", serverURL: serverURL)
         return try JSONDecoder().decode(SSOStatusEnvelope.self, from: data).data.isActive
+    }
+
+    func folders(serverURL: String, parentUUID: String? = nil) async throws -> [BinderFolder] {
+        var request = try makeRequest(path: "folders", serverURL: serverURL, method: "GET")
+        if let parentUUID {
+            guard let url = request.url,
+                  var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+                throw BinderAPIError.invalidServerURL
+            }
+            components.queryItems = [URLQueryItem(name: "parentUuid", value: parentUUID)]
+            guard let foldersURL = components.url else { throw BinderAPIError.invalidServerURL }
+            request.url = foldersURL
+        }
+
+        let (data, response) = try await urlSession.data(for: request)
+        try absorbSessionCookie(from: response, for: request)
+        try validate(response, data: data)
+        return try JSONDecoder().decode(FolderListEnvelope.self, from: data).data.items
+    }
+
+    func allFolders(serverURL: String) async throws -> [BinderFolder] {
+        let (data, _) = try await request(path: "folders/all", serverURL: serverURL)
+        return try JSONDecoder().decode(FolderListEnvelope.self, from: data).data.items
+    }
+
+    func foldersForDocument(serverURL: String, documentUUID: String) async throws -> [BinderFolder] {
+        let (data, _) = try await request(
+            path: "folders/for-document/\(documentUUID)",
+            serverURL: serverURL
+        )
+        return try JSONDecoder().decode(FolderListEnvelope.self, from: data).data.items
+    }
+
+    func updateDocumentFolders(
+        serverURL: String,
+        documentUUID: String,
+        selectedFolderUUIDs: Set<String>,
+        originalFolderUUIDs: Set<String>
+    ) async throws {
+        let additions = selectedFolderUUIDs.subtracting(originalFolderUUIDs).sorted()
+        let removals = originalFolderUUIDs.subtracting(selectedFolderUUIDs).sorted()
+        for folderUUID in additions {
+            try await changeDocumentFolderLink(
+                serverURL: serverURL,
+                folderUUID: folderUUID,
+                documentUUID: documentUUID,
+                remove: false
+            )
+        }
+        for folderUUID in removals {
+            try await changeDocumentFolderLink(
+                serverURL: serverURL,
+                folderUUID: folderUUID,
+                documentUUID: documentUUID,
+                remove: true
+            )
+        }
+    }
+
+    private func changeDocumentFolderLink(
+        serverURL: String,
+        folderUUID: String,
+        documentUUID: String,
+        remove: Bool
+    ) async throws {
+        guard let csrfToken = csrfToken ?? KeychainStore.csrfToken(origin: origin(for: serverURL)) else {
+            throw BinderAPIError.loginRequired
+        }
+        var request = try makeRequest(
+            path: "folders/\(folderUUID)/documents",
+            serverURL: serverURL,
+            method: remove ? "DELETE" : "POST"
+        )
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(csrfToken, forHTTPHeaderField: "X-CSRF-Token")
+        request.httpBody = try JSONEncoder().encode(FolderDocumentLinkPayload(documentUuids: [documentUUID]))
+        let (data, response) = try await urlSession.data(for: request)
+        try absorbSessionCookie(from: response, for: request)
+        try validate(response, data: data)
+    }
+
+    func documentsInFolder(
+        serverURL: String,
+        folderUUID: String,
+        page: Int = 1,
+        pageSize: Int = 25,
+        sortDirection: BinderSortDirection = .desc,
+        groupBy: BinderGroupMode = .none,
+        groupDirection: BinderSortDirection = .asc
+    ) async throws -> BinderFolderDocumentPage {
+        var request = try makeRequest(path: "documents", serverURL: serverURL, method: "GET")
+        guard let url = request.url,
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw BinderAPIError.invalidServerURL
+        }
+        components.queryItems = [
+            URLQueryItem(name: "folderUuid", value: folderUUID),
+            URLQueryItem(name: "page", value: String(page)),
+            URLQueryItem(name: "pageSize", value: String(pageSize)),
+            URLQueryItem(name: "sort", value: "createdAt"),
+            URLQueryItem(name: "direction", value: sortDirection.rawValue),
+            URLQueryItem(name: "groupBy", value: groupBy.rawValue),
+            URLQueryItem(name: "groupDirection", value: groupDirection.rawValue),
+        ]
+        guard let documentsURL = components.url else { throw BinderAPIError.invalidServerURL }
+        request.url = documentsURL
+
+        let (data, response) = try await urlSession.data(for: request)
+        try absorbSessionCookie(from: response, for: request)
+        try validate(response, data: data)
+        return try JSONDecoder().decode(DocumentListEnvelope.self, from: data).data
+    }
+
+    func metadataEditorOptions(serverURL: String) async throws -> BinderMetadataEditorOptions {
+        let (vocabularyData, _) = try await request(path: "metadata/vocabulary", serverURL: serverURL)
+        let (issuerData, _) = try await request(path: "issuers", serverURL: serverURL)
+        let (definitionsData, _) = try await request(path: "metadata/definitions", serverURL: serverURL)
+        return BinderMetadataEditorOptions(
+            vocabulary: try JSONDecoder().decode(MetadataVocabularyEnvelope.self, from: vocabularyData).data,
+            issuers: try JSONDecoder().decode(IssuerListEnvelope.self, from: issuerData).data.items,
+            definitions: try JSONDecoder().decode(MetadataDefinitionsEnvelope.self, from: definitionsData).data.items.filter(\.active)
+        )
+    }
+
+    func updateDocumentMetadata(
+        serverURL: String,
+        documentUUID: String,
+        issuerUUID: String?,
+        documentTypeUUID: String?,
+        categoryUUID: String?,
+        tagUUIDs: [String],
+        custom: [String: BinderMetadataValue]
+    ) async throws {
+        guard let csrfToken = csrfToken ?? KeychainStore.csrfToken(origin: origin(for: serverURL)) else {
+            throw BinderAPIError.loginRequired
+        }
+        let payload = SetDocumentMetadataPayload(
+            issuerUuid: issuerUUID,
+            documentTypeUuid: documentTypeUUID,
+            categoryUuid: categoryUUID,
+            tagUuids: tagUUIDs,
+            custom: custom
+        )
+        var request = try makeRequest(path: "documents/\(documentUUID)/metadata", serverURL: serverURL, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(csrfToken, forHTTPHeaderField: "X-CSRF-Token")
+        request.httpBody = try JSONEncoder().encode(payload)
+        let (data, response) = try await urlSession.data(for: request)
+        try absorbSessionCookie(from: response, for: request)
+        try validate(response, data: data)
+    }
+
+    func updateDocumentTitle(serverURL: String, documentUUID: String, title: String) async throws {
+        guard let csrfToken = csrfToken ?? KeychainStore.csrfToken(origin: origin(for: serverURL)) else {
+            throw BinderAPIError.loginRequired
+        }
+        var request = try makeRequest(path: "documents/\(documentUUID)/title", serverURL: serverURL, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(csrfToken, forHTTPHeaderField: "X-CSRF-Token")
+        request.httpBody = try JSONEncoder().encode(SetDocumentTitlePayload(title: title))
+        let (data, response) = try await urlSession.data(for: request)
+        try absorbSessionCookie(from: response, for: request)
+        try validate(response, data: data)
+    }
+
+    func documentSummary(serverURL: String, documentUUID: String) async throws -> BinderDocumentSummary {
+        let (data, _) = try await request(path: "documents/\(documentUUID)", serverURL: serverURL)
+        return try JSONDecoder().decode(DocumentSummaryEnvelope.self, from: data).data
     }
 
     func search(serverURL: String, query: String, limit: Int = 20) async throws -> BinderSearchResponse {
