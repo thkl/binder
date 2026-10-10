@@ -38,6 +38,11 @@ export class DocumentStore extends BaseCrudStore<Document> {
     return this.model.findAll({ where: { ownerUuid, uuid: { [Op.in]: uuids } } });
   }
 
+  async findAccessibleCandidates(uuids: string[]): Promise<Document[]> {
+    if (uuids.length === 0) return [];
+    return this.model.findAll({ where: { uuid: { [Op.in]: [...new Set(uuids)] } } });
+  }
+
   async findOwnedVersionFamily(ownerUuid: string, versionFamilyUuid: string): Promise<Document[]> {
     return this.model.findAll({
       where: { ownerUuid, versionFamilyUuid },

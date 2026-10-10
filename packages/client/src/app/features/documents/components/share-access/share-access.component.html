@@ -1,0 +1,43 @@
+<section class="share-access" [attr.aria-label]="'sharing.title' | t">
+  <header>
+    <div>
+      <h4>{{ 'sharing.title' | t }}</h4>
+      <p>{{ 'sharing.readOnly' | t }}</p>
+    </div>
+  </header>
+
+  <form class="share-form" (submit)="$event.preventDefault(); add()">
+    <label>
+      <span>{{ 'sharing.user' | t }}</span>
+      <select
+        [value]="selectedRecipient()"
+        (change)="selectedRecipient.set($any($event.target).value)"
+      >
+        <option value="">{{ 'sharing.chooseUser' | t }}</option>
+        @for (recipient of availableRecipients(); track recipient.uuid) {
+          <option [value]="recipient.uuid">{{ recipient.username }}</option>
+        }
+      </select>
+    </label>
+    <button type="submit" [disabled]="busy() || !selectedRecipient()">
+      {{ 'sharing.add' | t }}
+    </button>
+  </form>
+
+  @if (error(); as errorKey) {
+    <p class="share-error" role="alert">{{ errorKey | t }}</p>
+  }
+
+  <ul>
+    @for (grant of grants(); track grant.uuid) {
+      <li>
+        <span>{{ grant.recipientUsername }}</span>
+        <button type="button" [disabled]="busy()" (click)="remove(grant.recipientUuid)">
+          {{ 'sharing.remove' | t }}
+        </button>
+      </li>
+    } @empty {
+      <li class="empty">{{ 'sharing.none' | t }}</li>
+    }
+  </ul>
+</section>

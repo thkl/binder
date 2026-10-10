@@ -19,6 +19,8 @@ import { DocumentAuditHistoryComponent } from '../document-audit-history/documen
 import { CalendarService } from '../../services/calendar.service';
 import { DocumentsService } from '../../services/documents.service';
 import { ResizableSplitComponent } from '../../../../common/components/resizable-split/resizable-split.component';
+import { ShareAccessComponent } from '../share-access/share-access.component';
+import { AuthService } from '../../../authentication/services/auth.service';
 
 export type DocumentDrawerTab = 'preview' | 'metadata' | 'history';
 export type DocumentDrawerMode = 'analysis' | 'metadata';
@@ -32,6 +34,7 @@ export type DocumentDrawerMode = 'analysis' | 'metadata';
     DocumentMetadataEditorComponent,
     ResizableSplitComponent,
     TranslatePipe,
+    ShareAccessComponent,
   ],
   templateUrl: './document-drawer.component.html',
   styleUrl: './document-drawer.component.css',
@@ -46,6 +49,7 @@ export class DocumentDrawerComponent {
   readonly suggestionLoading = input(false);
   readonly requeueLoading = input(false);
   readonly externalClosePrompt = input(false);
+  readonly sharePanelOpen = signal(false);
 
   readonly closeRequest = output<void>();
   readonly tabChange = output<DocumentDrawerTab>();
@@ -70,7 +74,8 @@ export class DocumentDrawerComponent {
   readonly calendarSyncing = signal(false);
   readonly calendarError = signal<string | null>(null);
   readonly showClosePrompt = computed(() => this.closePrompt() || this.externalClosePrompt());
-  readonly showAnalysis = computed(() => this.mode() === 'analysis');
+  readonly showAnalysis = computed(() => this.mode() === 'analysis' && !this.readOnly());
+  readonly readOnly = computed(() => this.documentData().ownerUuid !== this.auth.user()?.uuid);
   readonly fileUrl = computed<SafeResourceUrl>(() => {
     const url = this.application.getApiUrl('v1', `documents/${this.documentUuid()}/file`);
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
@@ -92,6 +97,7 @@ export class DocumentDrawerComponent {
   private readonly calendar = inject(CalendarService);
   private readonly documents = inject(DocumentsService);
   private readonly i18n = inject(I18nService);
+  private readonly auth = inject(AuthService);
   private readonly initialTabEffect = effect(() => {
     this.activeTab.set(this.initialTab());
   });

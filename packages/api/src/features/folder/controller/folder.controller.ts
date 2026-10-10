@@ -23,6 +23,7 @@ import { CurrentUser, ScopedUser } from '../../authentication/decorators/current
 import { FolderService } from '../service/folder.service';
 import { DocumentService } from '../../document/service/document.service';
 import { createContentDisposition } from '../../../shared/http/content-disposition';
+import { SharingService } from '../../sharing/service/sharing.service';
 
 @Controller('folders')
 @UseGuards(AuthenticationGuard)
@@ -30,7 +31,18 @@ export class FolderController {
   constructor(
     private readonly folders: FolderService,
     private readonly documents: DocumentService,
+    private readonly sharing: SharingService,
   ) {}
+
+  @Get('shared')
+  async listShared(@CurrentUser() user: ScopedUser) {
+    return { data: { items: await this.sharing.listReceivedFolders(user.userId) } };
+  }
+
+  @Get('shared/:uuid/documents')
+  async listSharedFolderDocuments(@CurrentUser() user: ScopedUser, @Param('uuid') uuid: string) {
+    return { data: await this.documents.listSharedFolderDocuments(user.userId, uuid) };
+  }
 
   @Get()
   async list(@CurrentUser() user: ScopedUser, @Query('parentUuid') parentUuid?: string) {

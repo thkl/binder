@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { FoldersService, FolderTreeRow } from '../../services/folders.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { ShareAccessComponent } from '../share-access/share-access.component';
 
 @Component({
   selector: 'binder-folder-tree',
   standalone: true,
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, ShareAccessComponent],
   templateUrl: './folder-tree.component.html',
   styleUrl: './folder-tree.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,6 +23,7 @@ export class FolderTreeComponent {
   readonly editingUuid = signal<string | null>(null);
   readonly movingUuid = signal<string | null>(null);
   readonly moveTargetUuid = signal<string>('');
+  readonly sharingFolderUuid = signal<string | null>(null);
 
   constructor(readonly folders: FoldersService) {}
 

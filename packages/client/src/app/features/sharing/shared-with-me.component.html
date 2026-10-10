@@ -1,0 +1,67 @@
+<main class="shared-page">
+  <header class="shared-heading">
+    <div>
+      <p class="section-kicker">{{ 'sharing.kicker' | t }}</p>
+      <h2>{{ 'sharing.sharedWithMe' | t }}</h2>
+      <p class="muted">{{ 'sharing.sharedCopy' | t }}</p>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p role="status">{{ 'sharing.loading' | t }}</p>
+  }
+  @if (error()) {
+    <p class="shared-error" role="alert">{{ 'sharing.loadFailed' | t }}</p>
+  }
+
+  <section class="shared-section">
+    <h3>{{ 'sharing.folders' | t }}</h3>
+    @if (folders().length) {
+      <div class="shared-folder-list">
+        @for (folder of folders(); track folder.uuid) {
+          <button
+            type="button"
+            [class.selected]="selectedFolder()?.uuid === folder.uuid"
+            (click)="selectFolder(folder)"
+          >
+            <span class="folder-name">{{ folder.name }}</span>
+            <small>{{ 'sharing.sharedBy' | t }} {{ folder.ownerUsername }}</small>
+          </button>
+        }
+      </div>
+    } @else {
+      <p class="muted">{{ 'sharing.noFolders' | t }}</p>
+    }
+  </section>
+
+  @if (selectedFolder(); as folder) {
+    <section class="shared-section">
+      <h3>{{ folder.name }}</h3>
+      <ng-container *ngTemplateOutlet="documentRows; context: { $implicit: folderDocuments() }" />
+    </section>
+  }
+
+  <section class="shared-section">
+    <h3>{{ 'sharing.documents' | t }}</h3>
+    <ng-container *ngTemplateOutlet="documentRows; context: { $implicit: documents() }" />
+  </section>
+
+  <ng-template #documentRows let-items>
+    @if (items.length) {
+      <div class="shared-document-list">
+        @for (item of items; track item.document.uuid) {
+          <button type="button" class="shared-document" (click)="openDocument(item.document)">
+            @if (item.document.thumbnailUrl) {
+              <img src="{{ item.document.thumbnailUrl }}" alt="" loading="lazy" />
+            }
+            <span class="document-title">{{ title(item) }}</span>
+            <span class="document-date">{{ item.document.createdAt | date }}</span>
+            <span class="open-label">{{ 'sharing.open' | t }} →</span>
+          </button>
+        }
+      </div>
+    } @else {
+      <p class="muted">{{ 'sharing.noDocuments' | t }}</p>
+    }
+  </ng-template>
+</main>

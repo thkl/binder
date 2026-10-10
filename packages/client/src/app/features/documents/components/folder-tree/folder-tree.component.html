@@ -147,6 +147,14 @@
           </button>
           <button
             type="button"
+            (click)="sharingFolderUuid.set(sharingFolderUuid() === row.folder.uuid ? null : row.folder.uuid)"
+            [attr.aria-label]="'sharing.title' | t"
+            [attr.aria-expanded]="sharingFolderUuid() === row.folder.uuid"
+          >
+            {{ 'sharing.short' | t }}
+          </button>
+          <button
+            type="button"
             class="danger"
             (click)="remove(row.folder.uuid, row.folder.name)"
             [attr.aria-label]="'folders.delete' | t"
@@ -155,6 +163,9 @@
           </button>
         </span>
       </div>
+      @if (sharingFolderUuid() === row.folder.uuid) {
+        <binder-share-access resourceType="folders" [resourceUuid]="row.folder.uuid" />
+      }
     } @empty {
       <p class="folder-empty">{{ 'folders.empty' | t }}</p>
     }

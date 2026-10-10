@@ -1,0 +1,91 @@
+.share-access {
+  margin-top: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.7rem;
+  padding: 0.8rem;
+  background: var(--color-surface-raised, var(--color-surface));
+}
+
+.share-access h4 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.86rem;
+}
+
+.share-access p {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+.share-form,
+.share-form label {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.share-form {
+  align-items: end;
+  margin-top: 0.7rem;
+}
+
+.share-form label {
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  color: var(--color-muted);
+  font-size: 0.68rem;
+}
+
+.share-form select {
+  width: 100%;
+  min-height: 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.5rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font: inherit;
+}
+
+.share-form button,
+.share-access li button {
+  border: 1px solid var(--color-border);
+  border-radius: 0.4rem;
+  padding: 0.38rem 0.55rem;
+  color: var(--color-accent);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.share-access button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.share-access ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.65rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.share-access li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--color-text);
+  font-size: 0.75rem;
+}
+
+.share-access li.empty {
+  color: var(--color-muted);
+}
+
+.share-access .share-error {
+  color: var(--color-danger);
+}

@@ -45,6 +45,8 @@ import { EmailImportConfig } from '../../features/email-import/models/email-impo
 import { PasswordResetToken } from '../../features/authentication/models/password-reset-token.entity';
 import { PushDevice } from '../../features/notifications/models/push-device.entity';
 import { PushNotificationEvent } from '../../features/notifications/models/push-notification-event.entity';
+import { DocumentShare } from '../../features/sharing/models/document-share.entity';
+import { FolderShare } from '../../features/sharing/models/folder-share.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -106,6 +108,8 @@ export class DatabaseConnectionService {
       PasswordResetToken,
       PushDevice,
       PushNotificationEvent,
+      DocumentShare,
+      FolderShare,
     ]);
     await this.initialize();
   }

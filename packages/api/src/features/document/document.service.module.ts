@@ -17,6 +17,7 @@ import { DocumentChangeSetStoreModule } from './document-change-set.store.module
 import { DocumentBulkMetadataService } from './service/document-bulk-metadata.service';
 import { CalendarStoreModule } from '../calendar/calendar.store.module';
 import { ClassificationFeedbackServiceModule } from '../classification-feedback/classification-feedback.service.module';
+import { SharingServiceModule } from '../sharing/sharing.service.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ClassificationFeedbackServiceModule } from '../classification-feedback/
     SharedModule,
     CalendarStoreModule,
     ClassificationFeedbackServiceModule,
+    SharingServiceModule,
   ],
   providers: [
     DocumentService,

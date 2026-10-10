@@ -44,6 +44,13 @@ export const appRoutes: Routes = [
       ),
   },
   {
+    path: 'shared',
+    loadComponent: () =>
+      import('./features/sharing/shared-with-me.component').then(
+        ({ SharedWithMeComponent }) => SharedWithMeComponent,
+      ),
+  },
+  {
     path: 'documents/:folderid',
     loadComponent: () =>
       import('./features/documents/components/documents/documents.component').then(

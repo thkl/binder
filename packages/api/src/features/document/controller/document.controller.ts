@@ -131,6 +131,11 @@ export class DocumentController {
     };
   }
 
+  @Get('shared')
+  async listShared(@CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.listShared(user.userId) };
+  }
+
   @Post('bulk')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async bulkAction(@Body() body: unknown, @CurrentUser() user: ScopedUser) {

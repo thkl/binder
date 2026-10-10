@@ -42,6 +42,8 @@ import { SecretsModule } from '../shared/config/secrets.module';
 import { SecretsService } from '../shared/config/secrets.service';
 import { EmailImportConfig } from '../features/email-import/models/email-import-config.entity';
 import { PasswordResetToken } from '../features/authentication/models/password-reset-token.entity';
+import { DocumentShare } from '../features/sharing/models/document-share.entity';
+import { FolderShare } from '../features/sharing/models/folder-share.entity';
 
 @Global()
 @Module({
@@ -123,6 +125,8 @@ import { PasswordResetToken } from '../features/authentication/models/password-r
       ApiToken,
       EmailImportConfig,
       PasswordResetToken,
+      DocumentShare,
+      FolderShare,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],

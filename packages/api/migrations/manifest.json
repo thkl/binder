@@ -461,6 +461,17 @@
                "required": [
                     "push_devices"
                ]
+          },
+          "73": {
+               "created": [
+                    "document_shares",
+                    "folder_shares"
+               ],
+               "required": [
+                    "users",
+                    "documents",
+                    "folders"
+               ]
           }
      }
 }

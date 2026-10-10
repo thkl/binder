@@ -79,6 +79,22 @@ export class UserStore extends BaseCrudStore<User, IStoreUser, UserStoreQueries>
     });
   }
 
+  async findShareCandidates(excludeUuid: string): Promise<Array<Pick<User, 'uuid' | 'username'>>> {
+    return this.model.findAll({
+      where: { isActive: true, uuid: { [Op.ne]: excludeUuid } },
+      attributes: ['uuid', 'username'],
+      order: [['username', 'ASC'], ['uuid', 'ASC']],
+    });
+  }
+
+  async findByUuids(uuids: string[]): Promise<User[]> {
+    if (uuids.length === 0) return [];
+    return this.model.findAll({
+      where: { uuid: { [Op.in]: [...new Set(uuids)] } },
+      attributes: ['uuid', 'username', 'isActive'],
+    });
+  }
+
   async findByUsernameInsensitive(username: string, excludeUuid?: string): Promise<User | null> {
     return this.model.findOne({
       where: {

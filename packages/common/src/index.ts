@@ -249,6 +249,50 @@ export const FolderNodeSchema = z.object({
 });
 export type FolderNode = z.infer<typeof FolderNodeSchema>;
 
+export const ShareRecipientSchema = z.object({
+  uuid: z.uuid(),
+  username: z.string().min(1).max(100),
+});
+export type ShareRecipient = z.infer<typeof ShareRecipientSchema>;
+
+export const ShareGrantSchema = z.object({
+  uuid: z.uuid(),
+  recipientUuid: z.uuid(),
+  recipientUsername: z.string().min(1).max(100),
+  createdAt: z.iso.datetime(),
+});
+export type ShareGrant = z.infer<typeof ShareGrantSchema>;
+
+export const ShareRecipientsResponseSchema = z.object({ items: z.array(ShareRecipientSchema) });
+export type ShareRecipientsResponse = z.infer<typeof ShareRecipientsResponseSchema>;
+
+export const ShareGrantsResponseSchema = z.object({ items: z.array(ShareGrantSchema) });
+export type ShareGrantsResponse = z.infer<typeof ShareGrantsResponseSchema>;
+
+export const CreateShareInputSchema = z.object({ recipientUuid: z.uuid() });
+export type CreateShareInput = z.infer<typeof CreateShareInputSchema>;
+
+export const SharedDocumentSchema = z.object({
+  document: DocumentSchema,
+  sharedAt: z.iso.datetime(),
+});
+export type SharedDocument = z.infer<typeof SharedDocumentSchema>;
+
+export const SharedDocumentListResponseSchema = z.object({ items: z.array(SharedDocumentSchema) });
+export type SharedDocumentListResponse = z.infer<typeof SharedDocumentListResponseSchema>;
+
+export const SharedFolderSchema = z.object({
+  uuid: z.uuid(),
+  ownerUuid: z.uuid(),
+  name: z.string().min(1).max(255),
+  ownerUsername: z.string().min(1).max(100),
+  sharedAt: z.iso.datetime(),
+});
+export type SharedFolder = z.infer<typeof SharedFolderSchema>;
+
+export const SharedFolderListResponseSchema = z.object({ items: z.array(SharedFolderSchema) });
+export type SharedFolderListResponse = z.infer<typeof SharedFolderListResponseSchema>;
+
 export const FolderListResponseSchema = z.object({
   parentUuid: z.uuid().nullable(),
   items: z.array(FolderNodeSchema),

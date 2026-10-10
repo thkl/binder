@@ -1,0 +1,120 @@
+.shared-page {
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.shared-heading h2 {
+  margin: 0.35rem 0;
+}
+
+.shared-heading p {
+  margin-bottom: 0;
+}
+
+.section-kicker {
+  color: var(--color-accent);
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.muted {
+  color: var(--color-muted);
+}
+
+.shared-error {
+  color: var(--color-danger);
+}
+
+.shared-section {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.shared-section h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.shared-folder-list,
+.shared-document-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.shared-folder-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr));
+}
+
+.shared-folder-list button,
+.shared-document {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.7rem;
+  padding: 0.75rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.shared-folder-list button {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.shared-folder-list button.selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.shared-folder-list small,
+.document-date {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+.shared-document {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.shared-document img {
+  width: 3.5rem;
+  height: 4.2rem;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+  border-radius: 0.3rem;
+  background: var(--color-surface-raised, var(--color-surface));
+}
+
+.document-title {
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.open-label {
+  color: var(--color-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.shared-folder-list button:focus-visible,
+.shared-document:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 620px) {
+  .shared-document {
+    grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+  }
+
+  .document-date {
+    display: none;
+  }
+}

@@ -27,6 +27,7 @@ import { McpPluginModule } from './features/plugin/mcp/mcp.plugin.module';
 import { EmailImportModule } from './features/email-import/email-import.module';
 import { LocalizationModule } from './features/localization/localization.module';
 import { NotificationsModule } from './features/notifications/notifications.module';
+import { SharingModule } from './features/sharing/sharing.module';
 
 @Module({
   controllers: [HealthController],
@@ -55,6 +56,7 @@ import { NotificationsModule } from './features/notifications/notifications.modu
     EmailImportModule,
     LocalizationModule,
     NotificationsModule,
+    SharingModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

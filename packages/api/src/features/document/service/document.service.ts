@@ -20,6 +20,7 @@ import {
   DocumentListFacetsResponseSchema,
   DocumentListResponse,
   DocumentListResponseSchema,
+  SharedDocumentListResponseSchema,
   DocumentStorageIssueListResponseSchema,
   DocumentDeleteResponseSchema,
   ComposeDocumentInput,
@@ -74,6 +75,7 @@ import { CalendarEventStore } from '../../calendar/store/calendar-event.store';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { ClassificationFeedbackService } from '../../classification-feedback/service/classification-feedback.service';
 import { IssuerService } from '../../issuer/service/issuer.service';
+import { SharingService } from '../../sharing/service/sharing.service';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -104,6 +106,7 @@ export class DocumentService {
     private readonly settings: ApplicationSettingsService,
     private readonly classificationFeedback: ClassificationFeedbackService,
     private readonly issuers: IssuerService,
+    private readonly sharing: SharingService,
   ) {}
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -408,6 +411,35 @@ export class DocumentService {
     });
   }
 
+  async listShared(ownerUuid: string) {
+    const grants = await this.sharing.listReceivedDocumentGrants(ownerUuid);
+    return this.sharedDocumentResponse([...grants.keys()], grants);
+  }
+
+  async listSharedFolderDocuments(ownerUuid: string, folderUuid: string) {
+    const [documentUuids, grants] = await Promise.all([
+      this.sharing.listReceivedFolderDocumentUuids(ownerUuid, folderUuid),
+      this.sharing.listReceivedDocumentGrants(ownerUuid),
+    ]);
+    return this.sharedDocumentResponse(documentUuids, grants);
+  }
+
+  private async sharedDocumentResponse(
+    documentUuids: string[],
+    grants: Map<string, Date>,
+  ) {
+    const documents = await this.documents.findAccessibleCandidates(documentUuids);
+    documents.sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime());
+    return SharedDocumentListResponseSchema.parse({
+      items: documents.flatMap((document) => {
+        const sharedAt = grants.get(document.uuid);
+        return sharedAt
+          ? [{ document: this.toSharedDocumentResponse(document), sharedAt: sharedAt.toISOString() }]
+          : [];
+      }),
+    });
+  }
+
   async documentChangeToken(ownerUuid: string): Promise<{ token: string; updatedAt: Date | null }> {
     return this.documents.changeToken(ownerUuid);
   }
@@ -619,15 +651,13 @@ export class DocumentService {
   }
 
   async get(ownerUuid: string, uuid: string) {
-    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
-    if (!document) {
-      throw new NotFoundException('Document not found');
-    }
-
+    const document = await this.findReadableDocument(ownerUuid, uuid);
+    const isOwner = document.ownerUuid === ownerUuid;
     const [summaries, calendarEvent] = await Promise.all([
-      this.metadata.getDocumentMetadataSummaries(ownerUuid, [document]),
-      this.calendarEvents.findOwnedByDocument(ownerUuid, uuid),
+      isOwner ? this.metadata.getDocumentMetadataSummaries(ownerUuid, [document]) : Promise.resolve(new Map()),
+      isOwner ? this.calendarEvents.findOwnedByDocument(ownerUuid, uuid) : Promise.resolve(null),
     ]);
+    if (!isOwner) return this.toSharedDocumentResponse(document);
     return this.toDocumentResponse(
       document,
       summaries.get(uuid),
@@ -1178,10 +1208,7 @@ export class DocumentService {
   }
 
   async getFile(ownerUuid: string, uuid: string) {
-    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
-    if (!document) {
-      throw new NotFoundException('Document not found');
-    }
+    const document = await this.findReadableDocument(ownerUuid, uuid);
     this.assertDocumentContentAvailable(document);
     return {
       document: this.toDocumentResponse(document),
@@ -1192,6 +1219,10 @@ export class DocumentService {
   async markOpened(ownerUuid: string, uuid: string): Promise<{ isNew: boolean; updatedAt: Date }> {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) {
+      const sharedDocument = (await this.documents.findAccessibleCandidates([uuid]))[0];
+      if (sharedDocument && await this.sharing.canReadDocument(ownerUuid, uuid)) {
+        return { isNew: sharedDocument.isNew, updatedAt: sharedDocument.updatedAt };
+      }
       throw new NotFoundException('Document not found');
     }
 
@@ -1263,17 +1294,18 @@ export class DocumentService {
   }
 
   async getArchive(ownerUuid: string, uuid: string) {
-    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
-    if (!document) throw new NotFoundException('Document not found');
+    const document = await this.findReadableDocument(ownerUuid, uuid);
     this.assertDocumentContentAvailable(document);
     if (document.archiveStatus !== 'ready' || !document.archiveKey) {
       throw new NotFoundException('The PDF/A archive is not available');
     }
     if (!(await this.storage.exists(document.archiveKey))) {
-      await this.documents.update(uuid, {
-        archiveStatus: 'failed',
-        archiveError: 'The generated PDF/A archive is missing from storage',
-      });
+      if (document.ownerUuid === ownerUuid) {
+        await this.documents.update(uuid, {
+          archiveStatus: 'failed',
+          archiveError: 'The generated PDF/A archive is missing from storage',
+        });
+      }
       throw new NotFoundException('The PDF/A archive is missing from storage');
     }
 
@@ -1289,20 +1321,17 @@ export class DocumentService {
   }
 
   async getExtractedText(ownerUuid: string, uuid: string) {
-    const result = await this.documents.findOwnedPageText(ownerUuid, uuid);
-    if (!result) throw new NotFoundException('Document not found');
-    this.assertDocumentContentAvailable(result.document);
+    const document = await this.findReadableDocument(ownerUuid, uuid);
+    const pages = await DocumentPage.findAll({ where: { documentUuid: uuid }, order: [['pageNumber', 'ASC']] });
+    this.assertDocumentContentAvailable(document);
     return DocumentExtractedTextResponseSchema.parse({
-      text: result.pages.map((page) => page.text).join('\n\n'),
-      pages: result.pages.map((page) => ({ pageNumber: page.pageNumber, text: page.text })),
+      text: pages.map((page) => page.text).join('\n\n'),
+      pages: pages.map((page) => ({ pageNumber: page.pageNumber, text: page.text })),
     });
   }
 
   async getThumbnail(ownerUuid: string, uuid: string) {
-    const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
-    if (!document) {
-      throw new NotFoundException('Document thumbnail not found');
-    }
+    const document = await this.findReadableDocument(ownerUuid, uuid);
 
     this.assertDocumentContentAvailable(document);
 
@@ -1434,7 +1463,17 @@ export class DocumentService {
     }
   }
 
+  private async findReadableDocument(ownerUuid: string, uuid: string): Promise<Document> {
+    const document = (await this.documents.findAccessibleCandidates([uuid]))[0];
+    if (!document || (document.ownerUuid !== ownerUuid && !(await this.sharing.canReadDocument(ownerUuid, uuid)))) {
+      throw new NotFoundException('Document not found');
+    }
+    return document;
+  }
+
   async getMetadata(ownerUuid: string, uuid: string) {
+    const document = await this.findReadableDocument(ownerUuid, uuid);
+    if (document.ownerUuid !== ownerUuid) throw new NotFoundException('Document metadata not found');
     return this.metadata.getDocumentMetadata(ownerUuid, uuid);
   }
 
@@ -1687,6 +1726,22 @@ export class DocumentService {
       status: document.status,
       createdAt: document.createdAt.toISOString(),
       updatedAt: document.updatedAt.toISOString(),
+    };
+  }
+
+  private toSharedDocumentResponse(
+    document: import('../models/document.entity').Document,
+  ): DocumentResponse {
+    return {
+      ...this.toDocumentResponse(document),
+      storageKey: `shared/${document.uuid}`,
+      thumbnailKey: null,
+      archiveKey: null,
+      archiveUrl: null,
+      archiveStatus: 'not-requested',
+      archiveError: null,
+      issuerUuid: null,
+      calendarEventUrl: null,
     };
   }
 

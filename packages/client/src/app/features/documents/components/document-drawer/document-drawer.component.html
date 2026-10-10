@@ -28,6 +28,13 @@
           >
             {{ 'documents.download' | t }}
           </a>
+          @if (!readOnly()) {
+          <button
+            type="button"
+            class="drawer-download-link"
+            [attr.aria-expanded]="sharePanelOpen()"
+            (click)="sharePanelOpen.update((open) => !open)"
+          >{{ 'sharing.title' | t }}</button>
           @if (archiveReady() && archiveUrl(); as archiveUrl) {
             <a
               class="drawer-download-link"
@@ -105,7 +112,11 @@
           <button type="button" class="drawer-delete-link" (click)="deleteRequested.emit()">
             {{ 'documents.delete' | t }}
           </button>
+          }
         </div>
+        @if (sharePanelOpen() && !readOnly()) {
+          <binder-share-access resourceType="documents" [resourceUuid]="documentUuid()" />
+        }
       </div>
       <button
         type="button"
@@ -128,6 +139,7 @@
       >
         {{ 'viewer.document' | t }}
       </button>
+      @if (!readOnly()) {
       <button
         type="button"
         role="tab"
@@ -148,6 +160,7 @@
       >
         {{ 'documents.history' | t }}
       </button>
+      }
     </nav>
 
     @if (versions().length > 1) {
@@ -203,7 +216,7 @@
         </div>
       </section>
 
-      @if (activeTab() === 'metadata') {
+      @if (!readOnly() && activeTab() === 'metadata') {
         <section id="document-drawer-metadata" class="metadata-panel" role="tabpanel">
           <binder-document-metadata-editor
             [documentUuid]="documentUuid()"
@@ -218,7 +231,7 @@
           />
         </section>
       }
-      @if (activeTab() === 'history') {
+      @if (!readOnly() && activeTab() === 'history') {
         <section id="document-drawer-history" class="history-panel" role="tabpanel">
           <binder-document-audit-history
             [documentUuid]="documentUuid()"

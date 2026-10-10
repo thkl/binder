@@ -25,6 +25,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Document search](./architecture/search.md) — page text search, snippets, and the semantic-search extension point
 - [Document bulk actions](./architecture/bulk-actions.md) — page-scoped selection and batch document operations
 - [Virtual folders](./architecture/virtual-folders.md) — owner-scoped logical folder trees and document links
+- [Document and folder sharing](./architecture/sharing.md) — read-only sharing between accounts on one Binder server
 - [Document exports](./architecture/document-exports.md) — selected-document and folder ZIP exports
 - [Saved searches](./architecture/saved-searches.md) — owner-scoped reusable list and semantic searches
 - [Backup and scheduled maintenance](./architecture/backup-and-scheduling.md) — PostgreSQL backup/restore, retention, and recurring jobs
