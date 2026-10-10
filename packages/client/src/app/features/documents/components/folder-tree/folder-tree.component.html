@@ -26,7 +26,7 @@
           autocomplete="off"
           required
         />
-        <button type="submit" [disabled]="!createName().trim()">{{ 'folders.create' | t }}</button>
+        <button class="primary-button" type="submit" [disabled]="!createName().trim()">{{ 'folders.create' | t }}</button>
         <button type="button" class="quiet" (click)="cancelCreate()">
           {{ 'folders.cancel' | t }}
         </button>
@@ -50,7 +50,7 @@
             }
           }
         </select>
-        <button type="submit">{{ 'folders.move' | t }}</button>
+        <button class="primary-button" type="submit">{{ 'folders.move' | t }}</button>
         <button type="button" class="quiet" (click)="cancelMove()">
           {{ 'folders.cancel' | t }}
         </button>

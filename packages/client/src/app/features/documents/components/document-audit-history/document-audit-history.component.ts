@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+ 
 import type { Document, DocumentAuditEvent, DocumentAuditResponse } from '@binder/common';
 import { TranslatePipe, I18nService } from '../../../../common/i18n/i18n.service';
 import { DocumentAuditService } from '../../services/document-audit.service';
 import { DocumentsService } from '../../services/documents.service';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'binder-document-audit-history',

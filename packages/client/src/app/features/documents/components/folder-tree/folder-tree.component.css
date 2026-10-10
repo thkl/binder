@@ -79,7 +79,7 @@
 .folder-create-form {
   margin: 0 0.75rem 0.75rem;
   padding: 0.65rem;
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--color-border);
   border-radius: 0.65rem;
   background: var(--color-surface);
 }
@@ -102,13 +102,19 @@
   flex: 1 1 8rem;
   min-width: 0;
   min-height: 2.35rem;
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 0.4rem;
   padding: 0.4rem 0.5rem;
   color: var(--color-text);
   background: var(--color-surface);
   font: inherit;
   font-size: 0.75rem;
+}
+
+.folder-form-row input:focus {
+  border: 1px solid var(--color-accent);
+    box-shadow: 0 0 0 0px;
+    outline: none;
 }
 
 .folder-form-row select {
@@ -127,11 +133,8 @@
 .folder-form-row button,
 .folder-actions button {
   min-height: 2.35rem;
-  border: 1px solid var(--color-accent);
   border-radius: 0.4rem;
   padding: 0.35rem 0.55rem;
-  color: var(--color-accent);
-  background: var(--color-accent);
   cursor: pointer;
   font: inherit;
   font-size: 0.68rem;
