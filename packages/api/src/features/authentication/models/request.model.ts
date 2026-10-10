@@ -8,6 +8,8 @@ export type SessionRequest = Request & {
     csrfToken?: string;
     oidcState?: string;
     oidcCodeVerifier?: string;
+    nativeAppState?: string;
+    nativeCodeChallenge?: string;
     dropboxState?: string;
     dropboxCodeVerifier?: string;
   };

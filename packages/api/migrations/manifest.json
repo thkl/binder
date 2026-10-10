@@ -438,6 +438,14 @@
                     "maintenance_requests",
                     "maintenance_runs"
                ]
+          },
+          "70": {
+               "created": [
+                    "native_sso_auth_codes"
+               ],
+               "required": [
+                    "users"
+               ]
           }
      }
 }

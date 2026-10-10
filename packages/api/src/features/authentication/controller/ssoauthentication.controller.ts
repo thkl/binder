@@ -5,6 +5,7 @@ import {
   Get,
   HttpException,
   Post,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -17,6 +18,7 @@ import { ApplicationSettingsService } from '../../settings/service/application-s
 import { AuthenticationService } from '../service/authentication.service';
 import { ConfigService } from '@nestjs/config';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
+import { NativeSSOAuthCodeStore } from '../stores/native-sso-auth-code.store';
 
 @Controller('ssoauth')
 export class AuthenticationController {
@@ -25,6 +27,7 @@ export class AuthenticationController {
     private readonly settingsService: ApplicationSettingsService,
     private readonly appConfig: ConfigService<BinderConfig>,
     private readonly authenticationService: AuthenticationService,
+    private readonly nativeSSOAuthCodes: NativeSSOAuthCodeStore,
   ) {}
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
@@ -50,10 +53,32 @@ export class AuthenticationController {
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Get('native/login')
+  async nativeLogin(
+    @Req() request: SessionRequest,
+    @Res() res: Response,
+    @Query('state') state: string,
+    @Query('code_challenge') codeChallenge: string,
+  ) {
+    if (!/^[A-Za-z0-9_-]{43,128}$/.test(state ?? '') || !/^[A-Za-z0-9_-]{43}$/.test(codeChallenge ?? '')) {
+      throw new BadRequestException('Invalid native SSO state or PKCE challenge');
+    }
+    const ssodata = await this.ssoAuthenticationService.getAuthorizationUrl();
+    if (!ssodata) throw new HttpException('SSO is not configured', 400);
+    request.session.oidcState = ssodata.state;
+    request.session.oidcCodeVerifier = ssodata.code_verifier;
+    request.session.nativeAppState = state;
+    request.session.nativeCodeChallenge = codeChallenge;
+    return res.redirect(ssodata.url);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Get('/callback')
   async callback(@Req() request: SessionRequest, @Res() res: Response) {
     const expectedState = request.session.oidcState;
     const codeVerifier = request.session.oidcCodeVerifier;
+    const nativeAppState = request.session.nativeAppState;
+    const nativeCodeChallenge = request.session.nativeCodeChallenge;
 
     if (!expectedState || !codeVerifier) {
       throw new BadRequestException('Invalid or expired OIDC session state');
@@ -61,6 +86,8 @@ export class AuthenticationController {
 
     delete request.session.oidcState;
     delete request.session.oidcCodeVerifier;
+    delete request.session.nativeAppState;
+    delete request.session.nativeCodeChallenge;
 
     // Build the full current callback URL from express request
     const currentUrl = new URL(request.originalUrl, `${request.protocol}://${request.get('host')}`);
@@ -74,6 +101,18 @@ export class AuthenticationController {
 
     if (oidcUser && oidcUser.email) {
       const result = await this.authenticationService.validateSSOUser(oidcUser.email);
+      if (nativeAppState && nativeCodeChallenge) {
+        if (!result.user.uuid) throw new UnauthorizedException('SSO user is no longer available');
+        const code = await this.nativeSSOAuthCodes.issue(
+          result.user.uuid,
+          nativeCodeChallenge,
+          nativeAppState,
+        );
+        const callbackUrl = new URL('com.binder.ios://sso/callback');
+        callbackUrl.searchParams.set('code', code);
+        callbackUrl.searchParams.set('state', nativeAppState);
+        return res.redirect(callbackUrl.toString());
+      }
       // Normal login (no 2FA or 2FA not enabled)
       await new Promise<void>((resolve, reject) => {
         request.session.regenerate((error) => (error ? reject(error) : resolve()));

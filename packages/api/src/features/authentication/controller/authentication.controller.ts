@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
@@ -31,6 +32,8 @@ import { ensureCsrfToken } from '../../../shared/security/csrf-token';
 import { CurrentUser, ScopedUser } from '../decorators/current-user.decorator';
 import { UserManagementService } from '../service/user-management.service';
 import { PasswordResetService } from '../service/password-reset.service';
+import { NativeSSOAuthCodeStore } from '../stores/native-sso-auth-code.store';
+import { z } from 'zod';
 
 @Controller('auth')
 export class AuthenticationController {
@@ -38,6 +41,7 @@ export class AuthenticationController {
     private readonly authentication: AuthenticationService,
     private readonly userManagement: UserManagementService,
     private readonly passwordReset: PasswordResetService,
+    private readonly nativeSSOAuthCodes: NativeSSOAuthCodeStore,
   ) {}
 
   @Get('users')
@@ -99,16 +103,55 @@ export class AuthenticationController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async login(@Body() body: unknown, @Req() request: SessionRequest) {
     const result = await this.authentication.login(LoginInputSchema.parse(body));
+    return this.establishSession(request, result.uuid, result.mustChangePassword, result);
+  }
+
+  @Post('native/login')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async nativeLogin(
+    @Body() body: unknown,
+    @Req() request: SessionRequest,
+    @Headers('content-type') contentType?: string,
+  ) {
+    if (!contentType?.toLowerCase().startsWith('application/json')) {
+      throw new UnauthorizedException('Native login requires a JSON request');
+    }
+    const result = await this.authentication.login(LoginInputSchema.parse(body));
+    return this.establishSession(request, result.uuid, result.mustChangePassword, result);
+  }
+
+  @Post('native/sso/exchange')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async exchangeNativeSSO(@Body() body: unknown, @Req() request: SessionRequest) {
+    const input = z
+      .object({
+        code: z.string().min(20).max(128),
+        codeVerifier: z.string().min(43).max(128).regex(/^[A-Za-z0-9._~-]+$/),
+      })
+      .parse(body);
+    const grant = await this.nativeSSOAuthCodes.consume(input.code, input.codeVerifier);
+    if (!grant) throw new UnauthorizedException('SSO authorization code is invalid or expired');
+    const user = await this.authentication.getAuthenticatedUser(grant.userUuid);
+    if (!user) throw new UnauthorizedException('SSO user is no longer active');
+    return this.establishSession(request, grant.userUuid, user.mustChangePassword, user);
+  }
+
+  private async establishSession(
+    request: SessionRequest,
+    userId: string,
+    mustChangePassword: boolean,
+    responseData: unknown,
+  ) {
     await new Promise<void>((resolve, reject) => {
       request.session.regenerate((error) => (error ? reject(error) : resolve()));
     });
-    request.session.userId = result.uuid;
-    request.session.mustChangePassword = result.mustChangePassword;
+    request.session.userId = userId;
+    request.session.mustChangePassword = mustChangePassword;
     const csrfToken = ensureCsrfToken(request);
     await new Promise<void>((resolve, reject) => {
       request.session.save((error) => (error ? reject(error) : resolve()));
     });
-    return { data: result, csrfToken };
+    return { data: responseData, csrfToken };
   }
 
   @Post('password-reset/request')
