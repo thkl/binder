@@ -5,6 +5,48 @@ struct BinderUser: Decodable {
     let username: String?
 }
 
+struct BinderSearchResponse: Decodable {
+    let query: String
+    let total: Int
+    let items: [BinderSearchResult]
+}
+
+struct BinderSearchResult: Decodable, Identifiable {
+    let document: BinderSearchDocument
+    let pageNumber: Int?
+    let snippet: String
+    let matchType: String
+    let semanticScore: Double?
+
+    var id: String { document.uuid }
+}
+
+struct BinderSearchDocument: Decodable {
+    let uuid: String
+    let title: String?
+    let originalFilename: String
+    let pageCount: Int?
+    let metadataSummary: BinderDocumentMetadataSummary?
+}
+
+struct BinderDocumentMetadataSummary: Decodable {
+    let documentType: BinderVocabularyValue?
+    let category: BinderVocabularyValue?
+    let issuer: BinderIssuerValue?
+}
+
+struct BinderVocabularyValue: Decodable {
+    let name: String
+}
+
+struct BinderIssuerValue: Decodable {
+    let name: String
+}
+
+private struct SearchEnvelope: Decodable {
+    let data: BinderSearchResponse
+}
+
 private struct LoginEnvelope: Decodable {
     let data: BinderUser
     let csrfToken: String
@@ -44,6 +86,30 @@ final class BinderAPI {
     func isSSOActive(serverURL: String) async throws -> Bool {
         let (data, _) = try await request(path: "ssoauth/active", serverURL: serverURL)
         return try JSONDecoder().decode(SSOStatusEnvelope.self, from: data).data.isActive
+    }
+
+    func search(serverURL: String, query: String, limit: Int = 20) async throws -> BinderSearchResponse {
+        var request = try makeRequest(path: "documents/search", serverURL: serverURL, method: "GET")
+        guard let url = request.url,
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw BinderAPIError.invalidServerURL
+        }
+        components.queryItems = [
+            URLQueryItem(name: "q", value: query),
+            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "semanticThreshold", value: "0.35")
+        ]
+        guard let searchURL = components.url else { throw BinderAPIError.invalidServerURL }
+        request.url = searchURL
+        let (data, response) = try await urlSession.data(for: request)
+        try absorbSessionCookie(from: response, for: request)
+        try validate(response, data: data)
+        return try JSONDecoder().decode(SearchEnvelope.self, from: data).data
+    }
+
+    func thumbnail(serverURL: String, documentUUID: String) async throws -> Data {
+        let (data, _) = try await request(path: "documents/\(documentUUID)/thumbnail", serverURL: serverURL)
+        return data
     }
 
     func login(serverURL: String, username: String, password: String) async throws -> BinderUser {

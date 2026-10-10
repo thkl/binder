@@ -242,22 +242,25 @@ export class DocumentsService {
     if (values !== undefined) params.set(key, values.join(','));
   }
 
-  async requeueDocument(uuid: string): Promise<boolean> {
+  async requeueDocument(uuid: string): Promise<BinderDocument | null> {
+    this.error.set(null);
     try {
-      await firstValueFrom(
+      const response = await firstValueFrom(
         this.http.post<ApiResponse<unknown>>(
           this.appService.getApiUrl('v1', `documents/${uuid}/pipeline/requeue`),
           {},
           { withCredentials: true },
         ),
       );
+      const document = DocumentSchema.parse(
+        (response.data as { document?: unknown } | null)?.document,
+      );
       await this.load();
+      return document;
     } catch (error) {
       this.error.set(this.getErrorMessage(error));
-    } finally {
-      this.loading.set(false);
+      return null;
     }
-    return this.error() === null;
   }
 
   async generateArchive(uuid: string): Promise<boolean> {

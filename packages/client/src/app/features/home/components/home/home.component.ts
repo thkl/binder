@@ -53,6 +53,7 @@ export class HomeComponent {
   readonly metadataClosePrompt = signal(false);
   readonly deleteDialogUuid = signal<string | null>(null);
   readonly duplicateDocumentLoading = signal(false);
+  readonly requeueLoading = signal<Record<string, boolean>>({});
   readonly selectedType = signal('');
   readonly selectedCategory = signal('');
   readonly selectedTag = signal('');
@@ -368,6 +369,28 @@ export class HomeComponent {
   async generateArchive(uuid: string): Promise<void> {
     await this.documents.generateArchive(uuid);
     await this.reloadSearch();
+  }
+
+  async requeueDocument(uuid: string): Promise<void> {
+    this.requeueLoading.update((current) => ({ ...current, [uuid]: true }));
+    try {
+      const updatedDocument = await this.documents.requeueDocument(uuid);
+      if (!updatedDocument) return;
+
+      this.drawerDocumentSnapshot.set(updatedDocument);
+      this.search.result.update((result) =>
+        result
+          ? {
+              ...result,
+              items: result.items.map((item) =>
+                item.document.uuid === uuid ? { ...item, document: updatedDocument } : item,
+              ),
+            }
+          : result,
+      );
+    } finally {
+      this.requeueLoading.update((current) => ({ ...current, [uuid]: false }));
+    }
   }
 
   requestDeleteDocument(uuid: string): void {

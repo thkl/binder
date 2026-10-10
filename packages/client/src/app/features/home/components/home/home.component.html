@@ -395,6 +395,7 @@
       [documentData]="drawerDocument"
       [initialTab]="drawerTab()"
       [mode]="drawerMode()"
+      [requeueLoading]="requeueLoading()[drawerUuid] === true"
       [externalClosePrompt]="metadataClosePrompt()"
       (tabChange)="drawerTab.set($event)"
       (dirtyChange)="metadataDirtyChanged($event)"
@@ -405,6 +406,7 @@
       (suggestionTitleAccepted)="titleSuggestionAccepted()"
       (suggestionDismissed)="reloadSearch()"
       (suggestionAccepted)="titleSuggestionAccepted()"
+      (requeueRequested)="requeueDocument(drawerUuid)"
       (archiveRequested)="generateArchive(drawerUuid)"
       (deleteRequested)="requestDeleteDocument(drawerUuid)"
     />

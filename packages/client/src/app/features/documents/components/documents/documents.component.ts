@@ -873,7 +873,10 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   async requeueDocument(uuid: string): Promise<void> {
     this.requeueLoading.update((current) => ({ ...current, [uuid]: true }));
     try {
-      await this.documents.requeueDocument(uuid);
+      const updatedDocument = await this.documents.requeueDocument(uuid);
+      if (updatedDocument && this.drawerDocumentUuid() === uuid) {
+        this.drawerDocumentSnapshot.set(updatedDocument);
+      }
     } finally {
       this.requeueLoading.update((current) => ({ ...current, [uuid]: false }));
     }
