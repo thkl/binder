@@ -800,8 +800,9 @@ h2 {
 
 .status.processing,
 .status.scanning {
-  color: var(--color-text);
-  background: var(--color-text);
+  color: var(--color-warning);
+  border: 1px solid var(--color-surface);
+  background: var(--color-surface);
 }
 
 .archive-indicator {

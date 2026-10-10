@@ -134,6 +134,13 @@
   background: var(--color-accent);
   font-weight: 900;
 }
+
+.job-status.status-running {
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+  background: var(--color-accent);
+}
+
 .job-status.status-succeeded {
   border-color: var(--color-success);
   color: var(--color-bg);

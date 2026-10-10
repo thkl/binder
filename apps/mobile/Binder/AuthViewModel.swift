@@ -12,6 +12,7 @@ final class AuthViewModel: ObservableObject {
     @Published var isBusy = false
     @Published var errorMessage: String?
     @Published var user: BinderUser?
+    @Published private(set) var hasCompletedInitialAuthCheck = false
 
     private let api = BinderAPI.shared
     private let sso = NativeSSO()
@@ -20,31 +21,41 @@ final class AuthViewModel: ObservableObject {
     func refresh() async {
         guard !isRefreshing, !isBusy else { return }
         let normalized = normalizedServerURL
-        guard !normalized.isEmpty else { return }
+        guard !normalized.isEmpty else {
+            hasCompletedInitialAuthCheck = true
+            return
+        }
         isRefreshing = true
-        defer { isRefreshing = false }
+        defer {
+            isRefreshing = false
+            hasCompletedInitialAuthCheck = true
+        }
         serverURL = normalized
-        await refreshSSOStatus(serverURL: normalized)
         do {
             let current = try await api.currentUser(serverURL: normalized)
             user = current
             if current != nil {
                 return
             }
-            if AppSettings.remembersPassword,
-               let savedPassword = KeychainStore.password(),
-               !AppSettings.savedUsername.isEmpty {
-                username = AppSettings.savedUsername
-                password = savedPassword
-                do {
-                    user = try await api.login(serverURL: normalized, username: username, password: savedPassword)
-                    errorMessage = nil
-                } catch {
-                    errorMessage = "Automatic sign-in failed. Check the saved password and try again."
-                }
-            }
         } catch {
-            // A server can be unavailable while the app starts; keep the login form usable.
+            // Try saved credentials below in case the session has expired.
+        }
+
+        if AppSettings.remembersPassword,
+           let savedPassword = KeychainStore.password(),
+           !AppSettings.savedUsername.isEmpty {
+            username = AppSettings.savedUsername
+            password = savedPassword
+            do {
+                user = try await api.login(serverURL: normalized, username: username, password: savedPassword)
+                errorMessage = nil
+            } catch {
+                errorMessage = "Automatic sign-in failed. Check the saved password and try again."
+            }
+        }
+
+        if user == nil {
+            await refreshSSOStatus(serverURL: normalized)
         }
     }
 

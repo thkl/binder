@@ -112,6 +112,11 @@ final class BinderAPI {
         return data
     }
 
+    func documentFile(serverURL: String, documentUUID: String) async throws -> Data {
+        let (data, _) = try await request(path: "documents/\(documentUUID)/file", serverURL: serverURL)
+        return data
+    }
+
     func login(serverURL: String, username: String, password: String) async throws -> BinderUser {
         let body = try JSONSerialization.data(withJSONObject: ["username": username, "password": password])
         var request = try makeRequest(path: "auth/native/login", serverURL: serverURL, method: "POST")
