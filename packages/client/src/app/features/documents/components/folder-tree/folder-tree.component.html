@@ -61,7 +61,10 @@
   }
 
   <div class="folder-tree-list" role="tree" [attr.aria-label]="'folders.title' | t">
-    <div class="folder-row folder-row-root">
+    <div
+      class="folder-row folder-row-root"
+      [class.menu-open]="actionMenuUuid() === '__root__'"
+    >
       <button
         class="folder-root-row"
         type="button"
@@ -101,6 +104,7 @@
     @for (row of folders.rows(); track trackRow($index, row)) {
       <div
         class="folder-row"
+        [class.menu-open]="actionMenuUuid() === row.folder.uuid"
         [style.padding-left.rem]="0.7 + row.depth * 1.15"
         role="treeitem"
         [attr.aria-expanded]="row.folder.hasChildren ? row.expanded : null"
@@ -176,7 +180,11 @@
               <button type="button" role="menuitem" (click)="beginMove(row.folder.uuid)">
                 {{ 'folders.move' | t }}
               </button>
-              <button type="button" role="menuitem" (click)="openSharing(row.folder.uuid)">
+              <button
+                type="button"
+                role="menuitem"
+                (click)="openSharing(row.folder.uuid, row.folder.name)"
+              >
                 {{ 'sharing.title' | t }}
               </button>
               <button
@@ -189,13 +197,6 @@
           }
         </div>
       </div>
-      @if (sharingFolderUuid() === row.folder.uuid) {
-        <binder-share-access
-          resourceType="folders"
-          [resourceUuid]="row.folder.uuid"
-          (close)="sharingFolderUuid.set(null)"
-        />
-      }
     } @empty {
       <p class="folder-empty">{{ 'folders.empty' | t }}</p>
     }
@@ -235,3 +236,22 @@
     </button>
   </div>
 </aside>
+
+@if (sharingFolder(); as folder) {
+  <div class="folder-share-backdrop" role="presentation" (click)="closeFolderSharing()">
+    <div
+      class="folder-share-dialog"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'sharing.titleFor' | t: { name: folder.name }"
+      (click)="$event.stopPropagation()"
+    >
+      <binder-share-access
+        resourceType="folders"
+        [resourceUuid]="folder.uuid"
+        [resourceName]="folder.name"
+        (close)="closeFolderSharing()"
+      />
+    </div>
+  </div>
+}

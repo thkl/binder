@@ -35,6 +35,7 @@
 		A10000000000000000000040 /* MetadataDefinitionManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000040 /* MetadataDefinitionManagementView.swift */; };
 		A10000000000000000000041 /* MetadataFormField.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000041 /* MetadataFormField.swift */; };
 		A10000000000000000000042 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000042 /* PushNotificationManager.swift */; };
+		A10000000000000000000043 /* ShareManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000043 /* ShareManagementView.swift */; };
 		F75494FF307A69AC00908E01 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F75494FD307A68EB00908E01 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -92,6 +93,7 @@
 		A20000000000000000000040 /* MetadataDefinitionManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataDefinitionManagementView.swift; sourceTree = "<group>"; };
 		A20000000000000000000041 /* MetadataFormField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataFormField.swift; sourceTree = "<group>"; };
 		A20000000000000000000042 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
+		A20000000000000000000043 /* ShareManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareManagementView.swift; sourceTree = "<group>"; };
 		F75494FD307A68EB00908E01 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -146,6 +148,7 @@
 				A20000000000000000000040 /* MetadataDefinitionManagementView.swift */,
 				A20000000000000000000041 /* MetadataFormField.swift */,
 				A20000000000000000000042 /* PushNotificationManager.swift */,
+				A20000000000000000000043 /* ShareManagementView.swift */,
 				A20000000000000000000014 /* ShareViewController.swift */,
 				A20000000000000000000015 /* SharedPDFQueue.swift */,
 				A20000000000000000000016 /* ShareExtension-Info.plist */,
@@ -290,6 +293,7 @@
 				A10000000000000000000040 /* MetadataDefinitionManagementView.swift in Sources */,
 				A10000000000000000000041 /* MetadataFormField.swift in Sources */,
 				A10000000000000000000042 /* PushNotificationManager.swift in Sources */,
+				A10000000000000000000043 /* ShareManagementView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

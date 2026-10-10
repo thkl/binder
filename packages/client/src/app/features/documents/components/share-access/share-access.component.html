@@ -1,7 +1,13 @@
 <section class="share-access" [attr.aria-label]="'sharing.title' | t">
   <header>
     <div>
-      <h4>{{ 'sharing.title' | t }}</h4>
+      <h4>
+        @if (resourceName(); as name) {
+          {{ 'sharing.titleFor' | t: { name: name } }}
+        } @else {
+          {{ 'sharing.title' | t }}
+        }
+      </h4>
       <p>{{ 'sharing.readOnly' | t }}</p>
     </div>
     <button

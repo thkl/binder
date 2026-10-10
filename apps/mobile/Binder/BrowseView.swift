@@ -7,6 +7,7 @@ struct BrowseView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var folderEditorRequest: FolderManagementRequest?
+    @State private var shareRequest: ShareManagementRequest?
     @State private var folderToDelete: BinderFolder?
     @State private var showingDeleteConfirmation = false
     @State private var managementError: String?
@@ -69,6 +70,13 @@ struct BrowseView: View {
                     onSaved: { await loadFolders() }
                 )
             }
+            .sheet(item: $shareRequest) { request in
+                ShareManagementView(
+                    resource: request.resource,
+                    resourceUUID: request.uuid,
+                    serverURL: model.serverURL
+                )
+            }
             .confirmationDialog(
                 "Delete folder?",
                 isPresented: $showingDeleteConfirmation,
@@ -116,6 +124,7 @@ struct BrowseView: View {
             FolderActionMenu(
                 createSubfolder: { beginCreateFolder(parentUUID: folder.uuid) },
                 edit: { beginEditFolder(folder) },
+                share: { shareRequest = ShareManagementRequest(resource: .folders, uuid: folder.uuid) },
                 delete: { confirmDelete(folder) }
             )
         }
@@ -176,6 +185,7 @@ private struct FolderContentsView: View {
     @State private var errorMessage: String?
     @State private var documentErrorMessage: String?
     @State private var folderEditorRequest: FolderManagementRequest?
+    @State private var shareRequest: ShareManagementRequest?
     @State private var folderToDelete: BinderFolder?
     @State private var showingDeleteConfirmation = false
     @State private var managementError: String?
@@ -275,6 +285,12 @@ private struct FolderContentsView: View {
                     }
                     .accessibilityLabel("Create subfolder")
 
+                    Button {
+                        shareRequest = ShareManagementRequest(resource: .folders, uuid: folder.uuid)
+                    } label: {
+                        Label("Share folder", systemImage: "person.2")
+                    }
+
                     Menu {
                         Picker("Group by", selection: $sortOptions.groupBy) {
                             ForEach(BinderGroupMode.allCases) { mode in
@@ -310,6 +326,13 @@ private struct FolderContentsView: View {
                     await onFolderTreeChanged()
                     await loadContents()
                 }
+            )
+        }
+        .sheet(item: $shareRequest) { request in
+            ShareManagementView(
+                resource: request.resource,
+                resourceUUID: request.uuid,
+                serverURL: model.serverURL
             )
         }
         .confirmationDialog(
@@ -363,6 +386,7 @@ private struct FolderContentsView: View {
             FolderActionMenu(
                 createSubfolder: { beginCreateFolder(parentUUID: child.uuid) },
                 edit: { beginEditFolder(child) },
+                share: { shareRequest = ShareManagementRequest(resource: .folders, uuid: child.uuid) },
                 delete: { confirmDelete(child) }
             )
         }

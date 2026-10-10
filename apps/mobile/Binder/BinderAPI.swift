@@ -6,6 +6,22 @@ struct BinderUser: Decodable {
     let isAdmin: Bool?
 }
 
+struct BinderShareRecipient: Decodable, Identifiable, Hashable {
+    let uuid: String
+    let username: String
+
+    var id: String { uuid }
+}
+
+struct BinderShareGrant: Decodable, Identifiable {
+    let uuid: String
+    let recipientUuid: String
+    let recipientUsername: String
+    let createdAt: String
+
+    var id: String { uuid }
+}
+
 private struct PushDevicePayload: Encodable {
     let token: String
     let environment: String?
@@ -251,6 +267,15 @@ enum BinderGroupMode: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+enum ShareResource: String, Identifiable {
+    case documents
+    case folders
+
+    var id: String { rawValue }
+    var path: String { rawValue }
+    var title: String { self == .documents ? "Document" : "Folder" }
+}
+
 struct BinderFolderSortOptions: Codable, Equatable {
     var direction: BinderSortDirection = .desc
     var groupBy: BinderGroupMode = .none
@@ -279,6 +304,20 @@ private struct DocumentListEnvelope: Decodable {
 
 private struct DocumentSummaryEnvelope: Decodable {
     let data: BinderDocumentSummary
+}
+
+private struct ShareRecipientsEnvelope: Decodable {
+    let data: Items
+    struct Items: Decodable { let items: [BinderShareRecipient] }
+}
+
+private struct ShareGrantsEnvelope: Decodable {
+    let data: Items
+    struct Items: Decodable { let items: [BinderShareGrant] }
+}
+
+private struct CreateSharePayload: Encodable {
+    let recipientUuid: String
 }
 
 private struct MetadataVocabularyEnvelope: Decodable {
@@ -509,6 +548,36 @@ final class BinderAPI {
     func allFolders(serverURL: String) async throws -> [BinderFolder] {
         let (data, _) = try await request(path: "folders/all", serverURL: serverURL)
         return try JSONDecoder().decode(FolderListEnvelope.self, from: data).data.items
+    }
+
+    func shareRecipients(serverURL: String) async throws -> [BinderShareRecipient] {
+        let (data, _) = try await request(path: "shares/recipients", serverURL: serverURL)
+        return try JSONDecoder().decode(ShareRecipientsEnvelope.self, from: data).data.items
+    }
+
+    func shares(serverURL: String, resource: ShareResource, uuid: String) async throws -> [BinderShareGrant] {
+        let (data, _) = try await request(path: "shares/\(resource.path)/\(uuid)", serverURL: serverURL)
+        return try JSONDecoder().decode(ShareGrantsEnvelope.self, from: data).data.items
+    }
+
+    func addShare(serverURL: String, resource: ShareResource, uuid: String, recipientUUID: String) async throws -> [BinderShareGrant] {
+        let data = try await mutate(
+            path: "shares/\(resource.path)/\(uuid)",
+            serverURL: serverURL,
+            method: "POST",
+            payload: CreateSharePayload(recipientUuid: recipientUUID)
+        )
+        return try JSONDecoder().decode(ShareGrantsEnvelope.self, from: data).data.items
+    }
+
+    func removeShare(serverURL: String, resource: ShareResource, uuid: String, recipientUUID: String) async throws -> [BinderShareGrant] {
+        let data = try await mutate(
+            path: "shares/\(resource.path)/\(uuid)/\(recipientUUID)",
+            serverURL: serverURL,
+            method: "DELETE",
+            payload: EmptyMutationPayload()
+        )
+        return try JSONDecoder().decode(ShareGrantsEnvelope.self, from: data).data.items
     }
 
     func createFolder(serverURL: String, name: String, parentUUID: String?) async throws -> BinderFolder {

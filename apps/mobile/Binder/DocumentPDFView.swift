@@ -51,6 +51,13 @@ struct DocumentPDFView: View {
                 .accessibilityIdentifier("show-document-metadata")
 
                 Button {
+                    activeSheet = .sharing(document.uuid)
+                } label: {
+                    Label("Share access", systemImage: "person.2")
+                }
+                .accessibilityIdentifier("manage-document-sharing")
+
+                Button {
                     if let pdfFileURL { activeSheet = .share(pdfFileURL) }
                 } label: {
                     Label("Share", systemImage: "square.and.arrow.up")
@@ -65,6 +72,12 @@ struct DocumentPDFView: View {
                 PDFShareSheet(fileURL: fileURL)
             case .metadata(let document):
                 DocumentMetadataSheet(document: document, serverURL: serverURL)
+            case .sharing(let documentUUID):
+                ShareManagementView(
+                    resource: .documents,
+                    resourceUUID: documentUUID,
+                    serverURL: serverURL
+                )
             }
         }
         .alert("Couldn’t share PDF", isPresented: Binding(
@@ -129,11 +142,13 @@ struct DocumentPDFView: View {
 private enum DocumentPDFSheet: Identifiable {
     case share(URL)
     case metadata(BinderDocumentSummary)
+    case sharing(String)
 
     var id: String {
         switch self {
         case .share(let url): "share-\(url.absoluteString)"
         case .metadata(let document): "metadata-\(document.uuid)"
+        case .sharing(let uuid): "sharing-\(uuid)"
         }
     }
 }

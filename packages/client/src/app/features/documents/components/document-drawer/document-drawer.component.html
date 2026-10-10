@@ -127,6 +127,7 @@
           <binder-share-access
             resourceType="documents"
             [resourceUuid]="documentUuid()"
+            [resourceName]="documentData().title || documentData().originalFilename"
             (close)="sharePanelOpen.set(false)"
           />
         }

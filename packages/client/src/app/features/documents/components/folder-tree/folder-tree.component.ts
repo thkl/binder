@@ -6,6 +6,7 @@ import { SharingService } from '../../services/sharing.service';
 
 @Component({
   selector: 'binder-folder-tree',
+  host: { '[class.share-dialog-open]': 'sharingFolder() !== null' },
   standalone: true,
   imports: [TranslatePipe, ShareAccessComponent],
   templateUrl: './folder-tree.component.html',
@@ -24,7 +25,7 @@ export class FolderTreeComponent {
   readonly editingUuid = signal<string | null>(null);
   readonly movingUuid = signal<string | null>(null);
   readonly moveTargetUuid = signal<string>('');
-  readonly sharingFolderUuid = signal<string | null>(null);
+  readonly sharingFolder = signal<{ uuid: string; name: string } | null>(null);
   readonly actionMenuUuid = signal<string | null>(null);
 
   constructor(readonly folders: FoldersService, readonly sharing: SharingService) {}
@@ -129,9 +130,13 @@ export class FolderTreeComponent {
     this.actionMenuUuid.update((current) => (current === uuid ? null : uuid));
   }
 
-  openSharing(uuid: string): void {
+  openSharing(uuid: string, name: string): void {
     this.actionMenuUuid.set(null);
-    this.sharingFolderUuid.update((current) => (current === uuid ? null : uuid));
+    this.sharingFolder.update((current) => (current?.uuid === uuid ? null : { uuid, name }));
+  }
+
+  closeFolderSharing(): void {
+    this.sharingFolder.set(null);
   }
 
   @HostListener('document:click', ['$event'])
@@ -145,5 +150,6 @@ export class FolderTreeComponent {
   @HostListener('document:keydown.escape')
   closeMenuOnEscape(): void {
     this.actionMenuUuid.set(null);
+    this.closeFolderSharing();
   }
 }

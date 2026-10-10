@@ -35,6 +35,7 @@
     "sharing.noDocuments": "No documents have been shared with you.",
     "sharing.open": "Open PDF",
     "sharing.title": "Sharing",
+    "sharing.titleFor": "Sharing: {name}",
     "sharing.short": "Share",
     "sharing.shared": "Shared",
     "sharing.sharedWithCount": "Shared with {count} users",

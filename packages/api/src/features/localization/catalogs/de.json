@@ -30,6 +30,7 @@
     "sharing.noDocuments": "Es wurden keine Dokumente mit Ihnen geteilt.",
     "sharing.open": "PDF öffnen",
     "sharing.title": "Freigabe",
+    "sharing.titleFor": "Freigabe: {name}",
     "sharing.short": "Teilen",
     "sharing.shared": "Geteilt",
     "sharing.sharedWithCount": "Mit {count} Benutzern geteilt",

@@ -14,6 +14,7 @@ import type { ShareGrant, ShareRecipient } from '@binder/common';
 export class ShareAccessComponent implements OnInit {
   readonly resourceType = input.required<'documents' | 'folders'>();
   readonly resourceUuid = input.required<string>();
+  readonly resourceName = input<string | null>(null);
   readonly close = output<void>();
   readonly recipients = signal<ShareRecipient[]>([]);
   readonly grants = signal<ShareGrant[]>([]);

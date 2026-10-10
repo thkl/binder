@@ -9,12 +9,14 @@ struct FolderManagementRequest: Identifiable {
 struct FolderActionMenu: View {
     let createSubfolder: () -> Void
     let edit: () -> Void
+    let share: () -> Void
     let delete: () -> Void
 
     var body: some View {
         Menu {
             Button("Add subfolder", systemImage: "folder.badge.plus", action: createSubfolder)
             Button("Rename or move", systemImage: "pencil", action: edit)
+            Button("Share folder", systemImage: "person.2", action: share)
             Divider()
             Button("Delete folder", systemImage: "trash", role: .destructive, action: delete)
         } label: {
