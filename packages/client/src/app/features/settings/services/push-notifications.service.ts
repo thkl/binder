@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiResponse } from '@binder/common';
 
 export interface PushNotificationSettings {
+  provider: 'apns' | 'pushover';
   enabled: boolean;
   keyId: string;
   teamId: string;
@@ -12,6 +13,10 @@ export interface PushNotificationSettings {
   processingComplete: boolean;
   processingFailed: boolean;
   hasAPNsKey: boolean;
+  pushoverAppToken: string;
+  pushoverUserKey: string;
+  hasPushoverAppToken: boolean;
+  hasPushoverUserKey: boolean;
 }
 
 export interface RegisteredPushDevice {
@@ -24,8 +29,10 @@ export interface RegisteredPushDevice {
 }
 
 const defaults: PushNotificationSettings = {
+  provider: 'apns',
   enabled: false, keyId: '', teamId: '', topic: 'network.thkl.binder.ios',
   documentAdded: true, processingComplete: false, processingFailed: true, hasAPNsKey: false,
+  pushoverAppToken: '', pushoverUserKey: '', hasPushoverAppToken: false, hasPushoverUserKey: false,
 };
 
 @Injectable({ providedIn: 'root' })
@@ -62,11 +69,13 @@ export class PushNotificationsService {
 
   async save(): Promise<void> {
     this.saving.set(true); this.error.set(null); this.saved.set(false);
-    const { enabled, keyId, teamId, topic, documentAdded, processingComplete, processingFailed } = this.settings();
+    const { provider, enabled, keyId, teamId, topic, documentAdded, processingComplete, processingFailed,
+      pushoverAppToken, pushoverUserKey } = this.settings();
     try {
       const response = await firstValueFrom(this.http.put<ApiResponse<PushNotificationSettings>>(this.baseUrl,
-        { enabled, keyId, teamId, topic, documentAdded, processingComplete, processingFailed }, { withCredentials: true }));
-      this.settings.set(response.data); this.saved.set(true);
+        { provider, enabled, keyId, teamId, topic, documentAdded, processingComplete, processingFailed,
+          pushoverAppToken: pushoverAppToken.trim(), pushoverUserKey: pushoverUserKey.trim() }, { withCredentials: true }));
+      this.settings.set({ ...defaults, ...response.data }); this.saved.set(true);
     } catch (error) { this.error.set(this.message(error)); }
     finally { this.saving.set(false); }
   }
@@ -88,6 +97,25 @@ export class PushNotificationsService {
       this.settings.set(response.data);
     } catch (error) { this.error.set(this.message(error)); }
     finally { this.saving.set(false); }
+  }
+
+  async deletePushoverCredentials(): Promise<void> {
+    this.saving.set(true); this.error.set(null);
+    try {
+      const response = await firstValueFrom(this.http.delete<ApiResponse<PushNotificationSettings>>(
+        `${this.baseUrl}/pushover-credentials`, { withCredentials: true }));
+      this.settings.set({ ...defaults, ...response.data });
+    } catch (error) { this.error.set(this.message(error)); }
+    finally { this.saving.set(false); }
+  }
+
+  async sendPushoverTest(): Promise<void> {
+    this.deviceError.set(null); this.deviceMessage.set(null); this.deviceActionId.set('pushover');
+    try {
+      await firstValueFrom(this.http.post<ApiResponse<null>>(`${this.baseUrl}/test`, {}, { withCredentials: true }));
+      this.deviceMessage.set('push.testSent');
+    } catch (error) { this.deviceError.set(this.message(error)); }
+    finally { this.deviceActionId.set(null); }
   }
 
   async removeDevice(device: RegisteredPushDevice): Promise<void> {

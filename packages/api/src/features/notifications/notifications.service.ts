@@ -9,7 +9,9 @@ import { PushNotificationEvent } from './models/push-notification-event.entity';
 import { DocumentStore } from '../document/store/document.store';
 
 type Environment = 'sandbox' | 'production';
+type PushProvider = 'apns' | 'pushover';
 type PushSettings = {
+  provider: PushProvider;
   enabled: boolean;
   keyId: string;
   teamId: string;
@@ -18,6 +20,8 @@ type PushSettings = {
   processingComplete: boolean;
   processingFailed: boolean;
   hasAPNsKey: boolean;
+  hasPushoverAppToken: boolean;
+  hasPushoverUserKey: boolean;
 };
 type APNsAlert = { title: string; body: string; data?: Record<string, string> };
 type APNsResult = { status: number; reason?: string; requestId?: string };
@@ -66,7 +70,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
   async sendTestPush(uuid: string): Promise<void> {
     const config = await this.getPushSettings();
-    if (!config.enabled || !config.hasAPNsKey || !config.keyId || !config.teamId || !config.topic) {
+    if (config.provider !== 'apns' || !config.enabled || !this.isAPNsConfigured(config)) {
       throw new BadRequestException('Configure and enable APNs before sending a test notification');
     }
     const device = await this.devices.findByUuid(uuid);
@@ -87,21 +91,61 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async sendPushoverTest(): Promise<void> {
+    const config = await this.getPushSettings();
+    if (config.provider !== 'pushover' || !config.enabled || !this.isPushoverConfigured(config)) {
+      throw new BadRequestException('Configure and enable Pushover before sending a test notification');
+    }
+    await this.postPushover('Binder test notification', 'Pushover notifications are working for this server.');
+  }
+
   async getPushSettings(): Promise<PushSettings> {
     const get = async (key: string, fallback = '') => (await this.settings.get(`push.${key}`, fallback)) ?? fallback;
     return {
+      provider: (await get('provider', 'apns')) === 'pushover' ? 'pushover' : 'apns',
       enabled: (await get('enabled', 'false')) === 'true',
       keyId: await get('keyId'), teamId: await get('teamId'), topic: await get('topic', 'network.thkl.binder.ios'),
       documentAdded: (await get('events.documentAdded', 'true')) === 'true',
       processingComplete: (await get('events.processingComplete', 'false')) === 'true',
       processingFailed: (await get('events.processingFailed', 'true')) === 'true',
       hasAPNsKey: Boolean(await get('privateKey')),
+      hasPushoverAppToken: Boolean(await get('pushover.appToken')),
+      hasPushoverUserKey: Boolean(await get('pushover.userKey')),
     };
   }
 
   async savePushSettings(input: Record<string, unknown>): Promise<PushSettings> {
+    const provider = input.provider;
+    if (provider !== undefined && provider !== 'apns' && provider !== 'pushover') {
+      throw new BadRequestException('Notification provider must be apns or pushover');
+    }
+    const current = await this.getPushSettings();
+    const selectedProvider = (provider as PushProvider | undefined) ?? current.provider;
+    const enabling = input.enabled === true || input.enabled === 'true';
+    for (const key of ['pushoverAppToken', 'pushoverUserKey']) {
+      const value = input[key];
+      if (typeof value === 'string' && value.trim().length > 512) throw new BadRequestException(`${key} is too long`);
+    }
+    if (enabling && selectedProvider === 'apns') {
+      const effective = (key: 'keyId' | 'teamId' | 'topic', fallback: string) =>
+        typeof input[key] === 'string' ? input[key] as string : fallback;
+      const apnsConfigured = current.hasAPNsKey
+        && Boolean(effective('keyId', current.keyId).trim())
+        && Boolean(effective('teamId', current.teamId).trim())
+        && Boolean(effective('topic', current.topic).trim());
+      if (!apnsConfigured) {
+        throw new BadRequestException('Upload the APNs .p8 key and enter its Key ID, Team ID, and app topic before enabling notifications');
+      }
+    }
+    if (enabling && selectedProvider === 'pushover') {
+      const hasAppToken = (typeof input.pushoverAppToken === 'string' && Boolean(input.pushoverAppToken.trim())) || current.hasPushoverAppToken;
+      const hasUserKey = (typeof input.pushoverUserKey === 'string' && Boolean(input.pushoverUserKey.trim())) || current.hasPushoverUserKey;
+      if (!hasAppToken || !hasUserKey) {
+        throw new BadRequestException('Enter a Pushover application token and user or group key before enabling notifications');
+      }
+    }
     const fields: [string, unknown][] = [
-      ['enabled', input.enabled], ['keyId', input.keyId], ['teamId', input.teamId], ['topic', input.topic],
+      ['provider', provider], ['enabled', input.enabled], ['keyId', input.keyId], ['teamId', input.teamId], ['topic', input.topic],
       ['events.documentAdded', input.documentAdded], ['events.processingComplete', input.processingComplete], ['events.processingFailed', input.processingFailed],
     ];
     for (const [key, value] of fields) {
@@ -112,14 +156,20 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       }
       await this.settings.set(`push.${key}`, normalized, false, 'APNs push notification configuration');
     }
-    if (input.enabled === true || input.enabled === 'true') {
-      const config = await this.getPushSettings();
-      if (!config.hasAPNsKey || !config.keyId || !config.teamId || !config.topic) {
-        throw new BadRequestException('Upload the APNs .p8 key and enter its Key ID, Team ID, and app topic before enabling notifications');
+    for (const [inputKey, settingKey] of [['pushoverAppToken', 'pushover.appToken'], ['pushoverUserKey', 'pushover.userKey']] as const) {
+      const value = input[inputKey];
+      if (typeof value === 'string' && value.trim()) {
+        await this.settings.set(`push.${settingKey}`, value.trim(), true, `Encrypted Pushover ${inputKey}`);
       }
     }
     this.jwtCache = undefined;
     return this.getPushSettings();
+  }
+
+  async deletePushoverCredentials(): Promise<void> {
+    await this.settings.delete('push.pushover.appToken');
+    await this.settings.delete('push.pushover.userKey');
+    await this.settings.set('push.enabled', 'false', false, 'Push notifications enabled');
   }
 
   async saveAPNsKey(pem: string): Promise<void> {
@@ -159,15 +209,21 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       : event.eventType === 'processing-complete' ? config.processingComplete
         : config.processingFailed;
     if (!config.enabled || !enabled) return;
-    if (!config.hasAPNsKey || !config.keyId || !config.teamId || !config.topic) throw new Error('APNs is enabled but its key, Key ID, Team ID, or topic is missing');
-    const devices = await this.devices.findForOwner(event.ownerUuid);
     const document = await this.documents.findOwnedByUuid(event.ownerUuid, event.documentUuid);
     const documentTitle = document?.title?.trim() || document?.originalFilename || '';
+    const body = this.notificationText(event.eventType, documentTitle);
+    if (config.provider === 'pushover') {
+      if (!this.isPushoverConfigured(config)) throw new Error('Pushover is enabled but its application token or user key is missing');
+      await this.postPushover('Binder', body);
+      return;
+    }
+    if (!this.isAPNsConfigured(config)) throw new Error('APNs is enabled but its key, Key ID, Team ID, or topic is missing');
+    const devices = await this.devices.findForOwner(event.ownerUuid);
     for (const device of devices) {
       const host = device.environment === 'sandbox' ? 'https://api.sandbox.push.apple.com' : 'https://api.push.apple.com';
       const result = await this.postAPNs(host, device.token, config, {
         title: 'Binder',
-        body: this.notificationText(event.eventType, documentTitle),
+        body,
         data: { documentUuid: event.documentUuid, documentTitle, eventType: event.eventType },
       });
       if (result.status === 410) {
@@ -177,6 +233,31 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
         throw new Error(`APNs returned HTTP ${result.status}${details ? ` (${details})` : ''}`);
       }
     }
+  }
+
+  private async postPushover(title: string, message: string): Promise<void> {
+    const appToken = await this.settings.get('push.pushover.appToken');
+    const userKey = await this.settings.get('push.pushover.userKey');
+    if (!appToken || !userKey) throw new Error('Pushover credentials are missing');
+    const response = await fetch('https://api.pushover.net/1/messages.json', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ token: appToken, user: userKey, title, message }),
+      signal: AbortSignal.timeout(12_000),
+    });
+    const payload = await response.json().catch(() => null) as { status?: number; errors?: string[] } | null;
+    if (!response.ok || payload?.status !== 1) {
+      const details = payload?.errors?.join(', ');
+      throw new BadGatewayException(`Pushover returned HTTP ${response.status}${details ? ` (${details})` : ''}`);
+    }
+  }
+
+  private isAPNsConfigured(config: PushSettings): boolean {
+    return config.hasAPNsKey && Boolean(config.keyId && config.teamId && config.topic);
+  }
+
+  private isPushoverConfigured(config: PushSettings): boolean {
+    return config.hasPushoverAppToken && config.hasPushoverUserKey;
   }
 
   private postAPNs(host: string, token: string, config: PushSettings, alert: APNsAlert): Promise<APNsResult> {

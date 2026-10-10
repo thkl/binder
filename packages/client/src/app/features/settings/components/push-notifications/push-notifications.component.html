@@ -7,6 +7,14 @@
     <div class="push-body">
       @if (push.error(); as error) { <p class="field-hint warning" role="alert">{{ error }}</p> }
       <p class="muted">{{ 'push.copy' | t }}</p>
+      <label class="push-provider">{{ 'push.provider' | t }}
+        <select [value]="push.settings().provider" (change)="updateProvider($event)">
+          <option value="apns">{{ 'push.providerApns' | t }}</option>
+          <option value="pushover">{{ 'push.providerPushover' | t }}</option>
+        </select>
+      </label>
+      <label class="push-toggle"><input type="checkbox" [checked]="push.settings().enabled" (change)="updateBoolean('enabled', $event)" />{{ 'push.enabled' | t }}</label>
+      @if (push.settings().provider === 'apns') {
       <aside class="push-guide" aria-labelledby="push-guide-title">
         <h4 id="push-guide-title">{{ 'push.guideTitle' | t }}</h4>
         <p>{{ 'push.guideIntro' | t }} <a href="https://developer.apple.com/help/account/keys/create-a-private-key/" target="_blank" rel="noopener noreferrer">{{ 'push.guideLink' | t }}</a></p>
@@ -18,7 +26,6 @@
         </ol>
         <p class="push-guide-note"><strong>{{ 'push.guideNoteTitle' | t }}</strong> {{ 'push.guideCertificateNote' | t }}</p>
       </aside>
-      <label class="push-toggle"><input type="checkbox" [checked]="push.settings().enabled" (change)="updateBoolean('enabled', $event)" />{{ 'push.enabled' | t }}</label>
       <div class="push-grid">
         <label>{{ 'push.keyId' | t }}<input type="text" [value]="push.settings().keyId" (input)="updateText('keyId', $event)" autocomplete="off" /></label>
         <label>{{ 'push.teamId' | t }}<input type="text" [value]="push.settings().teamId" (input)="updateText('teamId', $event)" autocomplete="off" /></label>
@@ -29,11 +36,26 @@
         <label class="secondary-button push-file">{{ 'push.uploadKey' | t }}<input type="file" accept=".p8" (change)="selectKey($event)" /></label>
         @if (push.settings().hasAPNsKey) { <button class="secondary-button" type="button" (click)="push.deleteKey()" [disabled]="push.saving()">{{ 'push.removeKey' | t }}</button> }
       </div>
+      } @else {
+      <p class="field-hint">{{ 'push.pushoverPrivacy' | t }}</p>
+      <div class="push-grid">
+        <label>{{ 'push.pushoverAppToken' | t }}<input type="password" [value]="push.settings().pushoverAppToken" (input)="updateText('pushoverAppToken', $event)" [placeholder]="push.settings().hasPushoverAppToken ? ('push.secretConfigured' | t) : ''" autocomplete="new-password" /></label>
+        <label>{{ 'push.pushoverUserKey' | t }}<input type="password" [value]="push.settings().pushoverUserKey" (input)="updateText('pushoverUserKey', $event)" [placeholder]="push.settings().hasPushoverUserKey ? ('push.secretConfigured' | t) : ''" autocomplete="new-password" /></label>
+      </div>
+      <div class="push-key-row">
+        <p class="field-hint">{{ push.settings().hasPushoverAppToken && push.settings().hasPushoverUserKey ? ('push.pushoverConfigured' | t) : ('push.pushoverMissing' | t) }}</p>
+        @if (push.settings().hasPushoverAppToken || push.settings().hasPushoverUserKey) { <button class="secondary-button" type="button" (click)="push.deletePushoverCredentials()" [disabled]="push.saving()">{{ 'push.removeCredentials' | t }}</button> }
+        @if (push.settings().enabled && push.settings().hasPushoverAppToken && push.settings().hasPushoverUserKey) { <button class="secondary-button" type="button" (click)="push.sendPushoverTest()" [disabled]="push.deviceActionId() !== null">{{ 'push.sendTest' | t }}</button> }
+      </div>
+      @if (push.deviceError(); as error) { <p class="field-hint warning" role="alert">{{ error }}</p> }
+      @if (push.deviceMessage(); as message) { <p class="saved-message" role="status">{{ message | t }}</p> }
+      }
       <fieldset class="push-events"><legend>{{ 'push.events' | t }}</legend>
         <label><input type="checkbox" [checked]="push.settings().documentAdded" (change)="updateBoolean('documentAdded', $event)" />{{ 'push.documentAdded' | t }}</label>
         <label><input type="checkbox" [checked]="push.settings().processingComplete" (change)="updateBoolean('processingComplete', $event)" />{{ 'push.processingComplete' | t }}</label>
         <label><input type="checkbox" [checked]="push.settings().processingFailed" (change)="updateBoolean('processingFailed', $event)" />{{ 'push.processingFailed' | t }}</label>
       </fieldset>
+      @if (push.settings().provider === 'apns') {
       <section class="push-devices" aria-labelledby="push-devices-title">
         <div class="push-devices-heading">
           <div><h4 id="push-devices-title">{{ 'push.devicesTitle' | t }}</h4><p class="field-hint">{{ 'push.devicesCopy' | t }}</p></div>
@@ -61,6 +83,7 @@
           </div>
         }
       </section>
+      }
     </div>
     <footer class="form-footer">
       @if (push.saved()) { <span class="saved-message" role="status">✓ {{ 'settings.saved' | t }}</span> }

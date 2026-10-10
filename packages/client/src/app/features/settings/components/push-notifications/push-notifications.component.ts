@@ -10,8 +10,11 @@ export class PushNotificationsComponent implements OnInit {
   readonly push = inject(PushNotificationsService);
   ngOnInit(): void { void this.push.load(); }
 
-  updateText(key: 'keyId' | 'teamId' | 'topic', event: Event): void {
+  updateText(key: 'keyId' | 'teamId' | 'topic' | 'pushoverAppToken' | 'pushoverUserKey', event: Event): void {
     this.push.update({ [key]: (event.target as HTMLInputElement).value });
+  }
+  updateProvider(event: Event): void {
+    this.push.update({ provider: (event.target as HTMLSelectElement).value as 'apns' | 'pushover' });
   }
   updateBoolean(key: 'enabled' | 'documentAdded' | 'processingComplete' | 'processingFailed', event: Event): void {
     this.push.update({ [key]: (event.target as HTMLInputElement).checked });

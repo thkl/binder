@@ -52,7 +52,7 @@ export class NotificationsController {
     const settings = await this.notifications.getPushSettings();
     return {
       data: {
-        enabled: settings.enabled && settings.hasAPNsKey && Boolean(settings.keyId && settings.teamId && settings.topic),
+        enabled: settings.provider === 'apns' && settings.enabled && settings.hasAPNsKey && Boolean(settings.keyId && settings.teamId && settings.topic),
       },
     };
   }
@@ -93,6 +93,14 @@ export class NotificationsController {
     return { data: null };
   }
 
+  @Post('push-settings/test')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async sendPushoverTest() {
+    await this.notifications.sendPushoverTest();
+    return { data: null };
+  }
+
   @Put('push-settings')
   @UseGuards(RolesGuard)
   @Roles('admin')
@@ -126,6 +134,14 @@ export class NotificationsController {
   @Roles('admin')
   async deleteAPNsKey() {
     await this.notifications.deleteAPNsKey();
+    return { data: await this.notifications.getPushSettings() };
+  }
+
+  @Delete('push-settings/pushover-credentials')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async deletePushoverCredentials() {
+    await this.notifications.deletePushoverCredentials();
     return { data: await this.notifications.getPushSettings() };
   }
 }
