@@ -71,9 +71,15 @@ OCR uses one OCRmyPDF job by default (`pipeline.ocrJobs=1`). This keeps a small
 server from spawning one OCR process per CPU core. `pipeline.ocrRotatePages` remains
 enabled by default for scanned pages, while `pipeline.ocrDeskew` is disabled by
 default because deskewing is CPU-intensive and can be enabled when document quality
-requires it. The normal pass uses `--redo-ocr`; a forced pass is used only when
-the result still contains no usable searchable text. This avoids the unnecessary
-CPU cost of rasterizing healthy documents.
+requires it. With deskew disabled, the normal pass uses `--redo-ocr`; a forced
+pass is used only when the result still contains no usable searchable text.
+OCRmyPDF does not allow `--redo-ocr` together with `--deskew`, so enabling
+deskew selects `--skip-text` for the initial pass. This leaves pages that
+already contain text untouched while processing scanned pages. If the result
+still has no usable text, the pipeline retries with force OCR, which rasterizes
+page content and can increase CPU use and reduce quality for printable vector
+content. OCR jobs are queued only when text extraction finds no usable
+searchable text.
 
 The production worker image installs OCRmyPDF, Ghostscript, Tesseract, and the German/English language data. Local worker runs require the same tools to be installed on the host; if `ocrmypdf` is missing, the job fails visibly and follows the normal retry policy.
 

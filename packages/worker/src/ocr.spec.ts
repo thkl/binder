@@ -70,7 +70,7 @@ test('supports a forced OCR fallback for unusable existing text layers', () => {
   }
 });
 
-test('allows OCR quality options to be disabled or enabled independently', () => {
+test('uses skip-text with deskew to avoid rasterizing pages that already have text', () => {
   const previous = {
     ocrJobs: config.ocrJobs,
     ocrLanguages: config.ocrLanguages,
@@ -87,7 +87,7 @@ test('allows OCR quality options to be disabled or enabled independently', () =>
     assert.deepEqual(buildOcrArguments('/input.pdf', '/output.pdf'), [
       '--jobs',
       '2',
-      '--redo-ocr',
+      '--skip-text',
       '--deskew',
       '--language',
       'eng',

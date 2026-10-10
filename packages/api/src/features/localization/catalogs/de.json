@@ -743,6 +743,8 @@
     "maintenance.pipeline.copy": "Dokumentenverarbeitung prüfen, sichere Fehlerdetails ansehen und wiederholbare Jobs neu starten.",
     "maintenance.pipeline.live": "Live",
     "maintenance.pipeline.filters": "Filter für Pipeline-Jobs",
+    "maintenance.pipeline.filteredDocument": "Fehlgeschlagene Jobs dieses Dokuments werden angezeigt.",
+    "maintenance.pipeline.showAllJobs": "Alle Pipeline-Jobs anzeigen",
     "maintenance.pipeline.status": "Status",
     "maintenance.pipeline.kind": "Aufgabe",
     "maintenance.pipeline.allStatuses": "Alle Status",

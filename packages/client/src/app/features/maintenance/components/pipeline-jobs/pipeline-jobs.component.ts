@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import type { PipelineJobKind, PipelineJobMonitorQuery, PipelineJobStatus } from '@binder/common';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import {
@@ -29,6 +30,7 @@ export class PipelineJobsComponent implements OnInit, OnDestroy {
   readonly i18n = inject(I18nService);
   readonly statusFilter = signal<PipelineJobStatusFilter>('all');
   readonly kindFilter = signal<PipelineJobKindFilter>('all');
+  readonly documentUuid = signal<string | null>(null);
   readonly page = signal(1);
   readonly pageSize = 25;
   readonly retryingUuid = signal<string | null>(null);
@@ -51,9 +53,15 @@ export class PipelineJobsComponent implements OnInit, OnDestroy {
   ];
   readonly jobs = computed(() => this.pipeline.response()?.items ?? []);
   readonly meta = computed(() => this.pipeline.response()?.meta ?? null);
+  private readonly route = inject(ActivatedRoute);
   private refreshTimer: number | null = null;
 
   ngOnInit(): void {
+    const documentUuid = this.route.snapshot.queryParamMap.get('documentUuid');
+    if (documentUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentUuid)) {
+      this.documentUuid.set(documentUuid);
+      this.statusFilter.set('failed');
+    }
     void this.load();
     this.refreshTimer = window.setInterval(() => {
       if (!this.pipeline.loading()) void this.load();
@@ -73,6 +81,8 @@ export class PipelineJobsComponent implements OnInit, OnDestroy {
     const kind = this.kindFilter();
     if (status !== 'all') query.status = status;
     if (kind !== 'all') query.kind = kind;
+    const documentUuid = this.documentUuid();
+    if (documentUuid) query.documentUuid = documentUuid;
     await this.pipeline.load(query);
   }
 

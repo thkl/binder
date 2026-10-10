@@ -34,6 +34,17 @@
   font-size: 0.78rem;
   line-height: 1.5;
 }
+.pipeline-filter-note {
+  margin: 0.45rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+.pipeline-filter-note a {
+  margin-inline-start: 0.35rem;
+  color: var(--color-accent);
+  font-weight: 700;
+  text-decoration: underline;
+}
 .live-badge {
   display: inline-flex;
   align-items: center;
@@ -182,7 +193,7 @@
   padding: 0.65rem;
   border-radius: 0.45rem;
   color: var(--color-danger);
-  background: var(--color-danger);
+  background: var(--color-surface);
   font: inherit;
   line-height: 1.45;
   white-space: pre-wrap;

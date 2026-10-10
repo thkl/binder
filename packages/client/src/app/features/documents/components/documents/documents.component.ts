@@ -48,7 +48,7 @@ import {
   DocumentComposeRequest,
 } from '../document-compose-dialog/document-compose-dialog.component';
 import { InboxService } from '../../../inbox/services/inbox.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, map } from 'rxjs';
 
@@ -71,6 +71,7 @@ type DocumentFilterValues = {
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     DocumentDrawerComponent,
     DocumentActionsComponent,
     DocumentFilterMenuComponent,

@@ -20,6 +20,7 @@ export async function runOcr(
   const key = `derived/${createdAt.getUTCFullYear()}/${String(createdAt.getUTCMonth() + 1).padStart(2, '0')}/${documentUuid}/ocr.pdf`;
   const output = resolveStoragePath(key);
   const temporary = `${output}.${randomUUID()}.tmp.pdf`;
+  const ocrMode = options.forceOcr ? 'force' : config.ocrDeskew ? 'skip-text' : 'redo';
 
   await fs.mkdir(dirname(output), { recursive: true, mode: 0o750 });
   logger.info('Starting OCR', {
@@ -28,7 +29,7 @@ export async function runOcr(
     jobs: config.ocrJobs,
     rotatePages: config.ocrRotatePages,
     deskew: config.ocrDeskew,
-    forceOcr: options.forceOcr ?? false,
+    ocrMode,
     input: storageKey,
     output: key,
   });
@@ -51,10 +52,14 @@ export function buildOcrArguments(
   output: string,
   options: OcrOptions = {},
 ): string[] {
+  // OCRmyPDF cannot combine --redo-ocr with --deskew. In deskew mode, skip
+  // pages that already have text so their content is not needlessly rasterized;
+  // the pipeline retries with force OCR if the resulting text is still unusable.
+  const ocrMode = options.forceOcr ? 'force' : config.ocrDeskew ? 'skip-text' : 'redo';
   return [
     '--jobs',
     String(config.ocrJobs),
-    options.forceOcr ? '--force-ocr' : '--redo-ocr',
+    ocrMode === 'force' ? '--force-ocr' : ocrMode === 'skip-text' ? '--skip-text' : '--redo-ocr',
     ...(config.ocrRotatePages ? ['--rotate-pages'] : []),
     ...(config.ocrDeskew ? ['--deskew'] : []),
     '--language',

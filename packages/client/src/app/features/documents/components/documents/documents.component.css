@@ -777,7 +777,20 @@ h2 {
 
 .status.failed {
   color: var(--color-danger);
-  background: var(--color-danger);
+  background: var(--color-surface);
+  border: 1px solid var(--color-danger);
+}
+
+.status-link {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.status-link:hover,
+.status-link:focus-visible {
+  text-decoration: underline;
+  outline: 2px solid var(--color-danger);
+  outline-offset: 2px;
 }
 
 .status.quarantined {
@@ -1106,7 +1119,7 @@ h2 {
     height: 6.5rem;
   }
 
-  .document-row > .status {
+  .document-row>.status {
     grid-column: 3;
     justify-self: start;
   }
@@ -1133,6 +1146,7 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .preview-card,
   .spinner {
     animation: none;

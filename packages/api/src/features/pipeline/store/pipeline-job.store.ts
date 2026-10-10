@@ -40,10 +40,12 @@ export class PipelineJobStore extends BaseCrudStore<PipelineJob> {
       ownerUuid: string;
       status?: PipelineJobStatus;
       kind?: PipelineJobKind;
+      documentUuid?: string;
     } = { ownerUuid };
 
     if (query.status) where.status = query.status;
     if (query.kind) where.kind = query.kind;
+    if (query.documentUuid) where.documentUuid = query.documentUuid;
 
     const result = await this.model.findAndCountAll({
       where,

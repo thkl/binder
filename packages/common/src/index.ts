@@ -966,6 +966,7 @@ export const PipelineJobMonitorQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
   status: PipelineJobStatusSchema.optional(),
   kind: PipelineJobKindSchema.optional(),
+  documentUuid: z.uuid().optional(),
 });
 export type PipelineJobMonitorQuery = z.infer<typeof PipelineJobMonitorQuerySchema>;
 

@@ -567,9 +567,23 @@
                     </dl>
                   </div>
 
-                  <span class="status" [class]="'status ' + document.status">{{
-                    document.status
-                  }}</span>
+                  @if (document.status === 'failed') {
+                    <a
+                      class="status failed status-link"
+                      [routerLink]="['/maintenance']"
+                      [queryParams]="{ documentUuid: document.uuid }"
+                      [title]="'maintenance.pipeline.failureDetails' | t"
+                      [attr.aria-label]="
+                        document.status + '. ' + ('maintenance.pipeline.failureDetails' | t)
+                      "
+                    >
+                      {{ document.status }} <span aria-hidden="true">↗</span>
+                    </a>
+                  } @else {
+                    <span class="status" [class]="'status ' + document.status">{{
+                      document.status
+                    }}</span>
+                  }
                   @if (document.archiveStatus === 'ready') {
                     <span
                       class="archive-indicator"
@@ -723,9 +737,23 @@
                       </div>
                     </dl>
 
-                    <span class="status" [class]="'status ' + document.status">{{
-                      document.status
-                    }}</span>
+                    @if (document.status === 'failed') {
+                      <a
+                        class="status failed status-link"
+                        [routerLink]="['/maintenance']"
+                        [queryParams]="{ documentUuid: document.uuid }"
+                        [title]="'maintenance.pipeline.failureDetails' | t"
+                        [attr.aria-label]="
+                          document.status + '. ' + ('maintenance.pipeline.failureDetails' | t)
+                        "
+                      >
+                        {{ document.status }} <span aria-hidden="true">↗</span>
+                      </a>
+                    } @else {
+                      <span class="status" [class]="'status ' + document.status">{{
+                        document.status
+                      }}</span>
+                    }
                     @if (document.archiveStatus === 'ready') {
                       <span
                         class="archive-indicator"

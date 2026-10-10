@@ -4,6 +4,12 @@
       <p class="section-kicker">{{ 'maintenance.pipeline.kicker' | t }}</p>
       <h3 id="pipeline-jobs-title">{{ 'maintenance.pipeline.title' | t }}</h3>
       <p class="pipeline-copy">{{ 'maintenance.pipeline.copy' | t }}</p>
+      @if (documentUuid()) {
+        <p class="pipeline-filter-note">
+          {{ 'maintenance.pipeline.filteredDocument' | t }}
+          <a href="/maintenance">{{ 'maintenance.pipeline.showAllJobs' | t }}</a>
+        </p>
+      }
     </div>
     <span class="live-badge"
       ><span class="live-dot" aria-hidden="true"></span>{{ 'maintenance.pipeline.live' | t }}</span
@@ -73,7 +79,7 @@
               {{ 'maintenance.pipeline.attempts' | t }} {{ job.attempts }}/{{ job.maxAttempts }}
             </small>
             @if (job.lastError) {
-              <details class="failure-details">
+              <details class="failure-details" [open]="documentUuid() !== null">
                 <summary>{{ 'maintenance.pipeline.failureDetails' | t }}</summary>
                 <pre>{{ job.lastError }}</pre>
               </details>

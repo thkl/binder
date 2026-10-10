@@ -757,6 +757,8 @@
     "maintenance.pipeline.copy": "Inspect document processing, review safe failure details, and retry recoverable jobs.",
     "maintenance.pipeline.live": "Live",
     "maintenance.pipeline.filters": "Pipeline job filters",
+    "maintenance.pipeline.filteredDocument": "Showing failed jobs for this document.",
+    "maintenance.pipeline.showAllJobs": "Show all pipeline jobs",
     "maintenance.pipeline.status": "Status",
     "maintenance.pipeline.kind": "Task",
     "maintenance.pipeline.allStatuses": "All statuses",

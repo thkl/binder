@@ -32,6 +32,7 @@ export class PipelineJobService {
       };
       if (query.status) params['status'] = query.status;
       if (query.kind) params['kind'] = query.kind;
+      if (query.documentUuid) params['documentUuid'] = query.documentUuid;
 
       const response = await firstValueFrom(
         this.http.get<ApiResponse<unknown>>(this.application.getApiUrl('v1', 'pipeline/jobs'), {
