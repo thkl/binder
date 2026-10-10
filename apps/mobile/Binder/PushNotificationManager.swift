@@ -9,6 +9,7 @@ final class PushNotificationManager: ObservableObject {
 
     @Published private(set) var isAuthorized = false
     @Published private(set) var errorMessage: String?
+    @Published private(set) var serverEnabled = false
     @Published var isEnabled: Bool {
         didSet { AppSettings.pushNotificationsEnabled = isEnabled }
     }
@@ -31,6 +32,8 @@ final class PushNotificationManager: ObservableObject {
         self.serverURL = serverURL
         if enabled {
             do {
+                serverEnabled = try await BinderAPI.shared.pushNotificationsEnabled(serverURL: serverURL)
+                guard serverEnabled else { return }
                 let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
                 isAuthorized = granted
                 guard granted else {
@@ -54,6 +57,14 @@ final class PushNotificationManager: ObservableObject {
 
     func sync(serverURL: String) async {
         self.serverURL = serverURL
+        do {
+            serverEnabled = try await BinderAPI.shared.pushNotificationsEnabled(serverURL: serverURL)
+        } catch {
+            serverEnabled = false
+            errorMessage = "Could not check notification availability on this server."
+            return
+        }
+        guard serverEnabled else { return }
         await refreshAuthorization()
         guard isEnabled, isAuthorized else { return }
         UIApplication.shared.registerForRemoteNotifications()
@@ -115,9 +126,12 @@ struct PushNotificationSettingsView: View {
                     get: { manager.isEnabled },
                     set: { value in Task { await manager.setEnabled(value, serverURL: serverURL) } }
                 ))
+                .disabled(!manager.serverEnabled)
                 LabeledContent("Permission", value: manager.isAuthorized ? "Allowed" : "Not allowed")
             } footer: {
-                Text("Binder registers this device with your server. You can change alert permissions in iOS Settings.")
+                Text(manager.serverEnabled
+                     ? "Binder registers this device with your server. You can change alert permissions in iOS Settings."
+                     : "Push notifications are disabled on this server.")
             }
             if let error = manager.errorMessage {
                 Section { Text(error).foregroundStyle(.red) }

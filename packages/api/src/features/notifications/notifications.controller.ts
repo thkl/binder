@@ -37,6 +37,16 @@ export class NotificationsController {
     return { data: null };
   }
 
+  @Get('status')
+  async getNotificationStatus() {
+    const settings = await this.notifications.getPushSettings();
+    return {
+      data: {
+        enabled: settings.enabled && settings.hasAPNsKey && Boolean(settings.keyId && settings.teamId && settings.topic),
+      },
+    };
+  }
+
   @Delete('devices')
   async unregisterDevice(@Body() body: { token?: unknown }, @CurrentUser() user: ScopedUser) {
     if (typeof body.token === 'string') await this.notifications.unregisterDevice(user.userId, body.token.toLowerCase());

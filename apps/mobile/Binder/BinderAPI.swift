@@ -11,6 +11,11 @@ private struct PushDevicePayload: Encodable {
     let environment: String?
 }
 
+private struct PushStatusEnvelope: Decodable {
+    let data: PushStatus
+    struct PushStatus: Decodable { let enabled: Bool }
+}
+
 struct BinderSearchResponse: Decodable {
     let query: String
     let total: Int
@@ -884,6 +889,11 @@ final class BinderAPI {
     func registerPushDevice(serverURL: String, token: String, environment: String) async throws {
         _ = try await mutate(path: "notifications/devices", serverURL: serverURL, method: "POST",
                              payload: PushDevicePayload(token: token, environment: environment))
+    }
+
+    func pushNotificationsEnabled(serverURL: String) async throws -> Bool {
+        let (data, _) = try await request(path: "notifications/status", serverURL: serverURL)
+        return try JSONDecoder().decode(PushStatusEnvelope.self, from: data).data.enabled
     }
 
     func unregisterPushDevice(serverURL: String, token: String) async throws {

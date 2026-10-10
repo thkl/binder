@@ -31,7 +31,12 @@ struct SignedInView: View {
         .task { await PushNotificationManager.shared.sync(serverURL: model.serverURL) }
         .task { await uploadQueuedPDFs() }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await uploadQueuedPDFs() } }
+            if phase == .active {
+                Task {
+                    await PushNotificationManager.shared.sync(serverURL: model.serverURL)
+                    await uploadQueuedPDFs()
+                }
+            }
         }
         .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
     }

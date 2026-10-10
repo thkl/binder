@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var model: AuthViewModel
+    @ObservedObject private var pushNotifications = PushNotificationManager.shared
 
     var body: some View {
         NavigationStack {
@@ -26,10 +27,12 @@ struct SettingsView: View {
                 }
 
                 Section("Account") {
-                    NavigationLink {
-                        PushNotificationSettingsView(serverURL: model.serverURL)
-                    } label: {
-                        Label("Notifications", systemImage: "bell.badge")
+                    if pushNotifications.serverEnabled {
+                        NavigationLink {
+                            PushNotificationSettingsView(serverURL: model.serverURL)
+                        } label: {
+                            Label("Notifications", systemImage: "bell.badge")
+                        }
                     }
                     Button(role: .destructive) {
                         Task { await model.signOut() }
