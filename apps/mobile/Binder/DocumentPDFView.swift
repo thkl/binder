@@ -145,6 +145,7 @@ private struct DocumentMetadataSheet: View {
     @State private var isLoadingMetadata = true
     @State private var folderError: String?
     @State private var metadataError: String?
+    @State private var navigationPath: [DocumentMetadataRoute] = []
     let serverURL: String
     @Environment(\.dismiss) private var dismiss
 
@@ -167,7 +168,7 @@ private struct DocumentMetadataSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             List {
                 Section("Document") {
                     LabeledContent("Title", value: document.title?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
@@ -223,19 +224,23 @@ private struct DocumentMetadataSheet: View {
             .listStyle(.insetGrouped)
             .navigationTitle("Document info")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: DocumentMetadataRoute.self) { route in
+                switch route {
+                case .edit:
+                    DocumentMetadataEditorView(document: document, serverURL: serverURL) { updatedDocument, updatedFolders in
+                        document = updatedDocument
+                        folders = updatedFolders
+                        isLoadingFolders = false
+                        isLoadingMetadata = false
+                        folderError = nil
+                        metadataError = nil
+                        Task { await loadDocumentInfo() }
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink {
-                        DocumentMetadataEditorView(document: document, serverURL: serverURL) { updatedDocument, updatedFolders in
-                            document = updatedDocument
-                            folders = updatedFolders
-                            isLoadingFolders = false
-                            isLoadingMetadata = false
-                            folderError = nil
-                            metadataError = nil
-                            Task { await loadDocumentInfo() }
-                        }
-                    } label: {
+                    NavigationLink(value: DocumentMetadataRoute.edit) {
                         Text("Edit")
                     }
                 }
@@ -244,7 +249,8 @@ private struct DocumentMetadataSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents(navigationPath.isEmpty ? [.medium, .large] : [.large])
+        .presentationDragIndicator(navigationPath.isEmpty ? .visible : .hidden)
         .task { await loadDocumentInfo() }
     }
 
@@ -284,6 +290,10 @@ private struct DocumentMetadataSheet: View {
         }
         isLoadingFolders = false
     }
+}
+
+private enum DocumentMetadataRoute: Hashable {
+    case edit
 }
 
 private struct PDFDocumentView: UIViewRepresentable {

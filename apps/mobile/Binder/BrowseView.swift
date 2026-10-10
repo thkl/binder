@@ -3,17 +3,21 @@ import SwiftUI
 struct BrowseView: View {
     @ObservedObject var model: AuthViewModel
 
-    @State private var folders: [BinderFolder] = []
+    @State private var allFolders: [BinderFolder] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var folderEditorRequest: FolderManagementRequest?
+    @State private var folderToDelete: BinderFolder?
+    @State private var showingDeleteConfirmation = false
+    @State private var managementError: String?
 
     var body: some View {
         NavigationStack {
             Group {
-                if isLoading && folders.isEmpty {
+                if isLoading && allFolders.isEmpty {
                     ProgressView("Loading folders…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let errorMessage, folders.isEmpty {
+                } else if let errorMessage, allFolders.isEmpty {
                     ContentUnavailableView {
                         Label("Couldn’t load folders", systemImage: "folder.badge.questionmark")
                     } description: {
@@ -21,12 +25,14 @@ struct BrowseView: View {
                     } actions: {
                         Button("Retry") { Task { await loadFolders() } }
                     }
-                } else if folders.isEmpty {
-                    ContentUnavailableView(
-                        "No folders yet",
-                        systemImage: "folder",
-                        description: Text("Folders in your Binder library will appear here.")
-                    )
+                } else if rootFolders.isEmpty {
+                    ContentUnavailableView {
+                        Label("No folders yet", systemImage: "folder")
+                    } description: {
+                        Text("Create a folder to organize your documents.")
+                    } actions: {
+                        Button("Create folder") { beginCreateFolder(parentUUID: nil) }
+                    }
                 } else {
                     List {
                         if let errorMessage {
@@ -38,14 +44,7 @@ struct BrowseView: View {
                         }
 
                         Section("Folders") {
-                            ForEach(folders) { folder in
-                                NavigationLink {
-                                    FolderContentsView(folder: folder, model: model)
-                                } label: {
-                                    FolderListRow(folder: folder)
-                                }
-                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                            }
+                            ForEach(rootFolders) { folder in folderRow(folder) }
                         }
                     }
                     .listStyle(.insetGrouped)
@@ -53,20 +52,110 @@ struct BrowseView: View {
                 }
             }
             .navigationTitle("Folders")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { beginCreateFolder(parentUUID: nil) } label: {
+                        Label("New folder", systemImage: "plus")
+                    }
+                    .accessibilityIdentifier("create-folder")
+                }
+            }
+            .sheet(item: $folderEditorRequest) { request in
+                FolderManagementSheet(
+                    folder: request.folder,
+                    parentUUID: request.parentUUID,
+                    serverURL: model.serverURL,
+                    allFolders: allFolders,
+                    onSaved: { await loadFolders() }
+                )
+            }
+            .confirmationDialog(
+                "Delete folder?",
+                isPresented: $showingDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let folderToDelete { Task { await deleteFolder(folderToDelete) } }
+                }
+                Button("Cancel", role: .cancel) { folderToDelete = nil }
+            } message: {
+                Text("Its documents will be unlinked, and its child folders will be moved to the top level.")
+            }
+            .alert("Folder update failed", isPresented: Binding(
+                get: { managementError != nil },
+                set: { if !$0 { managementError = nil } }
+            )) {
+                Button("OK", role: .cancel) { managementError = nil }
+            } message: {
+                Text(managementError ?? "")
+            }
             .task { await loadFolders() }
         }
     }
 
+    private var rootFolders: [BinderFolder] {
+        allFolders
+            .filter { $0.parentUuid == nil }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    private func folderRow(_ folder: BinderFolder) -> some View {
+        HStack(spacing: 8) {
+            NavigationLink {
+                FolderContentsView(
+                    folder: folder,
+                    model: model,
+                    allFolders: $allFolders,
+                    onFolderTreeChanged: loadFolders
+                )
+            } label: {
+                FolderListRow(folder: folder)
+            }
+            .buttonStyle(.plain)
+
+            FolderActionMenu(
+                createSubfolder: { beginCreateFolder(parentUUID: folder.uuid) },
+                edit: { beginEditFolder(folder) },
+                delete: { confirmDelete(folder) }
+            )
+        }
+        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 8))
+    }
+
+    private func beginCreateFolder(parentUUID: String?) {
+        folderEditorRequest = FolderManagementRequest(folder: nil, parentUUID: parentUUID)
+    }
+
+    private func beginEditFolder(_ folder: BinderFolder) {
+        folderEditorRequest = FolderManagementRequest(folder: folder, parentUUID: folder.parentUuid)
+    }
+
+    private func confirmDelete(_ folder: BinderFolder) {
+        folderToDelete = folder
+        showingDeleteConfirmation = true
+    }
+
     @MainActor
     private func loadFolders() async {
-        guard !isLoading || folders.isEmpty else { return }
+        guard !isLoading || allFolders.isEmpty else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
         do {
-            folders = try await BinderAPI.shared.folders(serverURL: model.serverURL)
+            allFolders = try await BinderAPI.shared.allFolders(serverURL: model.serverURL)
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func deleteFolder(_ folder: BinderFolder) async {
+        folderToDelete = nil
+        do {
+            try await BinderAPI.shared.deleteFolder(serverURL: model.serverURL, uuid: folder.uuid)
+            await loadFolders()
+        } catch {
+            managementError = error.localizedDescription
         }
     }
 }
@@ -74,6 +163,8 @@ struct BrowseView: View {
 private struct FolderContentsView: View {
     let folder: BinderFolder
     @ObservedObject var model: AuthViewModel
+    @Binding var allFolders: [BinderFolder]
+    let onFolderTreeChanged: () async -> Void
 
     @State private var sortOptions: BinderFolderSortOptions
     @State private var subfolders: [BinderFolder] = []
@@ -84,10 +175,21 @@ private struct FolderContentsView: View {
     @State private var isLoadingMore = false
     @State private var errorMessage: String?
     @State private var documentErrorMessage: String?
+    @State private var folderEditorRequest: FolderManagementRequest?
+    @State private var folderToDelete: BinderFolder?
+    @State private var showingDeleteConfirmation = false
+    @State private var managementError: String?
 
-    init(folder: BinderFolder, model: AuthViewModel) {
+    init(
+        folder: BinderFolder,
+        model: AuthViewModel,
+        allFolders: Binding<[BinderFolder]>,
+        onFolderTreeChanged: @escaping () async -> Void
+    ) {
         self.folder = folder
         self.model = model
+        self._allFolders = allFolders
+        self.onFolderTreeChanged = onFolderTreeChanged
         _sortOptions = State(initialValue: FolderSortPreferenceStore.load(
             serverURL: model.serverURL,
             accountID: model.user?.uuid ?? model.username,
@@ -121,12 +223,7 @@ private struct FolderContentsView: View {
                     if !subfolders.isEmpty {
                         Section("Folders") {
                             ForEach(subfolders) { child in
-                                NavigationLink {
-                                    FolderContentsView(folder: child, model: model)
-                                } label: {
-                                    FolderListRow(folder: child)
-                                }
-                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                                folderRow(child)
                             }
                         }
                     }
@@ -172,29 +269,68 @@ private struct FolderContentsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Group by", selection: $sortOptions.groupBy) {
-                        ForEach(BinderGroupMode.allCases) { mode in
-                            Text(mode.label).tag(mode)
-                        }
+                HStack(spacing: 12) {
+                    Button { beginCreateFolder(parentUUID: folder.uuid) } label: {
+                        Image(systemName: "folder.badge.plus")
                     }
-                    Picker("Sort order", selection: $sortOptions.direction) {
-                        ForEach(BinderSortDirection.allCases) { direction in
-                            Text(direction.label).tag(direction)
+                    .accessibilityLabel("Create subfolder")
+
+                    Menu {
+                        Picker("Group by", selection: $sortOptions.groupBy) {
+                            ForEach(BinderGroupMode.allCases) { mode in
+                                Text(mode.label).tag(mode)
+                            }
                         }
-                    }
-                    if sortOptions.groupBy != .none {
-                        Picker("Group order", selection: $sortOptions.groupDirection) {
+                        Picker("Sort order", selection: $sortOptions.direction) {
                             ForEach(BinderSortDirection.allCases) { direction in
                                 Text(direction.label).tag(direction)
                             }
                         }
+                        if sortOptions.groupBy != .none {
+                            Picker("Group order", selection: $sortOptions.groupDirection) {
+                                ForEach(BinderSortDirection.allCases) { direction in
+                                    Text(direction.label).tag(direction)
+                                }
+                            }
+                        }
+                    } label: {
+                        Label("Sort", systemImage: "arrow.up.arrow.down")
                     }
-                } label: {
-                    Label("Sort", systemImage: "arrow.up.arrow.down")
+                    .accessibilityLabel("Sort and group documents")
                 }
-                .accessibilityLabel("Sort and group documents")
             }
+        }
+        .sheet(item: $folderEditorRequest) { request in
+            FolderManagementSheet(
+                folder: request.folder,
+                parentUUID: request.parentUUID,
+                serverURL: model.serverURL,
+                allFolders: allFolders,
+                onSaved: {
+                    await onFolderTreeChanged()
+                    await loadContents()
+                }
+            )
+        }
+        .confirmationDialog(
+            "Delete folder?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let folderToDelete { Task { await deleteFolder(folderToDelete) } }
+            }
+            Button("Cancel", role: .cancel) { folderToDelete = nil }
+        } message: {
+            Text("Its documents will be unlinked, and its child folders will be moved to the top level.")
+        }
+        .alert("Folder update failed", isPresented: Binding(
+            get: { managementError != nil },
+            set: { if !$0 { managementError = nil } }
+        )) {
+            Button("OK", role: .cancel) { managementError = nil }
+        } message: {
+            Text(managementError ?? "")
         }
         .task(id: "\(model.serverURL)-\(folder.uuid)") {
             await loadContentsWhenViewSettles()
@@ -207,6 +343,54 @@ private struct FolderContentsView: View {
                 folderUUID: folder.uuid
             )
             Task { await loadDocuments(reset: true) }
+        }
+    }
+
+    private func folderRow(_ child: BinderFolder) -> some View {
+        HStack(spacing: 8) {
+            NavigationLink {
+                FolderContentsView(
+                    folder: child,
+                    model: model,
+                    allFolders: $allFolders,
+                    onFolderTreeChanged: onFolderTreeChanged
+                )
+            } label: {
+                FolderListRow(folder: child)
+            }
+            .buttonStyle(.plain)
+
+            FolderActionMenu(
+                createSubfolder: { beginCreateFolder(parentUUID: child.uuid) },
+                edit: { beginEditFolder(child) },
+                delete: { confirmDelete(child) }
+            )
+        }
+        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 8))
+    }
+
+    private func beginCreateFolder(parentUUID: String?) {
+        folderEditorRequest = FolderManagementRequest(folder: nil, parentUUID: parentUUID)
+    }
+
+    private func beginEditFolder(_ folder: BinderFolder) {
+        folderEditorRequest = FolderManagementRequest(folder: folder, parentUUID: folder.parentUuid)
+    }
+
+    private func confirmDelete(_ folder: BinderFolder) {
+        folderToDelete = folder
+        showingDeleteConfirmation = true
+    }
+
+    @MainActor
+    private func deleteFolder(_ folderToRemove: BinderFolder) async {
+        folderToDelete = nil
+        do {
+            try await BinderAPI.shared.deleteFolder(serverURL: model.serverURL, uuid: folderToRemove.uuid)
+            await onFolderTreeChanged()
+            await loadContents()
+        } catch {
+            managementError = error.localizedDescription
         }
     }
 

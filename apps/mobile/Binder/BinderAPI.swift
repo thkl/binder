@@ -46,6 +46,22 @@ struct BinderFolder: Decodable, Identifiable {
     var id: String { uuid }
 }
 
+struct BinderIssuer: Decodable, Identifiable {
+    let uuid: String
+    let ownerUuid: String?
+    var name: String
+    var address: String?
+    var zipCode: String?
+    var city: String?
+    var country: String?
+    var custom: [String: BinderMetadataValue]
+    var folderUuid: String?
+    let createdAt: String?
+    let updatedAt: String?
+
+    var id: String { uuid }
+}
+
 extension BinderFolder {
     func path(in folders: [BinderFolder]) -> String {
         let byUUID = Dictionary(uniqueKeysWithValues: folders.map { ($0.uuid, $0) })
@@ -151,15 +167,6 @@ struct BinderMetadataOption: Decodable, Identifiable {
     var id: String { uuid }
 }
 
-struct BinderIssuerOption: Decodable, Identifiable {
-    let uuid: String
-    let name: String
-    let city: String?
-    let folderUuid: String?
-
-    var id: String { uuid }
-}
-
 struct BinderMetadataDefinition: Decodable, Identifiable {
     let uuid: String
     let key: String
@@ -173,7 +180,7 @@ struct BinderMetadataDefinition: Decodable, Identifiable {
 
 struct BinderMetadataEditorOptions: Decodable {
     let vocabulary: BinderMetadataVocabulary
-    let issuers: [BinderIssuerOption]
+    let issuers: [BinderIssuer]
     let definitions: [BinderMetadataDefinition]
 }
 
@@ -236,6 +243,10 @@ private struct FolderListEnvelope: Decodable {
     }
 }
 
+private struct FolderMutationEnvelope: Decodable {
+    let data: BinderFolder
+}
+
 private struct DocumentListEnvelope: Decodable {
     let data: BinderFolderDocumentPage
 }
@@ -250,8 +261,71 @@ private struct MetadataVocabularyEnvelope: Decodable {
 
 private struct IssuerListEnvelope: Decodable {
     let data: Items
-    struct Items: Decodable { let items: [BinderIssuerOption] }
+    struct Items: Decodable { let items: [BinderIssuer] }
 }
+
+private struct IssuerMutationEnvelope: Decodable {
+    let data: BinderIssuer
+}
+
+private struct FolderCreatePayload: Encodable {
+    let name: String
+    let parentUuid: String?
+}
+
+private struct FolderUpdatePayload: Encodable {
+    let name: String
+}
+
+private struct FolderMovePayload: Encodable {
+    let parentUuid: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case parentUuid
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        if let parentUuid {
+            try container.encode(parentUuid, forKey: .parentUuid)
+        } else {
+            try container.encodeNil(forKey: .parentUuid)
+        }
+    }
+}
+
+struct IssuerMutationPayload: Encodable {
+    let name: String
+    let address: String?
+    let zipCode: String?
+    let city: String?
+    let country: String?
+    let custom: [String: BinderMetadataValue]
+    let folderUuid: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case name
+        case address
+        case zipCode
+        case city
+        case country
+        case custom
+        case folderUuid
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(name, forKey: .name)
+        try container.encode(address, forKey: .address)
+        try container.encode(zipCode, forKey: .zipCode)
+        try container.encode(city, forKey: .city)
+        try container.encode(country, forKey: .country)
+        try container.encode(custom, forKey: .custom)
+        try container.encode(folderUuid, forKey: .folderUuid)
+    }
+}
+
+private struct EmptyMutationPayload: Encodable {}
 
 private struct MetadataDefinitionsEnvelope: Decodable {
     let data: Items
@@ -336,6 +410,28 @@ final class BinderAPI {
     func allFolders(serverURL: String) async throws -> [BinderFolder] {
         let (data, _) = try await request(path: "folders/all", serverURL: serverURL)
         return try JSONDecoder().decode(FolderListEnvelope.self, from: data).data.items
+    }
+
+    func createFolder(serverURL: String, name: String, parentUUID: String?) async throws -> BinderFolder {
+        let payload = FolderCreatePayload(name: name, parentUuid: parentUUID)
+        let data = try await mutate(path: "folders", serverURL: serverURL, method: "POST", payload: payload)
+        return try JSONDecoder().decode(FolderMutationEnvelope.self, from: data).data
+    }
+
+    func updateFolder(serverURL: String, uuid: String, name: String) async throws -> BinderFolder {
+        let payload = FolderUpdatePayload(name: name)
+        let data = try await mutate(path: "folders/\(uuid)", serverURL: serverURL, method: "PATCH", payload: payload)
+        return try JSONDecoder().decode(FolderMutationEnvelope.self, from: data).data
+    }
+
+    func moveFolder(serverURL: String, uuid: String, parentUUID: String?) async throws -> BinderFolder {
+        let payload = FolderMovePayload(parentUuid: parentUUID)
+        let data = try await mutate(path: "folders/\(uuid)/move", serverURL: serverURL, method: "POST", payload: payload)
+        return try JSONDecoder().decode(FolderMutationEnvelope.self, from: data).data
+    }
+
+    func deleteFolder(serverURL: String, uuid: String) async throws {
+        _ = try await mutate(path: "folders/\(uuid)", serverURL: serverURL, method: "DELETE", payload: EmptyMutationPayload())
     }
 
     func foldersForDocument(serverURL: String, documentUUID: String) async throws -> [BinderFolder] {
@@ -435,6 +531,21 @@ final class BinderAPI {
             issuers: try JSONDecoder().decode(IssuerListEnvelope.self, from: issuerData).data.items,
             definitions: try JSONDecoder().decode(MetadataDefinitionsEnvelope.self, from: definitionsData).data.items.filter(\.active)
         )
+    }
+
+    func issuers(serverURL: String) async throws -> [BinderIssuer] {
+        let (data, _) = try await request(path: "issuers", serverURL: serverURL)
+        return try JSONDecoder().decode(IssuerListEnvelope.self, from: data).data.items
+    }
+
+    func createIssuer(serverURL: String, payload: IssuerMutationPayload) async throws -> BinderIssuer {
+        let data = try await mutate(path: "issuers", serverURL: serverURL, method: "POST", payload: payload)
+        return try JSONDecoder().decode(IssuerMutationEnvelope.self, from: data).data
+    }
+
+    func updateIssuer(serverURL: String, uuid: String, payload: IssuerMutationPayload) async throws -> BinderIssuer {
+        let data = try await mutate(path: "issuers/\(uuid)", serverURL: serverURL, method: "PATCH", payload: payload)
+        return try JSONDecoder().decode(IssuerMutationEnvelope.self, from: data).data
     }
 
     func updateDocumentMetadata(
@@ -627,6 +738,25 @@ final class BinderAPI {
         try absorbSessionCookie(from: response, for: request)
         try validate(response, data: data)
         return (data, response)
+    }
+
+    private func mutate<Payload: Encodable>(
+        path: String,
+        serverURL: String,
+        method: String,
+        payload: Payload
+    ) async throws -> Data {
+        guard let csrfToken = csrfToken ?? KeychainStore.csrfToken(origin: origin(for: serverURL)) else {
+            throw BinderAPIError.loginRequired
+        }
+        var request = try makeRequest(path: path, serverURL: serverURL, method: method)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(csrfToken, forHTTPHeaderField: "X-CSRF-Token")
+        request.httpBody = try JSONEncoder().encode(payload)
+        let (data, response) = try await urlSession.data(for: request)
+        try absorbSessionCookie(from: response, for: request)
+        try validate(response, data: data)
+        return data
     }
 
     private func makeRequest(path: String, serverURL: String, method: String) throws -> URLRequest {

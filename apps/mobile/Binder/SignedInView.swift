@@ -24,6 +24,9 @@ struct SignedInView: View {
 
             BrowseView(model: model)
                 .tabItem { Label("Browse", systemImage: "folder") }
+
+            SettingsView(model: model)
+                .tabItem { Label("Settings", systemImage: "gearshape") }
         }
         .task { await uploadQueuedPDFs() }
         .onChange(of: scenePhase) { _, phase in
