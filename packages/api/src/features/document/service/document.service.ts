@@ -73,6 +73,7 @@ import { PipelineJobEvent } from '../../pipeline/models/pipeline-job-event.entit
 import { CalendarEventStore } from '../../calendar/store/calendar-event.store';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { ClassificationFeedbackService } from '../../classification-feedback/service/classification-feedback.service';
+import { IssuerService } from '../../issuer/service/issuer.service';
 
 export interface UploadedDocumentFile {
   buffer: Buffer;
@@ -102,6 +103,7 @@ export class DocumentService {
     private readonly calendarEvents: CalendarEventStore,
     private readonly settings: ApplicationSettingsService,
     private readonly classificationFeedback: ClassificationFeedbackService,
+    private readonly issuers: IssuerService,
   ) {}
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
@@ -1521,8 +1523,17 @@ export class DocumentService {
     }
 
     const classification: SetDocumentMetadataInput = {};
-    if (canApply('issuer') && !metadata.issuer && suggestion.issuerUuid) {
-      classification.issuerUuid = suggestion.issuerUuid;
+    if (canApply('issuer') && !metadata.issuer) {
+      if (suggestion.issuerUuid) {
+        classification.issuerUuid = suggestion.issuerUuid;
+      } else if (suggestion.suggestedIssuer) {
+        try {
+          const issuer = await this.issuers.findOrCreate(ownerUuid, suggestion.suggestedIssuer);
+          classification.issuerUuid = issuer.uuid;
+        } catch (error) {
+          this.logger.warn(`Unable to create suggested issuer for ${uuid}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
     }
     if (canApply('documentType') && !metadata.documentType && suggestion.documentTypeUuid) {
       classification.documentTypeUuid = suggestion.documentTypeUuid;
@@ -1619,7 +1630,7 @@ export class DocumentService {
     const fields = ['title'];
     if (suggestion.documentTypeUuid) fields.push('documentType');
     if (suggestion.categoryUuid) fields.push('category');
-    if (suggestion.issuerUuid) fields.push('issuer');
+    if (suggestion.issuerUuid || suggestion.suggestedIssuer) fields.push('issuer');
     if (suggestion.tagUuids.length > 0) fields.push('tags');
     if (Object.keys(suggestion.custom).length > 0) fields.push('custom');
     return fields;

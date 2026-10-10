@@ -906,8 +906,8 @@ final class BinderAPI {
     }
 
     func pushDeviceRegistration(serverURL: String, token: String) async throws -> (enabled: Bool, environment: String?) {
-        let (data, _) = try await mutate(path: "notifications/devices/status", serverURL: serverURL, method: "POST",
-                                         payload: PushDevicePayload(token: token, environment: nil, deviceName: nil))
+        let data = try await mutate(path: "notifications/devices/status", serverURL: serverURL, method: "POST",
+                                    payload: PushDevicePayload(token: token, environment: nil, deviceName: nil))
         let registration = try JSONDecoder().decode(PushDeviceRegistrationEnvelope.self, from: data).data
         return (registration.enabled, registration.environment)
     }

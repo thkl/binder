@@ -181,6 +181,25 @@ export class DocumentMetadataEditorComponent {
       return false;
     }
 
+    const suggestion = this.activeSuggestion();
+    if (
+      this.acceptedSuggestionFields().has('issuerUuid') &&
+      !this.issuerUuid() &&
+      suggestion?.suggestedIssuer
+    ) {
+      const candidate = suggestion.suggestedIssuer;
+      const normalize = (value: string | null | undefined) => value?.trim().toLocaleLowerCase() ?? '';
+      const existing = this.metadata.issuers().find((issuer) =>
+        normalize(issuer.name) === normalize(candidate.name) &&
+        (['address', 'zipCode', 'city', 'country'] as const).every((field) =>
+          !candidate[field] || normalize(issuer[field]) === normalize(candidate[field]),
+        ),
+      );
+      const issuer = existing ?? await this.metadata.createIssuer(candidate);
+      if (!issuer) return false;
+      this.issuerUuid.set(issuer.uuid);
+    }
+
     const result = await this.metadata.setDocumentMetadata(this.documentUuid(), {
       issuerUuid: this.issuerUuid() || null,
       documentTypeUuid: this.documentTypeUuid() || null,
@@ -282,7 +301,7 @@ export class DocumentMetadataEditorComponent {
     const fields = ['title'];
     if (suggestion.documentTypeUuid) fields.push('documentTypeUuid');
     if (suggestion.categoryUuid) fields.push('categoryUuid');
-    if (suggestion.issuerUuid) fields.push('issuerUuid');
+    if (suggestion.issuerUuid || suggestion.suggestedIssuer) fields.push('issuerUuid');
     if (suggestion.tagUuids.length > 0) fields.push('tagUuids');
     if (Object.keys(suggestion.custom).length > 0) fields.push('custom');
     this.applyingAllSuggestion = true;
@@ -345,6 +364,12 @@ export class DocumentMetadataEditorComponent {
   suggestedIssuerName(uuid: string | null): string {
     const item = this.metadata.issuers().find((candidate) => candidate.uuid === uuid);
     return item?.name ?? 'No suggestion';
+  }
+
+  suggestedIssuerLabel(suggestion: DocumentTitleSuggestion): string {
+    return suggestion.issuerUuid
+      ? this.suggestedIssuerName(suggestion.issuerUuid)
+      : suggestion.suggestedIssuer?.name ?? 'No suggestion';
   }
 
   itemName(item: { name: string; translations: Record<string, string> }): string {

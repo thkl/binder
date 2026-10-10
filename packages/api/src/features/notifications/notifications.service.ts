@@ -6,6 +6,7 @@ import { BinderLogger } from '../../shared/service/logger.helper';
 import { PushDeviceStore } from './store/push-device.store';
 import { PushNotificationEventStore } from './store/push-notification-event.store';
 import { PushNotificationEvent } from './models/push-notification-event.entity';
+import { DocumentStore } from '../document/store/document.store';
 
 type Environment = 'sandbox' | 'production';
 type PushSettings = {
@@ -32,6 +33,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     private readonly settings: ApplicationSettingsService,
     private readonly devices: PushDeviceStore,
     private readonly events: PushNotificationEventStore,
+    private readonly documents: DocumentStore,
   ) {}
 
   onModuleInit() {
@@ -159,12 +161,14 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     if (!config.enabled || !enabled) return;
     if (!config.hasAPNsKey || !config.keyId || !config.teamId || !config.topic) throw new Error('APNs is enabled but its key, Key ID, Team ID, or topic is missing');
     const devices = await this.devices.findForOwner(event.ownerUuid);
+    const document = await this.documents.findOwnedByUuid(event.ownerUuid, event.documentUuid);
+    const documentTitle = document?.title?.trim() || document?.originalFilename || '';
     for (const device of devices) {
       const host = device.environment === 'sandbox' ? 'https://api.sandbox.push.apple.com' : 'https://api.push.apple.com';
       const result = await this.postAPNs(host, device.token, config, {
         title: 'Binder',
-        body: this.notificationText(event.eventType),
-        data: { documentUuid: event.documentUuid, eventType: event.eventType },
+        body: this.notificationText(event.eventType, documentTitle),
+        data: { documentUuid: event.documentUuid, documentTitle, eventType: event.eventType },
       });
       if (result.status === 410) {
         await this.devices.deleteToken(device.token);
@@ -215,9 +219,11 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     }));
   }
 
-  private notificationText(type: string): string {
+  private notificationText(type: string, documentTitle: string): string {
     if (type === 'document-added') return 'A document was added.';
-    if (type === 'processing-complete') return 'Document processing is complete.';
+    if (type === 'processing-complete') {
+      return documentTitle ? `“${documentTitle}” has finished processing.` : 'Document processing is complete.';
+    }
     return 'Document processing needs attention.';
   }
 

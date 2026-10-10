@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
-import { DocumentTitleSuggestion, DocumentTitleSuggestionSchema } from '@binder/common';
+import { CreateIssuerInputSchema, DocumentTitleSuggestion, DocumentTitleSuggestionSchema } from '@binder/common';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { DocumentPage } from '../models/document-page.entity';
 import { DocumentStore } from '../store/document.store';
@@ -91,7 +91,7 @@ export class TitleSuggestionService {
         messages: [
           {
             role: 'system',
-            content: `${analysisPrompt}\n\nReturn one valid JSON object with exactly these keys: suggestedTitle, confidence, issuerUuid, documentTypeUuid, categoryUuid, tagUuids, and custom. confidence must be a JSON number between 0 and 1 representing how strongly the document evidence supports the complete suggestion; use higher values for clear evidence and use 0 only when there is no useful evidence. Do not return a percentage. The title must be at most 255 characters. Select issuerUuid only from the supplied issuers and only when the document text provides sufficient evidence. Use null or [] when uncertain. Use only supplied UUIDs and metadata keys. Never include markdown.`,
+            content: `${analysisPrompt}\n\nReturn one valid JSON object with exactly these keys: suggestedTitle, confidence, issuerUuid, suggestedIssuer, documentTypeUuid, categoryUuid, tagUuids, and custom. confidence must be a JSON number between 0 and 1 representing how strongly the document evidence supports the complete suggestion; use higher values for clear evidence and use 0 only when there is no useful evidence. Do not return a percentage. The title must be at most 255 characters. If a supplied issuer clearly matches the document, return its UUID in issuerUuid and set suggestedIssuer to null. If no supplied issuer matches and the document provides clear issuer evidence, set issuerUuid to null and return suggestedIssuer with name, address, zipCode, city, country, and custom; use null for unknown text fields and {} for custom when none is supported. Never invent issuer details. If the issuer is unclear, use null for both issuer fields. Select issuerUuid only from the supplied issuers. Use only supplied UUIDs and metadata keys. Never include markdown.`,
           },
           {
             role: 'user',
@@ -117,15 +117,27 @@ export class TitleSuggestionService {
         ? raw.suggestedTitle.trim().slice(0, 255)
         : fallbackTitle.slice(0, 255);
     const confidence = parseConfidence(raw.confidence, invalidFields);
-    const issuerUuid = parseUuid(raw.issuerUuid, 'issuerUuid', invalidFields);
+    let issuerUuid = parseUuid(raw.issuerUuid, 'issuerUuid', invalidFields);
+    let suggestedIssuer = parseSuggestedIssuer(raw.suggestedIssuer, invalidFields);
     const documentTypeUuid = parseUuid(raw.documentTypeUuid, 'documentTypeUuid', invalidFields);
     const categoryUuid = parseUuid(raw.categoryUuid, 'categoryUuid', invalidFields);
     const tagUuids = parseUuidArray(raw.tagUuids, 'tagUuids', invalidFields);
     const custom = parseCustom(raw.custom, invalidFields);
+    const allowedIssuerUuids = new Set(allowedIssuers.map((issuer) => issuer.uuid));
+    if (!issuerUuid || !allowedIssuerUuids.has(issuerUuid)) issuerUuid = null;
+    if (issuerUuid) suggestedIssuer = null;
+    if (suggestedIssuer) {
+      const existing = findMatchingIssuer(suggestedIssuer, allowedIssuers);
+      if (existing) {
+        issuerUuid = existing.uuid;
+        suggestedIssuer = null;
+      }
+    }
     const suggestion = DocumentTitleSuggestionSchema.parse({
       suggestedTitle,
       confidence,
       issuerUuid,
+      suggestedIssuer,
       documentTypeUuid,
       categoryUuid,
       tagUuids,
@@ -137,7 +149,6 @@ export class TitleSuggestionService {
         fields: [...new Set(invalidFields)],
       });
     }
-    const allowedIssuerUuids = new Set(allowedIssuers.map((issuer) => issuer.uuid));
     const allowedTypeUuids = new Set(vocabulary.documentTypes.map((item) => item.uuid));
     const allowedCategoryUuids = new Set(vocabulary.categories.map((item) => item.uuid));
     const allowedTagUuids = new Set(vocabulary.tags.map((item) => item.uuid));
@@ -238,4 +249,34 @@ function parseCustom(value: unknown, invalidFields: string[]): SuggestionRecord 
     return {};
   }
   return value;
+}
+
+function parseSuggestedIssuer(value: unknown, invalidFields: string[]) {
+  if (value === undefined || value === null) return null;
+  const parsed = CreateIssuerInputSchema.omit({ folderUuid: true }).safeParse(value);
+  if (!parsed.success) {
+    invalidFields.push('suggestedIssuer');
+    return null;
+  }
+  return parsed.data;
+}
+
+function findMatchingIssuer(
+  candidate: NonNullable<DocumentTitleSuggestion['suggestedIssuer']>,
+  issuers: Array<{
+    uuid: string;
+    name: string;
+    address: string | null;
+    zipCode: string | null;
+    city: string | null;
+    country: string | null;
+  }>,
+) {
+  const normalize = (value: string | null | undefined) => value?.trim().toLocaleLowerCase() ?? '';
+  return issuers.find((issuer) =>
+    normalize(issuer.name) === normalize(candidate.name) &&
+    (['address', 'zipCode', 'city', 'country'] as const).every((field) =>
+      !candidate[field] || normalize(issuer[field]) === normalize(candidate[field]),
+    ),
+  );
 }

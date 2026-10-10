@@ -55,10 +55,10 @@
           ><input
             type="checkbox"
             [checked]="isSuggestionAccepted('issuerUuid')"
-            [disabled]="!pending.issuerUuid"
+            [disabled]="!pending.issuerUuid && !pending.suggestedIssuer"
             (change)="acceptSuggestionField('issuerUuid')"
           /><span
-            >{{ 'editor.issuer' | t }}: {{ suggestedIssuerName(pending.issuerUuid) }}</span
+            >{{ 'editor.issuer' | t }}: {{ suggestedIssuerLabel(pending) }}</span
           ></label
         >
         <label class="suggestion-item"

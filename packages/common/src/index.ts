@@ -485,6 +485,7 @@ export const DocumentTitleSuggestionSchema = z.object({
   suggestedTitle: z.string().trim().min(1).max(255),
   confidence: z.number().min(0).max(1),
   issuerUuid: z.uuid().nullable().default(null),
+  suggestedIssuer: CreateIssuerInputSchema.omit({ folderUuid: true }).nullable().default(null),
   documentTypeUuid: z.uuid().nullable().default(null),
   categoryUuid: z.uuid().nullable().default(null),
   tagUuids: z.array(z.uuid()).max(50).default([]),

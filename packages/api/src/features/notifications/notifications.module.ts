@@ -4,9 +4,10 @@ import { SharedModule } from '../../shared/shared.service.module';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { NotificationsStoreModule } from './notifications.store.module';
+import { DocumentStoreModule } from '../document/document.store.module';
 
 @Module({
-  imports: [AuthenticationServiceModule, SharedModule, NotificationsStoreModule],
+  imports: [AuthenticationServiceModule, SharedModule, NotificationsStoreModule, DocumentStoreModule],
   controllers: [NotificationsController],
   providers: [NotificationsService],
 })
