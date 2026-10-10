@@ -22,6 +22,7 @@ import { AuthService } from '../../../authentication/services/auth.service';
 import { DropboxConnectionService } from '../../services/dropbox-connection.service';
 import { MaintenanceService } from '../../../maintenance/services/maintenance.service';
 import { ApiTokenManagerComponent } from '../api-token-manager/api-token-manager.component';
+import { IssuerManagerComponent } from '../issuer-manager/issuer-manager.component';
 
 @Component({
   selector: 'binder-settings',
@@ -31,6 +32,7 @@ import { ApiTokenManagerComponent } from '../api-token-manager/api-token-manager
     AiProviderManagerComponent,
     UserManagementComponent,
     ApiTokenManagerComponent,
+    IssuerManagerComponent,
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
@@ -99,6 +101,7 @@ export class SettingsComponent implements OnInit {
     const sectionExists =
       requestedSection === 'users' ||
       requestedSection === 'mcpaccess' ||
+      requestedSection === 'issuers' ||
       response.template.sections.some((section) => section.key === requestedSection);
 
     if (!sectionExists && firstSection) {
@@ -145,6 +148,7 @@ export class SettingsComponent implements OnInit {
 
   sectionLabel(key: string): string {
     if (key === 'users') return this.i18n.t('users.title');
+    if (key === 'issuers') return this.i18n.t('issuers.title');
     const section = this.sections().find((candidate) => candidate.key === key);
     return section ? this.i18n.t(`settings.${section.key}`) : this.i18n.t('settings.title');
   }

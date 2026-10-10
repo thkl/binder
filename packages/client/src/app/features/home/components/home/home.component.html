@@ -35,7 +35,11 @@
         [attr.aria-label]="'home.title' | t"
         autocomplete="off"
       />
-      <button type="submit" class="secondary-button" [disabled]="search.loading() || !searchQuery().trim()">
+      <button
+        type="submit"
+        class="secondary-button"
+        [disabled]="search.loading() || !searchQuery().trim()"
+      >
         {{ search.loading() ? ('home.searching' | t) : ('home.search' | t) }}
       </button>
     </form>

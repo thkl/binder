@@ -19,7 +19,10 @@ export class NativeSSOAuthCodeStore {
     return code;
   }
 
-  async consume(code: string, verifier: string): Promise<{ userUuid: string; appState: string } | null> {
+  async consume(
+    code: string,
+    verifier: string,
+  ): Promise<{ userUuid: string; appState: string } | null> {
     const challenge = createHash('sha256').update(verifier, 'ascii').digest('base64url');
     const codeHash = this.hash(code);
     const sequelize = NativeSSOAuthCode.sequelize;

@@ -18,7 +18,8 @@ export class CsrfGuard implements CanActivate {
     if (path.endsWith('/ssoauth/callback')) return true;
     // These endpoints establish a fresh native session using credentials or a
     // short-lived PKCE-bound authorization code instead of an existing cookie.
-    if (path.endsWith('/auth/native/login') || path.endsWith('/auth/native/sso/exchange')) return true;
+    if (path.endsWith('/auth/native/login') || path.endsWith('/auth/native/sso/exchange'))
+      return true;
 
     // Bearer-authenticated API/MCP requests do not use browser cookies, so
     // they are not exposed to the CSRF threat this guard protects against.

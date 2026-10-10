@@ -60,7 +60,10 @@ export class AuthenticationController {
     @Query('state') state: string,
     @Query('code_challenge') codeChallenge: string,
   ) {
-    if (!/^[A-Za-z0-9_-]{43,128}$/.test(state ?? '') || !/^[A-Za-z0-9_-]{43}$/.test(codeChallenge ?? '')) {
+    if (
+      !/^[A-Za-z0-9_-]{43,128}$/.test(state ?? '') ||
+      !/^[A-Za-z0-9_-]{43}$/.test(codeChallenge ?? '')
+    ) {
       throw new BadRequestException('Invalid native SSO state or PKCE challenge');
     }
     const ssodata = await this.ssoAuthenticationService.getAuthorizationUrl();

@@ -1,0 +1,153 @@
+.issuer-manager {
+  padding: 1.5rem;
+}
+
+.manager-heading,
+.form-title,
+.issuer-tools,
+.issuer-row,
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.manager-heading {
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.manager-heading h3,
+.form-title h4 {
+  margin: 0.4rem 0;
+}
+
+.manager-heading .muted {
+  max-width: 42rem;
+}
+
+.issuer-form {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0;
+  padding: 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  background: var(--color-surface);
+}
+
+.form-title {
+  align-items: baseline;
+}
+
+.text-action {
+  border: 0;
+  padding: 0.4rem;
+  color: var(--color-accent);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.text-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.text-field input,
+.text-field select,
+.text-field textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.text-field textarea {
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.text-field small,
+.issuer-details small {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  justify-content: flex-end;
+}
+
+.form-error {
+  margin: 0;
+  color: var(--color-danger, #b42318);
+}
+
+.success-message {
+  color: var(--color-success);
+}
+
+.issuer-tools {
+  margin: 1rem 0 0.5rem;
+}
+
+.search-field {
+  flex: 1;
+  max-width: 32rem;
+}
+
+.issuer-count {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.issuer-list {
+  display: grid;
+}
+
+.issuer-row {
+  padding: 1rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.issuer-details {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.issuer-details span {
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+  .issuer-manager {
+    padding: 1rem;
+  }
+
+  .manager-heading {
+    flex-direction: column;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: auto;
+  }
+
+  .issuer-row {
+    align-items: flex-start;
+  }
+}

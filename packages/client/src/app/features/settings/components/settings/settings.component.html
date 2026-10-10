@@ -44,11 +44,23 @@
               <span class="section-chevron">›</span>
             </button>
           }
+          <button
+            type="button"
+            class="section-link"
+            [class.active]="activeSection() === 'issuers'"
+            (click)="selectSection('issuers')"
+          >
+            <span class="section-symbol">◌</span>
+            <span>{{ 'issuers.title' | t }}</span>
+            <span class="section-chevron">›</span>
+          </button>
         </nav>
       </aside>
 
       <div class="settings-content">
-        @if (activeSection() === 'maintenance') {
+        @if (activeSection() === 'issuers') {
+          <binder-issuer-manager />
+        } @else if (activeSection() === 'maintenance') {
           <section class="settings-form glass-card provider-connection-card">
             <header class="form-heading">
               <div>

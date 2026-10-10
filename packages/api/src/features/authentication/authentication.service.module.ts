@@ -25,7 +25,6 @@ import { PasswordResetService } from './service/password-reset.service';
     AuthenticationGuard,
     PermissionGuard,
     PasswordResetService,
-    
   ],
 })
 export class AuthenticationServiceModule {}

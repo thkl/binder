@@ -126,7 +126,11 @@ export class AuthenticationController {
     const input = z
       .object({
         code: z.string().min(20).max(128),
-        codeVerifier: z.string().min(43).max(128).regex(/^[A-Za-z0-9._~-]+$/),
+        codeVerifier: z
+          .string()
+          .min(43)
+          .max(128)
+          .regex(/^[A-Za-z0-9._~-]+$/),
       })
       .parse(body);
     const grant = await this.nativeSSOAuthCodes.consume(input.code, input.codeVerifier);

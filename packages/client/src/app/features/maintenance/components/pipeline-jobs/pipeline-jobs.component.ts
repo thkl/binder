@@ -58,7 +58,10 @@ export class PipelineJobsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const documentUuid = this.route.snapshot.queryParamMap.get('documentUuid');
-    if (documentUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentUuid)) {
+    if (
+      documentUuid &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentUuid)
+    ) {
       this.documentUuid.set(documentUuid);
       this.statusFilter.set('failed');
     }

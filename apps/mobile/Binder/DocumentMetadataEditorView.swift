@@ -326,25 +326,31 @@ struct DocumentMetadataEditorView: View {
                 custom: customValues
             )
 
-            var foldersToSave = selectedFolderUUIDs
+            var routingFolderUUIDs: Set<String> = []
             if let folderUUID = options.issuers.first(where: { $0.uuid == issuerUUID })?.folderUuid {
-                foldersToSave.insert(folderUUID)
+                routingFolderUUIDs.insert(folderUUID)
             }
             if let folderUUID = options.vocabulary.documentTypes.first(where: { $0.uuid == documentTypeUUID })?.folderUuid {
-                foldersToSave.insert(folderUUID)
+                routingFolderUUIDs.insert(folderUUID)
             }
             if let folderUUID = options.vocabulary.categories.first(where: { $0.uuid == categoryUUID })?.folderUuid {
-                foldersToSave.insert(folderUUID)
+                routingFolderUUIDs.insert(folderUUID)
             }
-            try await BinderAPI.shared.updateDocumentFolders(
-                serverURL: serverURL,
-                documentUUID: document.uuid,
-                selectedFolderUUIDs: foldersToSave,
-                originalFolderUUIDs: originalFolderUUIDs
-            )
+            if selectedFolderUUIDs != originalFolderUUIDs {
+                try await BinderAPI.shared.updateDocumentFolders(
+                    serverURL: serverURL,
+                    documentUUID: document.uuid,
+                    selectedFolderUUIDs: selectedFolderUUIDs,
+                    originalFolderUUIDs: originalFolderUUIDs.union(routingFolderUUIDs)
+                )
+            }
 
             let updatedDocument = updatedSummary(title: normalizedTitle, options: options)
-            onSaved(updatedDocument, folders.filter { foldersToSave.contains($0.uuid) })
+            let updatedFolders = try await BinderAPI.shared.foldersForDocument(
+                serverURL: serverURL,
+                documentUUID: document.uuid
+            )
+            onSaved(updatedDocument, updatedFolders)
             dismiss()
         } catch {
             saveError = error.localizedDescription

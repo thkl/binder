@@ -16,9 +16,7 @@ export class LoginComponent {
   readonly password = signal('');
   ssoActive = signal(false);
 
-  constructor(
-    readonly auth: AuthService,
-  ) {
+  constructor(readonly auth: AuthService) {
     void this.auth
       .isSSOActive()
       .then((result) => this.ssoActive.set(result))

@@ -97,7 +97,9 @@ export class FoldersService {
           withCredentials: true,
         }),
       );
-      const folders = sortFoldersByPath(FolderDocumentListResponseSchema.parse(response.data).items);
+      const folders = sortFoldersByPath(
+        FolderDocumentListResponseSchema.parse(response.data).items,
+      );
       this.allFolders.set(folders);
       return folders;
     } catch (error) {

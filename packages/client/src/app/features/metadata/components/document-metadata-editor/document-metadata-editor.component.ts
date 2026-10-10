@@ -191,18 +191,26 @@ export class DocumentMetadataEditorComponent {
     if (result) {
       const persisted = await this.metadata.getDocumentMetadata(this.documentUuid());
       const persistedMetadata = persisted ?? result;
-      const routingFolderUuids = [
-        persistedMetadata.issuer?.folderUuid,
-        persistedMetadata.documentType?.folderUuid,
-        persistedMetadata.category?.folderUuid,
-      ].filter((uuid): uuid is string => Boolean(uuid));
-      const selectedFolderUuids = new Set([...this.selectedFolderUuids(), ...routingFolderUuids]);
-      const foldersSaved = await this.folders.setDocumentFolders(
-        this.documentUuid(),
-        [...selectedFolderUuids],
-        this.originalFolderUuids(),
+      const routingFolderUuids = new Set(
+        [
+          persistedMetadata.issuer?.folderUuid,
+          persistedMetadata.documentType?.folderUuid,
+          persistedMetadata.category?.folderUuid,
+        ].filter((uuid): uuid is string => Boolean(uuid)),
       );
-      if (!foldersSaved) return false;
+      const selectedFolderUuids = this.selectedFolderUuids();
+      const originalFolderUuids = new Set(this.originalFolderUuids());
+      const folderSelectionChanged =
+        selectedFolderUuids.size !== originalFolderUuids.size ||
+        [...selectedFolderUuids].some((uuid) => !originalFolderUuids.has(uuid));
+      if (folderSelectionChanged) {
+        const foldersSaved = await this.folders.setDocumentFolders(
+          this.documentUuid(),
+          [...selectedFolderUuids],
+          [...new Set([...originalFolderUuids, ...routingFolderUuids])],
+        );
+        if (!foldersSaved) return false;
+      }
       const persistedFolders = await this.folders.listForDocument(this.documentUuid());
       this.applyMetadata(persistedMetadata);
       this.applyFolderSelection(persistedFolders);

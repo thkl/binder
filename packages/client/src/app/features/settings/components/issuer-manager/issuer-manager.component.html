@@ -1,0 +1,141 @@
+<section class="issuer-manager glass-card">
+  <header class="manager-heading">
+    <div>
+      <p class="section-kicker">{{ 'issuers.kicker' | t }}</p>
+      <h3>{{ 'issuers.title' | t }}</h3>
+      <p class="muted">{{ 'issuers.copy' | t }}</p>
+    </div>
+    <button type="button" class="primary-action" (click)="startCreate()">
+      {{ 'issuers.add' | t }}
+    </button>
+  </header>
+
+  @if (saved()) {
+    <p class="success-message" role="status">{{ 'issuers.saved' | t }}</p>
+  }
+
+  @if (formOpen()) {
+    <form class="issuer-form" (submit)="$event.preventDefault(); save()">
+      <div class="form-title">
+        <h4>{{ editingUuid() ? ('issuers.edit' | t) : ('issuers.add' | t) }}</h4>
+        <button type="button" class="text-action" (click)="cancel()">
+          {{ 'common.cancel' | t }}
+        </button>
+      </div>
+
+      @if (formError(); as error) {
+        <p class="form-error" role="alert">{{ error }}</p>
+      }
+
+      <div class="form-grid">
+        <label class="text-field">
+          <span class="field-label">{{ 'issuers.name' | t }}</span>
+          <input
+            [value]="name()"
+            (input)="name.set($any($event.target).value)"
+            required
+            maxlength="200"
+          />
+        </label>
+        <label class="text-field">
+          <span class="field-label">{{ 'issuers.address' | t }}</span>
+          <input
+            [value]="address()"
+            (input)="address.set($any($event.target).value)"
+            maxlength="255"
+          />
+        </label>
+        <label class="text-field">
+          <span class="field-label">{{ 'issuers.zipCode' | t }}</span>
+          <input
+            [value]="zipCode()"
+            (input)="zipCode.set($any($event.target).value)"
+            maxlength="32"
+          />
+        </label>
+        <label class="text-field">
+          <span class="field-label">{{ 'issuers.city' | t }}</span>
+          <input [value]="city()" (input)="city.set($any($event.target).value)" maxlength="150" />
+        </label>
+        <label class="text-field">
+          <span class="field-label">{{ 'issuers.country' | t }}</span>
+          <input
+            [value]="country()"
+            (input)="country.set($any($event.target).value)"
+            maxlength="100"
+          />
+        </label>
+        <label class="text-field">
+          <span class="field-label">{{ 'issuers.folderRouting' | t }}</span>
+          <select [value]="folderUuid()" (change)="folderUuid.set($any($event.target).value)">
+            <option value="">{{ 'issuers.noFolderRouting' | t }}</option>
+            @for (folder of sortedFolders(); track folder.uuid) {
+              <option [value]="folder.uuid">{{ folderPath(folder.uuid) }}</option>
+            }
+          </select>
+        </label>
+        <label class="text-field full-width">
+          <span class="field-label">{{ 'issuers.customFields' | t }}</span>
+          <textarea
+            [value]="customJson()"
+            (input)="customJson.set($any($event.target).value)"
+            rows="5"
+            spellcheck="false"
+          ></textarea>
+          <small>{{ 'issuers.customFieldsHint' | t }}</small>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="secondary-button" (click)="cancel()">
+          {{ 'common.cancel' | t }}
+        </button>
+        <button
+          type="submit"
+          class="primary-action"
+          [disabled]="metadata.saving() || !name().trim()"
+        >
+          {{ metadata.saving() ? ('settings.saving' | t) : ('settings.save' | t) }}
+        </button>
+      </div>
+    </form>
+  }
+
+  <div class="issuer-tools">
+    <label class="text-field search-field">
+      <span class="field-label">{{ 'issuers.search' | t }}</span>
+      <input [value]="search()" (input)="search.set($any($event.target).value)" />
+    </label>
+    <span class="issuer-count">{{ visibleIssuers().length }} {{ 'issuers.count' | t }}</span>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">{{ 'settings.loading' | t }}</p>
+  } @else if (metadata.error(); as error) {
+    <p class="form-error" role="alert">{{ error }}</p>
+  } @else {
+    <div class="issuer-list">
+      @for (issuer of visibleIssuers(); track issuer.uuid) {
+        <article class="issuer-row">
+          <div class="issuer-details">
+            <strong>{{ issuer.name }}</strong>
+            <span>{{ location(issuer) || ('issuers.noLocation' | t) }}</span>
+            @if (addressLine(issuer)) {
+              <small>{{ addressLine(issuer) }}</small>
+            }
+            @if (issuer.folderUuid) {
+              <small>{{ 'issuers.folderRouting' | t }}: {{ folderPath(issuer.folderUuid) }}</small>
+            }
+          </div>
+          <button type="button" class="secondary-button" (click)="edit(issuer)">
+            {{ 'issuers.edit' | t }}
+          </button>
+        </article>
+      } @empty {
+        <p class="muted">
+          {{ search().trim() ? ('issuers.noMatches' | t) : ('issuers.empty' | t) }}
+        </p>
+      }
+    </div>
+  }
+</section>

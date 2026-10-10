@@ -1120,7 +1120,7 @@ h2 {
     height: 6.5rem;
   }
 
-  .document-row>.status {
+  .document-row > .status {
     grid-column: 3;
     justify-self: start;
   }
@@ -1147,7 +1147,6 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .preview-card,
   .spinner {
     animation: none;

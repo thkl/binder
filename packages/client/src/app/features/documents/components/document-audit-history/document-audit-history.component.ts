@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
- 
+
 import type { Document, DocumentAuditEvent, DocumentAuditResponse } from '@binder/common';
 import { TranslatePipe, I18nService } from '../../../../common/i18n/i18n.service';
 import { DocumentAuditService } from '../../services/document-audit.service';
