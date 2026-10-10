@@ -3,6 +3,7 @@ import Foundation
 struct BinderUser: Decodable {
     let uuid: String?
     let username: String?
+    let isAdmin: Bool?
 }
 
 struct BinderSearchResponse: Decodable {
@@ -162,7 +163,11 @@ struct BinderMetadataVocabulary: Decodable {
 struct BinderMetadataOption: Decodable, Identifiable {
     let uuid: String
     let name: String
+    let description: String?
+    let translations: [String: String]?
     let folderUuid: String?
+    let active: Bool?
+    let scope: String?
 
     var id: String { uuid }
 }
@@ -173,7 +178,9 @@ struct BinderMetadataDefinition: Decodable, Identifiable {
     let label: String
     let type: String
     let options: [String]?
-    let active: Bool
+    let mandatory: Bool?
+    let active: Bool?
+    let scope: String?
 
     var id: String { key }
 }
@@ -330,6 +337,79 @@ private struct EmptyMutationPayload: Encodable {}
 private struct MetadataDefinitionsEnvelope: Decodable {
     let data: Items
     struct Items: Decodable { let items: [BinderMetadataDefinition] }
+}
+
+enum BinderVocabularyKind: String, CaseIterable, Identifiable {
+    case documentTypes = "document-types"
+    case categories
+    case tags
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .documentTypes: "Document types"
+        case .categories: "Categories"
+        case .tags: "Tags"
+        }
+    }
+    var singularTitle: String {
+        switch self {
+        case .documentTypes: "document type"
+        case .categories: "category"
+        case .tags: "tag"
+        }
+    }
+    var systemImage: String {
+        switch self {
+        case .documentTypes: "doc.text"
+        case .categories: "square.grid.2x2"
+        case .tags: "tag"
+        }
+    }
+}
+
+struct BinderVocabularyCreatePayload: Encodable {
+    let name: String
+    let description: String?
+    let translations: [String: String]
+    let scope: String
+    let folderUuid: String?
+}
+
+struct BinderVocabularyUpdatePayload: Encodable {
+    let name: String
+    let description: String?
+    let translations: [String: String]
+    let folderUuid: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case name
+        case description
+        case translations
+        case folderUuid
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(name, forKey: .name)
+        try container.encode(description, forKey: .description)
+        try container.encode(translations, forKey: .translations)
+        try container.encode(folderUuid, forKey: .folderUuid)
+    }
+}
+
+struct BinderMetadataDefinitionCreatePayload: Encodable {
+    let key: String
+    let label: String
+    let type: String
+    let options: [String]?
+    let unique: Bool
+    let mandatory: Bool
+    let scope: String
+}
+
+struct BinderMetadataDefinitionUpdatePayload: Encodable {
+    let label: String
 }
 
 private struct SetDocumentMetadataPayload: Encodable {
@@ -529,7 +609,76 @@ final class BinderAPI {
         return BinderMetadataEditorOptions(
             vocabulary: try JSONDecoder().decode(MetadataVocabularyEnvelope.self, from: vocabularyData).data,
             issuers: try JSONDecoder().decode(IssuerListEnvelope.self, from: issuerData).data.items,
-            definitions: try JSONDecoder().decode(MetadataDefinitionsEnvelope.self, from: definitionsData).data.items.filter(\.active)
+            definitions: try JSONDecoder().decode(MetadataDefinitionsEnvelope.self, from: definitionsData).data.items.filter { $0.active != false }
+        )
+    }
+
+    func createVocabulary(
+        serverURL: String,
+        kind: BinderVocabularyKind,
+        payload: BinderVocabularyCreatePayload
+    ) async throws {
+        _ = try await mutate(
+            path: "metadata/vocabulary/\(kind.rawValue)",
+            serverURL: serverURL,
+            method: "POST",
+            payload: payload
+        )
+    }
+
+    func updateVocabulary(
+        serverURL: String,
+        kind: BinderVocabularyKind,
+        uuid: String,
+        payload: BinderVocabularyUpdatePayload
+    ) async throws {
+        _ = try await mutate(
+            path: "metadata/vocabulary/\(kind.rawValue)/\(uuid)",
+            serverURL: serverURL,
+            method: "PATCH",
+            payload: payload
+        )
+    }
+
+    func cloneVocabulary(serverURL: String, kind: BinderVocabularyKind, uuid: String) async throws {
+        _ = try await mutate(
+            path: "metadata/vocabulary/\(kind.rawValue)/\(uuid)/clone",
+            serverURL: serverURL,
+            method: "POST",
+            payload: EmptyMutationPayload()
+        )
+    }
+
+    func deleteVocabulary(serverURL: String, kind: BinderVocabularyKind, uuid: String) async throws {
+        _ = try await mutate(
+            path: "metadata/vocabulary/\(kind.rawValue)/\(uuid)",
+            serverURL: serverURL,
+            method: "DELETE",
+            payload: EmptyMutationPayload()
+        )
+    }
+
+    func createMetadataDefinition(
+        serverURL: String,
+        payload: BinderMetadataDefinitionCreatePayload
+    ) async throws {
+        _ = try await mutate(path: "metadata/definitions", serverURL: serverURL, method: "POST", payload: payload)
+    }
+
+    func updateMetadataDefinition(
+        serverURL: String,
+        uuid: String,
+        payload: BinderMetadataDefinitionUpdatePayload
+    ) async throws {
+        _ = try await mutate(path: "metadata/definitions/\(uuid)", serverURL: serverURL, method: "PATCH", payload: payload)
+    }
+
+    func deleteMetadataDefinition(serverURL: String, uuid: String) async throws {
+        _ = try await mutate(
+            path: "metadata/definitions/\(uuid)",
+            serverURL: serverURL,
+            method: "DELETE",
+            payload: EmptyMutationPayload()
         )
     }
 

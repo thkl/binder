@@ -126,9 +126,6 @@ struct SignedInView: View {
                     }
                     .accessibilityLabel("Scan document")
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Sign out", role: .destructive) { Task { await model.signOut() } }
-                }
             }
             .sheet(isPresented: $isShowingScanner) {
                 DocumentScanner(

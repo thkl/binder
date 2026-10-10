@@ -13,24 +13,28 @@ struct SettingsView: View {
                         Label("Issuers", systemImage: "person.text.rectangle")
                     }
 
-                    plannedSetting("Metadata", systemImage: "list.bullet.rectangle")
-                    plannedSetting("Tags", systemImage: "tag")
+                    NavigationLink {
+                        MetadataManagementView(model: model)
+                    } label: {
+                        Label("Metadata", systemImage: "list.bullet.rectangle")
+                    }
+                    NavigationLink {
+                        MetadataVocabularyView(model: model, kind: .tags)
+                    } label: {
+                        Label("Tags", systemImage: "tag")
+                    }
+                }
+
+                Section("Account") {
+                    Button(role: .destructive) {
+                        Task { await model.signOut() }
+                    } label: {
+                        Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
                 }
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Settings")
         }
-    }
-
-    private func plannedSetting(_ title: String, systemImage: String) -> some View {
-        HStack {
-            Label(title, systemImage: systemImage)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text("Later")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-        }
-        .accessibilityElement(children: .combine)
     }
 }
