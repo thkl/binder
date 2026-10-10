@@ -7,14 +7,14 @@ struct BinderApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if auth.user != nil { SignedInView(model: auth) }
-                else if !auth.hasCompletedInitialAuthCheck {
-                    ProgressView("Restoring your session…")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(uiColor: .systemGroupedBackground))
+            ZStack {
+                Color(uiColor: .systemGroupedBackground)
+                    .ignoresSafeArea()
+
+                Group {
+                    if auth.user != nil { SignedInView(model: auth) }
+                    else { LoginView(model: auth) }
                 }
-                else { LoginView(model: auth) }
             }
             .task { await auth.refresh() }
             .onChange(of: scenePhase) { _, phase in

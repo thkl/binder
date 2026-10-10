@@ -16,6 +16,14 @@
 		A10000000000000000000007 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* AppSettings.swift */; };
 		A10000000000000000000008 /* SignedInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* SignedInView.swift */; };
 		A10000000000000000000009 /* DocumentPDFView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* DocumentPDFView.swift */; };
+		A10000000000000000000010 /* SharedPDFQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SharedPDFQueue.swift */; };
+		A10000000000000000000011 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* ShareViewController.swift */; };
+		A10000000000000000000012 /* SharedPDFQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SharedPDFQueue.swift */; };
+		A10000000000000000000013 /* BinderAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* BinderAPI.swift */; };
+		A10000000000000000000014 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* KeychainStore.swift */; };
+		A10000000000000000000015 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* AppSettings.swift */; };
+		A10000000000000000000016 /* BinderShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* BinderShare.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A10000000000000000000017 /* DocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* DocumentScanner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,10 +39,23 @@
 		A20000000000000000000010 /* Binder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Binder.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000011 /* SignedInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignedInView.swift; sourceTree = "<group>"; };
 		A20000000000000000000012 /* DocumentPDFView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPDFView.swift; sourceTree = "<group>"; };
+		A20000000000000000000014 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		A20000000000000000000015 /* SharedPDFQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedPDFQueue.swift; sourceTree = "<group>"; };
+		A20000000000000000000016 /* ShareExtension-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "ShareExtension-Info.plist"; sourceTree = "<group>"; };
+		A20000000000000000000017 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ShareExtension.entitlements"; sourceTree = "<group>"; };
+		A20000000000000000000018 /* BinderShare.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = BinderShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000019 /* DocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScanner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A30000000000000000000005 /* BinderShare Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -64,6 +85,11 @@
 				A20000000000000000000007 /* AppSettings.swift */,
 				A20000000000000000000011 /* SignedInView.swift */,
 				A20000000000000000000012 /* DocumentPDFView.swift */,
+				A20000000000000000000019 /* DocumentScanner.swift */,
+				A20000000000000000000014 /* ShareViewController.swift */,
+				A20000000000000000000015 /* SharedPDFQueue.swift */,
+				A20000000000000000000016 /* ShareExtension-Info.plist */,
+				A20000000000000000000017 /* ShareExtension.entitlements */,
 				A20000000000000000000008 /* Info.plist */,
 				A20000000000000000000009 /* Binder.entitlements */,
 			);
@@ -74,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000010 /* Binder.app */,
+				A20000000000000000000018 /* BinderShare.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -88,15 +115,34 @@
 				A30000000000000000000002 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
 				A30000000000000000000003 /* Resources */,
-			);
-			buildRules = (
+				A30000000000000000000008 /* Embed App Extensions */,
 			);
 			dependencies = (
+				A90000000000000000000002 /* PBXTargetDependency */,
+			);
+			buildRules = (
 			);
 			name = Binder;
 			productName = Binder;
 			productReference = A20000000000000000000010 /* Binder.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A50000000000000000000002 /* BinderShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000000000000000000003 /* Build configuration list for PBXNativeTarget "BinderShare" */;
+			buildPhases = (
+				A30000000000000000000007 /* BinderShare Sources */,
+				A30000000000000000000005 /* BinderShare Frameworks */,
+				A30000000000000000000006 /* BinderShare Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BinderShare;
+			productName = BinderShare;
+			productReference = A20000000000000000000018 /* BinderShare.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -108,6 +154,9 @@
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					A50000000000000000000001 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					A50000000000000000000002 = {
 						CreatedOnToolsVersion = 27.0;
 					};
 				};
@@ -126,6 +175,7 @@
 			projectRoot = "";
 			targets = (
 				A50000000000000000000001 /* Binder */,
+				A50000000000000000000002 /* BinderShare */,
 			);
 		};
 /* End PBXProject section */
@@ -154,10 +204,60 @@
 				A10000000000000000000007 /* AppSettings.swift in Sources */,
 				A10000000000000000000008 /* SignedInView.swift in Sources */,
 				A10000000000000000000009 /* DocumentPDFView.swift in Sources */,
+				A10000000000000000000010 /* SharedPDFQueue.swift in Sources */,
+				A10000000000000000000017 /* DocumentScanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A30000000000000000000006 /* BinderShare Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A30000000000000000000007 /* BinderShare Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000011 /* ShareViewController.swift in Sources */,
+				A10000000000000000000012 /* SharedPDFQueue.swift in Sources */,
+				A10000000000000000000013 /* BinderAPI.swift in Sources */,
+				A10000000000000000000014 /* KeychainStore.swift in Sources */,
+				A10000000000000000000015 /* AppSettings.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A30000000000000000000008 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A10000000000000000000016 /* BinderShare.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		A90000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A60000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000000000000000000002;
+			remoteInfo = BinderShare;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		A90000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A50000000000000000000002 /* BinderShare */;
+			targetProxy = A90000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A70000000000000000000001 /* Debug */ = {
@@ -230,6 +330,56 @@
 			};
 			name = Release;
 		};
+		A70000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Binder/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H5NZA7GY3K;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Binder/ShareExtension-Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = network.thkl.binder.ios.share;
+				PRODUCT_NAME = BinderShare;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A70000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Binder/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H5NZA7GY3K;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Binder/ShareExtension-Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = network.thkl.binder.ios.share;
+				PRODUCT_NAME = BinderShare;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -247,6 +397,15 @@
 			buildConfigurations = (
 				A70000000000000000000003 /* Debug */,
 				A70000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A80000000000000000000003 /* Build configuration list for PBXNativeTarget "BinderShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A70000000000000000000005 /* Debug */,
+				A70000000000000000000006 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

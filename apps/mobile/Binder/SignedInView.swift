@@ -3,6 +3,7 @@ import UIKit
 
 struct SignedInView: View {
     @ObservedObject var model: AuthViewModel
+    @Environment(\.scenePhase) private var scenePhase
     @State private var query = ""
     @State private var results: [BinderSearchResult] = []
     @State private var resultCount = 0
@@ -10,11 +11,36 @@ struct SignedInView: View {
     @State private var hasSearched = false
     @State private var isSearching = false
     @State private var errorMessage: String?
+    @State private var isUploadingQueuedPDFs = false
+    @State private var queuedUploadMessage: String?
+    @State private var canRetryQueuedPDFs = false
+    @State private var isShowingScanner = false
+    @State private var scannerError: String?
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 searchBar
+
+                if isUploadingQueuedPDFs {
+                    ProgressView("Uploading queued PDFs…")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.vertical, 10)
+                } else if let queuedUploadMessage {
+                    HStack(spacing: 12) {
+                        Label(queuedUploadMessage, systemImage: "doc.badge.arrow.up")
+                            .font(.footnote)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if canRetryQueuedPDFs {
+                            Button("Retry") { Task { await uploadQueuedPDFs() } }
+                                .font(.footnote.weight(.semibold))
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+                    .background(Color(uiColor: .secondarySystemGroupedBackground))
+                }
 
                 if isSearching {
                     ProgressView("Searching…")
@@ -65,10 +91,43 @@ struct SignedInView: View {
             }
             .navigationTitle("Binder")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        guard DocumentScanner.isSupported else {
+                            scannerError = "Document scanning is not available on this device."
+                            return
+                        }
+                        isShowingScanner = true
+                    } label: {
+                        Image(systemName: "doc.viewfinder")
+                    }
+                    .accessibilityLabel("Scan document")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Sign out", role: .destructive) { Task { await model.signOut() } }
                 }
             }
+            .sheet(isPresented: $isShowingScanner) {
+                DocumentScanner(
+                    isPresented: $isShowingScanner,
+                    onScan: saveScannedPDF,
+                    onError: { scannerError = $0 }
+                )
+                .ignoresSafeArea()
+            }
+            .alert("Document scanner", isPresented: Binding(
+                get: { scannerError != nil },
+                set: { if !$0 { scannerError = nil } }
+            )) {
+                Button("OK", role: .cancel) { scannerError = nil }
+            } message: {
+                Text(scannerError ?? "")
+            }
+            .task { await uploadQueuedPDFs() }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { Task { await uploadQueuedPDFs() } }
+            }
+            .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         }
     }
 
@@ -127,6 +186,56 @@ struct SignedInView: View {
             hasSearched = true
         }
     }
+
+    @MainActor
+    private func uploadQueuedPDFs() async {
+        guard !isUploadingQueuedPDFs else { return }
+        do {
+            let files = try SharedPDFQueue.pendingFiles()
+            guard !files.isEmpty else {
+                queuedUploadMessage = nil
+                canRetryQueuedPDFs = false
+                return
+            }
+
+            isUploadingQueuedPDFs = true
+            queuedUploadMessage = nil
+            canRetryQueuedPDFs = false
+            defer { isUploadingQueuedPDFs = false }
+            var uploaded = 0
+
+            for file in files {
+                do {
+                    try await BinderAPI.shared.uploadDocument(serverURL: model.serverURL, fileURL: file)
+                    try SharedPDFQueue.remove(fileAt: file)
+                    uploaded += 1
+                } catch {
+                    let remaining = files.count - uploaded
+                    queuedUploadMessage = "\(remaining) PDF(s) remain queued. Check the server connection and retry."
+                    canRetryQueuedPDFs = true
+                    return
+                }
+            }
+
+            queuedUploadMessage = "Uploaded \(uploaded) queued PDF(s)."
+        } catch {
+            queuedUploadMessage = error.localizedDescription
+            canRetryQueuedPDFs = true
+        }
+    }
+
+    @MainActor
+    private func saveScannedPDF(_ pages: [UIImage]) {
+        do {
+            _ = try ScannedDocumentQueue.enqueue(pages: pages)
+            queuedUploadMessage = "Scan saved. Uploading PDF…"
+            canRetryQueuedPDFs = false
+            Task { await uploadQueuedPDFs() }
+        } catch {
+            scannerError = error.localizedDescription
+        }
+    }
+
 }
 
 private struct BinderSearchResultRow: View {

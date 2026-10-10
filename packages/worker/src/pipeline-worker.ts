@@ -332,11 +332,23 @@ async function processJob(job: ClaimedJob): Promise<void> {
         break;
 
       case 'ocr': {
-        const key = await runOcr(job.storageKey, job.documentUuid, job.createdAt);
+        // With deskew enabled, skip-text can leave a broken existing text layer
+        // untouched. Detect that case before OCR so it goes straight to the
+        // force pass instead of doing two complete OCR runs.
+        const sourceText = config.ocrDeskew ? await extractPdfPages(job.storageKey) : undefined;
+        const needsForceForBrokenText = Boolean(
+          sourceText?.requiresOcr && sourceText.text.trim().length > 0,
+        );
+        const key = await runOcr(
+          job.storageKey,
+          job.documentUuid,
+          job.createdAt,
+          needsForceForBrokenText ? { forceOcr: true } : {},
+        );
         let extracted = await extractPdfPages(key);
 
         if (extracted.requiresOcr) {
-          logger.warn('OCR redo pass produced no usable text; forcing OCR', {
+          logger.warn('OCR pass produced no usable text; forcing OCR', {
             documentUuid: job.documentUuid,
             jobUuid: job.jobUuid,
           });

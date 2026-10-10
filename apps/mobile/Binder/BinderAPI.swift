@@ -117,6 +117,56 @@ final class BinderAPI {
         return data
     }
 
+    func uploadDocument(serverURL: String, fileURL: URL) async throws {
+        var hasSession = false
+        do {
+            hasSession = try await currentUser(serverURL: serverURL) != nil
+        } catch let error as URLError {
+            throw error
+        } catch {
+            // The server rejected the session; try the opted-in password below.
+        }
+        if !hasSession { try await signInWithSavedPassword(serverURL: serverURL) }
+
+        guard let cookie = KeychainStore.sessionCookie(origin: origin(for: serverURL)),
+              let csrfToken = csrfToken ?? KeychainStore.csrfToken(origin: origin(for: serverURL)) else {
+            throw BinderAPIError.loginRequired
+        }
+
+        let boundary = "Binder-\(UUID().uuidString)"
+        let safeFilename = fileURL.lastPathComponent
+            .replacingOccurrences(of: "\"", with: "_")
+            .replacingOccurrences(of: "\r", with: "_")
+            .replacingOccurrences(of: "\n", with: "_")
+        let bodyURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("binder-upload-\(UUID().uuidString).multipart")
+        defer { try? FileManager.default.removeItem(at: bodyURL) }
+
+        guard FileManager.default.createFile(atPath: bodyURL.path, contents: nil) else {
+            throw BinderAPIError.invalidResponse
+        }
+        let output = try FileHandle(forWritingTo: bodyURL)
+        defer { try? output.close() }
+        try output.write(contentsOf: Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(safeFilename)\"\r\nContent-Type: application/pdf\r\n\r\n".utf8))
+
+        let input = try FileHandle(forReadingFrom: fileURL)
+        defer { try? input.close() }
+        while let chunk = try input.read(upToCount: 1024 * 1024), !chunk.isEmpty {
+            try output.write(contentsOf: chunk)
+        }
+        try output.write(contentsOf: Data("\r\n--\(boundary)--\r\n".utf8))
+        try output.synchronize()
+
+        var request = try makeRequest(path: "documents", serverURL: serverURL, method: "POST")
+        request.timeoutInterval = 120
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue(csrfToken, forHTTPHeaderField: "X-CSRF-Token")
+        request.setValue(cookie, forHTTPHeaderField: "Cookie")
+        let (data, response) = try await urlSession.upload(for: request, fromFile: bodyURL)
+        try absorbSessionCookie(from: response, for: request)
+        try validate(response, data: data)
+    }
+
     func login(serverURL: String, username: String, password: String) async throws -> BinderUser {
         let body = try JSONSerialization.data(withJSONObject: ["username": username, "password": password])
         var request = try makeRequest(path: "auth/native/login", serverURL: serverURL, method: "POST")
@@ -232,6 +282,15 @@ final class BinderAPI {
         try KeychainStore.saveSession(cookie: cookie, csrfToken: token, origin: origin(for: serverURL))
     }
 
+    private func signInWithSavedPassword(serverURL: String) async throws {
+        guard AppSettings.remembersPassword,
+              let password = KeychainStore.password(),
+              !AppSettings.savedUsername.isEmpty else {
+            throw BinderAPIError.loginRequired
+        }
+        _ = try await login(serverURL: serverURL, username: AppSettings.savedUsername, password: password)
+    }
+
     private func origin(for serverURL: String) -> String {
         guard let components = URLComponents(string: serverURL),
               let scheme = components.scheme, let host = components.host else { return serverURL }
@@ -256,6 +315,7 @@ enum BinderAPIError: LocalizedError {
     case ssoCouldNotStart
     case ssoNotConfigured
     case sessionCookieMissing
+    case loginRequired
 
     var errorDescription: String? {
         switch self {
@@ -266,6 +326,7 @@ enum BinderAPIError: LocalizedError {
         case .ssoCouldNotStart: "The system sign-in window could not be opened."
         case .ssoNotConfigured: "Single sign-on is not configured on this server."
         case .sessionCookieMissing: "The server did not establish a session. Check the server URL and cookie configuration."
+        case .loginRequired: "Open Binder and sign in before uploading this PDF."
         }
     }
 }

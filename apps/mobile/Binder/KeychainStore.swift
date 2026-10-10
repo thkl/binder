@@ -7,9 +7,17 @@ enum KeychainStore {
         Bundle.main.object(forInfoDictionaryKey: "BinderSharedKeychainAccessGroup") as? String
     }
 
-    static func savePassword(_ password: String) throws { try save(password, account: "saved-password", shared: false) }
-    static func password() -> String? { read(account: "saved-password", shared: false) }
-    static func deletePassword() { delete(account: "saved-password", shared: false) }
+    static func savePassword(_ password: String) throws { try save(password, account: "saved-password", shared: true) }
+    static func password() -> String? {
+        if let sharedPassword = read(account: "saved-password", shared: true) { return sharedPassword }
+        guard let legacyPassword = read(account: "saved-password", shared: false) else { return nil }
+        try? save(legacyPassword, account: "saved-password", shared: true)
+        return legacyPassword
+    }
+    static func deletePassword() {
+        delete(account: "saved-password", shared: true)
+        delete(account: "saved-password", shared: false)
+    }
 
     static func saveSession(cookie: String, csrfToken: String?, origin: String) throws {
         try save(cookie, account: "session-cookie-\(origin)", shared: true)

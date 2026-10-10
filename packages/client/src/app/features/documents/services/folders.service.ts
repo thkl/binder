@@ -97,7 +97,7 @@ export class FoldersService {
           withCredentials: true,
         }),
       );
-      const folders = FolderDocumentListResponseSchema.parse(response.data).items;
+      const folders = sortFoldersByPath(FolderDocumentListResponseSchema.parse(response.data).items);
       this.allFolders.set(folders);
       return folders;
     } catch (error) {
@@ -376,4 +376,31 @@ export class FoldersService {
       null
     );
   }
+}
+
+function sortFoldersByPath(folders: FolderNode[]): FolderNode[] {
+  const byUuid = new Map(folders.map((folder) => [folder.uuid, folder]));
+  const pathByUuid = new Map<string, string>();
+
+  const pathFor = (folder: FolderNode): string => {
+    const cached = pathByUuid.get(folder.uuid);
+    if (cached) return cached;
+
+    const parts: string[] = [];
+    const visited = new Set<string>();
+    let current: FolderNode | undefined = folder;
+    while (current && !visited.has(current.uuid)) {
+      visited.add(current.uuid);
+      parts.unshift(current.name);
+      current = current.parentUuid ? byUuid.get(current.parentUuid) : undefined;
+    }
+
+    const path = parts.join(' / ');
+    pathByUuid.set(folder.uuid, path);
+    return path;
+  };
+
+  return [...folders].sort((left, right) =>
+    pathFor(left).localeCompare(pathFor(right), undefined, { numeric: true, sensitivity: 'base' }),
+  );
 }
