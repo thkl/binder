@@ -5,7 +5,7 @@
       <h3>{{ 'issuers.title' | t }}</h3>
       <p class="muted">{{ 'issuers.copy' | t }}</p>
     </div>
-    <button type="button" class="primary-action" (click)="startCreate()">
+    <button type="button" class="primary-action primary-button" (click)="startCreate()">
       {{ 'issuers.add' | t }}
     </button>
   </header>
@@ -70,7 +70,7 @@
           <select [value]="folderUuid()" (change)="folderUuid.set($any($event.target).value)">
             <option value="">{{ 'issuers.noFolderRouting' | t }}</option>
             @for (folder of sortedFolders(); track folder.uuid) {
-              <option [value]="folder.uuid">{{ folderPath(folder.uuid) }}</option>
+              <option [value]="folder.uuid" [selected]="folder.uuid===folderUuid()?'selected':undefined">{{ folderPath(folder.uuid) }}</option>
             }
           </select>
         </label>
@@ -92,7 +92,7 @@
         </button>
         <button
           type="submit"
-          class="primary-action"
+          class="primary-action primary-button"
           [disabled]="metadata.saving() || !name().trim()"
         >
           {{ metadata.saving() ? ('settings.saving' | t) : ('settings.save' | t) }}

@@ -145,7 +145,7 @@
                 <select [value]="folderUuid()" (change)="folderUuid.set($any($event.target).value)">
                   <option value="">{{ 'metadata.noFolderRouting' | t }}</option>
                   @for (folder of folders.allFolders(); track folder.uuid) {
-                    <option [value]="folder.uuid">{{ folderPath(folder.uuid) }}</option>
+                    <option [value]="folder.uuid" [selected]="folder.uuid===folderUuid()?'selected':undefined">{{ folderPath(folder.uuid) }}</option>
                   }
                 </select>
                 <small class="field-help">{{ 'metadata.folderRoutingHint' | t }}</small></label
@@ -237,7 +237,7 @@
                       >
                         <option value="">{{ 'metadata.noFolderRouting' | t }}</option>
                         @for (folder of folders.allFolders(); track folder.uuid) {
-                          <option [value]="folder.uuid">{{ folderPath(folder.uuid) }}</option>
+                          <option [value]="folder.uuid" [selected]="folder.uuid===editingFolderUuid()?'selected':undefined">{{ folderPath(folder.uuid) }}</option>
                         }
                       </select></label
                     >
