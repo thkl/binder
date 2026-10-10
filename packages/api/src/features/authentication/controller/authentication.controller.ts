@@ -33,6 +33,7 @@ import { CurrentUser, ScopedUser } from '../decorators/current-user.decorator';
 import { UserManagementService } from '../service/user-management.service';
 import { PasswordResetService } from '../service/password-reset.service';
 import { NativeSSOAuthCodeStore } from '../stores/native-sso-auth-code.store';
+import { AuthenticationSessionStore } from '../stores/authentication-session.store';
 import { z } from 'zod';
 
 @Controller('auth')
@@ -42,6 +43,7 @@ export class AuthenticationController {
     private readonly userManagement: UserManagementService,
     private readonly passwordReset: PasswordResetService,
     private readonly nativeSSOAuthCodes: NativeSSOAuthCodeStore,
+    private readonly sessions: AuthenticationSessionStore,
   ) {}
 
   @Get('users')
@@ -197,16 +199,16 @@ export class AuthenticationController {
   @Post('password')
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async changePassword(@Body() body: unknown, @Req() request: SessionRequest) {
-    if (!request.session.userId) {
+    const userUuid = request.session.userId;
+    if (!userUuid) {
       throw new UnauthorizedException();
     }
     const result = await this.authentication.changePassword(
-      request.session.userId,
+      userUuid,
       ChangePasswordInputSchema.parse(body),
     );
-    request.session.mustChangePassword = false;
-    const csrfToken = ensureCsrfToken(request);
-    return { data: result, csrfToken };
+    await this.sessions.invalidateOtherSessions(userUuid, request.sessionID);
+    return this.establishSession(request, userUuid, false, result);
   }
 
   @Post('logout')

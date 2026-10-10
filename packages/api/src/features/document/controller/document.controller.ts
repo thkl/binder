@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  OnModuleDestroy,
   Param,
   Post,
   Query,
@@ -14,6 +15,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { rm } from 'node:fs/promises';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import {
   DocumentBulkActionInputSchema,
   DocumentExportSelectionInputSchema,
@@ -41,10 +48,13 @@ import { DocumentBulkMetadataService } from '../service/document-bulk-metadata.s
 import { createContentDisposition } from '../../../shared/http/content-disposition';
 
 const HARD_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024;
+// mkdtemp creates a private (0700) directory so buffered PDF contents are never
+// exposed through a shared, world-readable temporary directory.
+const UPLOAD_TEMP_DIRECTORY = mkdtempSync(join(tmpdir(), 'binder-api-upload-'));
 
 @Controller('documents')
 @UseGuards(AuthenticationGuard)
-export class DocumentController {
+export class DocumentController implements OnModuleDestroy {
   private readonly logger = new BinderLogger(DocumentController.name);
 
   constructor(
@@ -54,10 +64,18 @@ export class DocumentController {
     private readonly bulkMetadata: DocumentBulkMetadataService,
   ) {}
 
+  async onModuleDestroy(): Promise<void> {
+    await rm(UPLOAD_TEMP_DIRECTORY, { recursive: true, force: true });
+  }
+
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @UseInterceptors(
     FileInterceptor('file', {
+      storage: diskStorage({
+        destination: UPLOAD_TEMP_DIRECTORY,
+        filename: (_request, _file, callback) => callback(null, randomUUID()),
+      }),
       limits: {
         fileSize: HARD_UPLOAD_LIMIT_BYTES,
         files: 1,
@@ -75,7 +93,11 @@ export class DocumentController {
       this.logger.error('No file sumbitted');
       throw new BadRequestException('A PDF file is required');
     }
-    return { data: await this.documents.upload(user.userId, file) };
+    try {
+      return { data: await this.documents.upload(user.userId, file) };
+    } finally {
+      await rm(file.path, { force: true }).catch(() => undefined);
+    }
   }
 
   @Get()

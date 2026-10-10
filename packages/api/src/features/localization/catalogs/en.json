@@ -40,7 +40,7 @@
     "sharing.shared": "Shared",
     "sharing.sharedWithCount": "Shared with {count} users",
     "sharing.close": "Close sharing panel",
-    "sharing.readOnly": "Recipients can view and download this item.",
+    "sharing.readOnly": "readOnly",
     "sharing.user": "Workspace user",
     "sharing.chooseUser": "Choose a user",
     "sharing.add": "Share",

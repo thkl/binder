@@ -138,6 +138,7 @@ NODE_ENV=production
 API_PORT=3000
 API_PREFIX=api/v1
 ROOT_URI=https://binder.example.com
+TRUST_PROXY=<HAProxy IP or CIDR>
 
 APP_ROOT_PATH=/app
 ENCRYPTION_KEY=<base64 encoding of exactly 32 random bytes>
@@ -155,6 +156,11 @@ SETUP_SECRET=<long random value used only for first-run setup>
 
 For local development, `ROOT_URI` should match the browser origin, for
 example `http://localhost:4200` when the Angular development server is used.
+When `ROOT_URI` uses HTTPS, set `TRUST_PROXY` to the IP address or CIDR of the
+reverse proxy that connects directly to the API. Multiple trusted proxies can
+be comma-separated. The API rejects HTTPS configuration without this setting
+and ignores forwarded headers from other peers. Keep the API port reachable
+only from the configured proxy; do not use a wildcard trust range.
 For Docker Compose, the service environment overrides `DATABASE_HOST` with
 the internal hostname `postgres`; the other database values still come from
 `.env`.
@@ -447,5 +453,7 @@ rather than expecting it in the log output.
   and perform a restore drill before relying on the backup.
 - Keep the API and worker on the same migration-compatible release and shared
   absolute storage paths.
+- Restrict API network access to the reverse proxy and set `TRUST_PROXY` to
+  only its address or subnet when `ROOT_URI` uses HTTPS.
 - Configure `ROOT_URI` to the real browser origin when using HTTPS or a
   reverse proxy.

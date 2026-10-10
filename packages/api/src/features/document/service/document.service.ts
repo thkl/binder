@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  TooManyRequestsException,
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/sequelize';
 import { ConfigService } from '@nestjs/config';
@@ -37,6 +38,7 @@ import {
   ClassificationFeedbackField,
 } from '@binder/common';
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 import type { Readable } from 'node:stream';
 import type { Express } from 'express';
@@ -78,7 +80,8 @@ import { IssuerService } from '../../issuer/service/issuer.service';
 import { SharingService } from '../../sharing/service/sharing.service';
 
 export interface UploadedDocumentFile {
-  buffer: Buffer;
+  path: string;
+  size: number;
   mimetype: string;
   originalname: string;
 }
@@ -87,6 +90,11 @@ export interface UploadedDocumentFile {
 export class DocumentService {
   private readonly logger = new BinderLogger(DocumentService.name);
   private readonly thumbnailGeneration = new Map<string, Promise<string>>();
+  private activeUploads = 0;
+  private activeThumbnailGenerations = 0;
+  private readonly thumbnailGenerationWaiters: Array<() => void> = [];
+  private static readonly MAX_CONCURRENT_UPLOADS = 2;
+  private static readonly MAX_CONCURRENT_THUMBNAIL_GENERATIONS = 3;
 
   constructor(
     @InjectConnection() private readonly sequelize: Sequelize,
@@ -110,91 +118,101 @@ export class DocumentService {
   ) {}
 
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
-    if (!file) {
+    if (!file?.path) {
       throw new BadRequestException('Only PDF documents are supported');
     }
 
-    await this.storage.validatePdf(file.buffer);
-
-    const uuid = randomUUID();
-    const stored = await this.storage.storePdf(file.buffer, uuid, file.originalname);
+    if (this.activeUploads >= DocumentService.MAX_CONCURRENT_UPLOADS) {
+      throw new TooManyRequestsException('Too many document uploads are being processed');
+    }
+    this.activeUploads += 1;
 
     try {
-      const duplicate = await this.documents.findByChecksum(stored.checksumSha256);
-      if (duplicate) {
-        const duplicateDetails: {
-          code: string;
-          message: string;
-          documentUuid?: string;
-        } = {
-          code: 'DOCUMENT_DUPLICATE',
-          message: 'A document with identical content already exists.',
-        };
+      const buffer = await readFile(file.path);
+      await this.storage.validatePdf(buffer);
 
-        if (duplicate.ownerUuid === ownerUuid) {
-          duplicateDetails.documentUuid = duplicate.uuid;
+      const uuid = randomUUID();
+      const stored = await this.storage.storePdf(buffer, uuid, file.originalname);
+
+      try {
+        const duplicate = await this.documents.findByChecksum(stored.checksumSha256);
+        if (duplicate) {
+          const duplicateDetails: {
+            code: string;
+            message: string;
+            documentUuid?: string;
+          } = {
+            code: 'DOCUMENT_DUPLICATE',
+            message: 'A document with identical content already exists.',
+          };
+
+          if (duplicate.ownerUuid === ownerUuid) {
+            duplicateDetails.documentUuid = duplicate.uuid;
+          }
+
+          throw new ConflictException(duplicateDetails);
         }
 
-        throw new ConflictException(duplicateDetails);
-      }
-
-      const input = CreateDocumentInputSchema.parse({
-        originalFilename: file.originalname,
-        mimeType: 'application/pdf',
-        sizeBytes: stored.sizeBytes,
-        checksumSha256: stored.checksumSha256,
-      });
-      const malwareScanRequired = await this.isMalwareScanRequired();
-      const document = await this.documents.create({
-        uuid,
-        ownerUuid,
-        versionFamilyUuid: uuid,
-        versionNumber: 1,
-        versionParentUuid: null,
-        title: file.originalname,
-        ...input,
-        storageKey: stored.storageKey,
-        thumbnailKey: null,
-        pageCount: 1,
-        issuerUuid: null,
-        isNew: true,
-        status: malwareScanRequired ? 'scanning' : 'processing',
-      });
-      await this.recordAudit({
-        documentUuid: document.uuid,
-        ownerUuid,
-        actorUuid: ownerUuid,
-        actorType: 'user',
-        eventType: 'uploaded',
-        summary: 'Document uploaded',
-      });
-      await this.addManualUploadToInbox(
-        document.uuid,
-        ownerUuid,
-        file,
-        stored.checksumSha256,
-        stored.sizeBytes,
-      );
-      try {
-        await this.pipeline.enqueue(
+        const input = CreateDocumentInputSchema.parse({
+          originalFilename: file.originalname,
+          mimeType: 'application/pdf',
+          sizeBytes: stored.sizeBytes,
+          checksumSha256: stored.checksumSha256,
+        });
+        const malwareScanRequired = await this.isMalwareScanRequired();
+        const document = await this.documents.create({
+          uuid,
+          ownerUuid,
+          versionFamilyUuid: uuid,
+          versionNumber: 1,
+          versionParentUuid: null,
+          title: file.originalname,
+          ...input,
+          storageKey: stored.storageKey,
+          thumbnailKey: null,
+          pageCount: 1,
+          issuerUuid: null,
+          isNew: true,
+          status: malwareScanRequired ? 'scanning' : 'processing',
+        });
+        await this.recordAudit({
+          documentUuid: document.uuid,
+          ownerUuid,
+          actorUuid: ownerUuid,
+          actorType: 'user',
+          eventType: 'uploaded',
+          summary: 'Document uploaded',
+        });
+        await this.addManualUploadToInbox(
           document.uuid,
           ownerUuid,
-          malwareScanRequired ? 'malware-scan' : 'text-extraction',
+          file,
+          stored.checksumSha256,
+          stored.sizeBytes,
         );
+        try {
+          await this.pipeline.enqueue(
+            document.uuid,
+            ownerUuid,
+            malwareScanRequired ? 'malware-scan' : 'text-extraction',
+          );
+        } catch (error) {
+          this.logger.error(`Unable to enqueue document pipeline for ${document.uuid}`, error);
+        }
+        return this.toDocumentResponse(document);
       } catch (error) {
-        this.logger.error(`Unable to enqueue document pipeline for ${document.uuid}`, error);
+        await this.storage.remove(stored.storageKey).catch(() => undefined);
+        throw error;
       }
-      return this.toDocumentResponse(document);
-    } catch (error) {
-      await this.storage.remove(stored.storageKey).catch(() => undefined);
-      throw error;
+    } finally {
+      this.activeUploads -= 1;
     }
   }
 
   private async addManualUploadToInbox(
     documentUuid: string,
     ownerUuid: string,
-    file: UploadedDocumentFile,
+    file: Pick<UploadedDocumentFile, 'originalname'>,
     checksumSha256: string,
     sizeBytes: number,
     autoApplyAi = false,
@@ -1370,6 +1388,7 @@ export class DocumentService {
   private async generateThumbnail(
     document: import('../models/document.entity').Document,
   ): Promise<string> {
+    await this.acquireThumbnailGenerationSlot();
     try {
       // Re-check after joining the in-flight map in case another request finished first.
       if (document.thumbnailKey && (await this.storage.exists(document.thumbnailKey))) {
@@ -1386,7 +1405,29 @@ export class DocumentService {
       return thumbnailKey;
     } catch {
       throw new NotFoundException('Document thumbnail could not be generated');
+    } finally {
+      this.releaseThumbnailGenerationSlot();
     }
+  }
+
+  private async acquireThumbnailGenerationSlot(): Promise<void> {
+    if (
+      this.activeThumbnailGenerations >=
+      DocumentService.MAX_CONCURRENT_THUMBNAIL_GENERATIONS
+    ) {
+      await new Promise<void>((resolve) => this.thumbnailGenerationWaiters.push(resolve));
+      return;
+    }
+    this.activeThumbnailGenerations += 1;
+  }
+
+  private releaseThumbnailGenerationSlot(): void {
+    const next = this.thumbnailGenerationWaiters.shift();
+    if (next) {
+      next();
+      return;
+    }
+    this.activeThumbnailGenerations -= 1;
   }
 
   async getPipeline(ownerUuid: string, uuid: string) {

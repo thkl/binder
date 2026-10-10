@@ -35,7 +35,7 @@
     "sharing.shared": "Geteilt",
     "sharing.sharedWithCount": "Mit {count} Benutzern geteilt",
     "sharing.close": "Freigabebereich schließen",
-    "sharing.readOnly": "Empfänger können dieses Element ansehen und herunterladen.",
+    "sharing.readOnly": "Nur Lesen",
     "sharing.user": "Benutzer im Arbeitsbereich",
     "sharing.chooseUser": "Benutzer auswählen",
     "sharing.add": "Teilen",

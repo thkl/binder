@@ -21,6 +21,7 @@ export const ConfigKeys = {
   SESSION_SECRET: 'SESSION_SECRET',
   SESSION_TTL_MS: 'SESSION_TTL_MS',
   ROOT_URI: 'ROOT_URI',
+  TRUST_PROXY: 'TRUST_PROXY',
   NODE_ENV: 'NODE_ENV',
   DOCUMENT_STORAGE_ROOT: 'DOCUMENT_STORAGE_ROOT', // this only exists in dev
   PG_DUMP_PATH: 'PG_DUMP_PATH',
@@ -42,6 +43,7 @@ export interface BinderConfig {
   LOG_JSON?: string;
   LOG_LEVEL?: string;
   ROOT_URI: string;
+  TRUST_PROXY?: string;
   NODE_ENV?: string;
   DATABASE_HOST: string;
   DATABASE_PORT: number;

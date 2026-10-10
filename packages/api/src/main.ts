@@ -49,11 +49,19 @@ async function bootstrap(): Promise<void> {
 
   const rootUri = nestConfigService.get<string>(ConfigKeys.ROOT_URI)!;
   const secureCookies = rootUri.startsWith('https://');
-  if (secureCookies) {
-    // Traefik terminates TLS and forwards the original protocol in
-    // X-Forwarded-Proto. Trust the proxy chain so express-session can safely
-    // determine that the external request is HTTPS.
-    app.getHttpAdapter().getInstance().set('trust proxy', true);
+  const trustedProxies = nestConfigService
+    .get<string>(ConfigKeys.TRUST_PROXY)
+    ?.split(',')
+    .map((proxy) => proxy.trim())
+    .filter(Boolean);
+  if (secureCookies && !trustedProxies?.length) {
+    throw new Error(
+      `${ConfigKeys.TRUST_PROXY} must list the trusted reverse proxy IPs/CIDRs when ROOT_URI uses HTTPS`,
+    );
+  }
+  if (trustedProxies?.length) {
+    // Only accept forwarded headers from explicitly configured proxy addresses.
+    app.getHttpAdapter().getInstance().set('trust proxy', trustedProxies);
   }
 
   const developmentOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
@@ -86,7 +94,9 @@ async function bootstrap(): Promise<void> {
 
   app.use(
     session({
-      proxy: secureCookies,
+      // Express derives req.secure from the explicitly trusted proxy list.
+      // Do not let express-session trust arbitrary X-Forwarded-Proto headers.
+      proxy: false,
       store: new PgSession({
         pool: pgPool,
         tableName: 'user_sessions',
