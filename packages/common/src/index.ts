@@ -272,6 +272,18 @@ export type ShareGrantsResponse = z.infer<typeof ShareGrantsResponseSchema>;
 export const CreateShareInputSchema = z.object({ recipientUuid: z.uuid() });
 export type CreateShareInput = z.infer<typeof CreateShareInputSchema>;
 
+export const OwnedShareSummaryItemSchema = z.object({
+  uuid: z.uuid(),
+  recipientCount: z.number().int().nonnegative(),
+});
+export type OwnedShareSummaryItem = z.infer<typeof OwnedShareSummaryItemSchema>;
+
+export const OwnedShareSummarySchema = z.object({
+  documents: z.array(OwnedShareSummaryItemSchema),
+  folders: z.array(OwnedShareSummaryItemSchema),
+});
+export type OwnedShareSummary = z.infer<typeof OwnedShareSummarySchema>;
+
 export const SharedDocumentSchema = z.object({
   document: DocumentSchema,
   sharedAt: z.iso.datetime(),

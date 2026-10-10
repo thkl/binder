@@ -269,6 +269,26 @@
   font-size: 0.65rem;
 }
 
+.folder-share-indicator {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--color-accent);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.folder-share-indicator svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
 .folder-actions {
   display: flex;
   position: absolute;

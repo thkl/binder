@@ -416,6 +416,14 @@ export class DocumentService {
     return this.sharedDocumentResponse([...grants.keys()], grants);
   }
 
+  async listSharedUnfiled(ownerUuid: string) {
+    const [documentUuids, grants] = await Promise.all([
+      this.sharing.listReceivedUnfiledDocumentUuids(ownerUuid),
+      this.sharing.listReceivedDocumentGrants(ownerUuid),
+    ]);
+    return this.sharedDocumentResponse(documentUuids, grants);
+  }
+
   async listSharedFolderDocuments(ownerUuid: string, folderUuid: string) {
     const [documentUuids, grants] = await Promise.all([
       this.sharing.listReceivedFolderDocumentUuids(ownerUuid, folderUuid),

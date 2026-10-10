@@ -1,5 +1,5 @@
-<main class="shared-page">
-  <header class="shared-heading">
+<main class="documents-page shared-page">
+  <header class="documents-heading">
     <div>
       <p class="section-kicker">{{ 'sharing.kicker' | t }}</p>
       <h2>{{ 'sharing.sharedWithMe' | t }}</h2>
@@ -7,61 +7,132 @@
     </div>
   </header>
 
-  @if (loading()) {
-    <p role="status">{{ 'sharing.loading' | t }}</p>
-  }
   @if (error()) {
-    <p class="shared-error" role="alert">{{ 'sharing.loadFailed' | t }}</p>
+    <div class="notice error" role="alert">{{ 'sharing.loadFailed' | t }}</div>
   }
 
-  <section class="shared-section">
-    <h3>{{ 'sharing.folders' | t }}</h3>
-    @if (folders().length) {
-      <div class="shared-folder-list">
+  <div class="documents-layout">
+    <aside class="folder-tree" aria-labelledby="shared-folder-title">
+      <header class="folder-tree-header">
+        <div>
+          <span class="folder-tree-kicker">{{ 'sharing.kicker' | t }}</span>
+          <h3 id="shared-folder-title">{{ 'sharing.folders' | t }}</h3>
+        </div>
+      </header>
+      <p class="folder-tree-copy">{{ 'sharing.sharedByOthers' | t }}</p>
+
+      <div class="folder-tree-list" role="tree" [attr.aria-label]="'sharing.folders' | t">
+        <button
+          class="shared-folder-row"
+          type="button"
+          role="treeitem"
+          [class.selected]="selectedFolderUuid() === '__all_shared__'"
+          (click)="selectFolder('__all_shared__')"
+        >
+          <span class="folder-glyph" aria-hidden="true">/</span>
+          <span class="folder-label">{{ 'sharing.allShared' | t }}</span>
+          <span class="folder-count">{{ documents().length }}</span>
+        </button>
         @for (folder of folders(); track folder.uuid) {
           <button
+            class="shared-folder-row"
             type="button"
-            [class.selected]="selectedFolder()?.uuid === folder.uuid"
-            (click)="selectFolder(folder)"
+            role="treeitem"
+            [class.selected]="selectedFolderUuid() === folder.uuid"
+            (click)="selectFolder(folder.uuid)"
           >
-            <span class="folder-name">{{ folder.name }}</span>
-            <small>{{ 'sharing.sharedBy' | t }} {{ folder.ownerUsername }}</small>
+            <span class="folder-glyph" aria-hidden="true">□</span>
+            <span class="shared-folder-name">
+              <span class="folder-label">{{ folder.name }}</span>
+              <small>{{ 'sharing.sharedBy' | t }} {{ folder.ownerUsername }}</small>
+            </span>
           </button>
         }
+        <div class="folder-tree-divider" aria-hidden="true"></div>
+        <button
+          class="shared-folder-row"
+          type="button"
+          role="treeitem"
+          [class.selected]="selectedFolderUuid() === '__unfiled_shared__'"
+          (click)="selectFolder('__unfiled_shared__')"
+        >
+          <span class="folder-glyph" aria-hidden="true">□</span>
+          <span class="folder-label">{{ 'sharing.unfiled' | t }}</span>
+          <span class="folder-count">{{ unfiledDocuments().length }}</span>
+        </button>
       </div>
-    } @else {
-      <p class="muted">{{ 'sharing.noFolders' | t }}</p>
-    }
-  </section>
+    </aside>
 
-  @if (selectedFolder(); as folder) {
-    <section class="shared-section">
-      <h3>{{ folder.name }}</h3>
-      <ng-container *ngTemplateOutlet="documentRows; context: { $implicit: folderDocuments() }" />
+    <section class="document-card glass-card">
+      <header class="list-header">
+        @if (selectedFolderUuid() === '__all_shared__') {
+          <span>{{ 'sharing.allShared' | t }}</span>
+        } @else if (selectedFolderUuid() === '__unfiled_shared__') {
+          <span>{{ 'sharing.unfiled' | t }}</span>
+        } @else {
+            <span>{{ selectedFolderName() }}</span>
+        }
+        <small>{{ selectedDocuments().length }} {{ 'sharing.documents' | t }}</small>
+      </header>
+
+      @if (loading()) {
+        <div class="empty-state"><span class="spinner"></span><p>{{ 'sharing.loading' | t }}</p></div>
+      } @else if (selectedDocuments().length === 0) {
+        <div class="empty-state">
+          <span class="empty-icon">▱</span>
+          <h3>{{ 'sharing.noDocuments' | t }}</h3>
+        </div>
+      } @else {
+        <div class="document-list">
+          @for (item of selectedDocuments(); track item.document.uuid) {
+            <article class="document-row shared-document-row">
+              <button
+                type="button"
+                class="row-preview"
+                (click)="openDocument(item.document)"
+                [disabled]="openingUuid() === item.document.uuid"
+                [attr.aria-label]="('documents.open' | t) + ': ' + title(item)"
+              >
+                @if (!hasThumbnailFailed(item.document.uuid)) {
+                  <img
+                    class="thumbnail"
+                    [src]="item.document.thumbnailUrl"
+                    [alt]="('documents.previewOf' | t) + ': ' + title(item)"
+                    loading="lazy"
+                    (error)="markThumbnailFailed(item.document.uuid)"
+                  />
+                } @else {
+                  <span class="file-icon">PDF</span>
+                }
+              </button>
+              <div class="document-name">
+                <div class="title-line"><strong>{{ title(item) }}</strong></div>
+                <dl class="document-facts">
+                  <div><dt>{{ 'documents.type' | t }}</dt><dd>PDF</dd></div>
+                  <div><dt>{{ 'documents.size' | t }}</dt><dd>{{ item.document.sizeBytes | number }} bytes</dd></div>
+                  <div><dt>{{ 'documents.pages' | t }}</dt><dd>{{ item.document.pageCount }}</dd></div>
+                  <div><dt>{{ 'documents.modified' | t }}</dt><dd>{{ item.document.updatedAt | date: 'mediumDate' }}</dd></div>
+                </dl>
+              </div>
+              <span class="status ready">{{ 'sharing.readOnly' | t }}</span>
+              <button
+                type="button"
+                class="shared-open-button"
+                (click)="openDocument(item.document)"
+                [disabled]="openingUuid() === item.document.uuid"
+              >{{ 'sharing.open' | t }} →</button>
+            </article>
+          }
+        </div>
+      }
     </section>
+  </div>
+
+  @if (drawerDocument(); as document) {
+    <binder-document-drawer
+      [documentUuid]="document.uuid"
+      [documentData]="document"
+      (closeRequest)="closeDocument()"
+    />
   }
-
-  <section class="shared-section">
-    <h3>{{ 'sharing.documents' | t }}</h3>
-    <ng-container *ngTemplateOutlet="documentRows; context: { $implicit: documents() }" />
-  </section>
-
-  <ng-template #documentRows let-items>
-    @if (items.length) {
-      <div class="shared-document-list">
-        @for (item of items; track item.document.uuid) {
-          <button type="button" class="shared-document" (click)="openDocument(item.document)">
-            @if (item.document.thumbnailUrl) {
-              <img src="{{ item.document.thumbnailUrl }}" alt="" loading="lazy" />
-            }
-            <span class="document-title">{{ title(item) }}</span>
-            <span class="document-date">{{ item.document.createdAt | date }}</span>
-            <span class="open-label">{{ 'sharing.open' | t }} →</span>
-          </button>
-        }
-      </div>
-    } @else {
-      <p class="muted">{{ 'sharing.noDocuments' | t }}</p>
-    }
-  </ng-template>
 </main>

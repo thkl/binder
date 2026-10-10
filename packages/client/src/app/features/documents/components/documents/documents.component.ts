@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { DocumentsService } from '../../services/documents.service';
+import { SharingService } from '../../services/sharing.service';
 import { FoldersService } from '../../services/folders.service';
 import {
   DocumentDrawerComponent,
@@ -89,6 +90,7 @@ type DocumentFilterValues = {
 })
 export class DocumentsComponent implements OnInit, OnDestroy {
   readonly documents = inject(DocumentsService);
+  readonly sharing = inject(SharingService);
   readonly folders = inject(FoldersService);
   readonly savedSearches = inject(SavedSearchService);
   readonly metadata = inject(MetadataService);
@@ -321,6 +323,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.folders.select(null);
     void this.folders.loadChildren(null);
     void this.folders.listAll();
+    void this.sharing.loadOwnedSummary();
     void this.metadata.loadVocabulary();
     void this.savedSearches.load();
     /*

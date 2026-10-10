@@ -663,6 +663,30 @@ h2 {
   gap: 0.35rem;
 }
 
+.document-share-indicator {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+  padding: 0.2rem 0.4rem;
+  color: var(--color-accent);
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
+.document-share-indicator svg,
+.folder-share-indicator svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
 .title-input {
   min-width: 0;
   width: 100%;

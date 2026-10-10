@@ -136,6 +136,11 @@ export class DocumentController {
     return { data: await this.documents.listShared(user.userId) };
   }
 
+  @Get('shared/unfiled')
+  async listSharedUnfiled(@CurrentUser() user: ScopedUser) {
+    return { data: await this.documents.listSharedUnfiled(user.userId) };
+  }
+
   @Post('bulk')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async bulkAction(@Body() body: unknown, @CurrentUser() user: ScopedUser) {
@@ -361,7 +366,7 @@ export class DocumentController {
   }
 
   @Get(':uuid/thumbnail')
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Throttle({ default: { limit: 1200, ttl: 60_000 } })
   async thumbnail(
     @Param('uuid') uuid: string,
     @CurrentUser() user: ScopedUser,

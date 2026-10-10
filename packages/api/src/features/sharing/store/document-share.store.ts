@@ -17,6 +17,10 @@ export class DocumentShareStore extends BaseCrudStore<DocumentShare> {
     });
   }
 
+  listForOwner(ownerUuid: string): Promise<DocumentShare[]> {
+    return this.model.findAll({ where: { ownerUuid }, attributes: ['documentUuid', 'recipientUserUuid'] });
+  }
+
   listForOwnerDocuments(ownerUuid: string, documentUuids: string[]): Promise<DocumentShare[]> {
     if (documentUuids.length === 0) return Promise.resolve([]);
     return this.model.findAll({ where: { ownerUuid, documentUuid: { [Op.in]: documentUuids } } });

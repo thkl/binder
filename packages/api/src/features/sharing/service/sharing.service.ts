@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  OwnedShareSummarySchema,
   ShareGrantsResponseSchema,
   ShareRecipientsResponseSchema,
 } from '@binder/common';
@@ -23,6 +24,25 @@ export class SharingService {
     const users = await this.users.findShareCandidates(userUuid);
     return ShareRecipientsResponseSchema.parse({
       items: users.map((user) => ({ uuid: user.uuid, username: user.username })),
+    });
+  }
+
+  async listOwnedShareSummary(ownerUuid: string) {
+    const [documentShares, folderShares] = await Promise.all([
+      this.documentShares.listForOwner(ownerUuid),
+      this.folderShares.listForOwner(ownerUuid),
+    ]);
+    const countByUuid = (items: Array<{ documentUuid?: string; folderUuid?: string }>, field: 'documentUuid' | 'folderUuid') => {
+      const counts = new Map<string, number>();
+      for (const item of items) {
+        const uuid = item[field];
+        if (uuid) counts.set(uuid, (counts.get(uuid) ?? 0) + 1);
+      }
+      return [...counts].map(([uuid, recipientCount]) => ({ uuid, recipientCount }));
+    };
+    return OwnedShareSummarySchema.parse({
+      documents: countByUuid(documentShares, 'documentUuid'),
+      folders: countByUuid(folderShares, 'folderUuid'),
     });
   }
 
@@ -110,6 +130,23 @@ export class SharingService {
     return sharedAtByDocument;
   }
 
+  async listReceivedUnfiledDocumentUuids(userUuid: string): Promise<string[]> {
+    const [directShares, folderShares] = await Promise.all([
+      this.documentShares.listForRecipient(userUuid),
+      this.folderShares.listForRecipient(userUuid),
+    ]);
+    const sharedFolderUuids = new Set<string>();
+    for (const share of folderShares) {
+      const subtree = await this.folders.listSubtree(share.ownerUuid, share.folderUuid);
+      for (const folder of subtree) sharedFolderUuids.add(folder.uuid);
+    }
+    const links = await this.folders.listDocumentLinksForFolders([...sharedFolderUuids]);
+    const filedDocumentUuids = new Set(links.map((link) => link.documentUuid));
+    return [...new Set(directShares.map((share) => share.documentUuid))].filter(
+      (documentUuid) => !filedDocumentUuids.has(documentUuid),
+    );
+  }
+
   async listReceivedFolders(userUuid: string) {
     const shares = await this.folderShares.listForRecipient(userUuid);
     const [folders, owners] = await Promise.all([
@@ -134,15 +171,17 @@ export class SharingService {
 
   async listReceivedFolderDocumentUuids(userUuid: string, folderUuid: string): Promise<string[]> {
     const shares = await this.folderShares.listForRecipient(userUuid);
-    const sharedSubtreeUuids = new Set<string>();
+    let sharedOwnerUuid: string | null = null;
     for (const share of shares) {
       const subtree = await this.folders.listSubtree(share.ownerUuid, share.folderUuid);
       if (subtree.some((folder) => folder.uuid === folderUuid)) {
-        for (const folder of subtree) sharedSubtreeUuids.add(folder.uuid);
+        sharedOwnerUuid = share.ownerUuid;
+        break;
       }
     }
-    if (!sharedSubtreeUuids.has(folderUuid)) throw new NotFoundException('Shared folder not found');
-    const links = await this.folders.listDocumentLinksForFolders([...sharedSubtreeUuids]);
+    if (!sharedOwnerUuid) throw new NotFoundException('Shared folder not found');
+    const requestedSubtree = await this.folders.listSubtree(sharedOwnerUuid, folderUuid);
+    const links = await this.folders.listDocumentLinksForFolders(requestedSubtree.map((folder) => folder.uuid));
     return [...new Set(links.map((link) => link.documentUuid))];
   }
 

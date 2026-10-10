@@ -1,14 +1,18 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import type { SharedDocument, SharedFolder } from '@binder/common';
-import { TranslatePipe } from '../../common/i18n/i18n.service';
+import type { Document, SharedDocument, SharedFolder } from '@binder/common';
+import { I18nService, TranslatePipe } from '../../common/i18n/i18n.service';
 import { SharingService } from '../documents/services/sharing.service';
+import { DocumentsService } from '../documents/services/documents.service';
+import { DocumentDrawerComponent } from '../documents/components/document-drawer/document-drawer.component';
+
+const ALL_SHARED = '__all_shared__';
+const UNFILED_SHARED = '__unfiled_shared__';
 
 @Component({
   selector: 'binder-shared-with-me',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe, DocumentDrawerComponent],
   templateUrl: './shared-with-me.component.html',
   styleUrl: './shared-with-me.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -16,22 +20,30 @@ import { SharingService } from '../documents/services/sharing.service';
 export class SharedWithMeComponent implements OnInit {
   readonly folders = signal<SharedFolder[]>([]);
   readonly documents = signal<SharedDocument[]>([]);
+  readonly unfiledDocuments = signal<SharedDocument[]>([]);
   readonly folderDocuments = signal<SharedDocument[]>([]);
-  readonly selectedFolder = signal<SharedFolder | null>(null);
+  readonly selectedFolderUuid = signal(ALL_SHARED);
+  readonly drawerDocument = signal<Document | null>(null);
+  readonly openingUuid = signal<string | null>(null);
   readonly loading = signal(false);
   readonly error = signal(false);
+  readonly thumbnailFailed = signal<Record<string, boolean>>({});
   private readonly sharing = inject(SharingService);
-  private readonly router = inject(Router);
+  private readonly documentsService = inject(DocumentsService);
+  private readonly i18n = inject(I18nService);
+  private folderLoadRun = 0;
 
   async ngOnInit(): Promise<void> {
     this.loading.set(true);
     try {
-      const [folders, documents] = await Promise.all([
+      const [folders, documents, unfiled] = await Promise.all([
         this.sharing.receivedFolders(),
         this.sharing.receivedDocuments(),
+        this.sharing.receivedUnfiledDocuments(),
       ]);
       this.folders.set(folders);
       this.documents.set(documents);
+      this.unfiledDocuments.set(unfiled);
     } catch {
       this.error.set(true);
     } finally {
@@ -39,25 +51,65 @@ export class SharedWithMeComponent implements OnInit {
     }
   }
 
-  async selectFolder(folder: SharedFolder): Promise<void> {
-    this.selectedFolder.set(folder);
+  async selectFolder(folderUuid: string): Promise<void> {
+    const run = ++this.folderLoadRun;
+    this.selectedFolderUuid.set(folderUuid);
+    if (folderUuid === ALL_SHARED || folderUuid === UNFILED_SHARED) {
+      this.loading.set(false);
+      return;
+    }
+    const folder = this.folders().find((item) => item.uuid === folderUuid);
+    if (!folder) return;
     this.folderDocuments.set([]);
     this.loading.set(true);
     this.error.set(false);
     try {
-      this.folderDocuments.set(await this.sharing.folderDocuments(folder.uuid));
+      const documents = await this.sharing.folderDocuments(folder.uuid);
+      if (run === this.folderLoadRun) this.folderDocuments.set(documents);
     } catch {
-      this.error.set(true);
+      if (run === this.folderLoadRun) this.error.set(true);
     } finally {
-      this.loading.set(false);
+      if (run === this.folderLoadRun) this.loading.set(false);
     }
   }
 
-  openDocument(document: SharedDocument['document']): void {
-    void this.router.navigate(['/documents'], { queryParams: { open: document.uuid } });
+  async openDocument(document: SharedDocument['document']): Promise<void> {
+    this.openingUuid.set(document.uuid);
+    this.error.set(false);
+    try {
+      const loaded = await this.documentsService.loadDocument(document.uuid);
+      if (loaded) this.drawerDocument.set(loaded);
+      else this.error.set(true);
+    } finally {
+      this.openingUuid.set(null);
+    }
+  }
+
+  closeDocument(): void { this.drawerDocument.set(null); }
+
+  selectedDocuments(): SharedDocument[] {
+    const selection = this.selectedFolderUuid();
+    if (selection === ALL_SHARED) return this.documents();
+    if (selection === UNFILED_SHARED) return this.unfiledDocuments();
+    return this.folderDocuments();
+  }
+
+  selectedFolderName(): string {
+    const selection = this.selectedFolderUuid();
+    if (selection === ALL_SHARED) return this.i18n.t('sharing.allShared');
+    if (selection === UNFILED_SHARED) return this.i18n.t('sharing.unfiled');
+    return this.folders().find((folder) => folder.uuid === selection)?.name ?? '';
   }
 
   title(item: SharedDocument): string {
     return item.document.title || item.document.originalFilename;
+  }
+
+  markThumbnailFailed(uuid: string): void {
+    this.thumbnailFailed.update((current) => ({ ...current, [uuid]: true }));
+  }
+
+  hasThumbnailFailed(uuid: string): boolean {
+    return this.thumbnailFailed()[uuid] === true;
   }
 }

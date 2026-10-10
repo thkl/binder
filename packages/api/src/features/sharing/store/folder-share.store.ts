@@ -17,6 +17,10 @@ export class FolderShareStore extends BaseCrudStore<FolderShare> {
     });
   }
 
+  listForOwner(ownerUuid: string): Promise<FolderShare[]> {
+    return this.model.findAll({ where: { ownerUuid }, attributes: ['folderUuid', 'recipientUserUuid'] });
+  }
+
   listForOwnerFolders(ownerUuid: string, folderUuids: string[]): Promise<FolderShare[]> {
     if (folderUuids.length === 0) return Promise.resolve([]);
     return this.model.findAll({ where: { ownerUuid, folderUuid: { [Op.in]: folderUuids } } });

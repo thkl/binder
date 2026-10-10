@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input, output, signal } fro
 import { FoldersService, FolderTreeRow } from '../../services/folders.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { ShareAccessComponent } from '../share-access/share-access.component';
+import { SharingService } from '../../services/sharing.service';
 
 @Component({
   selector: 'binder-folder-tree',
@@ -25,7 +26,7 @@ export class FolderTreeComponent {
   readonly moveTargetUuid = signal<string>('');
   readonly sharingFolderUuid = signal<string | null>(null);
 
-  constructor(readonly folders: FoldersService) {}
+  constructor(readonly folders: FoldersService, readonly sharing: SharingService) {}
 
   async toggle(row: FolderTreeRow): Promise<void> {
     await this.folders.toggle(row.folder);

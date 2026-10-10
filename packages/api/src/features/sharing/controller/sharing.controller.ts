@@ -14,6 +14,11 @@ export class SharingController {
     return { data: await this.sharing.listRecipients(user.userId) };
   }
 
+  @Get('summary')
+  async summary(@CurrentUser() user: ScopedUser) {
+    return { data: await this.sharing.listOwnedShareSummary(user.userId) };
+  }
+
   @Get('documents/:documentUuid')
   async listDocumentShares(
     @Param('documentUuid') documentUuid: string,
