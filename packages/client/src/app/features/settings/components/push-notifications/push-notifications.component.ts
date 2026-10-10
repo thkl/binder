@@ -22,4 +22,8 @@ export class PushNotificationsComponent implements OnInit {
     if (file) await this.push.uploadKey(file);
     input.value = '';
   }
+
+  registeredDate(value: string): string {
+    return new Date(value).toLocaleString();
+  }
 }

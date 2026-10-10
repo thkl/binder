@@ -4,6 +4,7 @@ export interface PushDeviceAttributes {
   uuid: string;
   ownerUuid: string;
   token: string;
+  deviceName: string;
   environment: 'sandbox' | 'production';
   createdAt: Date;
   updatedAt: Date;
@@ -22,6 +23,9 @@ export class PushDevice extends Model<PushDeviceAttributes, PushDeviceCreationAt
 
   @Column({ type: DataType.STRING(200), allowNull: false, unique: true })
   declare token: string;
+
+  @Column({ field: 'device_name', type: DataType.STRING(120), allowNull: false, defaultValue: 'iOS device' })
+  declare deviceName: string;
 
   @Column({ type: DataType.STRING(16), allowNull: false })
   declare environment: 'sandbox' | 'production';

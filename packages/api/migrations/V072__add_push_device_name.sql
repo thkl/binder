@@ -1,0 +1,2 @@
+ALTER TABLE push_devices
+    ADD COLUMN IF NOT EXISTS device_name VARCHAR(120) NOT NULL DEFAULT 'iOS device';

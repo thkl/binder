@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Post,
   Put,
   UploadedFile,
@@ -26,15 +27,24 @@ export class NotificationsController {
   constructor(private readonly notifications: NotificationsService) {}
 
   @Post('devices')
-  async registerDevice(@Body() body: { token?: unknown; environment?: unknown }, @CurrentUser() user: ScopedUser) {
+  async registerDevice(@Body() body: { token?: unknown; environment?: unknown; deviceName?: unknown }, @CurrentUser() user: ScopedUser) {
     if (typeof body.token !== 'string' || !/^[a-fA-F0-9]{64,200}$/.test(body.token)) {
       throw new BadRequestException('A valid APNs device token is required');
     }
     if (body.environment !== 'sandbox' && body.environment !== 'production') {
       throw new BadRequestException('APNs environment must be sandbox or production');
     }
-    await this.notifications.registerDevice(user.userId, body.token.toLowerCase(), body.environment);
+    const deviceName = typeof body.deviceName === 'string' ? body.deviceName.trim().slice(0, 120) : 'iOS device';
+    await this.notifications.registerDevice(user.userId, body.token.toLowerCase(), body.environment, deviceName || 'iOS device');
     return { data: null };
+  }
+
+  @Post('devices/status')
+  async getDeviceRegistration(@Body() body: { token?: unknown }, @CurrentUser() user: ScopedUser) {
+    if (typeof body.token !== 'string' || !/^[a-fA-F0-9]{64,200}$/.test(body.token)) {
+      throw new BadRequestException('A valid APNs device token is required');
+    }
+    return { data: await this.notifications.getDeviceRegistration(user.userId, body.token.toLowerCase()) };
   }
 
   @Get('status')
@@ -58,6 +68,29 @@ export class NotificationsController {
   @Roles('admin')
   async getPushSettings() {
     return { data: await this.notifications.getPushSettings() };
+  }
+
+  @Get('push-settings/devices')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async getRegisteredDevices() {
+    return { data: await this.notifications.getRegisteredDevices() };
+  }
+
+  @Delete('push-settings/devices/:uuid')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async removeRegisteredDevice(@Param('uuid') uuid: string) {
+    await this.notifications.removeRegisteredDevice(uuid);
+    return { data: null };
+  }
+
+  @Post('push-settings/devices/:uuid/test')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async sendTestPush(@Param('uuid') uuid: string) {
+    await this.notifications.sendTestPush(uuid);
+    return { data: null };
   }
 
   @Put('push-settings')

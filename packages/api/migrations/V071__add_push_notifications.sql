@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS push_notification_events (
 CREATE INDEX IF NOT EXISTS push_notification_events_pending_idx
     ON push_notification_events(available_at, created_at) WHERE delivered_at IS NULL;
 
-CREATE OR REPLACE FUNCTION enqueue_document_push_notification() RETURNS trigger AS $$
+CREATE FUNCTION enqueue_document_push_notification() RETURNS trigger AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         INSERT INTO push_notification_events(owner_id, document_id, event_type)
@@ -45,12 +45,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS documents_push_notification_insert ON documents;
 CREATE TRIGGER documents_push_notification_insert
     AFTER INSERT ON documents
     FOR EACH ROW EXECUTE FUNCTION enqueue_document_push_notification();
 
-DROP TRIGGER IF EXISTS documents_push_notification_status ON documents;
 CREATE TRIGGER documents_push_notification_status
     AFTER UPDATE OF status ON documents
     FOR EACH ROW EXECUTE FUNCTION enqueue_document_push_notification();

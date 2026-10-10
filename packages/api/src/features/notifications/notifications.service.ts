@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { createSign } from 'node:crypto';
 import { connect, ClientHttp2Session } from 'node:http2';
 import { ApplicationSettingsService } from '../settings/service/application-settings.service';
@@ -18,6 +18,8 @@ type PushSettings = {
   processingFailed: boolean;
   hasAPNsKey: boolean;
 };
+type APNsAlert = { title: string; body: string; data?: Record<string, string> };
+type APNsResult = { status: number; reason?: string; requestId?: string };
 
 @Injectable()
 export class NotificationsService implements OnModuleInit, OnModuleDestroy {
@@ -39,12 +41,48 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
   onModuleDestroy() { if (this.timer) clearInterval(this.timer); }
 
-  async registerDevice(ownerId: string, token: string, environment: Environment): Promise<void> {
-    await this.devices.register(ownerId, token, environment);
+  async registerDevice(ownerId: string, token: string, environment: Environment, deviceName: string): Promise<void> {
+    await this.devices.register(ownerId, token, environment, deviceName);
   }
 
   async unregisterDevice(ownerId: string, token: string): Promise<void> {
     await this.devices.unregister(ownerId, token);
+  }
+
+  async getDeviceRegistration(ownerId: string, token: string): Promise<{ enabled: boolean; environment: Environment | null }> {
+    const device = await this.devices.findRegistration(ownerId, token);
+    return { enabled: Boolean(device), environment: device?.environment ?? null };
+  }
+
+  async getRegisteredDevices() {
+    return this.devices.findAllForAdmin();
+  }
+
+  async removeRegisteredDevice(uuid: string): Promise<void> {
+    await this.devices.removeByUuid(uuid);
+  }
+
+  async sendTestPush(uuid: string): Promise<void> {
+    const config = await this.getPushSettings();
+    if (!config.enabled || !config.hasAPNsKey || !config.keyId || !config.teamId || !config.topic) {
+      throw new BadRequestException('Configure and enable APNs before sending a test notification');
+    }
+    const device = await this.devices.findByUuid(uuid);
+    if (!device) throw new NotFoundException('Registered device not found');
+    const host = device.environment === 'sandbox' ? 'https://api.sandbox.push.apple.com' : 'https://api.push.apple.com';
+    const result = await this.postAPNs(host, device.token, config, {
+      title: 'Binder test notification',
+      body: 'Push notifications are working for this device.',
+      data: { eventType: 'test' },
+    });
+    if (result.status === 410) {
+      await this.devices.deleteToken(device.token);
+      throw new BadRequestException('APNs reports this device token is no longer active. It has been removed.');
+    }
+    if (result.status < 200 || result.status >= 300) {
+      const details = [result.reason, result.requestId && `request ${result.requestId}`].filter(Boolean).join(', ');
+      throw new BadGatewayException(`APNs returned HTTP ${result.status}${details ? ` (${details})` : ''}`);
+    }
   }
 
   async getPushSettings(): Promise<PushSettings> {
@@ -123,15 +161,22 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     const devices = await this.devices.findForOwner(event.ownerUuid);
     for (const device of devices) {
       const host = device.environment === 'sandbox' ? 'https://api.sandbox.push.apple.com' : 'https://api.push.apple.com';
-      const status = await this.postAPNs(host, device.token, config, event);
-      if (status === 410) {
+      const result = await this.postAPNs(host, device.token, config, {
+        title: 'Binder',
+        body: this.notificationText(event.eventType),
+        data: { documentUuid: event.documentUuid, eventType: event.eventType },
+      });
+      if (result.status === 410) {
         await this.devices.deleteToken(device.token);
-      } else if (status < 200 || status >= 300) throw new Error(`APNs returned HTTP ${status}`);
+      } else if (result.status < 200 || result.status >= 300) {
+        const details = [result.reason, result.requestId && `request ${result.requestId}`].filter(Boolean).join(', ');
+        throw new Error(`APNs returned HTTP ${result.status}${details ? ` (${details})` : ''}`);
+      }
     }
   }
 
-  private postAPNs(host: string, token: string, config: PushSettings, event: PushNotificationEvent): Promise<number> {
-    return this.getJWT(config).then((jwt) => new Promise<number>((resolve, reject) => {
+  private postAPNs(host: string, token: string, config: PushSettings, alert: APNsAlert): Promise<APNsResult> {
+    return this.getJWT(config).then((jwt) => new Promise<APNsResult>((resolve, reject) => {
       const session: ClientHttp2Session = connect(host);
       const timeout = setTimeout(() => { session.destroy(); reject(new Error('APNs request timed out')); }, 12_000);
       session.once('error', (error) => { clearTimeout(timeout); reject(error); });
@@ -142,14 +187,29 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
           'apns-topic': config.topic, 'apns-push-type': 'alert', 'apns-priority': '10',
         });
         let status = 0;
-        request.on('response', (headers) => { status = Number(headers[':status'] ?? 0); });
-        request.on('data', () => undefined);
+        let requestId: string | undefined;
+        const responseChunks: Buffer[] = [];
+        request.on('response', (headers) => {
+          status = Number(headers[':status'] ?? 0);
+          requestId = typeof headers['apns-id'] === 'string' ? headers['apns-id'] : undefined;
+        });
+        request.on('data', (chunk: Buffer | string) => responseChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
         request.on('error', (error) => { clearTimeout(timeout); session.destroy(); reject(error); });
-        request.on('end', () => { clearTimeout(timeout); session.close(); resolve(status); });
+        request.on('end', () => {
+          clearTimeout(timeout);
+          session.close();
+          let reason: string | undefined;
+          if (responseChunks.length) {
+            try {
+              const body = JSON.parse(Buffer.concat(responseChunks).toString('utf8')) as { reason?: unknown };
+              if (typeof body.reason === 'string') reason = body.reason;
+            } catch { /* APNs may return an empty or non-JSON body. */ }
+          }
+          resolve({ status, reason, requestId });
+        });
         request.end(JSON.stringify({
-          aps: { alert: { title: 'Binder', body: this.notificationText(event.eventType) }, sound: 'default' },
-          documentUuid: event.documentUuid,
-          eventType: event.eventType,
+          aps: { alert: { title: alert.title, body: alert.body }, sound: 'default' },
+          ...alert.data,
         }));
       });
     }));

@@ -14,6 +14,15 @@ export interface PushNotificationSettings {
   hasAPNsKey: boolean;
 }
 
+export interface RegisteredPushDevice {
+  uuid: string;
+  ownerUsername: string;
+  deviceName: string;
+  environment: 'sandbox' | 'production';
+  createdAt: string;
+  tokenHint: string;
+}
+
 const defaults: PushNotificationSettings = {
   enabled: false, keyId: '', teamId: '', topic: 'network.thkl.binder.ios',
   documentAdded: true, processingComplete: false, processingFailed: true, hasAPNsKey: false,
@@ -26,6 +35,10 @@ export class PushNotificationsService {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly saved = signal(false);
+  readonly devices = signal<RegisteredPushDevice[]>([]);
+  readonly deviceActionId = signal<string | null>(null);
+  readonly deviceMessage = signal<string | null>(null);
+  readonly deviceError = signal<string | null>(null);
   private readonly baseUrl = '/api/v1/notifications/push-settings';
 
   constructor(private readonly http: HttpClient) {}
@@ -33,8 +46,12 @@ export class PushNotificationsService {
   async load(): Promise<void> {
     this.loading.set(true); this.error.set(null);
     try {
-      const response = await firstValueFrom(this.http.get<ApiResponse<PushNotificationSettings>>(this.baseUrl, { withCredentials: true }));
+      const [response, devicesResponse] = await Promise.all([
+        firstValueFrom(this.http.get<ApiResponse<PushNotificationSettings>>(this.baseUrl, { withCredentials: true })),
+        firstValueFrom(this.http.get<ApiResponse<RegisteredPushDevice[]>>(`${this.baseUrl}/devices`, { withCredentials: true })),
+      ]);
       this.settings.set({ ...defaults, ...response.data });
+      this.devices.set(devicesResponse.data);
     } catch (error) { this.error.set(this.message(error)); }
     finally { this.loading.set(false); }
   }
@@ -71,6 +88,25 @@ export class PushNotificationsService {
       this.settings.set(response.data);
     } catch (error) { this.error.set(this.message(error)); }
     finally { this.saving.set(false); }
+  }
+
+  async removeDevice(device: RegisteredPushDevice): Promise<void> {
+    this.deviceActionId.set(device.uuid); this.deviceError.set(null); this.deviceMessage.set(null);
+    try {
+      await firstValueFrom(this.http.delete<ApiResponse<null>>(`${this.baseUrl}/devices/${device.uuid}`, { withCredentials: true }));
+      this.devices.update((devices) => devices.filter((item) => item.uuid !== device.uuid));
+      this.deviceMessage.set('push.deviceRemoved');
+    } catch (error) { this.deviceError.set(this.message(error)); }
+    finally { this.deviceActionId.set(null); }
+  }
+
+  async sendTestPush(device: RegisteredPushDevice): Promise<void> {
+    this.deviceActionId.set(device.uuid); this.deviceError.set(null); this.deviceMessage.set(null);
+    try {
+      await firstValueFrom(this.http.post<ApiResponse<null>>(`${this.baseUrl}/devices/${device.uuid}/test`, {}, { withCredentials: true }));
+      this.deviceMessage.set('push.testSent');
+    } catch (error) { this.deviceError.set(this.message(error)); }
+    finally { this.deviceActionId.set(null); }
   }
 
   private message(error: unknown): string {

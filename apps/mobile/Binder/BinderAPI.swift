@@ -9,11 +9,20 @@ struct BinderUser: Decodable {
 private struct PushDevicePayload: Encodable {
     let token: String
     let environment: String?
+    let deviceName: String?
 }
 
 private struct PushStatusEnvelope: Decodable {
     let data: PushStatus
     struct PushStatus: Decodable { let enabled: Bool }
+}
+
+private struct PushDeviceRegistrationEnvelope: Decodable {
+    let data: PushDeviceRegistration
+    struct PushDeviceRegistration: Decodable {
+        let enabled: Bool
+        let environment: String?
+    }
 }
 
 struct BinderSearchResponse: Decodable {
@@ -886,9 +895,9 @@ final class BinderAPI {
         KeychainStore.deleteSession(origin: origin(for: serverURL))
     }
 
-    func registerPushDevice(serverURL: String, token: String, environment: String) async throws {
+    func registerPushDevice(serverURL: String, token: String, environment: String, deviceName: String) async throws {
         _ = try await mutate(path: "notifications/devices", serverURL: serverURL, method: "POST",
-                             payload: PushDevicePayload(token: token, environment: environment))
+                             payload: PushDevicePayload(token: token, environment: environment, deviceName: deviceName))
     }
 
     func pushNotificationsEnabled(serverURL: String) async throws -> Bool {
@@ -896,9 +905,16 @@ final class BinderAPI {
         return try JSONDecoder().decode(PushStatusEnvelope.self, from: data).data.enabled
     }
 
+    func pushDeviceRegistration(serverURL: String, token: String) async throws -> (enabled: Bool, environment: String?) {
+        let (data, _) = try await mutate(path: "notifications/devices/status", serverURL: serverURL, method: "POST",
+                                         payload: PushDevicePayload(token: token, environment: nil, deviceName: nil))
+        let registration = try JSONDecoder().decode(PushDeviceRegistrationEnvelope.self, from: data).data
+        return (registration.enabled, registration.environment)
+    }
+
     func unregisterPushDevice(serverURL: String, token: String) async throws {
         _ = try await mutate(path: "notifications/devices", serverURL: serverURL, method: "DELETE",
-                             payload: PushDevicePayload(token: token, environment: nil))
+                             payload: PushDevicePayload(token: token, environment: nil, deviceName: nil))
     }
 
     func clearCookies(serverURL: String) {

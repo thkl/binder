@@ -7,11 +7,22 @@
     <div class="push-body">
       @if (push.error(); as error) { <p class="field-hint warning" role="alert">{{ error }}</p> }
       <p class="muted">{{ 'push.copy' | t }}</p>
+      <aside class="push-guide" aria-labelledby="push-guide-title">
+        <h4 id="push-guide-title">{{ 'push.guideTitle' | t }}</h4>
+        <p>{{ 'push.guideIntro' | t }} <a href="https://developer.apple.com/help/account/keys/create-a-private-key/" target="_blank" rel="noopener noreferrer">{{ 'push.guideLink' | t }}</a></p>
+        <ol>
+          <li>{{ 'push.guideStep1' | t }}</li>
+          <li>{{ 'push.guideStep2' | t }}</li>
+          <li>{{ 'push.guideStep3' | t }}</li>
+          <li>{{ 'push.guideStep4' | t }}</li>
+        </ol>
+        <p class="push-guide-note"><strong>{{ 'push.guideNoteTitle' | t }}</strong> {{ 'push.guideCertificateNote' | t }}</p>
+      </aside>
       <label class="push-toggle"><input type="checkbox" [checked]="push.settings().enabled" (change)="updateBoolean('enabled', $event)" />{{ 'push.enabled' | t }}</label>
       <div class="push-grid">
         <label>{{ 'push.keyId' | t }}<input type="text" [value]="push.settings().keyId" (input)="updateText('keyId', $event)" autocomplete="off" /></label>
         <label>{{ 'push.teamId' | t }}<input type="text" [value]="push.settings().teamId" (input)="updateText('teamId', $event)" autocomplete="off" /></label>
-        <label>{{ 'push.topic' | t }}<input type="text" [value]="push.settings().topic" (input)="updateText('topic', $event)" placeholder="com.binder.ios" autocomplete="off" /></label>
+        <label>{{ 'push.topic' | t }}<input type="text" [value]="push.settings().topic" (input)="updateText('topic', $event)" placeholder="network.thkl.binder.ios" autocomplete="off" /></label>
       </div>
       <div class="push-key-row">
         <div><strong>{{ 'push.apnsKey' | t }}</strong><p class="field-hint">{{ push.settings().hasAPNsKey ? ('push.keyConfigured' | t) : ('push.keyMissing' | t) }}</p></div>
@@ -23,6 +34,33 @@
         <label><input type="checkbox" [checked]="push.settings().processingComplete" (change)="updateBoolean('processingComplete', $event)" />{{ 'push.processingComplete' | t }}</label>
         <label><input type="checkbox" [checked]="push.settings().processingFailed" (change)="updateBoolean('processingFailed', $event)" />{{ 'push.processingFailed' | t }}</label>
       </fieldset>
+      <section class="push-devices" aria-labelledby="push-devices-title">
+        <div class="push-devices-heading">
+          <div><h4 id="push-devices-title">{{ 'push.devicesTitle' | t }}</h4><p class="field-hint">{{ 'push.devicesCopy' | t }}</p></div>
+          <span class="field-count">{{ push.devices().length }}</span>
+        </div>
+        @if (push.deviceError(); as error) { <p class="field-hint warning" role="alert">{{ error }}</p> }
+        @if (push.deviceMessage(); as message) { <p class="saved-message" role="status">{{ message | t }}</p> }
+        @if (push.devices().length === 0) {
+          <p class="muted">{{ 'push.noDevices' | t }}</p>
+        } @else {
+          <div class="push-device-list">
+            @for (device of push.devices(); track device.uuid) {
+              <article class="push-device-row">
+                <div class="push-device-info">
+                  <strong>{{ device.deviceName }}</strong>
+                  <span>{{ device.ownerUsername }} · {{ device.environment === 'sandbox' ? ('push.sandbox' | t) : ('push.production' | t) }}</span>
+                  <small>{{ 'push.registered' | t }} {{ registeredDate(device.createdAt) }} · {{ device.tokenHint }}</small>
+                </div>
+                <div class="push-device-actions">
+                  <button class="secondary-button" type="button" (click)="push.sendTestPush(device)" [disabled]="push.deviceActionId() !== null">{{ 'push.sendTest' | t }}</button>
+                  <button class="secondary-button danger-button" type="button" (click)="push.removeDevice(device)" [disabled]="push.deviceActionId() !== null">{{ 'push.removeDevice' | t }}</button>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
     </div>
     <footer class="form-footer">
       @if (push.saved()) { <span class="saved-message" role="status">✓ {{ 'settings.saved' | t }}</span> }

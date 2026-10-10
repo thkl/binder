@@ -336,3 +336,23 @@ input:focus {
 select:focus {
   box-shadow: 0 0 0 1px var(--color-accent);
 }
+
+.settings-page {
+  padding-bottom: 2rem;
+}
+
+.settings-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.section-kicker {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
