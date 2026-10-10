@@ -31,10 +31,19 @@
           @if (!readOnly()) {
           <button
             type="button"
-            class="drawer-download-link"
+            class="drawer-download-link share-drawer-button"
             [attr.aria-expanded]="sharePanelOpen()"
             (click)="sharePanelOpen.update((open) => !open)"
-          >{{ 'sharing.title' | t }}</button>
+          >
+            {{ 'sharing.title' | t }}
+            @if (shareRecipientCount() > 0) {
+              <span
+                class="share-button-count"
+                [attr.aria-label]="'sharing.sharedWithCount' | t: { count: shareRecipientCount() }"
+                [title]="'sharing.sharedWithCount' | t: { count: shareRecipientCount() }"
+              >{{ shareRecipientCount() }}</span>
+            }
+          </button>
           @if (archiveReady() && archiveUrl(); as archiveUrl) {
             <a
               class="drawer-download-link"
@@ -115,7 +124,11 @@
           }
         </div>
         @if (sharePanelOpen() && !readOnly()) {
-          <binder-share-access resourceType="documents" [resourceUuid]="documentUuid()" />
+          <binder-share-access
+            resourceType="documents"
+            [resourceUuid]="documentUuid()"
+            (close)="sharePanelOpen.set(false)"
+          />
         }
       </div>
       <button

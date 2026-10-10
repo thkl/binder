@@ -21,6 +21,7 @@ import { DocumentsService } from '../../services/documents.service';
 import { ResizableSplitComponent } from '../../../../common/components/resizable-split/resizable-split.component';
 import { ShareAccessComponent } from '../share-access/share-access.component';
 import { AuthService } from '../../../authentication/services/auth.service';
+import { SharingService } from '../../services/sharing.service';
 
 export type DocumentDrawerTab = 'preview' | 'metadata' | 'history';
 export type DocumentDrawerMode = 'analysis' | 'metadata';
@@ -76,6 +77,9 @@ export class DocumentDrawerComponent {
   readonly showClosePrompt = computed(() => this.closePrompt() || this.externalClosePrompt());
   readonly showAnalysis = computed(() => this.mode() === 'analysis' && !this.readOnly());
   readonly readOnly = computed(() => this.documentData().ownerUuid !== this.auth.user()?.uuid);
+  readonly shareRecipientCount = computed(
+    () => this.sharing.documentShareCounts()[this.documentUuid()] ?? 0,
+  );
   readonly fileUrl = computed<SafeResourceUrl>(() => {
     const url = this.application.getApiUrl('v1', `documents/${this.documentUuid()}/file`);
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
@@ -98,6 +102,7 @@ export class DocumentDrawerComponent {
   private readonly documents = inject(DocumentsService);
   private readonly i18n = inject(I18nService);
   private readonly auth = inject(AuthService);
+  private readonly sharing = inject(SharingService);
   private readonly initialTabEffect = effect(() => {
     this.activeTab.set(this.initialTab());
   });

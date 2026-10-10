@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { SharingService } from '../../services/sharing.service';
 import type { ShareGrant, ShareRecipient } from '@binder/common';
@@ -14,6 +14,7 @@ import type { ShareGrant, ShareRecipient } from '@binder/common';
 export class ShareAccessComponent implements OnInit {
   readonly resourceType = input.required<'documents' | 'folders'>();
   readonly resourceUuid = input.required<string>();
+  readonly close = output<void>();
   readonly recipients = signal<ShareRecipient[]>([]);
   readonly grants = signal<ShareGrant[]>([]);
   readonly selectedRecipient = signal('');

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, input, output, signal } from '@angular/core';
 import { FoldersService, FolderTreeRow } from '../../services/folders.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { ShareAccessComponent } from '../share-access/share-access.component';
@@ -25,6 +25,7 @@ export class FolderTreeComponent {
   readonly movingUuid = signal<string | null>(null);
   readonly moveTargetUuid = signal<string>('');
   readonly sharingFolderUuid = signal<string | null>(null);
+  readonly actionMenuUuid = signal<string | null>(null);
 
   constructor(readonly folders: FoldersService, readonly sharing: SharingService) {}
 
@@ -45,6 +46,7 @@ export class FolderTreeComponent {
   }
 
   beginCreate(parentUuid: string | null): void {
+    this.actionMenuUuid.set(null);
     this.createName.set('');
     this.creatingParentUuid.set(parentUuid);
   }
@@ -66,6 +68,7 @@ export class FolderTreeComponent {
   }
 
   beginRename(uuid: string, currentName: string): void {
+    this.actionMenuUuid.set(null);
     this.editingUuid.set(uuid);
     this.createName.set(currentName);
     queueMicrotask(() => {
@@ -91,6 +94,7 @@ export class FolderTreeComponent {
   }
 
   beginMove(uuid: string): void {
+    this.actionMenuUuid.set(null);
     this.movingUuid.set(uuid);
     this.moveTargetUuid.set('');
   }
@@ -107,6 +111,7 @@ export class FolderTreeComponent {
   }
 
   async remove(uuid: string, name: string): Promise<void> {
+    this.actionMenuUuid.set(null);
     if (
       !window.confirm(
         `${name}: ${this.folders.selectedFolderUuid() === uuid ? 'This folder is selected. ' : ''}Delete the folder and keep its documents?`,
@@ -118,5 +123,27 @@ export class FolderTreeComponent {
 
   trackRow(_index: number, row: FolderTreeRow): string {
     return row.folder.uuid;
+  }
+
+  toggleActionMenu(uuid: string): void {
+    this.actionMenuUuid.update((current) => (current === uuid ? null : uuid));
+  }
+
+  openSharing(uuid: string): void {
+    this.actionMenuUuid.set(null);
+    this.sharingFolderUuid.update((current) => (current === uuid ? null : uuid));
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeMenuOnOutsideClick(event: MouseEvent): void {
+    const target = event.target;
+    if (target instanceof Element && !target.closest('.folder-actions')) {
+      this.actionMenuUuid.set(null);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  closeMenuOnEscape(): void {
+    this.actionMenuUuid.set(null);
   }
 }

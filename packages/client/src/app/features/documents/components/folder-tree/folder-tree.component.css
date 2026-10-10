@@ -130,8 +130,7 @@
   font-size: 0.75rem;
 }
 
-.folder-form-row button,
-.folder-actions button {
+.folder-form-row button {
   min-height: 2.35rem;
   border-radius: 0.4rem;
   padding: 0.35rem 0.55rem;
@@ -143,9 +142,7 @@
 }
 
 .folder-form-row button:hover,
-.folder-form-row button:focus-visible,
-.folder-actions button:hover,
-.folder-actions button:focus-visible {
+.folder-form-row button:focus-visible {
   border-color: var(--color-accent);
   outline: none;
 }
@@ -294,41 +291,77 @@
   position: absolute;
   top: 50%;
   right: 0.35rem;
-  z-index: 1;
-  gap: 0.1rem;
-  padding: 0.1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-  background: var(--color-surface);
-  backdrop-filter: blur(8px);
-  opacity: 0;
-  pointer-events: none;
+  z-index: 5;
   transform: translateY(-50%);
-  transition: opacity 0.15s ease;
 }
 
-.folder-row:hover .folder-actions,
-.folder-row:focus-within .folder-actions {
-  opacity: 1;
-  pointer-events: auto;
+.folder-select,
+.folder-root-row {
+  padding-right: 2.8rem;
 }
 
-.folder-actions button {
+.folder-actions .folder-menu-trigger {
   width: 2.1rem;
   min-height: 2.1rem;
-  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.45rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.folder-actions .folder-menu-trigger:hover,
+.folder-actions .folder-menu-trigger:focus-visible {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.folder-action-menu {
+  display: grid;
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  z-index: 10;
+  min-width: 11rem;
+  gap: 0.15rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.65rem;
+  padding: 0.35rem;
+  background: var(--color-surface);
+  box-shadow: 0 0.8rem 2rem var(--color-overlay);
+}
+
+.folder-action-menu button {
+  min-height: 2.35rem;
+  border: 0;
+  border-radius: 0.4rem;
+  padding: 0.45rem 0.6rem;
   color: var(--color-text);
   background: transparent;
+  font: inherit;
+  font-size: 0.74rem;
+  text-align: left;
+  cursor: pointer;
 }
 
-.folder-actions button:hover,
-.folder-actions button:focus-visible {
+.folder-action-menu button:hover,
+.folder-action-menu button:focus-visible {
   color: var(--color-bg);
   background: var(--color-accent);
+  outline: none;
 }
 
-.folder-actions button.danger:hover,
-.folder-actions button.danger:focus-visible {
+.folder-action-menu button.danger {
+  color: var(--color-danger);
+}
+
+.folder-action-menu button.danger:hover,
+.folder-action-menu button.danger:focus-visible {
   border-color: var(--color-danger);
   color: var(--color-bg);
   background: var(--color-danger);

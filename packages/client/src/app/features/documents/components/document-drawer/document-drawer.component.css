@@ -94,6 +94,25 @@
   text-decoration: none;
 }
 
+.share-drawer-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.share-button-count {
+  display: inline-grid;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  place-items: center;
+  border-radius: 999px;
+  padding: 0 0.25rem;
+  color: var(--color-bg);
+  background: var(--color-accent);
+  font-size: 0.62rem;
+  font-weight: 850;
+}
+
 .drawer-download-link:hover,
 .drawer-download-link:focus-visible {
   border-color: var(--color-accent);

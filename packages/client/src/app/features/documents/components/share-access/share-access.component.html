@@ -4,6 +4,13 @@
       <h4>{{ 'sharing.title' | t }}</h4>
       <p>{{ 'sharing.readOnly' | t }}</p>
     </div>
+    <button
+      class="share-close"
+      type="button"
+      (click)="close.emit()"
+      [attr.aria-label]="'sharing.close' | t"
+      [title]="'sharing.close' | t"
+    >×</button>
   </header>
 
   <form class="share-form" (submit)="$event.preventDefault(); add()">

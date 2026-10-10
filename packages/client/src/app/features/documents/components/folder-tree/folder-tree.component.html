@@ -77,11 +77,25 @@
           'folders.allDocuments' | t
         }}</span>
       </button>
-      <span class="folder-actions">
-        <button type="button" (click)="beginCreate(null)" [attr.aria-label]="'folders.newRoot' | t">
-          +
+      <div class="folder-actions">
+        <button
+          type="button"
+          class="folder-menu-trigger"
+          (click)="toggleActionMenu('__root__')"
+          [attr.aria-label]="'folders.moreActions' | t"
+          [attr.aria-expanded]="actionMenuUuid() === '__root__'"
+          aria-haspopup="menu"
+        >
+          …
         </button>
-      </span>
+        @if (actionMenuUuid() === '__root__') {
+          <div class="folder-action-menu" role="menu">
+            <button type="button" role="menuitem" (click)="beginCreate(null)">
+              {{ 'folders.newRoot' | t }}
+            </button>
+          </div>
+        }
+      </div>
     </div>
 
     @for (row of folders.rows(); track trackRow($index, row)) {
@@ -138,48 +152,49 @@
             }
           }
         </button>
-        <span class="folder-actions">
+        <div class="folder-actions">
           <button
             type="button"
-            (click)="beginCreate(row.folder.uuid)"
-            [attr.aria-label]="'folders.newChild' | t"
-          >
-            +
-          </button>
-          <button
-            type="button"
-            (click)="beginRename(row.folder.uuid, row.folder.name)"
-            [attr.aria-label]="'folders.rename' | t"
+            class="folder-menu-trigger"
+            (click)="toggleActionMenu(row.folder.uuid)"
+            [attr.aria-label]="'folders.moreActions' | t"
+            [attr.aria-expanded]="actionMenuUuid() === row.folder.uuid"
+            aria-haspopup="menu"
           >
             …
           </button>
-          <button
-            type="button"
-            (click)="beginMove(row.folder.uuid)"
-            [attr.aria-label]="'folders.move' | t"
-          >
-            ↗
-          </button>
-          <button
-            type="button"
-            (click)="sharingFolderUuid.set(sharingFolderUuid() === row.folder.uuid ? null : row.folder.uuid)"
-            [attr.aria-label]="'sharing.title' | t"
-            [attr.aria-expanded]="sharingFolderUuid() === row.folder.uuid"
-          >
-            {{ 'sharing.short' | t }}
-          </button>
-          <button
-            type="button"
-            class="danger"
-            (click)="remove(row.folder.uuid, row.folder.name)"
-            [attr.aria-label]="'folders.delete' | t"
-          >
-            ×
-          </button>
-        </span>
+          @if (actionMenuUuid() === row.folder.uuid) {
+            <div class="folder-action-menu" role="menu">
+              <button type="button" role="menuitem" (click)="beginCreate(row.folder.uuid)">
+                {{ 'folders.newChild' | t }}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                (click)="beginRename(row.folder.uuid, row.folder.name)"
+              >{{ 'folders.rename' | t }}</button>
+              <button type="button" role="menuitem" (click)="beginMove(row.folder.uuid)">
+                {{ 'folders.move' | t }}
+              </button>
+              <button type="button" role="menuitem" (click)="openSharing(row.folder.uuid)">
+                {{ 'sharing.title' | t }}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class="danger"
+                (click)="remove(row.folder.uuid, row.folder.name)"
+              >{{ 'folders.delete' | t }}</button>
+            </div>
+          }
+        </div>
       </div>
       @if (sharingFolderUuid() === row.folder.uuid) {
-        <binder-share-access resourceType="folders" [resourceUuid]="row.folder.uuid" />
+        <binder-share-access
+          resourceType="folders"
+          [resourceUuid]="row.folder.uuid"
+          (close)="sharingFolderUuid.set(null)"
+        />
       }
     } @empty {
       <p class="folder-empty">{{ 'folders.empty' | t }}</p>

@@ -12,6 +12,36 @@
   font-size: 0.86rem;
 }
 
+.share-access > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.share-close {
+  display: grid;
+  flex: 0 0 2.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 0.45rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.share-close:hover,
+.share-close:focus-visible {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
 .share-access p {
   margin: 0.25rem 0 0;
   color: var(--color-muted);
