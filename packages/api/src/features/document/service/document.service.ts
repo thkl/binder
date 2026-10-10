@@ -1,9 +1,10 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
-  TooManyRequestsException,
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/sequelize';
 import { ConfigService } from '@nestjs/config';
@@ -123,7 +124,10 @@ export class DocumentService {
     }
 
     if (this.activeUploads >= DocumentService.MAX_CONCURRENT_UPLOADS) {
-      throw new TooManyRequestsException('Too many document uploads are being processed');
+      throw new HttpException(
+        'Too many document uploads are being processed',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
     this.activeUploads += 1;
 
@@ -212,7 +216,7 @@ export class DocumentService {
   private async addManualUploadToInbox(
     documentUuid: string,
     ownerUuid: string,
-    file: Pick<UploadedDocumentFile, 'originalname'>,
+    file: { originalname: string; buffer?: Buffer; mimetype?: string },
     checksumSha256: string,
     sizeBytes: number,
     autoApplyAi = false,

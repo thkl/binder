@@ -15,12 +15,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
 import { rm } from 'node:fs/promises';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 import {
   DocumentBulkActionInputSchema,
   DocumentExportSelectionInputSchema,
@@ -72,10 +70,7 @@ export class DocumentController implements OnModuleDestroy {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: UPLOAD_TEMP_DIRECTORY,
-        filename: (_request, _file, callback) => callback(null, randomUUID()),
-      }),
+      dest: UPLOAD_TEMP_DIRECTORY,
       limits: {
         fileSize: HARD_UPLOAD_LIMIT_BYTES,
         files: 1,
