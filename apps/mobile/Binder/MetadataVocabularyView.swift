@@ -262,19 +262,19 @@ private struct MetadataVocabularyEditorView: View {
         NavigationStack {
             Form {
                 Section(kind.title) {
-                    LabeledContent("Name") {
+                    MetadataFormField(title: "Name") {
                         TextField("Enter name", text: $name)
                             .textInputAutocapitalization(.words)
                     }
-                    LabeledContent("Description") {
+                    MetadataFormField(title: "Description") {
                         TextField("Optional description", text: $description, axis: .vertical)
                             .lineLimit(2...4)
                     }
-                    LabeledContent("English translation") {
+                    MetadataFormField(title: "English translation") {
                         TextField("Optional", text: $englishName)
                             .textInputAutocapitalization(.words)
                     }
-                    LabeledContent("German translation") {
+                    MetadataFormField(title: "German translation") {
                         TextField("Optional", text: $germanName)
                             .textInputAutocapitalization(.words)
                     }

@@ -1,0 +1,32 @@
+<section class="settings-form glass-card">
+  <header class="form-heading">
+    <div><p class="section-kicker">{{ 'push.kicker' | t }}</p><h3>{{ 'push.title' | t }}</h3></div>
+  </header>
+  @if (push.loading()) { <p class="muted push-body">{{ 'settings.loading' | t }}</p> }
+  @else {
+    <div class="push-body">
+      @if (push.error(); as error) { <p class="field-hint warning" role="alert">{{ error }}</p> }
+      <p class="muted">{{ 'push.copy' | t }}</p>
+      <label class="push-toggle"><input type="checkbox" [checked]="push.settings().enabled" (change)="updateBoolean('enabled', $event)" />{{ 'push.enabled' | t }}</label>
+      <div class="push-grid">
+        <label>{{ 'push.keyId' | t }}<input type="text" [value]="push.settings().keyId" (input)="updateText('keyId', $event)" autocomplete="off" /></label>
+        <label>{{ 'push.teamId' | t }}<input type="text" [value]="push.settings().teamId" (input)="updateText('teamId', $event)" autocomplete="off" /></label>
+        <label>{{ 'push.topic' | t }}<input type="text" [value]="push.settings().topic" (input)="updateText('topic', $event)" placeholder="com.binder.ios" autocomplete="off" /></label>
+      </div>
+      <div class="push-key-row">
+        <div><strong>{{ 'push.apnsKey' | t }}</strong><p class="field-hint">{{ push.settings().hasAPNsKey ? ('push.keyConfigured' | t) : ('push.keyMissing' | t) }}</p></div>
+        <label class="secondary-button push-file">{{ 'push.uploadKey' | t }}<input type="file" accept=".p8" (change)="selectKey($event)" /></label>
+        @if (push.settings().hasAPNsKey) { <button class="secondary-button" type="button" (click)="push.deleteKey()" [disabled]="push.saving()">{{ 'push.removeKey' | t }}</button> }
+      </div>
+      <fieldset class="push-events"><legend>{{ 'push.events' | t }}</legend>
+        <label><input type="checkbox" [checked]="push.settings().documentAdded" (change)="updateBoolean('documentAdded', $event)" />{{ 'push.documentAdded' | t }}</label>
+        <label><input type="checkbox" [checked]="push.settings().processingComplete" (change)="updateBoolean('processingComplete', $event)" />{{ 'push.processingComplete' | t }}</label>
+        <label><input type="checkbox" [checked]="push.settings().processingFailed" (change)="updateBoolean('processingFailed', $event)" />{{ 'push.processingFailed' | t }}</label>
+      </fieldset>
+    </div>
+    <footer class="form-footer">
+      @if (push.saved()) { <span class="saved-message" role="status">✓ {{ 'settings.saved' | t }}</span> }
+      <button class="primary-button" type="button" (click)="push.save()" [disabled]="push.saving()">{{ push.saving() ? ('settings.saving' | t) : ('settings.save' | t) }}</button>
+    </footer>
+  }
+</section>

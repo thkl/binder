@@ -43,6 +43,8 @@ import { DocumentClassificationFeedback } from '../../features/classification-fe
 import { ApiToken } from '../../features/plugin/mcp/models/api-token.entity';
 import { EmailImportConfig } from '../../features/email-import/models/email-import-config.entity';
 import { PasswordResetToken } from '../../features/authentication/models/password-reset-token.entity';
+import { PushDevice } from '../../features/notifications/models/push-device.entity';
+import { PushNotificationEvent } from '../../features/notifications/models/push-notification-event.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -102,6 +104,8 @@ export class DatabaseConnectionService {
       ApiToken,
       EmailImportConfig,
       PasswordResetToken,
+      PushDevice,
+      PushNotificationEvent,
     ]);
     await this.initialize();
   }

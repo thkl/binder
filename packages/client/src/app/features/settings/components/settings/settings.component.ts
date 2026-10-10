@@ -23,6 +23,7 @@ import { DropboxConnectionService } from '../../services/dropbox-connection.serv
 import { MaintenanceService } from '../../../maintenance/services/maintenance.service';
 import { ApiTokenManagerComponent } from '../api-token-manager/api-token-manager.component';
 import { IssuerManagerComponent } from '../issuer-manager/issuer-manager.component';
+import { PushNotificationsComponent } from '../push-notifications/push-notifications.component';
 
 @Component({
   selector: 'binder-settings',
@@ -33,6 +34,7 @@ import { IssuerManagerComponent } from '../issuer-manager/issuer-manager.compone
     UserManagementComponent,
     ApiTokenManagerComponent,
     IssuerManagerComponent,
+    PushNotificationsComponent,
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',

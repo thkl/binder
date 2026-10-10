@@ -37,6 +37,10 @@ export const settingsSections: SettingsSection[] = [
     key: 'calendar',
     label: 'Calendar integration',
   },
+  {
+    key: 'pushnotifications',
+    label: 'Push notifications',
+  },
 ];
 
 export const settingsMap: SettingsMapItem[] = [

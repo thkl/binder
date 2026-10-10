@@ -446,6 +446,16 @@
                "required": [
                     "users"
                ]
+          },
+          "71": {
+               "created": [
+                    "push_devices",
+                    "push_notification_events"
+               ],
+               "required": [
+                    "users",
+                    "documents"
+               ]
           }
      }
 }

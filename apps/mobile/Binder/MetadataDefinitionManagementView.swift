@@ -68,7 +68,7 @@ struct MetadataDefinitionManagementView: View {
                     }
 
                     Section("Add a custom field") {
-                        LabeledContent("Field key") {
+                        MetadataFormField(title: "Field key") {
                             TextField("Example: issueDate", text: $fieldKey)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
@@ -79,17 +79,20 @@ struct MetadataDefinitionManagementView: View {
                                     }
                                 }
                         }
-                        LabeledContent("Display label") {
+                        MetadataFormField(title: "Display label") {
                             TextField("Shown in document metadata", text: $fieldLabel)
                                 .textInputAutocapitalization(.words)
                         }
-                        Picker("Field type", selection: $fieldType) {
-                            ForEach(MetadataFieldKind.allCases) { type in
-                                Text(type.title).tag(type)
+                        MetadataFormField(title: "Field type") {
+                            Picker("Field type", selection: $fieldType) {
+                                ForEach(MetadataFieldKind.allCases) { type in
+                                    Text(type.title).tag(type)
+                                }
                             }
+                            .pickerStyle(.menu)
                         }
                         if fieldType.needsOptions {
-                            LabeledContent("Options") {
+                            MetadataFormField(title: "Options") {
                                 TextField("Comma-separated values", text: $fieldOptions, axis: .vertical)
                                     .lineLimit(2...4)
                             }
@@ -282,7 +285,7 @@ private struct MetadataDefinitionLabelEditorView: View {
                 Section("Custom field") {
                     LabeledContent("Key", value: definition.key)
                     LabeledContent("Type", value: MetadataFieldKind(rawValue: definition.type)?.title ?? definition.type)
-                    LabeledContent("Display label") {
+                    MetadataFormField(title: "Display label") {
                         TextField("Enter label", text: $label)
                     }
                 }

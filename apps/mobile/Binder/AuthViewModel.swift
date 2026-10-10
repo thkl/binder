@@ -115,6 +115,7 @@ final class AuthViewModel: ObservableObject {
 
     func signOut() async {
         let url = normalizedServerURL
+        await PushNotificationManager.shared.unregister(serverURL: url)
         do { try await api.logout(serverURL: url) } catch { api.clearCookies(serverURL: url) }
         user = nil
         password = ""

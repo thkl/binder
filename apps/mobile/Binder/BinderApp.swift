@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct BinderApp: App {
+    @UIApplicationDelegateAdaptor(BinderApplicationDelegate.self) private var appDelegate
     @StateObject private var auth = AuthViewModel()
     @Environment(\.scenePhase) private var scenePhase
 

@@ -109,6 +109,8 @@
           <binder-user-management />
         } @else if (activeSection() === 'mcpaccess') {
           <binder-api-token-manager />
+        } @else if (activeSection() === 'pushnotifications') {
+          <binder-push-notifications />
         } @else {
           <form class="settings-form glass-card" (submit)="$event.preventDefault(); save()">
             <header class="form-heading">

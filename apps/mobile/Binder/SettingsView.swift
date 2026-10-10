@@ -26,6 +26,11 @@ struct SettingsView: View {
                 }
 
                 Section("Account") {
+                    NavigationLink {
+                        PushNotificationSettingsView(serverURL: model.serverURL)
+                    } label: {
+                        Label("Notifications", systemImage: "bell.badge")
+                    }
                     Button(role: .destructive) {
                         Task { await model.signOut() }
                     } label: {

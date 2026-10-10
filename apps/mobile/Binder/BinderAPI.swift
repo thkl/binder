@@ -6,6 +6,11 @@ struct BinderUser: Decodable {
     let isAdmin: Bool?
 }
 
+private struct PushDevicePayload: Encodable {
+    let token: String
+    let environment: String?
+}
+
 struct BinderSearchResponse: Decodable {
     let query: String
     let total: Int
@@ -874,6 +879,16 @@ final class BinderAPI {
         try validate(response, data: data)
         csrfToken = nil
         KeychainStore.deleteSession(origin: origin(for: serverURL))
+    }
+
+    func registerPushDevice(serverURL: String, token: String, environment: String) async throws {
+        _ = try await mutate(path: "notifications/devices", serverURL: serverURL, method: "POST",
+                             payload: PushDevicePayload(token: token, environment: environment))
+    }
+
+    func unregisterPushDevice(serverURL: String, token: String) async throws {
+        _ = try await mutate(path: "notifications/devices", serverURL: serverURL, method: "DELETE",
+                             payload: PushDevicePayload(token: token, environment: nil))
     }
 
     func clearCookies(serverURL: String) {

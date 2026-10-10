@@ -26,6 +26,7 @@ import { ClassificationFeedbackModule } from './features/classification-feedback
 import { McpPluginModule } from './features/plugin/mcp/mcp.plugin.module';
 import { EmailImportModule } from './features/email-import/email-import.module';
 import { LocalizationModule } from './features/localization/localization.module';
+import { NotificationsModule } from './features/notifications/notifications.module';
 
 @Module({
   controllers: [HealthController],
@@ -53,6 +54,7 @@ import { LocalizationModule } from './features/localization/localization.module'
     McpPluginModule.register(process.env.MCP_ENABLED !== 'false'),
     EmailImportModule,
     LocalizationModule,
+    NotificationsModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

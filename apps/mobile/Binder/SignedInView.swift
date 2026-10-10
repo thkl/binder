@@ -28,6 +28,7 @@ struct SignedInView: View {
             SettingsView(model: model)
                 .tabItem { Label("Settings", systemImage: "gearshape") }
         }
+        .task { await PushNotificationManager.shared.sync(serverURL: model.serverURL) }
         .task { await uploadQueuedPDFs() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await uploadQueuedPDFs() } }
