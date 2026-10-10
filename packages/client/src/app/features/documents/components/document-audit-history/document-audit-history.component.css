@@ -52,22 +52,14 @@ h3 {
 .history-refresh,
 .history-pagination button {
   min-height: 2.35rem;
-  border: 1px solid var(--color-text);
   border-radius: 0.55rem;
   padding: 0.5rem 0.7rem;
-  color: var(--color-text);
-  background: var(--color-text);
   cursor: pointer;
   font: inherit;
   font-size: 0.7rem;
   font-weight: 750;
 }
 
-.history-refresh:hover,
-.history-pagination button:hover:not(:disabled) {
-  border-color: var(--color-accent);
-  color: var(--color-border);
-}
 
 .history-refresh:disabled,
 .history-pagination button:disabled {
@@ -112,8 +104,8 @@ h3 {
   margin-top: 0.18rem;
   border: 2px solid var(--color-accent);
   border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 0 4px var(--color-accent);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 4px var(--color-bg);
 }
 
 .history-entry-content {
@@ -126,14 +118,14 @@ h3 {
 }
 
 .history-entry-topline strong {
-  color: var(--color-border);
+  color: var(--color-text-text);
   font-size: 0.8rem;
 }
 
 time,
 .history-actor,
 .history-fields {
-  color: var(--color-text);
+  color: var(--color-text-muted);
   font-size: 0.67rem;
 }
 
@@ -146,7 +138,8 @@ time,
   margin-top: 0.42rem;
   border-radius: 999px;
   padding: 0.18rem 0.45rem;
-  background: var(--color-text);
+  border: 1px solid var(--color-text-muted);
+  background: var(--color-surface);
 }
 
 .history-rollback {

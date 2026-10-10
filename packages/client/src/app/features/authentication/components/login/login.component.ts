@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
-import { ApplicationService } from '../../../../common/application.service';
 
 @Component({
   selector: 'binder-login',
@@ -19,7 +18,6 @@ export class LoginComponent {
 
   constructor(
     readonly auth: AuthService,
-    readonly application: ApplicationService,
   ) {
     void this.auth
       .isSSOActive()

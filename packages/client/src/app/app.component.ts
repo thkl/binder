@@ -10,14 +10,12 @@ import {
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from './features/authentication/services/auth.service';
-import { ApplicationService } from './common/application.service';
 import { ChangePasswordComponent } from './features/authentication/components/change-password/change-password.component';
 import { LoginComponent } from './features/authentication/components/login/login.component';
 import { OnboardingComponent } from './features/authentication/components/onboarding/onboarding.component';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { I18nService, TranslatePipe } from './common/i18n/i18n.service';
 import { InboxService } from './features/inbox/services/inbox.service';
-import { MobileShareImportService } from './features/documents/services/mobile-share-import.service';
 import type { AppLanguage } from '@binder/common';
 
 type NavigationMenu = 'documents' | 'settings' | 'account';
@@ -41,7 +39,6 @@ type NavigationMenu = 'documents' | 'settings' | 'account';
 export class AppComponent implements OnInit {
   readonly openMenu = signal<NavigationMenu | null>(null);
   readonly passwordResetRoute = signal(false);
-  readonly mobileConnectionRoute = signal(false);
   private readonly avatarFailedFor = signal<string | null>(null);
   readonly gravatarUrl = computed(() => {
     const user = this.auth.user();
@@ -54,25 +51,17 @@ export class AppComponent implements OnInit {
     readonly i18n: I18nService,
     readonly inbox: InboxService,
     readonly router: Router,
-    readonly application: ApplicationService,
-    readonly mobileShare: MobileShareImportService,
   ) {
     this.passwordResetRoute.set(this.isPasswordResetUrl(this.router.url));
-    this.mobileConnectionRoute.set(this.isMobileConnectionUrl(this.router.url));
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
         this.passwordResetRoute.set(this.isPasswordResetUrl(event.urlAfterRedirects));
-        this.mobileConnectionRoute.set(this.isMobileConnectionUrl(event.urlAfterRedirects));
       });
 
     effect(() => {
       const user = this.auth.user();
       if (this.auth.loading()) return;
-
-      if (user && this.application.isNativeMobile()) {
-        void this.mobileShare.processPending();
-      }
 
       if (user) {
         void this.inbox.loadNewDocumentCount();
@@ -92,34 +81,13 @@ export class AppComponent implements OnInit {
     return url === '/reset-password' || url.startsWith('/reset-password?');
   }
 
-  private isMobileConnectionUrl(url: string): boolean {
-    return url === '/mobile-connection';
-  }
-
-  async ngOnInit(): Promise<void> {
-    if (this.application.isMobileBootstrapOrigin()) {
-      const serverUrl = await this.application.restoreNativeMobileServerUrl();
-      if (serverUrl) {
-        window.location.replace(serverUrl);
-      } else {
-        await this.router.navigateByUrl('/mobile-connection');
-      }
-      return;
-    }
-    if (this.application.isNativeMobile()) await this.application.restoreNativeMobileServerUrl();
+  ngOnInit(): void {
     void this.auth.restoreSession();
   }
 
   async logout(): Promise<void> {
     this.closeMenu();
     await this.auth.logout();
-  }
-
-  @HostListener('document:visibilitychange')
-  onVisibilityChange(): void {
-    if (document.visibilityState === 'visible' && this.auth.user()) {
-      void this.mobileShare.processPending();
-    }
   }
 
   setLanguage(language: AppLanguage): void {

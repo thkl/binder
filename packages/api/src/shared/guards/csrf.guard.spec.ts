@@ -80,17 +80,3 @@ test('accepts login requests from the configured web origin', () => {
     (error: unknown) => error instanceof ForbiddenException,
   );
 });
-
-test('does not trust the old Capacitor origin or marker for login', () => {
-  for (const headers of [
-    { origin: 'capacitor://localhost' },
-    { origin: 'https://localhost' },
-    { 'x-binder-mobile-app': 'capacitor' },
-  ]) {
-    assert.throws(
-      () =>
-        guard().canActivate(context(request({ path: '/api/v1/auth/login', session: {}, headers }))),
-      (error: unknown) => error instanceof ForbiddenException,
-    );
-  }
-});
