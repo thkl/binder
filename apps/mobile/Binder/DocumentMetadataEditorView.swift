@@ -9,8 +9,12 @@ struct DocumentMetadataEditorView: View {
     @State private var options: BinderMetadataEditorOptions?
     @State private var isLoading = true
     @State private var isSaving = false
+    @State private var isSuggesting = false
     @State private var loadError: String?
     @State private var saveError: String?
+    @State private var suggestionError: String?
+    @State private var suggestion: BinderAISuggestion?
+    @State private var selectedSuggestionFields: Set<String> = []
     @State private var title: String
     @State private var issuerUUID: String
     @State private var documentTypeUUID: String
@@ -97,6 +101,8 @@ struct DocumentMetadataEditorView: View {
                     .accessibilityLabel("Document title")
             }
 
+            suggestionSection(options)
+
             Section("Classification") {
                 Picker("Issuer", selection: $issuerUUID) {
                     Text("No issuer").tag("")
@@ -173,6 +179,123 @@ struct DocumentMetadataEditorView: View {
             }
         }
         .scrollDismissesKeyboard(.interactively)
+    }
+
+    @ViewBuilder
+    private func suggestionSection(_ options: BinderMetadataEditorOptions) -> some View {
+        Section {
+            if let suggestion {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("AI suggestions", systemImage: "sparkles")
+                        .font(.headline)
+                    Text("\(Int((suggestion.confidence * 100).rounded()))% confidence")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if suggestion.classificationSource == "feedback" || suggestion.classificationSource == "mixed" {
+                        Text("Some suggestions use your previous classification choices.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 3)
+
+                suggestionToggle("title", title: "Title", value: suggestion.suggestedTitle)
+                if let uuid = suggestion.documentTypeUuid {
+                    suggestionToggle(
+                        "documentTypeUuid",
+                        title: "Document type",
+                        value: options.vocabulary.documentTypes.first(where: { $0.uuid == uuid })?.name ?? "Unavailable"
+                    )
+                }
+                if let uuid = suggestion.categoryUuid {
+                    suggestionToggle(
+                        "categoryUuid",
+                        title: "Category",
+                        value: options.vocabulary.categories.first(where: { $0.uuid == uuid })?.name ?? "Unavailable"
+                    )
+                }
+                if suggestion.issuerUuid != nil || suggestion.suggestedIssuer != nil {
+                    let issuerName = suggestion.issuerUuid.flatMap { uuid in
+                        options.issuers.first(where: { $0.uuid == uuid })?.name
+                    } ?? suggestion.suggestedIssuer?.name ?? "Unavailable"
+                    suggestionToggle("issuerUuid", title: "Issuer", value: issuerName)
+                }
+                if !suggestion.tagUuids.isEmpty {
+                    let tagNames = suggestion.tagUuids.compactMap { uuid in
+                        options.vocabulary.tags.first(where: { $0.uuid == uuid })?.name
+                    }
+                    suggestionToggle("tagUuids", title: "Tags", value: tagNames.joined(separator: ", "))
+                }
+                if !suggestion.custom.isEmpty {
+                    let fieldNames = suggestion.custom.keys.sorted().map { key in
+                        options.definitions.first(where: { $0.key == key })?.label ?? key
+                    }
+                    suggestionToggle("custom", title: "Custom fields", value: fieldNames.joined(separator: ", "))
+                }
+
+                Button("Apply selected and save") {
+                    Task { await applySelectedSuggestions(selectAll: false) }
+                }
+                .disabled(selectedSuggestionFields.isEmpty || isSaving || isSuggesting)
+
+                Button("Accept all and save") {
+                    Task { await applySelectedSuggestions(selectAll: true) }
+                }
+                .disabled(isSaving || isSuggesting)
+
+                Button("Dismiss suggestions", role: .destructive) {
+                    Task { await dismissSuggestions() }
+                }
+                .disabled(isSaving || isSuggesting)
+
+                Button {
+                    Task { await generateSuggestions() }
+                } label: {
+                    if isSuggesting { ProgressView() }
+                    else { Label("Regenerate suggestions", systemImage: "arrow.clockwise") }
+                }
+                .disabled(isSuggesting || isSaving)
+            } else {
+                Button {
+                    Task { await generateSuggestions() }
+                } label: {
+                    if isSuggesting {
+                        ProgressView("Generating suggestions…")
+                    } else {
+                        Label("Suggest metadata with AI", systemImage: "sparkles")
+                    }
+                }
+                .disabled(isSuggesting || isSaving)
+            }
+
+            if let suggestionError {
+                Label(suggestionError, systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        } header: {
+            Text("AI suggestions")
+        }
+    }
+
+    private func suggestionToggle(_ field: String, title: String, value: String) -> some View {
+        Toggle(isOn: Binding(
+            get: { selectedSuggestionFields.contains(field) },
+            set: { selected in
+                if selected { selectedSuggestionFields.insert(field) }
+                else { selectedSuggestionFields.remove(field) }
+            }
+        )) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(value.isEmpty ? "No value" : value)
+                    .font(.body)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 
     @ViewBuilder
@@ -360,13 +483,19 @@ struct DocumentMetadataEditorView: View {
                 serverURL: serverURL,
                 documentUUID: document.uuid
             )
-            let (loadedOptions, loadedFolders, loadedAssignedFolders) = try await (
+            async let pendingSuggestion = BinderAPI.shared.documentSuggestion(
+                serverURL: serverURL,
+                documentUUID: document.uuid
+            )
+            let (loadedOptions, loadedFolders, loadedAssignedFolders, loadedSuggestion) = try await (
                 editorOptions,
                 allFolders,
-                assignedFolders
+                assignedFolders,
+                pendingSuggestion
             )
             options = loadedOptions
             folders = loadedFolders
+            suggestion = loadedSuggestion
             let assignedFolderUUIDs = Set(loadedAssignedFolders.map(\.uuid))
             originalFolderUUIDs = assignedFolderUUIDs
             selectedFolderUUIDs = assignedFolderUUIDs
@@ -376,7 +505,7 @@ struct DocumentMetadataEditorView: View {
     }
 
     @MainActor
-    private func save() async {
+    private func save(clearPendingSuggestion: Bool = false) async {
         guard let options, !isSaving else { return }
         let normalizedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedTitle.isEmpty else {
@@ -431,11 +560,131 @@ struct DocumentMetadataEditorView: View {
             if folderSelectionChanged, Set(updatedFolders.map(\.uuid)) != selectedFolderUUIDs {
                 throw BinderAPIError.server("The folder assignments could not be saved. Please try again.")
             }
+            if clearPendingSuggestion {
+                _ = try await BinderAPI.shared.clearDocumentSuggestion(
+                    serverURL: serverURL,
+                    documentUUID: document.uuid
+                )
+                suggestion = nil
+                selectedSuggestionFields = []
+            }
             onSaved(updatedDocument, updatedFolders)
             dismiss()
         } catch {
             saveError = error.localizedDescription
         }
+    }
+
+    @MainActor
+    private func generateSuggestions() async {
+        guard !isSuggesting else { return }
+        isSuggesting = true
+        suggestionError = nil
+        defer { isSuggesting = false }
+        do {
+            suggestion = try await BinderAPI.shared.suggestDocumentMetadata(
+                serverURL: serverURL,
+                documentUUID: document.uuid
+            )
+            selectedSuggestionFields = []
+        } catch {
+            suggestionError = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func dismissSuggestions() async {
+        guard !isSaving else { return }
+        suggestionError = nil
+        do {
+            _ = try await BinderAPI.shared.clearDocumentSuggestion(
+                serverURL: serverURL,
+                documentUUID: document.uuid
+            )
+            suggestion = nil
+            selectedSuggestionFields = []
+        } catch {
+            suggestionError = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func applySelectedSuggestions(selectAll: Bool) async {
+        guard let suggestion, !isSaving else { return }
+        if selectAll {
+            var allFields: Set<String> = ["title"]
+            if suggestion.documentTypeUuid != nil { allFields.insert("documentTypeUuid") }
+            if suggestion.categoryUuid != nil { allFields.insert("categoryUuid") }
+            if suggestion.issuerUuid != nil || suggestion.suggestedIssuer != nil {
+                allFields.insert("issuerUuid")
+            }
+            if !suggestion.tagUuids.isEmpty { allFields.insert("tagUuids") }
+            if !suggestion.custom.isEmpty { allFields.insert("custom") }
+            selectedSuggestionFields = allFields
+        }
+        guard !selectedSuggestionFields.isEmpty else { return }
+
+        suggestionError = nil
+        if selectedSuggestionFields.contains("title") {
+            title = suggestion.suggestedTitle
+        }
+        if selectedSuggestionFields.contains("documentTypeUuid"),
+           let documentTypeUuid = suggestion.documentTypeUuid {
+            self.documentTypeUUID = documentTypeUuid
+        }
+        if selectedSuggestionFields.contains("categoryUuid"),
+           let categoryUuid = suggestion.categoryUuid {
+            self.categoryUUID = categoryUuid
+        }
+        if selectedSuggestionFields.contains("issuerUuid") {
+            if let issuerUuid = suggestion.issuerUuid {
+                self.issuerUUID = issuerUuid
+            } else if let candidate = suggestion.suggestedIssuer, let options {
+                do {
+                    let normalized: (String?) -> String = { $0?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? "" }
+                    let existingIssuer = options.issuers.first { issuer in
+                        normalized(issuer.name) == normalized(candidate.name) &&
+                        [
+                            (candidate.address, issuer.address),
+                            (candidate.zipCode, issuer.zipCode),
+                            (candidate.city, issuer.city),
+                            (candidate.country, issuer.country),
+                        ].allSatisfy { pair in
+                            pair.0 == nil || normalized(pair.1) == normalized(pair.0)
+                        }
+                    }
+                    let issuer: BinderIssuer
+                    if let existingIssuer {
+                        issuer = existingIssuer
+                    } else {
+                        issuer = try await BinderAPI.shared.createIssuer(
+                            serverURL: serverURL,
+                            payload: IssuerMutationPayload(
+                                name: candidate.name,
+                                address: candidate.address,
+                                zipCode: candidate.zipCode,
+                                city: candidate.city,
+                                country: candidate.country,
+                                custom: candidate.custom ?? [:],
+                                folderUuid: nil
+                            )
+                        )
+                    }
+                    self.issuerUUID = issuer.uuid
+                } catch {
+                    suggestionError = error.localizedDescription
+                    return
+                }
+            }
+        }
+        if selectedSuggestionFields.contains("tagUuids") {
+            selectedTagUUIDs = Set(suggestion.tagUuids)
+        }
+        if selectedSuggestionFields.contains("custom") {
+            customValues.merge(suggestion.custom) { _, suggestedValue in suggestedValue }
+        }
+
+        await save(clearPendingSuggestion: true)
     }
 
     private func updatedSummary(title: String, options: BinderMetadataEditorOptions) -> BinderDocumentSummary {

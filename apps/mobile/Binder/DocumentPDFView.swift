@@ -9,9 +9,11 @@ struct DocumentPDFView: View {
     @State private var loadedPDF: PreparedPDFDocument?
     @State private var pdfFileURL: URL?
     @State private var isLoading = true
+    @State private var isRequeuing = false
+    @State private var hasRequeued = false
     @State private var errorMessage: String?
     @State private var activeSheet: DocumentPDFSheet?
-    @State private var shareError: String?
+    @State private var actionAlert: DocumentPDFAlert?
 
     private var filename: String {
         let original = document.originalFilename.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -21,6 +23,15 @@ struct DocumentPDFView: View {
     private var displayTitle: String {
         let title = document.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return title.isEmpty ? filename : title
+    }
+
+    private var canSplitDocument: Bool {
+        guard (document.pageCount ?? 0) > 1 else { return false }
+        return !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
+    }
+
+    private var canRequeueDocument: Bool {
+        !hasRequeued && ["failed", "ready", "quarantined"].contains(document.status ?? "")
     }
 
     var body: some View {
@@ -43,6 +54,29 @@ struct DocumentPDFView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
+                if canRequeueDocument || canSplitDocument {
+                    Menu {
+                        if canRequeueDocument {
+                            Button {
+                                Task { await requeueDocument() }
+                            } label: {
+                                Label(isRequeuing ? "Requeueing…" : "Requeue", systemImage: "arrow.clockwise")
+                            }
+                            .disabled(isRequeuing)
+                        }
+                        if canSplitDocument {
+                            Button {
+                                activeSheet = .split(document)
+                            } label: {
+                                Label("Split PDF", systemImage: "scissors")
+                            }
+                        }
+                    } label: {
+                        Label("Document actions", systemImage: "ellipsis.circle")
+                    }
+                    .accessibilityIdentifier("document-actions")
+                }
+
                 Button {
                     activeSheet = .metadata(document)
                 } label: {
@@ -78,15 +112,16 @@ struct DocumentPDFView: View {
                     resourceUUID: documentUUID,
                     serverURL: serverURL
                 )
+            case .split(let document):
+                DocumentSplitView(document: document, serverURL: serverURL)
             }
         }
-        .alert("Couldn’t share PDF", isPresented: Binding(
-            get: { shareError != nil },
-            set: { if !$0 { shareError = nil } }
-        )) {
-            Button("OK", role: .cancel) { shareError = nil }
-        } message: {
-            Text(shareError ?? "")
+        .alert(item: $actionAlert) { alert in
+            Alert(
+                title: Text(alert.title),
+                message: Text(alert.message),
+                dismissButton: .default(Text("OK"))
+            )
         }
         .task(id: "\(serverURL)-\(document.uuid)") {
             await loadPDFWhenViewIsReady()
@@ -133,22 +168,50 @@ struct DocumentPDFView: View {
             if loadedPDF == nil {
                 errorMessage = error.localizedDescription
             } else {
-                shareError = error.localizedDescription
+                actionAlert = DocumentPDFAlert(title: "Couldn’t share PDF", message: error.localizedDescription)
             }
         }
     }
+
+    @MainActor
+    private func requeueDocument() async {
+        guard !isRequeuing else { return }
+        isRequeuing = true
+        defer { isRequeuing = false }
+        do {
+            _ = try await BinderAPI.shared.requeueDocument(
+                serverURL: serverURL,
+                documentUUID: document.uuid
+            )
+            hasRequeued = true
+            actionAlert = DocumentPDFAlert(
+                title: "Processing queued",
+                message: "The document has been queued for processing again."
+            )
+        } catch {
+            actionAlert = DocumentPDFAlert(title: "Couldn’t requeue document", message: error.localizedDescription)
+        }
+    }
+}
+
+private struct DocumentPDFAlert: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
 }
 
 private enum DocumentPDFSheet: Identifiable {
     case share(URL)
     case metadata(BinderDocumentSummary)
     case sharing(String)
+    case split(BinderDocumentSummary)
 
     var id: String {
         switch self {
         case .share(let url): "share-\(url.absoluteString)"
         case .metadata(let document): "metadata-\(document.uuid)"
         case .sharing(let uuid): "sharing-\(uuid)"
+        case .split(let document): "split-\(document.uuid)"
         }
     }
 }

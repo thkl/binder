@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -21,7 +22,7 @@ import {
   UpdateManagedUserInputSchema,
   UserDirectoryResponseSchema,
 } from '@binder/common';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { AuthenticationService } from '../service/authentication.service';
 import { SessionRequest } from '../models/request.model';
 import { AuthenticationGuard } from '../guards/authentication.guard';
@@ -212,10 +213,16 @@ export class AuthenticationController {
   }
 
   @Post('logout')
-  async logout(@Req() request: SessionRequest): Promise<{ data: null }> {
+  async logout(
+    @Req() request: SessionRequest,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ data: null }> {
     await new Promise<void>((resolve, reject) => {
       request.session.destroy((error) => (error ? reject(error) : resolve()));
     });
+    // Remove the browser's now-invalid session ID so the next SSO start cannot
+    // accidentally continue from the destroyed session cookie.
+    response.clearCookie('connect.sid', { path: '/' });
     return { data: null };
   }
 }

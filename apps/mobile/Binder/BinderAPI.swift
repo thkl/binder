@@ -71,6 +71,33 @@ struct BinderDocumentSummary: Decodable, Identifiable {
     var id: String { uuid }
 }
 
+struct BinderSplitDocumentResult: Decodable {
+    let remainingDocument: BinderDocumentSummary
+    let extractedDocument: BinderDocumentSummary
+}
+
+struct BinderAISuggestedIssuer: Decodable {
+    let name: String
+    let address: String?
+    let zipCode: String?
+    let city: String?
+    let country: String?
+    let custom: [String: BinderMetadataValue]?
+}
+
+struct BinderAISuggestion: Decodable {
+    let suggestedTitle: String
+    let confidence: Double
+    let issuerUuid: String?
+    let suggestedIssuer: BinderAISuggestedIssuer?
+    let documentTypeUuid: String?
+    let categoryUuid: String?
+    let tagUuids: [String]
+    let custom: [String: BinderMetadataValue]
+    let classificationSource: String?
+    let feedbackFields: [String]?
+}
+
 typealias BinderSearchDocument = BinderDocumentSummary
 
 struct BinderFolder: Decodable, Identifiable {
@@ -313,6 +340,43 @@ private struct DocumentVersionListEnvelope: Decodable {
 
     struct Items: Decodable {
         let items: [BinderDocumentSummary]
+    }
+}
+
+private struct DocumentSplitEnvelope: Decodable {
+    let data: BinderSplitDocumentResult
+}
+
+private struct DocumentSplitPayload: Encodable {
+    let splitAfterPage: Int
+    let autoApplySuggestions: Bool
+}
+
+private struct DocumentRequeueEnvelope: Decodable {
+    let data: RequeuedDocument
+
+    struct RequeuedDocument: Decodable {
+        let document: BinderDocumentSummary
+    }
+}
+
+private struct DocumentSuggestionEnvelope: Decodable {
+    let data: SuggestionData
+
+    struct SuggestionData: Decodable {
+        let suggestion: BinderAISuggestion?
+    }
+}
+
+private struct GeneratedSuggestionEnvelope: Decodable {
+    let data: BinderAISuggestion
+}
+
+private struct ClearSuggestionEnvelope: Decodable {
+    let data: ClearSuggestionResult
+
+    struct ClearSuggestionResult: Decodable {
+        let cleared: Bool
     }
 }
 
@@ -847,6 +911,62 @@ final class BinderAPI {
             serverURL: serverURL
         )
         return try JSONDecoder().decode(DocumentVersionListEnvelope.self, from: data).data.items
+    }
+
+    func splitDocument(
+        serverURL: String,
+        documentUUID: String,
+        splitAfterPage: Int,
+        autoApplySuggestions: Bool
+    ) async throws -> BinderSplitDocumentResult {
+        let data = try await mutate(
+            path: "documents/\(documentUUID)/split",
+            serverURL: serverURL,
+            method: "POST",
+            payload: DocumentSplitPayload(
+                splitAfterPage: splitAfterPage,
+                autoApplySuggestions: autoApplySuggestions
+            )
+        )
+        return try JSONDecoder().decode(DocumentSplitEnvelope.self, from: data).data
+    }
+
+    func requeueDocument(serverURL: String, documentUUID: String) async throws -> BinderDocumentSummary {
+        let data = try await mutate(
+            path: "documents/\(documentUUID)/pipeline/requeue",
+            serverURL: serverURL,
+            method: "POST",
+            payload: EmptyMutationPayload()
+        )
+        return try JSONDecoder().decode(DocumentRequeueEnvelope.self, from: data).data.document
+    }
+
+    func documentSuggestion(serverURL: String, documentUUID: String) async throws -> BinderAISuggestion? {
+        let (data, _) = try await request(
+            path: "documents/\(documentUUID)/metadata",
+            serverURL: serverURL
+        )
+        return try JSONDecoder().decode(DocumentSuggestionEnvelope.self, from: data).data.suggestion
+    }
+
+    func suggestDocumentMetadata(serverURL: String, documentUUID: String) async throws -> BinderAISuggestion {
+        let data = try await mutate(
+            path: "documents/\(documentUUID)/title/suggest",
+            serverURL: serverURL,
+            method: "POST",
+            payload: EmptyMutationPayload()
+        )
+        return try JSONDecoder().decode(GeneratedSuggestionEnvelope.self, from: data).data
+    }
+
+    func clearDocumentSuggestion(serverURL: String, documentUUID: String) async throws -> Bool {
+        let data = try await mutate(
+            path: "documents/\(documentUUID)/ai-suggestion",
+            serverURL: serverURL,
+            method: "DELETE",
+            payload: EmptyMutationPayload()
+        )
+        return try JSONDecoder().decode(ClearSuggestionEnvelope.self, from: data).data.cleared
     }
 
     func search(serverURL: String, query: String, limit: Int = 20) async throws -> BinderSearchResponse {

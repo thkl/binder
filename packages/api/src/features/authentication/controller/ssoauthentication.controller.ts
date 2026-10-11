@@ -42,9 +42,9 @@ export class AuthenticationController {
   async login(@Req() request: SessionRequest, @Res() res: Response) {
     const ssodata = await this.ssoAuthenticationService.getAuthorizationUrl();
     if (ssodata) {
-      // Store the short-lived OIDC values in the authenticated session.
-      request.session.oidcState = ssodata.state;
-      request.session.oidcCodeVerifier = ssodata.code_verifier;
+      // Use a fresh session so logout or stale browser cookies cannot carry an
+      // earlier OIDC transaction into this login attempt.
+      await this.prepareOidcSession(request, ssodata.state, ssodata.code_verifier);
 
       return res.redirect(ssodata.url);
     } else {
@@ -68,11 +68,55 @@ export class AuthenticationController {
     }
     const ssodata = await this.ssoAuthenticationService.getAuthorizationUrl();
     if (!ssodata) throw new HttpException('SSO is not configured', 400);
-    request.session.oidcState = ssodata.state;
-    request.session.oidcCodeVerifier = ssodata.code_verifier;
-    request.session.nativeAppState = state;
-    request.session.nativeCodeChallenge = codeChallenge;
+    await this.prepareOidcSession(
+      request,
+      ssodata.state,
+      ssodata.code_verifier,
+      state,
+      codeChallenge,
+    );
     return res.redirect(ssodata.url);
+  }
+
+  /**
+   * Starts a new, persisted session for a single OIDC authorization transaction.
+   *
+   * @param {SessionRequest} request - Browser or native-app login request.
+   * @param {string} state - OIDC state value to validate on callback.
+   * @param {string} codeVerifier - PKCE verifier used to redeem the callback code.
+   * @param {string} [nativeAppState] - Optional app state returned to the native caller.
+   * @param {string} [nativeCodeChallenge] - Optional native-app PKCE challenge.
+   * @returns {Promise<void>} Resolves after the new session is stored.
+   */
+  private async prepareOidcSession(
+    request: SessionRequest,
+    state: string,
+    codeVerifier: string,
+    nativeAppState?: string,
+    nativeCodeChallenge?: string,
+  ): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      request.session.regenerate((error) => (error ? reject(error) : resolve()));
+    });
+    request.session.oidcState = state;
+    request.session.oidcCodeVerifier = codeVerifier;
+    if (nativeAppState && nativeCodeChallenge) {
+      request.session.nativeAppState = nativeAppState;
+      request.session.nativeCodeChallenge = nativeCodeChallenge;
+    }
+    await this.saveSession(request);
+  }
+
+  /**
+   * Waits for express-session to persist the current login transaction.
+   *
+   * @param {SessionRequest} request - Request containing the current session.
+   * @returns {Promise<void>} Resolves after the session is stored.
+   */
+  private async saveSession(request: SessionRequest): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      request.session.save((error) => (error ? reject(error) : resolve()));
+    });
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
