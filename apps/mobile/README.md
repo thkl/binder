@@ -5,17 +5,10 @@ The first native milestone is a SwiftUI login app for iOS 17 and later. Open
 
 ## Signing setup
 
-The project uses these initial identifiers:
+You have to change the Bundle and Group IDs of the project and the targets
+if you want to compile this for your own. You will need an Apple Dev Account
+if you want to deploy the mobile app on your device.
 
-- App Bundle ID: `network.thkl.binder.ios`
-- Share Extension Bundle ID: `network.thkl.binder.ios.share`
-- App Group: `group.com.binder.shared`
-- Shared Keychain group: the app's team prefix plus `com.binder.ios.shared`
-
-Register both bundle IDs, the App Group, and the shared Keychain access group
-for the Apple Developer team, then select the team for both targets in Signing
-& Capabilities. Change the identifiers in the project, entitlements, and native
-SSO callback if they are already in use. The
 The app and Share Extension store queued PDFs and the server URL in the App
 Group. Session cookies, CSRF tokens, and an opted-in password use the shared
 Keychain group so the extension can upload directly. The extension reads the
