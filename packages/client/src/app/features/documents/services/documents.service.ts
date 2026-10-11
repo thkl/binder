@@ -144,6 +144,21 @@ export class DocumentsService {
   }
 
   /**
+   * Deletes an older version from a document family.
+   *
+   * @param {string} documentUuid - UUID of the historical document version.
+   * @returns {Promise<void>} - Resolves when the version and its stored files are removed.
+   */
+  async deleteVersion(documentUuid: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete<ApiResponse<unknown>>(
+        this.appService.getApiUrl('v1', `documents/${documentUuid}/version`),
+        { withCredentials: true },
+      ),
+    );
+  }
+
+  /**
    * Marks an existing document as a version of another document.
    *
    * @param {string} documentUuid - UUID of the document.

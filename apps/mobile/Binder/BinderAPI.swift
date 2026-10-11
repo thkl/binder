@@ -66,6 +66,7 @@ struct BinderDocumentSummary: Decodable, Identifiable {
     let status: String?
     let isNew: Bool?
     let versionNumber: Int?
+    let versionParentUuid: String?
     let createdAt: String?
 
     var id: String { uuid }
@@ -965,6 +966,15 @@ final class BinderAPI {
             serverURL: serverURL
         )
         return try JSONDecoder().decode(DocumentVersionListEnvelope.self, from: data).data.items
+    }
+
+    func deleteDocumentVersion(serverURL: String, documentUUID: String) async throws {
+        _ = try await mutate(
+            path: "documents/\(documentUUID)/version",
+            serverURL: serverURL,
+            method: "DELETE",
+            payload: EmptyMutationPayload()
+        )
     }
 
     func splitDocument(

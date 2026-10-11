@@ -26,7 +26,7 @@
               <div class="history-entry-topline">
                 <strong>
                   {{ 'audit.version' | t }} {{ version.versionNumber }}
-                  @if (version.uuid === documentUuid()) {
+                  @if (version.versionParentUuid === null) {
                     <span>({{ 'audit.current' | t }})</span>
                   }
                 </strong>
@@ -43,6 +43,20 @@
               >
                 {{ 'audit.openVersion' | t }}
               </a>
+              @if (version.versionParentUuid !== null) {
+                <button
+                  type="button"
+                  class="history-version-delete"
+                  [disabled]="deletingVersion() !== null"
+                  (click)="deleteVersion(version)"
+                >
+                  {{
+                    deletingVersion() === version.uuid
+                      ? ('audit.deletingVersion' | t)
+                      : ('audit.deleteVersion' | t)
+                  }}
+                </button>
+              }
             </div>
           </li>
         }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { fn, Op, Order, WhereOptions } from 'sequelize';
+import { fn, Op, Order, Transaction, WhereOptions } from 'sequelize';
 import { BaseCrudStore } from '../../../shared/datastore/base-crud.store';
 import { Document } from '../models/document.entity';
 import { DocumentPage } from '../models/document-page.entity';
@@ -48,6 +48,18 @@ export class DocumentStore extends BaseCrudStore<Document> {
       where: { ownerUuid, versionFamilyUuid },
       order: [['versionNumber', 'ASC']],
     });
+  }
+
+  async reparentVersionChildren(
+    ownerUuid: string,
+    previousParentUuid: string,
+    nextParentUuid: string,
+    transaction?: Transaction,
+  ): Promise<void> {
+    await this.model.update(
+      { versionParentUuid: nextParentUuid },
+      { where: { ownerUuid, versionParentUuid: previousParentUuid }, transaction },
+    );
   }
 
   async assignVersion(

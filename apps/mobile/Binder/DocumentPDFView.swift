@@ -9,6 +9,7 @@ struct DocumentPDFView: View {
     @State private var loadedPDF: PreparedPDFDocument?
     @State private var pdfFileURL: URL?
     @State private var isLoading = true
+    @State private var isWaitingForMalwareScan = false
     @State private var isRequeuing = false
     @State private var hasRequeued = false
     @State private var errorMessage: String?
@@ -50,14 +51,20 @@ struct DocumentPDFView: View {
                 PDFDocumentView(document: loadedPDF.document)
                     .background(Color(uiColor: .secondarySystemBackground))
             } else if isLoading {
-                ProgressView("Loading PDF…")
+                ProgressView(isWaitingForMalwareScan ? "Waiting for malware scan…" : "Loading PDF…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ContentUnavailableView(
-                    "Couldn’t load PDF",
-                    systemImage: "doc.questionmark",
-                    description: Text(errorMessage ?? "Check your connection and try again.")
-                )
+                VStack(spacing: 12) {
+                    ContentUnavailableView(
+                        "Couldn’t load PDF",
+                        systemImage: "doc.questionmark",
+                        description: Text(errorMessage ?? "Check your connection and try again.")
+                    )
+                    Button("Retry") {
+                        Task { await loadPDFWhenViewIsReady() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
             }
         }
         .navigationTitle(displayTitle)
@@ -161,16 +168,42 @@ struct DocumentPDFView: View {
     @MainActor
     private func loadPDFWhenViewIsReady() async {
         isLoading = true
+        isWaitingForMalwareScan = false
         errorMessage = nil
         defer { isLoading = false }
         do {
             // Let the navigation push finish before starting network and PDF work.
             try await Task.sleep(for: .milliseconds(450))
-            try Task.checkCancellation()
-            let data = try await BinderAPI.shared.documentFile(
-                serverURL: serverURL,
-                documentUUID: document.uuid
-            )
+            let data: Data
+            while true {
+                try Task.checkCancellation()
+                let latestDocument = try await BinderAPI.shared.documentSummary(
+                    serverURL: serverURL,
+                    documentUUID: document.uuid
+                )
+                if latestDocument.status == "quarantined" {
+                    throw BinderAPIError.server("This document was quarantined and cannot be opened.")
+                }
+
+                if ["uploaded", "scanning"].contains(latestDocument.status ?? "") {
+                    isWaitingForMalwareScan = true
+                    try await Task.sleep(for: .seconds(2))
+                    continue
+                }
+
+                isWaitingForMalwareScan = false
+                do {
+                    data = try await BinderAPI.shared.documentFile(
+                        serverURL: serverURL,
+                        documentUUID: document.uuid
+                    )
+                    break
+                } catch BinderAPIError.server("The document is waiting for malware scanning") {
+                    // The scan may start between the status refresh and the file request.
+                    isWaitingForMalwareScan = true
+                    try await Task.sleep(for: .seconds(2))
+                }
+            }
             let safeFilename = URL(fileURLWithPath: filename).lastPathComponent
             let preparedPDF = try await Task.detached(priority: .userInitiated) {
                 let shareURL = FileManager.default.temporaryDirectory
@@ -195,6 +228,7 @@ struct DocumentPDFView: View {
             pdfFileURL = preparedPDF.fileURL
         } catch {
             if error is CancellationError { return }
+            isWaitingForMalwareScan = false
             if loadedPDF == nil {
                 errorMessage = error.localizedDescription
             } else {
@@ -260,6 +294,10 @@ private struct DocumentMetadataSheet: View {
     @State private var folderError: String?
     @State private var metadataError: String?
     @State private var versionError: String?
+    @State private var versionToDelete: BinderDocumentSummary?
+    @State private var confirmVersionDelete = false
+    @State private var versionDeleteError: String?
+    @State private var isDeletingVersion = false
     @State private var navigationPath: [DocumentMetadataRoute] = []
     let serverURL: String
     @Environment(\.dismiss) private var dismiss
@@ -311,11 +349,23 @@ private struct DocumentMetadataSheet: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(sortedVersions) { version in
+                            let isCurrent = version.versionParentUuid == nil
                             if version.uuid == document.uuid {
-                                DocumentVersionRow(version: version, isCurrent: true)
+                                DocumentVersionRow(version: version, isCurrent: isCurrent)
                             } else {
                                 NavigationLink(value: DocumentMetadataRoute.version(version.uuid)) {
-                                    DocumentVersionRow(version: version, isCurrent: false)
+                                    DocumentVersionRow(version: version, isCurrent: isCurrent)
+                                }
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    if !isCurrent {
+                                        Button(role: .destructive) {
+                                            versionToDelete = version
+                                            confirmVersionDelete = true
+                                        } label: {
+                                            Label("Delete version", systemImage: "trash")
+                                        }
+                                        .disabled(isDeletingVersion)
+                                    }
                                 }
                             }
                         }
@@ -404,6 +454,29 @@ private struct DocumentMetadataSheet: View {
         .presentationDetents(navigationPath.isEmpty ? [.medium, .large] : [.large])
         .presentationDragIndicator(navigationPath.isEmpty ? .visible : .hidden)
         .task { await loadDocumentInfo() }
+        .confirmationDialog(
+            "Delete this older version?",
+            isPresented: $confirmVersionDelete,
+            titleVisibility: .visible
+        ) {
+            Button("Delete version", role: .destructive) {
+                Task { await deleteVersion() }
+            }
+            Button("Cancel", role: .cancel) { versionToDelete = nil }
+        } message: {
+            Text("This permanently deletes the PDF version. The current version will remain available.")
+        }
+        .alert(
+            "Couldn’t delete version",
+            isPresented: Binding(
+                get: { versionDeleteError != nil },
+                set: { if !$0 { versionDeleteError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { versionDeleteError = nil }
+        } message: {
+            Text(versionDeleteError ?? "")
+        }
     }
 
     private var sortedFolders: [BinderFolder] {
@@ -472,6 +545,25 @@ private struct DocumentMetadataSheet: View {
             versionError = nil
         } catch {
             versionError = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func deleteVersion() async {
+        guard let version = versionToDelete, !isDeletingVersion else { return }
+        isDeletingVersion = true
+        defer {
+            isDeletingVersion = false
+            versionToDelete = nil
+        }
+        do {
+            try await BinderAPI.shared.deleteDocumentVersion(
+                serverURL: serverURL,
+                documentUUID: version.uuid
+            )
+            await loadVersionHistory()
+        } catch {
+            versionDeleteError = error.localizedDescription
         }
     }
 }

@@ -714,6 +714,7 @@ struct DocumentMetadataEditorView: View {
             status: document.status,
             isNew: document.isNew,
             versionNumber: document.versionNumber,
+            versionParentUuid: document.versionParentUuid,
             createdAt: document.createdAt
         )
     }

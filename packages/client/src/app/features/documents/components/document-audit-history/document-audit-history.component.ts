@@ -22,6 +22,7 @@ export class DocumentAuditHistoryComponent {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly rollingBack = signal<string | null>(null);
+  readonly deletingVersion = signal<string | null>(null);
   readonly versions = signal<Document[]>([]);
 
   private readonly audit = inject(DocumentAuditService);
@@ -87,6 +88,29 @@ export class DocumentAuditHistoryComponent {
       this.error.set(this.audit.errorMessage(error));
     } finally {
       this.rollingBack.set(null);
+    }
+  }
+
+  async deleteVersion(version: Document): Promise<void> {
+    if (version.versionParentUuid === null || this.deletingVersion()) return;
+    const title = version.title?.trim() || version.originalFilename;
+    if (
+      !window.confirm(
+        this.i18n.t('audit.deleteVersionConfirm').replace('{title}', title),
+      )
+    ) {
+      return;
+    }
+
+    this.deletingVersion.set(version.uuid);
+    this.error.set(null);
+    try {
+      await this.documents.deleteVersion(version.uuid);
+      await this.load(this.documentUuid(), 1);
+    } catch (error) {
+      this.error.set(this.audit.errorMessage(error));
+    } finally {
+      this.deletingVersion.set(null);
     }
   }
 }

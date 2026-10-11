@@ -154,6 +154,24 @@ time,
   font-weight: 750;
 }
 
+.history-version-delete {
+  display: block;
+  margin-top: 0.5rem;
+  border: 0;
+  padding: 0;
+  color: var(--color-danger);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.history-version-delete:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .history-rollback:hover:not(:disabled) {
   color: var(--color-border);
   text-decoration: underline;
