@@ -417,7 +417,7 @@
         }
       </div>
 
-      @if (documents.loading()) {
+      @if (documents.loading() && !documents.page()) {
         <div class="empty-state">
           <span class="spinner"></span>
           <p>{{ 'documents.loading' | t }}</p>
@@ -463,7 +463,7 @@
         </div>
       } @else {
         @if (viewMode() === 'list') {
-          <div class="document-list">
+          <div class="document-list" [attr.aria-busy]="documents.loading()">
             @for (group of documentGroups(); track group.key) {
               @if (groupMode() !== 'none') {
                 <div class="document-group-heading">
@@ -627,7 +627,7 @@
             }
           </div>
         } @else {
-          <div class="icon-grid">
+          <div class="icon-grid" [attr.aria-busy]="documents.loading()">
             @for (group of documentGroups(); track group.key) {
               @if (groupMode() !== 'none') {
                 <div class="document-group-heading icon-group-heading">

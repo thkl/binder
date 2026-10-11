@@ -16,6 +16,11 @@ notifications. Each user can configure one IMAP mailbox:
 - polling interval; and
 - whether messages may be deleted after successful import.
 
+The worker checks for due mailboxes at most once per minute, independently of
+the pipeline's job-queue polling loop. It checks the approved host and port
+only when a mailbox's configured polling interval has elapsed. Approving a
+server makes matching saved mailboxes eligible for the next worker scan.
+
 The credentials are encrypted at rest. They are masked in settings responses
 and must never appear in logs or error messages. The worker applies an
 optional exact trusted-sender allowlist, accepts PDF attachments only, and

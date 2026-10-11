@@ -46,6 +46,12 @@ export class EmailImportConfigService {
   ): Promise<{ uuid: string; host: string; port: number }> {
     const normalizedHost = normalizeImapHost(host);
     const server = await this.approvedServers.create(normalizedHost, port, approvedBy);
+    // If this approval unblocks saved mailboxes, make them eligible for the
+    // next worker scan instead of waiting for their previous polling interval.
+    await EmailImportConfig.update(
+      { lastPolledAt: null, lastError: null },
+      { where: { host: normalizedHost, port } },
+    );
     return { uuid: server.uuid, host: server.host, port: server.port };
   }
 

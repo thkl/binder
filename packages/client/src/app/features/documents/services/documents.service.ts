@@ -171,11 +171,13 @@ export class DocumentsService {
   private async fetchSupportedFormats(): Promise<void> {
     try {
       const response = await firstValueFrom(
-        this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1', 'document-formats'), {
+        this.http.get<unknown>(this.appService.getApiUrl('v1', 'document-formats'), {
           withCredentials: true,
         }),
       );
-      const formats = DocumentFormatsResponseSchema.parse(response.data).formats;
+      // The formats endpoint returns its descriptor object directly rather than
+      // wrapping it in the { data } envelope used by most API endpoints.
+      const formats = DocumentFormatsResponseSchema.parse(response).formats;
       if (formats.length === 0) throw new Error('The server returned no supported formats');
       this.supportedFormats.set(formats);
       this.writeCachedFormats(formats);

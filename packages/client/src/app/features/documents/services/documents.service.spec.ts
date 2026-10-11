@@ -28,31 +28,29 @@ describe('DocumentsService format discovery', () => {
   it('loads upload descriptors, builds the picker filter, and checks MIME and extension hints', async () => {
     const loading = service.loadSupportedFormats();
     http.expectOne((request) => request.url.endsWith('/v1/document-formats')).flush({
-      data: {
-        formats: [
-          {
-            id: 'pdf',
-            displayName: 'PDF',
-            extensions: ['.pdf'],
-            mimeTypes: ['application/pdf'],
-            capabilities: ['upload', 'download', 'preview', 'page-count', 'page-rotation', 'split'],
-          },
-          {
-            id: 'text',
-            displayName: 'Plain text',
-            extensions: ['.txt'],
-            mimeTypes: ['text/plain'],
-            capabilities: ['upload', 'download', 'text-extraction'],
-          },
-          {
-            id: 'image',
-            displayName: 'Image',
-            extensions: ['.jpg', '.jpeg', '.png'],
-            mimeTypes: ['image/jpeg', 'image/png'],
-            capabilities: ['upload', 'download', 'preview', 'text-extraction', 'ocr', 'page-count'],
-          },
-        ],
-      },
+      formats: [
+        {
+          id: 'pdf',
+          displayName: 'PDF',
+          extensions: ['.pdf'],
+          mimeTypes: ['application/pdf'],
+          capabilities: ['upload', 'download', 'preview', 'page-count', 'page-rotation', 'split'],
+        },
+        {
+          id: 'text',
+          displayName: 'Plain text',
+          extensions: ['.txt'],
+          mimeTypes: ['text/plain'],
+          capabilities: ['upload', 'download', 'text-extraction'],
+        },
+        {
+          id: 'image',
+          displayName: 'Image',
+          extensions: ['.jpg', '.jpeg', '.png'],
+          mimeTypes: ['image/jpeg', 'image/png'],
+          capabilities: ['upload', 'download', 'preview', 'text-extraction', 'ocr', 'page-count'],
+        },
+      ],
     });
     await loading;
 

@@ -9,6 +9,9 @@ import { WORKER_DOCUMENT_FORMATS } from './document-format.registry.js';
 import { logger } from './logger.js';
 
 const MAX_MESSAGE_BYTES = 50 * 1024 * 1024;
+// Mailbox settings cannot poll more frequently than once per minute. Keep this
+// sweep independent from the pipeline's short job-queue polling interval.
+const EMAIL_IMPORT_SCAN_INTERVAL_MS = 60_000;
 let lastRunAt = 0;
 
 /**
@@ -18,20 +21,27 @@ let lastRunAt = 0;
  * @returns {Promise<void>} - Resolves when the operation completes.
  */
 export async function importEmailMessages(force = false): Promise<void> {
-  if (!force && Date.now() - lastRunAt < Math.min(config.pollIntervalMs, 60_000)) return;
+  if (!force && Date.now() - lastRunAt < EMAIL_IMPORT_SCAN_INTERVAL_MS) return;
   lastRunAt = Date.now();
 
   const mailboxes = await EmailImportConfig.findAll({ where: { enabled: true } });
   for (const mailbox of mailboxes) {
+    // Apply the user's mailbox cadence before querying the administrator's
+    // approved-server list. An unapproved mailbox is still a poll attempt.
+    if (
+      !force &&
+      mailbox.lastPolledAt &&
+      Date.now() - mailbox.lastPolledAt.getTime() < mailbox.pollIntervalMs
+    )
+      continue;
+
     const host = normalizeImapHost(mailbox.host);
     const approved = host
       ? await EmailImportApprovedServer.findOne({ where: { host, port: mailbox.port } })
       : null;
     if (!approved) {
       const approvalError = 'IMAP server host and port require administrator approval';
-      if (mailbox.lastError !== approvalError) {
-        await mailbox.update({ lastError: approvalError });
-      }
+      await mailbox.update({ lastPolledAt: new Date(), lastError: approvalError });
       logger.warn('Skipping email mailbox because its IMAP server is not approved', {
         mailboxUuid: mailbox.uuid,
         host: mailbox.host,
@@ -39,12 +49,6 @@ export async function importEmailMessages(force = false): Promise<void> {
       });
       continue;
     }
-    if (
-      !force &&
-      mailbox.lastPolledAt &&
-      Date.now() - mailbox.lastPolledAt.getTime() < mailbox.pollIntervalMs
-    )
-      continue;
     await pollMailbox(mailbox);
   }
 }
