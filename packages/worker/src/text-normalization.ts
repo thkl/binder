@@ -1,11 +1,8 @@
 /**
- * Repairs a common OCR/PDF text-layer artefact where characters are emitted as
- * separate tokens, for example `0 1 . 0 1 . 2 0 2 2`.
+ * Repairs a common OCR/PDF text-layer artefact where characters are emitted as separate tokens, for example `0 1 . 0 1 . 2 0 2 2`. Normal word spacing is preserved. Only runs containing at least three single-character tokens are considered. Numeric runs are always repaired; non-numeric runs need at least four tokens to avoid changing short phrases such as `a b c` accidentally.
  *
- * Normal word spacing is preserved. Only runs containing at least three
- * single-character tokens are considered. Numeric runs are always repaired;
- * non-numeric runs need at least four tokens to avoid changing short phrases
- * such as `a b c` accidentally.
+ * @param {string} text - Extracted or user-entered text to process.
+ * @returns {string} - Text with likely OCR spacing and line-break artifacts repaired.
  */
 export function normalizeOcrSpacing(text: string): string {
   return text.split('\n').map(normalizeLine).join('\n');

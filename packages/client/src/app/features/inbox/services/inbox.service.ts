@@ -13,6 +13,7 @@ import {
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 
+/** Tracks the inbox queue, AI processing, and live document change events. */
 @Injectable({ providedIn: 'root' })
 export class InboxService {
   readonly items = signal<InboxQueueItem[]>([]);
@@ -27,8 +28,18 @@ export class InboxService {
 
   readonly activeDocuments = signal<string[]>([]);
 
+  /**
+   * Provides HTTP access for inbox and document-count requests.
+   *
+   * @param {HttpClient} http - HTTP client used to call the API.
+   */
   constructor(private readonly http: HttpClient) {}
 
+  /**
+   * Loads the inbox queue and refreshes the count of newly added documents.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async load(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
@@ -47,6 +58,11 @@ export class InboxService {
     }
   }
 
+  /**
+   * Refreshes the count shown for documents awaiting review.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async loadNewDocumentCount(): Promise<void> {
     try {
       const response = await firstValueFrom(
@@ -62,10 +78,21 @@ export class InboxService {
     }
   }
 
+  /**
+   * Records visible document IDs so live events can avoid unnecessary reloads.
+   *
+   * @param {string[]} uuidList - Document UUIDs currently visible in the list.
+   * @returns Records visible document IDs so live events can avoid unnecessary reloads.
+   */
   setActiveDocumens(uuidList: string[]) {
     this.activeDocuments.set(uuidList);
   }
 
+  /**
+   * Requests AI processing for eligible inbox items and updates the queue state.
+   *
+   * @returns {Promise<InboxAiProcessResponse | null>} - Requests AI processing for eligible inbox items and updates the queue state.
+   */
   async processAllWithAi(): Promise<InboxAiProcessResponse | null> {
     this.processing.set(true);
     this.error.set(null);
@@ -93,6 +120,12 @@ export class InboxService {
     }
   }
 
+  /**
+   * Removes one inbox item and adjusts the AI candidate count when applicable.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async remove(uuid: string): Promise<boolean> {
     this.error.set(null);
     try {
@@ -117,6 +150,12 @@ export class InboxService {
     }
   }
 
+  /**
+   * Removes every duplicate or rejected item and reloads the queue when changed.
+   *
+   * @param {'duplicate' | 'rejected'} status - Status used to filter or update records.
+   * @returns {Promise<number>} - Removes every duplicate or rejected item and reloads the queue when changed.
+   */
   async removeByStatus(status: 'duplicate' | 'rejected'): Promise<number> {
     this.error.set(null);
     try {
@@ -134,6 +173,11 @@ export class InboxService {
     }
   }
 
+  /**
+   * Opens the server event stream and refreshes the inbox for relevant changes.
+   *
+   * @returns {void} - No value.
+   */
   startLiveUpdates(): void {
     if (this.eventSource) return;
     const source = new EventSource('/api/v1/inbox/events', { withCredentials: true });
@@ -162,6 +206,11 @@ export class InboxService {
     this.eventSource = source;
   }
 
+  /**
+   * Closes the live event stream when the inbox service no longer needs updates.
+   *
+   * @returns {void} - No value.
+   */
   stopLiveUpdates(): void {
     this.eventSource?.close();
     this.eventSource = null;

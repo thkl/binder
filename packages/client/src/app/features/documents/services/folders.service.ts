@@ -22,6 +22,7 @@ export interface FolderTreeRow {
   expanded: boolean;
 }
 
+/** Maintains the folder tree and exposes folder CRUD and document assignment operations. */
 @Injectable({ providedIn: 'root' })
 export class FoldersService {
   readonly children = signal<Record<string, FolderNode[]>>({});
@@ -55,8 +56,20 @@ export class FoldersService {
   private readonly application = inject(ApplicationService);
   private readonly document = inject(DOCUMENT);
 
+  /**
+   * Provides HTTP access for folder API requests.
+   *
+   * @param {HttpClient} http - HTTP client used to call the API.
+   */
   constructor(private readonly http: HttpClient) {}
 
+  /**
+   * Fetches one level of the tree, skipping cached or already-running requests.
+   *
+   * @param {string | null} parentUuid - Parent folder UUID, or null for the root folder.
+   * @param {boolean} force - Whether to bypass cached state and reload.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async loadChildren(parentUuid: string | null, force = false): Promise<void> {
     const key = this.parentKey(parentUuid);
     if (!force && this.loadedParents().has(key)) return;
@@ -81,6 +94,12 @@ export class FoldersService {
     }
   }
 
+  /**
+   * Expands a folder by loading its children or collapses it when already open.
+   *
+   * @param {FolderNode} folder - Folder being processed.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async toggle(folder: FolderNode): Promise<void> {
     if (this.expanded().has(folder.uuid)) {
       this.expanded.update((current) => this.without(current, folder.uuid));
@@ -90,6 +109,11 @@ export class FoldersService {
     this.expanded.update((current) => new Set(current).add(folder.uuid));
   }
 
+  /**
+   * Loads every folder for selectors and sorts them by their full path.
+   *
+   * @returns {Promise<FolderNode[]>} - Loads every folder for selectors and sorts them by their full path.
+   */
   async listAll(): Promise<FolderNode[]> {
     try {
       const response = await firstValueFrom(
@@ -108,6 +132,12 @@ export class FoldersService {
     }
   }
 
+  /**
+   * Returns the folders currently assigned to a document.
+   *
+   * @param {string} documentUuid - UUID of the document.
+   * @returns {Promise<FolderNode[]>} - The folders currently assigned to a document.
+   */
   async listForDocument(documentUuid: string): Promise<FolderNode[]> {
     try {
       const response = await firstValueFrom(
@@ -123,6 +153,14 @@ export class FoldersService {
     }
   }
 
+  /**
+   * Applies the additions and removals needed to match a document's selected folders.
+   *
+   * @param {string} documentUuid - UUID of the document.
+   * @param {string[]} selectedUuids - Folder UUIDs selected by the user.
+   * @param {string[]} originalUuids - Folder UUIDs assigned before the edit.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async setDocumentFolders(
     documentUuid: string,
     selectedUuids: string[],
@@ -139,6 +177,13 @@ export class FoldersService {
     return results.every((result) => result !== null);
   }
 
+  /**
+   * Creates a child folder and refreshes its parent's cached children.
+   *
+   * @param {string} name - Secret, folder, or resource name to resolve or assign.
+   * @param {string | null} parentUuid - Parent folder UUID, or null for the root folder.
+   * @returns {Promise<FolderNode | null>} - Creates a child folder and refreshes its parent's cached children.
+   */
   async create(name: string, parentUuid: string | null): Promise<FolderNode | null> {
     const input = CreateFolderInputSchema.safeParse({ name, parentUuid });
     if (!input.success) {
@@ -162,6 +207,13 @@ export class FoldersService {
     }
   }
 
+  /**
+   * Renames a folder and updates the matching cached tree node.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {string} name - Secret, folder, or resource name to resolve or assign.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async rename(uuid: string, name: string): Promise<boolean> {
     const input = UpdateFolderInputSchema.safeParse({ name });
     if (!input.success) {
@@ -185,6 +237,13 @@ export class FoldersService {
     }
   }
 
+  /**
+   * Moves a folder and reloads the old and new parent lists.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {string | null} parentUuid - Parent folder UUID, or null for the root folder.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async move(uuid: string, parentUuid: string | null): Promise<boolean> {
     const input = MoveFolderInputSchema.safeParse({ parentUuid });
     if (!input.success) return false;
@@ -208,6 +267,12 @@ export class FoldersService {
     }
   }
 
+  /**
+   * Deletes a folder and refreshes its parent's tree, clearing selection if needed.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async remove(uuid: string): Promise<boolean> {
     const parentUuid = this.findFolder(uuid)?.parentUuid ?? null;
     try {
@@ -228,10 +293,23 @@ export class FoldersService {
     }
   }
 
+  /**
+   * Selects a folder for the document list or clears the current selection.
+   *
+   * @param {string | null} folderUuid - UUID of the folder.
+   * @returns {void} - No value.
+   */
   select(folderUuid: string | null): void {
     this.selectedFolderUuid.set(folderUuid);
   }
 
+  /**
+   * Adds the specified documents to a folder.
+   *
+   * @param {string} folderUuid - UUID of the folder.
+   * @param {string[]} documentUuids - Document UUIDs included in the operation.
+   * @returns {Promise<FolderDocumentActionResponse | null>} - Adds the specified documents to a folder.
+   */
   async linkDocuments(
     folderUuid: string,
     documentUuids: string[],
@@ -239,6 +317,13 @@ export class FoldersService {
     return this.changeDocumentLinks(folderUuid, documentUuids, false);
   }
 
+  /**
+   * Removes the specified documents from a folder.
+   *
+   * @param {string} folderUuid - UUID of the folder.
+   * @param {string[]} documentUuids - Document UUIDs included in the operation.
+   * @returns {Promise<FolderDocumentActionResponse | null>} - Removes the specified documents from a folder.
+   */
   async unlinkDocuments(
     folderUuid: string,
     documentUuids: string[],
@@ -246,6 +331,12 @@ export class FoldersService {
     return this.changeDocumentLinks(folderUuid, documentUuids, true);
   }
 
+  /**
+   * Downloads a ZIP archive containing documents in the selected folder.
+   *
+   * @param {string} folderUuid - UUID of the folder.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async exportFolder(folderUuid: string): Promise<boolean> {
     this.exportingFolderUuid.set(folderUuid);
     this.error.set(null);
@@ -278,10 +369,23 @@ export class FoldersService {
     }
   }
 
+  /**
+   * Clears the last folder operation error.
+   *
+   * @returns {void} - No value.
+   */
   clearError(): void {
     this.error.set(null);
   }
 
+  /**
+   * Shares the link/unlink request flow and refreshes the affected tree branch.
+   *
+   * @param {string} folderUuid - UUID of the folder.
+   * @param {string[]} documentUuids - Document UUIDs included in the operation.
+   * @param {boolean} remove - Whether matching values should be removed.
+   * @returns {Promise<FolderDocumentActionResponse | null>} - Shares the link/unlink request flow and refreshes the affected tree branch.
+   */
   private async changeDocumentLinks(
     folderUuid: string,
     documentUuids: string[],
@@ -313,6 +417,12 @@ export class FoldersService {
     }
   }
 
+  /**
+   * Replaces a folder in its cached parent list after a server update.
+   *
+   * @param {FolderNode} updated - Updated record returned by persistence.
+   * @returns {void} - No value.
+   */
   private replaceFolder(updated: FolderNode): void {
     const key = this.parentKey(updated.parentUuid);
     this.children.update((current) => ({
@@ -323,6 +433,12 @@ export class FoldersService {
     }));
   }
 
+  /**
+   * Removes a deleted or moved folder from all currently cached tree branches.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {void} - No value.
+   */
   private removeFolderFromState(uuid: string): void {
     const next: Record<string, FolderNode[]> = {};
     for (const [key, folders] of Object.entries(this.children())) {
@@ -331,6 +447,12 @@ export class FoldersService {
     this.children.set(next);
   }
 
+  /**
+   * Finds a folder in the loaded branches without triggering another request.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {FolderNode | null} - Finds a folder in the loaded branches without triggering another request.
+   */
   private findFolder(uuid: string): FolderNode | null {
     for (const folders of Object.values(this.children())) {
       const folder = folders.find((item) => item.uuid === uuid);
@@ -339,10 +461,23 @@ export class FoldersService {
     return null;
   }
 
+  /**
+   * Maps the root parent to a stable cache key.
+   *
+   * @param {string | null} parentUuid - Parent folder UUID, or null for the root folder.
+   * @returns {string} - Maps the root parent to a stable cache key.
+   */
   private parentKey(parentUuid: string | null): string {
     return parentUuid ?? 'root';
   }
 
+  /**
+   * Adds or removes a parent key from the active child-loading set.
+   *
+   * @param {string} key - Setting, header, or metadata key to read or update.
+   * @param {boolean} value - Value to store, parse, or compare.
+   * @returns {void} - No value.
+   */
   private setLoading(key: string, value: boolean): void {
     this.loadingParents.update((current) => {
       const next = new Set(current);
@@ -352,12 +487,25 @@ export class FoldersService {
     });
   }
 
+  /**
+   * Returns a copied set with the given folder UUID removed.
+   *
+   * @param {Set<string>} values - Values to store, remove, or encode.
+   * @param {string} value - Value to store, parse, or compare.
+   * @returns {Set<string>} - A copied set with the given folder UUID removed.
+   */
   private without(values: Set<string>, value: string): Set<string> {
     const next = new Set(values);
     next.delete(value);
     return next;
   }
 
+  /**
+   * Converts an HTTP failure into a message suitable for the folder UI.
+   *
+   * @param {unknown} error - Error value to handle or convert into a user-facing message.
+   * @returns {string} - Converts an HTTP failure into a message suitable for the folder UI.
+   */
   private errorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse && error.status === 409)
       return 'A folder with this name already exists here.';
@@ -366,6 +514,12 @@ export class FoldersService {
     return 'The folder operation could not be completed. Please try again.';
   }
 
+  /**
+   * Extracts a safe archive filename from the response header when present.
+   *
+   * @param {string | null} contentDisposition - Content-Disposition header to parse for a filename.
+   * @returns {string | null} - Extracts a safe archive filename from the response header when present.
+   */
   private archiveFilename(contentDisposition: string | null): string | null {
     if (!contentDisposition) return null;
 

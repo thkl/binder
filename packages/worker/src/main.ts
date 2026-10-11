@@ -11,6 +11,11 @@ import { requestShutdown, startPipelineWorker } from './pipeline-worker.js';
 import { maintenanceScheduler } from './maintenance.js';
 import { startWorkerHeartbeat, stopWorkerHeartbeat } from './worker-heartbeat.js';
 
+/**
+ * Authenticates dependencies, starts worker services, and runs the processing loop.
+ *
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function main(): Promise<void> {
   await sequelize.authenticate();
   await loadRuntimeConfiguration();
@@ -39,6 +44,12 @@ async function main(): Promise<void> {
   await startPipelineWorker();
 }
 
+/**
+ * Stops background work in order and closes the database after the active job finishes.
+ *
+ * @param {string} signal - Operating-system signal requesting worker shutdown.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function shutdown(signal: string): Promise<void> {
   requestShutdown();
   logger.info('Pipeline worker stopping', { signal });

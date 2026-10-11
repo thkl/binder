@@ -1,3 +1,10 @@
+/**
+ * Shared API contracts for Binder.
+ *
+ * These Zod schemas are used for runtime validation by both the API and clients;
+ * exported TypeScript types are inferred from the same schemas to keep the
+ * compile-time and runtime representations aligned.
+ */
 import { z } from 'zod';
 
 export const DocumentStatusSchema = z.enum([

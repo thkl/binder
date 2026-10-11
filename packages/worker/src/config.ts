@@ -77,6 +77,11 @@ let runtimeConfigurationFingerprint: string | null = null;
 let runtimeConfigurationTimer: NodeJS.Timeout | undefined;
 let runtimeConfigurationReloading = false;
 
+/**
+ * Loads runtime settings from the database and applies changed values to the shared worker config. Encrypted credentials are decrypted only after the setting rows have been fetched.
+ *
+ * @returns {Promise<boolean>} - `true` when the effective runtime configuration changed; otherwise, `false`.
+ */
 export async function loadRuntimeConfiguration(): Promise<boolean> {
   const keys = [
     'documents.storageRoot',
@@ -222,6 +227,11 @@ export async function loadRuntimeConfiguration(): Promise<boolean> {
   return true;
 }
 
+/**
+ * Starts polling persisted settings so long-running workers can adopt configuration changes.
+ *
+ * @returns {void} - No value.
+ */
 export function startRuntimeConfigurationReload(): void {
   if (runtimeConfigurationTimer) return;
   runtimeConfigurationTimer = setInterval(() => {
@@ -252,12 +262,24 @@ export function startRuntimeConfigurationReload(): void {
   }, RUNTIME_CONFIGURATION_POLL_INTERVAL_MS);
 }
 
+/**
+ * Stops runtime-setting polling and resets the reload state.
+ *
+ * @returns {void} - No value.
+ */
 export function stopRuntimeConfigurationReload(): void {
   if (runtimeConfigurationTimer) clearInterval(runtimeConfigurationTimer);
   runtimeConfigurationTimer = undefined;
   runtimeConfigurationReloading = false;
 }
 
+/**
+ * Decrypts an AES-256-GCM setting using the worker's configured encryption key.
+ *
+ * @param {string} value - Value to store, parse, or compare.
+ * @param {string} ivHex - Hex-encoded initialization vector used for decryption.
+ * @returns {string} - Decrypts an AES-256-GCM setting using the worker's configured encryption key.
+ */
 export function decryptSettingSecret(value: string, ivHex: string): string {
   const encoded = secrets.get('ENCRYPTION_KEY');
   if (!encoded) throw new Error('ENCRYPTION_KEY is required to decrypt embedding settings');
@@ -305,6 +327,13 @@ function readSettingBoolean(
 function getDefaultStorageRoot(): string {
   return resolve(process.env.APP_ROOT_PATH ?? process.cwd(), 'storage');
 }
+/**
+ * Reads a positive integer from the environment, validating the supplied fallback otherwise.
+ *
+ * @param {string} name - Secret, folder, or resource name to resolve or assign.
+ * @param {number} fallback - Fallback value used when the configured value is missing.
+ * @returns {number} - Reads a positive integer from the environment, validating the supplied fallback otherwise.
+ */
 export function readPositiveInteger(name: string, fallback: number): number {
   const value = Number(process.env[name] ?? fallback);
   if (!Number.isSafeInteger(value) || value <= 0)
@@ -312,6 +341,12 @@ export function readPositiveInteger(name: string, fallback: number): number {
   return value;
 }
 
+/**
+ * Reads a required environment secret, including its supported `_FILE` alternative.
+ *
+ * @param {string} name - Secret, folder, or resource name to resolve or assign.
+ * @returns {string} - Reads a required environment secret, including its supported `_FILE` alternative.
+ */
 export function readRequiredEnvironment(name: string): string {
   return secrets.require(name);
 }

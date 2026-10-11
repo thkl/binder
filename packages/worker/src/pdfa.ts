@@ -9,9 +9,12 @@ const PDF_A_PROFILE = 'pdfa-2b';
 const OCRMY_PDF_OUTPUT_TYPE = 'pdfa-2';
 
 /**
- * Creates a validated PDF/A-2b derivative with OCRmyPDF/Ghostscript.
- * The original upload is never replaced. If OCR already produced a derived
- * PDF, it is used as the source so the archive keeps its searchable text.
+ * Creates a validated PDF/A-2b derivative with OCRmyPDF/Ghostscript. The original upload is never replaced. If OCR already produced a derived PDF, it is used as the source so the archive keeps its searchable text.
+ *
+ * @param {string} originalStorageKey - Storage key of the original PDF.
+ * @param {string} documentUuid - UUID of the document.
+ * @param {Date} createdAt - Creation time used to derive storage paths.
+ * @returns {Promise<string>} - Storage key of the generated PDF/A-2b derivative.
  */
 export async function runPdfa(
   originalStorageKey: string,

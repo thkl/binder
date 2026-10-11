@@ -21,12 +21,24 @@ const WEEKDAYS = new Map([
 export class CronSchedule {
   private readonly fields: CronField[];
 
+  /**
+   * Parses a five-field cron expression and rejects invalid ranges or steps.
+   *
+   * @param {string} expression - Cron expression to parse and evaluate.
+   */
   constructor(expression: string) {
     const parts = expression.trim().split(/\s+/);
     if (parts.length !== 5) throw new Error('Cron schedule must contain five fields');
     this.fields = parts.map((part, index) => this.parseField(part, RANGES[index], index === 4));
   }
 
+  /**
+   * Checks the five cron fields against a date interpreted in the supplied timezone.
+   *
+   * @param {Date} date - Date to evaluate against the configured schedule.
+   * @param {string} timezone - Timezone used to evaluate a schedule.
+   * @returns {boolean} - true when the operation succeeds; otherwise, false.
+   */
   matches(date: Date, timezone: string): boolean {
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
@@ -50,6 +62,8 @@ export class CronSchedule {
     const weekdayMatches = this.fields[4].has(weekday);
     const dayFieldIsRestricted = this.fields[2].size < 31;
     const weekdayFieldIsRestricted = this.fields[4].size < 7;
+    // Standard cron uses OR when both day-of-month and weekday are restricted;
+    // if either field is a wildcard, the other field must match.
     const calendarMatches =
       dayFieldIsRestricted && weekdayFieldIsRestricted
         ? dayMatches || weekdayMatches
@@ -63,6 +77,13 @@ export class CronSchedule {
     );
   }
 
+  /**
+   * Finds the first matching minute within the next year, or returns `null` if none exists.
+   *
+   * @param {Date} after - Timestamp or position after which to continue.
+   * @param {string} timezone - Timezone used to evaluate a schedule.
+   * @returns {Date | null} - Finds the first matching minute within the next year, or returns `null` if none exists.
+   */
   nextOccurrence(after: Date, timezone: string): Date | null {
     const start = new Date(Math.floor(after.getTime() / 60_000) * 60_000 + 60_000);
     for (let minute = 0; minute < 366 * 24 * 60; minute += 1) {

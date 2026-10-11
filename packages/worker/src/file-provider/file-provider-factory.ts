@@ -6,6 +6,11 @@ import { DropboxFileProvider } from './dropbox-file-provider.js';
 import { FileProvider } from './file-provider.js';
 
 export class FileProviderFactory {
+  /**
+   * Creates the configured backup provider, or returns `null` when remote backup is disabled.
+   *
+   * @returns {Promise<FileProvider | null>} - Creates the configured backup provider, or returns `null` when remote backup is disabled.
+   */
   async create(): Promise<FileProvider | null> {
     const settings = await ApplicationSetting.findAll({
       where: { key: { [Op.in]: ['backup.provider', 'backup.dropbox.refreshToken'] } },
@@ -29,6 +34,12 @@ export class FileProviderFactory {
     return new DropboxFileProvider(refreshToken, appKey, appSecret);
   }
 
+  /**
+   * Creates a temporary provider for a supplied token without loading persisted backup settings.
+   *
+   * @param {string} accessToken - OAuth access token for the remote provider.
+   * @returns {FileProvider} - Creates a temporary provider for a supplied token without loading persisted backup settings.
+   */
   createWithAccessToken(accessToken: string): FileProvider {
     if (!accessToken.trim()) throw new Error('Dropbox access token is empty');
     return new DropboxFileProvider(null, null, null, accessToken.trim());

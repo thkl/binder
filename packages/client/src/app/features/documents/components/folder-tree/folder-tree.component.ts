@@ -4,6 +4,7 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
 import { ShareAccessComponent } from '../share-access/share-access.component';
 import { SharingService } from '../../services/sharing.service';
 
+/** Renders the folder tree and handles folder selection and management actions. */
 @Component({
   selector: 'binder-folder-tree',
   host: { '[class.share-dialog-open]': 'sharingFolder() !== null' },
@@ -30,6 +31,12 @@ export class FolderTreeComponent {
 
   constructor(readonly folders: FoldersService, readonly sharing: SharingService) {}
 
+  /**
+   * Expands or collapses a row and loads its children on first expansion.
+   *
+   * @param {FolderTreeRow} row - Folder tree row being acted on.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async toggle(row: FolderTreeRow): Promise<void> {
     await this.folders.toggle(row.folder);
   }
@@ -57,6 +64,11 @@ export class FolderTreeComponent {
     this.createName.set('');
   }
 
+  /**
+   * Creates the pending folder beneath the selected parent.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async create(): Promise<void> {
     const parentUuid = this.creatingParentUuid();
     if (parentUuid === undefined) return;
@@ -77,6 +89,13 @@ export class FolderTreeComponent {
     });
   }
 
+  /**
+   * Persists the edited folder name when the inline editor loses focus.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {Event} event - Queued notification or pipeline event to process.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async finishRename(uuid: string, event: Event): Promise<void> {
     if (this.editingUuid() !== uuid) return;
     const name = (event.target as HTMLInputElement).value;
@@ -105,12 +124,24 @@ export class FolderTreeComponent {
     this.moveTargetUuid.set('');
   }
 
+  /**
+   * Moves the selected folder to the chosen parent and closes the move control on success.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async move(): Promise<void> {
     const uuid = this.movingUuid();
     if (!uuid) return;
     if (await this.folders.move(uuid, this.moveTargetUuid() || null)) this.cancelMove();
   }
 
+  /**
+   * Confirms and removes a folder while retaining the documents it contains.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {string} name - Secret, folder, or resource name to resolve or assign.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async remove(uuid: string, name: string): Promise<void> {
     this.actionMenuUuid.set(null);
     if (

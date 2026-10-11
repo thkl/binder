@@ -8,6 +8,12 @@ import { logger } from './logger.js';
 const MAX_MESSAGE_BYTES = 50 * 1024 * 1024;
 let lastRunAt = 0;
 
+/**
+ * Polls enabled mailbox integrations and imports newly discovered PDF attachments.
+ *
+ * @param {boolean} force - Whether to bypass cached state and reload.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function importEmailMessages(force = false): Promise<void> {
   if (!force && Date.now() - lastRunAt < Math.min(config.pollIntervalMs, 60_000)) return;
   lastRunAt = Date.now();

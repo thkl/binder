@@ -10,6 +10,15 @@ export interface OcrOptions {
   forceOcr?: boolean;
 }
 
+/**
+ * Runs OCRmyPDF and atomically installs the generated PDF in derived storage. Temporary output is removed whether OCR succeeds or fails.
+ *
+ * @param {string} storageKey - Storage-relative key of the document or derived file.
+ * @param {string} documentUuid - UUID of the document.
+ * @param {Date} createdAt - Creation time used to derive storage paths.
+ * @param {OcrOptions} options - Options controlling the operation.
+ * @returns {Promise<string>} - Runs OCRmyPDF and atomically installs the generated PDF in derived storage. Temporary output is removed whether OCR succeeds or fails.
+ */
 export async function runOcr(
   storageKey: string,
   documentUuid: string,
@@ -47,6 +56,14 @@ export async function runOcr(
   }
 }
 
+/**
+ * Builds compatible OCRmyPDF arguments from worker configuration and per-run options.
+ *
+ * @param {string} input - Validated input describing the requested operation.
+ * @param {string} output - Destination path for generated output.
+ * @param {OcrOptions} options - Options controlling the operation.
+ * @returns {string[]} - Builds compatible OCRmyPDF arguments from worker configuration and per-run options.
+ */
 export function buildOcrArguments(
   input: string,
   output: string,
@@ -71,6 +88,14 @@ export function buildOcrArguments(
   ];
 }
 
+/**
+ * Runs a child process, captures bounded stderr for failures, and resolves only on exit code zero.
+ *
+ * @param {string} command - External command to execute.
+ * @param {string[]} args - Arguments passed to the external command.
+ * @param {string} documentUuid - UUID of the document.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export function runExternalCommand(
   command: string,
   args: string[],

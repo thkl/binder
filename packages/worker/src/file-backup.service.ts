@@ -37,8 +37,19 @@ export interface FileRestoreResult {
 }
 
 export class FileBackupService {
+  /**
+   * Creates backup and restore operations backed by the configured remote-file provider factory.
+   *
+   * @param {FileProviderFactory} providers - Provider factory used to create remote storage clients.
+   */
   constructor(private readonly providers = new FileProviderFactory()) {}
 
+  /**
+   * Creates a database or full-storage backup, encrypting it when a password is configured. External providers require encryption; local database-only dumps may remain unencrypted.
+   *
+   * @param {FileBackupSettings} settings - Settings service or values used by this operation.
+   * @returns {Promise<FileBackupResult>} - Creates a database or full-storage backup, encrypting it when a password is configured. External providers require encryption; local database-only dumps may remain unencrypted.
+   */
   async create(settings: FileBackupSettings): Promise<FileBackupResult> {
     logger.info('Starting backup', {
       scope: settings.scope,
@@ -156,6 +167,13 @@ export class FileBackupService {
     }
   }
 
+  /**
+   * Deletes matching remote backup artifacts older than the configured retention period.
+   *
+   * @param {FileBackupSettings} settings - Settings service or values used by this operation.
+   * @param {number} retentionDays - Number of days to retain remote backups.
+   * @returns {Promise<number>} - Deletes matching remote backup artifacts older than the configured retention period.
+   */
   async removeExpiredRemoteBackups(
     settings: FileBackupSettings,
     retentionDays: number,
@@ -180,6 +198,16 @@ export class FileBackupService {
     return candidates.length;
   }
 
+  /**
+   * Downloads, decrypts, validates, and restores a remote backup, optionally restoring storage. Temporary restore files are removed even when validation or a restore step fails.
+   *
+   * @param {FileProvider} provider - File provider used for remote backup or restore.
+   * @param {string} remotePath - Path of the file in remote storage.
+   * @param {string} password - Password used to encrypt or decrypt the backup.
+   * @param {(message: string) => Promise<void> | void} onProgress - Callback for reporting restore progress.
+   * @param {() => Promise<void> | void} onDatabaseRestored - Callback invoked after database restoration.
+   * @returns {Promise<FileRestoreResult>} - Downloads, decrypts, validates, and restores a remote backup, optionally restoring storage. Temporary restore files are removed even when validation or a restore step fails.
+   */
   async restoreEncryptedBackup(
     provider: FileProvider,
     remotePath: string,
@@ -219,6 +247,8 @@ export class FileBackupService {
         .split('\n')
         .map((entry) => entry.trim())
         .filter(Boolean);
+      // Inspect names and link types before extraction; an encrypted backup is
+      // still untrusted input until its archive structure has been checked.
       this.validateArchiveEntries(entries);
       const detailedListing = await execFileAsync('tar', ['-tvzf', archivePath], {
         maxBuffer: 4 * 1024 * 1024,
@@ -260,6 +290,8 @@ export class FileBackupService {
         remotePath,
         scope: manifest.scope,
       });
+      // Restore the database before swapping files so backup metadata/settings
+      // can be reapplied by the caller before the storage tree is replaced.
       await this.restoreDatabase(path.join(extractedRoot, 'database.dump'));
       await onDatabaseRestored?.();
       if (stagedStorage) await this.replaceStorage(stagedStorage);
@@ -278,6 +310,12 @@ export class FileBackupService {
     }
   }
 
+  /**
+   * Rejects missing required archive files and paths that could escape extraction storage.
+   *
+   * @param {string[]} entries - Archive entries to validate before extraction.
+   * @returns {void} - No value.
+   */
   private validateArchiveEntries(entries: string[]): void {
     if (!entries.includes('database.dump') || !entries.includes('manifest.json')) {
       throw new Error('Recovery archive is missing its database dump or manifest');
@@ -415,6 +453,11 @@ export class FileBackupService {
     );
   }
 
+  /**
+   * Loads and decrypts the backup settings required by the worker.
+   *
+   * @returns {Promise<FileBackupSettings>} - Loads and decrypts the backup settings required by the worker.
+   */
   static async loadSettings(): Promise<FileBackupSettings> {
     const rows = await ApplicationSetting.findAll({
       where: {

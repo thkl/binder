@@ -38,6 +38,7 @@ import {
 import { ClearDocumentSuggestionResponseSchema } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 
+/** Loads and persists metadata vocabularies, issuers, definitions, and document metadata. */
 @Injectable({ providedIn: 'root' })
 export class MetadataService {
   readonly vocabulary = signal<VocabularyResponse | null>(null);
@@ -50,8 +51,18 @@ export class MetadataService {
 
   private readonly apiUrl = '/api/v1/metadata';
 
+  /**
+   * Provides HTTP access for metadata endpoints.
+   *
+   * @param {HttpClient} http - HTTP client used to call the API.
+   */
   constructor(private readonly http: HttpClient) {}
 
+  /**
+   * Loads vocabulary, custom field definitions, issuers, and classification feedback.
+   *
+   * @returns {Promise<VocabularyResponse | null>} - Loads vocabulary, custom field definitions, issuers, and classification feedback.
+   */
   async loadVocabulary(): Promise<VocabularyResponse | null> {
     this.loading.set(true);
     this.error.set(null);
@@ -71,6 +82,11 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Loads server-defined custom metadata fields.
+   *
+   * @returns {Promise<MetadataDefinition[] | null>} - Loads server-defined custom metadata fields.
+   */
   async loadDefinitions(): Promise<MetadataDefinition[] | null> {
     try {
       const response = await firstValueFrom(
@@ -87,6 +103,11 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Loads issuer records used by document metadata.
+   *
+   * @returns {Promise<Issuer[] | null>} - Loads issuer records used by document metadata.
+   */
   async loadIssuers(): Promise<Issuer[] | null> {
     try {
       const response = await firstValueFrom(
@@ -101,6 +122,11 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Loads classification feedback available for review by administrators.
+   *
+   * @returns {Promise<ClassificationFeedback[] | null>} - Loads classification feedback available for review by administrators.
+   */
   async loadFeedback(): Promise<ClassificationFeedback[] | null> {
     try {
       const response = await firstValueFrom(
@@ -117,6 +143,12 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Deletes one classification feedback item and removes it from local state.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async removeFeedback(uuid: string): Promise<boolean> {
     this.saving.set(true);
     this.error.set(null);
@@ -137,6 +169,12 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Creates an issuer and reloads the issuer list after the server accepts it.
+   *
+   * @param {CreateIssuerInput} input - Validated input describing the requested operation.
+   * @returns {Promise<Issuer | null>} - Creates an issuer and reloads the issuer list after the server accepts it.
+   */
   async createIssuer(input: CreateIssuerInput): Promise<Issuer | null> {
     this.saving.set(true);
     this.error.set(null);
@@ -161,6 +199,13 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Updates an issuer and reloads the issuer list to keep selectors current.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {UpdateIssuerInput} input - Validated input describing the requested operation.
+   * @returns {Promise<Issuer | null>} - Updates an issuer and reloads the issuer list to keep selectors current.
+   */
   async updateIssuer(uuid: string, input: UpdateIssuerInput): Promise<Issuer | null> {
     this.saving.set(true);
     this.error.set(null);
@@ -185,6 +230,12 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Creates a custom metadata field definition.
+   *
+   * @param {CreateMetadataDefinition} input - Validated input describing the requested operation.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async createDefinition(input: CreateMetadataDefinition): Promise<boolean> {
     this.saving.set(true);
     this.error.set(null);
@@ -208,6 +259,13 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Updates the label or configuration of a custom metadata field.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {UpdateMetadataDefinition} input - Validated input describing the requested operation.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async updateDefinition(uuid: string, input: UpdateMetadataDefinition): Promise<boolean> {
     this.saving.set(true);
     this.error.set(null);
@@ -230,6 +288,12 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Deletes a custom metadata field definition.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async deleteDefinition(uuid: string): Promise<boolean> {
     this.saving.set(true);
     this.error.set(null);
@@ -250,6 +314,13 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Creates a document type, category, or tag in the server vocabulary.
+   *
+   * @param {'document-types' | 'categories' | 'tags'} kind - Resource kind or operation type.
+   * @param {CreateVocabularyItem} input - Validated input describing the requested operation.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async create(
     kind: 'document-types' | 'categories' | 'tags',
     input: CreateVocabularyItem,
@@ -273,6 +344,14 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Updates a vocabulary item's name and localized labels.
+   *
+   * @param {'document-types' | 'categories' | 'tags'} kind - Resource kind or operation type.
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {UpdateVocabularyItem} input - Validated input describing the requested operation.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async updateVocabulary(
     kind: 'document-types' | 'categories' | 'tags',
     uuid: string,
@@ -301,6 +380,13 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Copies a vocabulary item into the selected scope.
+   *
+   * @param {'document-types' | 'categories'} kind - Resource kind or operation type.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<VocabularyItem | null>} - Copies a vocabulary item into the selected scope.
+   */
   async cloneVocabulary(
     kind: 'document-types' | 'categories',
     uuid: string,
@@ -328,6 +414,13 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Deletes a document type or category vocabulary item.
+   *
+   * @param {'document-types' | 'categories'} kind - Resource kind or operation type.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async deleteVocabulary(kind: 'document-types' | 'categories', uuid: string): Promise<boolean> {
     this.saving.set(true);
     this.error.set(null);
@@ -347,6 +440,12 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Loads the editable metadata record for a document.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<DocumentMetadata | null>} - Loads the editable metadata record for a document.
+   */
   async getDocumentMetadata(uuid: string): Promise<DocumentMetadata | null> {
     try {
       const response = await firstValueFrom(
@@ -361,6 +460,12 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Loads OCR text and extraction details shown in the document editor.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<DocumentExtractedTextResponse | null>} - Loads OCR text and extraction details shown in the document editor.
+   */
   async getExtractedText(uuid: string): Promise<DocumentExtractedTextResponse | null> {
     try {
       const response = await firstValueFrom(
@@ -374,6 +479,13 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Validates and saves document metadata, returning the updated server record.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {SetDocumentMetadataInput} input - Validated input describing the requested operation.
+   * @returns {Promise<DocumentMetadata | null>} - Validates and saves document metadata, returning the updated server record.
+   */
   async setDocumentMetadata(
     uuid: string,
     input: SetDocumentMetadataInput,
@@ -399,6 +511,12 @@ export class MetadataService {
     }
   }
 
+  /**
+   * Dismisses the pending metadata suggestion for one document.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<boolean | null>} - Dismisses the pending metadata suggestion for one document.
+   */
   async clearDocumentSuggestion(uuid: string): Promise<boolean | null> {
     try {
       const response = await firstValueFrom(

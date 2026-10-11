@@ -19,6 +19,12 @@ import { validatePdfBuffer } from './extraction.js';
 
 let lastScanAt = 0;
 
+/**
+ * Scans the configured filesystem inbox and imports stable PDFs for its configured owner.
+ *
+ * @param {boolean} force - Whether to bypass cached state and reload.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function importInboxDocuments(force = false): Promise<void> {
   if (!config.inbox.enabled) return;
   if (!force && Date.now() - lastScanAt < config.inbox.pollIntervalMs) return;
@@ -66,6 +72,14 @@ export async function importInboxDocuments(force = false): Promise<void> {
   }
 }
 
+/**
+ * Writes an email attachment to the inbox and imports it through the normal validation flow.
+ *
+ * @param {Buffer} buffer - File contents held in memory.
+ * @param {string} filename - Source or destination filename for the file operation.
+ * @param {string} ownerUuid - UUID of the user who owns the resource.
+ * @returns {Promise<'imported' | 'duplicate' | 'rejected'>} - Writes an email attachment to the inbox and imports it through the normal validation flow.
+ */
 export async function importEmailPdf(
   buffer: Buffer,
   filename: string,
@@ -146,6 +160,8 @@ async function importFile(
   const claimedPath = join(await resolveStoragePath('tmp/inbox'), `${claimId}.incoming`);
   await fs.mkdir(dirname(claimedPath), { recursive: true, mode: 0o750 });
   try {
+    // Rename is atomic on the same filesystem, so only one worker can claim
+    // this inbox file even if multiple workers scan the directory together.
     await fs.rename(sourcePath, claimedPath);
   } catch {
     // Another worker or a concurrent copy won the file. It will be seen on the next scan if needed.

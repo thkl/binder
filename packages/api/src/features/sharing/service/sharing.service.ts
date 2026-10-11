@@ -10,8 +10,18 @@ import { FolderStore } from '../../folder/store/folder.store';
 import { DocumentShareStore } from '../store/document-share.store';
 import { FolderShareStore } from '../store/folder-share.store';
 
+/** Enforces share ownership and resolves the documents a recipient can read. */
 @Injectable()
 export class SharingService {
+  /**
+   * Receives datastore and policy dependencies for sharing operations.
+   *
+   * @param {UserStore} users - User store used to resolve share recipients.
+   * @param {DocumentStore} documents - Document store or service used by this operation.
+   * @param {FolderStore} folders - Folder store used to resolve folder and document links.
+   * @param {DocumentShareStore} documentShares - Store of direct document share grants.
+   * @param {FolderShareStore} folderShares - Store of folder share grants.
+   */
   constructor(
     private readonly users: UserStore,
     private readonly documents: DocumentStore,
@@ -20,6 +30,12 @@ export class SharingService {
     private readonly folderShares: FolderShareStore,
   ) {}
 
+  /**
+   * Returns eligible active users other than the current user.
+   *
+   * @param {string} userUuid - UUID of the user whose access is being checked.
+   * @returns Eligible active users other than the current user.
+   */
   async listRecipients(userUuid: string) {
     const users = await this.users.findShareCandidates(userUuid);
     return ShareRecipientsResponseSchema.parse({
@@ -27,6 +43,12 @@ export class SharingService {
     });
   }
 
+  /**
+   * Builds recipient counts for individually and folder-shared resources.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @returns Builds recipient counts for individually and folder-shared resources.
+   */
   async listOwnedShareSummary(ownerUuid: string) {
     const [documentShares, folderShares] = await Promise.all([
       this.documentShares.listForOwner(ownerUuid),
@@ -46,6 +68,13 @@ export class SharingService {
     });
   }
 
+  /**
+   * Verifies document ownership and lists its current share grants.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} documentUuid - UUID of the document.
+   * @returns Verifies document ownership and lists its current share grants.
+   */
   async listDocumentShares(ownerUuid: string, documentUuid: string) {
     await this.requireOwnedDocument(ownerUuid, documentUuid);
     const shares = await this.documentShares.listForOwnerDocument(ownerUuid, documentUuid);
@@ -66,6 +95,14 @@ export class SharingService {
     });
   }
 
+  /**
+   * Validates ownership and recipient eligibility before creating a document grant.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} documentUuid - UUID of the document.
+   * @param {string} recipientUuid - UUID of the share recipient.
+   * @returns Validates ownership and recipient eligibility before creating a document grant.
+   */
   async shareDocument(ownerUuid: string, documentUuid: string, recipientUuid: string) {
     await this.requireOwnedDocument(ownerUuid, documentUuid);
     await this.requireRecipient(ownerUuid, recipientUuid);
@@ -73,12 +110,27 @@ export class SharingService {
     return this.listDocumentShares(ownerUuid, documentUuid);
   }
 
+  /**
+   * Removes a document grant and returns the remaining grants.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} documentUuid - UUID of the document.
+   * @param {string} recipientUuid - UUID of the share recipient.
+   * @returns Removes a document grant and returns the remaining grants.
+   */
   async revokeDocumentShare(ownerUuid: string, documentUuid: string, recipientUuid: string) {
     await this.requireOwnedDocument(ownerUuid, documentUuid);
     await this.documentShares.removeShare(ownerUuid, documentUuid, recipientUuid);
     return this.listDocumentShares(ownerUuid, documentUuid);
   }
 
+  /**
+   * Verifies folder ownership and lists its current share grants.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} folderUuid - UUID of the folder.
+   * @returns Verifies folder ownership and lists its current share grants.
+   */
   async listFolderShares(ownerUuid: string, folderUuid: string) {
     await this.requireOwnedFolder(ownerUuid, folderUuid);
     const shares = await this.folderShares.listForOwnerFolder(ownerUuid, folderUuid);
@@ -99,6 +151,14 @@ export class SharingService {
     });
   }
 
+  /**
+   * Validates ownership and recipient eligibility before creating a folder grant.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} folderUuid - UUID of the folder.
+   * @param {string} recipientUuid - UUID of the share recipient.
+   * @returns Validates ownership and recipient eligibility before creating a folder grant.
+   */
   async shareFolder(ownerUuid: string, folderUuid: string, recipientUuid: string) {
     await this.requireOwnedFolder(ownerUuid, folderUuid);
     await this.requireRecipient(ownerUuid, recipientUuid);
@@ -106,12 +166,26 @@ export class SharingService {
     return this.listFolderShares(ownerUuid, folderUuid);
   }
 
+  /**
+   * Removes a folder grant and returns the remaining grants.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} folderUuid - UUID of the folder.
+   * @param {string} recipientUuid - UUID of the share recipient.
+   * @returns Removes a folder grant and returns the remaining grants.
+   */
   async revokeFolderShare(ownerUuid: string, folderUuid: string, recipientUuid: string) {
     await this.requireOwnedFolder(ownerUuid, folderUuid);
     await this.folderShares.removeShare(ownerUuid, folderUuid, recipientUuid);
     return this.listFolderShares(ownerUuid, folderUuid);
   }
 
+  /**
+   * Lists documents available through direct or inherited folder grants.
+   *
+   * @param {string} userUuid - UUID of the user whose access is being checked.
+   * @returns Lists documents available through direct or inherited folder grants.
+   */
   async listReceivedDocumentGrants(userUuid: string) {
     const [directShares, folderShares] = await Promise.all([
       this.documentShares.listForRecipient(userUuid),
@@ -130,6 +204,12 @@ export class SharingService {
     return sharedAtByDocument;
   }
 
+  /**
+   * Returns directly shared document IDs that are not inside a shared folder.
+   *
+   * @param {string} userUuid - UUID of the user whose access is being checked.
+   * @returns {Promise<string[]>} - Directly shared document IDs that are not inside a shared folder.
+   */
   async listReceivedUnfiledDocumentUuids(userUuid: string): Promise<string[]> {
     const [directShares, folderShares] = await Promise.all([
       this.documentShares.listForRecipient(userUuid),
@@ -147,6 +227,12 @@ export class SharingService {
     );
   }
 
+  /**
+   * Lists folders shared with a user and their owner's display details.
+   *
+   * @param {string} userUuid - UUID of the user whose access is being checked.
+   * @returns Lists folders shared with a user and their owner's display details.
+   */
   async listReceivedFolders(userUuid: string) {
     const shares = await this.folderShares.listForRecipient(userUuid);
     const [folders, owners] = await Promise.all([
@@ -169,6 +255,13 @@ export class SharingService {
     });
   }
 
+  /**
+   * Returns document IDs readable through the requested shared folder.
+   *
+   * @param {string} userUuid - UUID of the user whose access is being checked.
+   * @param {string} folderUuid - UUID of the folder.
+   * @returns {Promise<string[]>} - Document IDs readable through the requested shared folder.
+   */
   async listReceivedFolderDocumentUuids(userUuid: string, folderUuid: string): Promise<string[]> {
     const shares = await this.folderShares.listForRecipient(userUuid);
     let sharedOwnerUuid: string | null = null;
@@ -185,6 +278,12 @@ export class SharingService {
     return [...new Set(links.map((link) => link.documentUuid))];
   }
 
+  /**
+   * Combines direct and inherited grants into a de-duplicated readable document set.
+   *
+   * @param {string} userUuid - UUID of the user whose access is being checked.
+   * @returns {Promise<string[]>} - Combines direct and inherited grants into a de-duplicated readable document set.
+   */
   async listReadableDocumentUuids(userUuid: string): Promise<string[]> {
     const [directShares, folderShares] = await Promise.all([
       this.documentShares.listForRecipient(userUuid),
@@ -195,6 +294,8 @@ export class SharingService {
       const subtree = await this.folders.listSubtree(share.ownerUuid, share.folderUuid);
       for (const folder of subtree) folderUuids.add(folder.uuid);
     }
+    // A document may be shared directly and through several shared folders;
+    // return each readable UUID only once for downstream query filtering.
     const links = await this.folders.listDocumentLinksForFolders([...folderUuids]);
     return [...new Set([
       ...directShares.map((share) => share.documentUuid),
@@ -202,6 +303,13 @@ export class SharingService {
     ])];
   }
 
+  /**
+   * Checks whether a user owns a document or has direct/inherited share access.
+   *
+   * @param {string} userUuid - UUID of the user whose access is being checked.
+   * @param {string} documentUuid - UUID of the document.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async canReadDocument(userUuid: string, documentUuid: string): Promise<boolean> {
     const document = (await this.documents.findAccessibleCandidates([documentUuid]))[0];
     if (!document) return false;

@@ -17,6 +17,7 @@ import { CsrfService } from '../../../common/security/csrf.service';
 type ApiResponse<T> = { data: T; csrfToken?: unknown };
 type SSOActiveResponse = { isActive: boolean };
 
+/** Owns browser authentication state, setup flow, and CSRF token updates. */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   readonly user = signal<AuthenticatedUser | null>(null);
@@ -29,11 +30,22 @@ export class AuthService {
   readonly error = signal<string | null>(null);
   readonly appService = inject(ApplicationService);
 
+  /**
+   * Injects the API client and the CSRF token store used for mutating requests.
+   *
+   * @param {HttpClient} http - HTTP client used to call the API.
+   * @param {CsrfService} csrf - CSRF service used to validate browser requests.
+   */
   constructor(
     private readonly http: HttpClient,
     private readonly csrf: CsrfService,
   ) {}
 
+  /**
+   * Restores setup state and the current cookie session during application startup.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async restoreSession(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
@@ -73,6 +85,14 @@ export class AuthService {
     }
   }
 
+  /**
+   * Creates the initial administrator and starts the onboarding session.
+   *
+   * @param {string} setupSecret - Secret required to initialize the administrator account.
+   * @param {string} username - Username associated with the account.
+   * @param {string} password - Password used to encrypt or decrypt the backup.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async createAdministrator(
     setupSecret: string,
     username: string,
@@ -118,6 +138,11 @@ export class AuthService {
     }
   }
 
+  /**
+   * Reports whether SSO is configured on the connected server.
+   *
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async isSSOActive(): Promise<boolean> {
     const response = await firstValueFrom(
       this.http.get<ApiResponse<SSOActiveResponse>>(
@@ -127,6 +152,13 @@ export class AuthService {
     return response.data.isActive;
   }
 
+  /**
+   * Authenticates with username and password and stores the resulting session user.
+   *
+   * @param {string} username - Username associated with the account.
+   * @param {string} password - Password used to encrypt or decrypt the backup.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async login(username: string, password: string): Promise<boolean> {
     const input = LoginInputSchema.safeParse({ username, password });
     if (!input.success) {
@@ -154,6 +186,13 @@ export class AuthService {
     }
   }
 
+  /**
+   * Changes the current user's password and refreshes the authenticated user state.
+   *
+   * @param {string} currentPassword - Current password used to authorize the password change.
+   * @param {string} newPassword - New password to save.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async changePassword(currentPassword: string, newPassword: string): Promise<boolean> {
     const input = ChangePasswordInputSchema.safeParse({ currentPassword, newPassword });
     if (!input.success) {
@@ -181,6 +220,11 @@ export class AuthService {
     }
   }
 
+  /**
+   * Ends the current server session and clears local authentication state.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async logout(): Promise<void> {
     await firstValueFrom(
       this.http.post<ApiResponse<null>>(
@@ -194,6 +238,11 @@ export class AuthService {
     this.csrf.clear();
   }
 
+  /**
+   * Marks first-run onboarding complete in the client state.
+   *
+   * @returns {void} - No value.
+   */
   finishOnboarding(): void {
     this.onboardingActive.set(false);
     this.setupStatus.update((status) =>
@@ -202,11 +251,24 @@ export class AuthService {
     this.error.set(null);
   }
 
+  /**
+   * Validates and stores a CSRF token included in an API response.
+   *
+   * @param {{ csrfToken?: unknown }} response - HTTP response to populate with headers or content.
+   * @returns {void} - No value.
+   */
   private setCsrfToken(response: { csrfToken?: unknown }): void {
     const parsed = CsrfTokenSchema.safeParse(response.csrfToken);
     this.csrf.setToken(parsed.success ? parsed.data : null);
   }
 
+  /**
+   * Converts API validation and network errors into an authentication message.
+   *
+   * @param {unknown} error - Error value to handle or convert into a user-facing message.
+   * @param {string} unauthorizedMessage - Message returned when authentication is rejected.
+   * @returns {string} - Converts API validation and network errors into an authentication message.
+   */
   private getErrorMessage(
     error: unknown,
     unauthorizedMessage = 'Invalid username or password.',

@@ -9,6 +9,7 @@ import { DocumentDrawerComponent } from '../documents/components/document-drawer
 const ALL_SHARED = '__all_shared__';
 const UNFILED_SHARED = '__unfiled_shared__';
 
+/** Displays shared folders and documents using the regular document drawer. */
 @Component({
   selector: 'binder-shared-with-me',
   standalone: true,
@@ -33,6 +34,11 @@ export class SharedWithMeComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private folderLoadRun = 0;
 
+  /**
+   * Loads shared folders, all shared documents, and directly shared unfiled items.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async ngOnInit(): Promise<void> {
     this.loading.set(true);
     try {
@@ -51,6 +57,12 @@ export class SharedWithMeComponent implements OnInit {
     }
   }
 
+  /**
+   * Selects a shared folder and loads its documents, ignoring stale responses.
+   *
+   * @param {string} folderUuid - UUID of the folder.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async selectFolder(folderUuid: string): Promise<void> {
     const run = ++this.folderLoadRun;
     this.selectedFolderUuid.set(folderUuid);
@@ -73,6 +85,12 @@ export class SharedWithMeComponent implements OnInit {
     }
   }
 
+  /**
+   * Loads a shared document and opens it in the standard document drawer.
+   *
+   * @param {SharedDocument['document']} document - Document being read or updated.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async openDocument(document: SharedDocument['document']): Promise<void> {
     this.openingUuid.set(document.uuid);
     this.error.set(false);
@@ -87,6 +105,11 @@ export class SharedWithMeComponent implements OnInit {
 
   closeDocument(): void { this.drawerDocument.set(null); }
 
+  /**
+   * Returns rows for the currently selected shared folder or aggregate view.
+   *
+   * @returns {SharedDocument[]} - Rows for the currently selected shared folder or aggregate view.
+   */
   selectedDocuments(): SharedDocument[] {
     const selection = this.selectedFolderUuid();
     if (selection === ALL_SHARED) return this.documents();

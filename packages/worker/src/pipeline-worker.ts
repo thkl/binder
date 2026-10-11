@@ -23,16 +23,29 @@ import { MalwareDetectedError, scanDocument } from './malware-scanner.js';
 import { importEmailMessages } from './email-importer.js';
 import { isRecoveryActive, setRecoveryActive } from './recovery-state.js';
 interface ClaimedJob {
+  /** Unique queue row identifier used to finish or retry the claimed work. */
   jobUuid: string;
+  /** Document whose file is being processed. */
   documentUuid: string;
+  /** Owner used to scope document and audit updates. */
   ownerUuid: string;
+  /** Processing stage claimed from the durable queue. */
   kind: JobKind;
+  /** Number of prior attempts, used to enforce retry limits. */
   attempts: number;
+  /** Maximum attempts allowed before the job is marked failed. */
   maxAttempts: number;
+  /** Storage key resolved by the database row for the source PDF. */
   storageKey: string;
+  /** Creation time used for queue ordering and diagnostics. */
   createdAt: Date;
 }
 let stopping = false;
+/**
+ * Initializes recovery and import work, then polls the durable queue until shutdown is requested. Each cycle pauses during restore, imports new inbox items, reconciles missed jobs, and claims work.
+ *
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function startPipelineWorker(): Promise<void> {
   logger.info('Pipeline worker starting', {
     workerId: config.workerId,
@@ -79,6 +92,11 @@ export async function startPipelineWorker(): Promise<void> {
   }
 }
 
+/**
+ * Detects pending/running restore work and pauses document processing while recovery is active.
+ *
+ * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+ */
 async function shouldPauseForRecovery(): Promise<boolean> {
   if (isRecoveryActive()) return true;
   const pending = await MaintenanceRequest.findOne({
@@ -88,9 +106,19 @@ async function shouldPauseForRecovery(): Promise<boolean> {
   if (pending) setRecoveryActive(true);
   return Boolean(pending);
 }
+/**
+ * Requests a graceful stop after the current pipeline job finishes.
+ *
+ * @returns {void} - No value.
+ */
 export function requestShutdown(): void {
   stopping = true;
 }
+/**
+ * Recreates missing initial jobs for uploaded/scanning documents after interruption.
+ *
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function reconcileUploadedDocuments(): Promise<void> {
   const documents = await Document.findAll({
     where: { status: { [Op.in]: ['uploaded', 'scanning'] } },
@@ -184,6 +212,15 @@ async function reconcileUploadedDocuments(): Promise<void> {
   });
 }
 
+/**
+ * Creates the first processing job for a document if its initial stage is missing.
+ *
+ * @param {Transaction} transaction - Database transaction for related writes.
+ * @param {Document} document - Document being read or updated.
+ * @param {JobKind} kind - Resource kind or operation type.
+ * @param {string} message - Message to send or store as the failure reason.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function queueInitialJob(
   transaction: Transaction,
   document: Document,
@@ -218,6 +255,11 @@ async function queueInitialJob(
     { transaction },
   );
 }
+/**
+ * Atomically claims the oldest eligible job without waiting on other workers' locks.
+ *
+ * @returns {Promise<ClaimedJob | null>} - Atomically claims the oldest eligible job without waiting on other workers' locks.
+ */
 async function claimNextJob(): Promise<ClaimedJob | null> {
   return sequelize.transaction(async (transaction) => {
     const candidates = await PipelineJob.findAll({
@@ -229,6 +271,9 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
       lock: transaction.LOCK.UPDATE,
       skipLocked: true,
     });
+    // SKIP LOCKED lets multiple worker processes claim different jobs without
+    // waiting on one another; the document-state filter prevents stale OCR or
+    // extraction jobs from running while scanning/quarantine is in progress.
     const job = candidates.find(
       (candidate) =>
         candidate.kind === 'malware-scan' ||
@@ -283,6 +328,12 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
     };
   });
 }
+/**
+ * Runs the handler for one claimed stage and routes errors to retry/quarantine logic.
+ *
+ * @param {ClaimedJob} job - Claimed pipeline job being processed.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function processJob(job: ClaimedJob): Promise<void> {
   logger.info('Processing pipeline job', {
     jobUuid: job.jobUuid,
@@ -382,6 +433,12 @@ async function processJob(job: ClaimedJob): Promise<void> {
     await failJob(job, error instanceof Error ? error.message : String(error));
   }
 }
+/**
+ * Marks a clean scan complete and queues text extraction, or quarantines infected input.
+ *
+ * @param {ClaimedJob} job - Claimed pipeline job being processed.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function completeMalwareScan(job: ClaimedJob): Promise<void> {
   await sequelize.transaction(async (transaction) => {
     await PipelineJob.update(
@@ -421,6 +478,13 @@ async function completeMalwareScan(job: ClaimedJob): Promise<void> {
   });
 }
 
+/**
+ * Marks a malware-positive document as quarantined and records the reason for review.
+ *
+ * @param {ClaimedJob} job - Claimed pipeline job being processed.
+ * @param {string} message - Message to send or store as the failure reason.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function quarantineJob(job: ClaimedJob, message: string): Promise<void> {
   const safeMessage = message.slice(0, 2000);
   await sequelize.transaction(async (transaction) => {
@@ -449,6 +513,13 @@ async function quarantineJob(job: ClaimedJob, message: string): Promise<void> {
     jobUuid: job.jobUuid,
   });
 }
+/**
+ * Stores extracted page text and updates the document's searchable text fields.
+ *
+ * @param {string} documentUuid - UUID of the document.
+ * @param {string[]} pages - Extracted text for each page of the PDF.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function persistPages(documentUuid: string, pages: string[]): Promise<void> {
   const { DocumentPage } = await import('./document-page.model.js');
   const pageCount = Math.max(1, pages.length);
@@ -467,6 +538,13 @@ async function persistPages(documentUuid: string, pages: string[]): Promise<void
     textLength: pages.join('').length,
   });
 }
+/**
+ * Completes text extraction and queues follow-up OCR, embeddings, or metadata analysis.
+ *
+ * @param {ClaimedJob} job - Claimed pipeline job being processed.
+ * @param {boolean} needsOcr - Whether OCR should follow text extraction.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function completeJob(job: ClaimedJob, needsOcr: boolean): Promise<void> {
   await sequelize.transaction(async (transaction) => {
     await PipelineJob.update(
@@ -529,6 +607,13 @@ async function completeJob(job: ClaimedJob, needsOcr: boolean): Promise<void> {
   });
 }
 
+/**
+ * Resets inbox AI state when a document's extracted text changes.
+ *
+ * @param {Transaction} transaction - Database transaction for related writes.
+ * @param {ClaimedJob} job - Claimed pipeline job being processed.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function resetInboxAnalysis(transaction: Transaction, job: ClaimedJob): Promise<void> {
   const [updated] = await InboxItem.update(
     {
@@ -557,6 +642,13 @@ async function resetInboxAnalysis(transaction: Transaction, job: ClaimedJob): Pr
   }
 }
 
+/**
+ * Saves the completed PDF/A archive key and marks archive generation ready.
+ *
+ * @param {ClaimedJob} job - Claimed pipeline job being processed.
+ * @param {string} archiveKey - Storage key of the generated archive.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function completePdfaJob(job: ClaimedJob, archiveKey: string): Promise<void> {
   await sequelize.transaction(async (transaction) => {
     await PipelineJob.update(
@@ -594,6 +686,15 @@ async function completePdfaJob(job: ClaimedJob, archiveKey: string): Promise<voi
   });
   logger.info('PDF/A pipeline job completed', { jobUuid: job.jobUuid, archiveKey });
 }
+/**
+ * Enqueues a later processing stage while preserving the document's current pipeline state.
+ *
+ * @param {Transaction} transaction - Database transaction for related writes.
+ * @param {ClaimedJob} job - Claimed pipeline job being processed.
+ * @param {JobKind} kind - Resource kind or operation type.
+ * @param {string} message - Message to send or store as the failure reason.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function queueFollowup(
   transaction: Transaction,
   job: ClaimedJob,
@@ -641,6 +742,13 @@ async function queueFollowup(
     await addEvent(transaction, next.uuid, 'queued', `Queued ${kind}`);
   }
 }
+/**
+ * Marks a failed attempt and requeues it when retries remain.
+ *
+ * @param {ClaimedJob} job - Claimed pipeline job being processed.
+ * @param {string} message - Message to send or store as the failure reason.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function failJob(job: ClaimedJob, message: string): Promise<void> {
   const safe = message.slice(0, 2000);
   try {
@@ -721,6 +829,11 @@ async function failJob(job: ClaimedJob, message: string): Promise<void> {
     logger.error('Unable to record pipeline failure', { jobUuid: job.jobUuid, error });
   }
 }
+/**
+ * Reclaims jobs left running by a worker that exited without completing them.
+ *
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function recoverStaleJobs(): Promise<void> {
   const stale = await PipelineJob.findAll({
     where: {
@@ -750,6 +863,11 @@ async function recoverStaleJobs(): Promise<void> {
   }
   logger.info('Checked for stale pipeline jobs', { recovered: stale.length });
 }
+/**
+ * Logs counts and oldest age for queued and running pipeline jobs.
+ *
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function logQueueStatus(): Promise<void> {
   const statuses = ['queued', 'running', 'succeeded', 'failed', 'cancelled'] as const;
   const counts = await Promise.all(
@@ -763,6 +881,15 @@ async function logQueueStatus(): Promise<void> {
     pdfaEnabled: config.pdfa.enabled,
   });
 }
+/**
+ * Writes a durable event describing a pipeline job state transition.
+ *
+ * @param {Transaction} transaction - Database transaction for related writes.
+ * @param {string} jobUuid - UUID of the pipeline job.
+ * @param {string} type - Event or value type being processed.
+ * @param {string} message - Message to send or store as the failure reason.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function addEvent(
   transaction: Transaction,
   jobUuid: string,
@@ -775,6 +902,22 @@ async function addEvent(
   );
 }
 
+/**
+ * Records a user-visible document audit entry for an automated pipeline action.
+ *
+ * @param {Transaction} transaction - Database transaction for related writes.
+ * @param {Pick<ClaimedJob, 'documentUuid' | 'ownerUuid' | 'kind'>} job - Claimed pipeline job being processed.
+ * @param {| 'processing-started'
+ * | 'processing-succeeded'
+ * | 'processing-failed'
+ * | 'archive-queued'
+ * | 'archive-generated'
+ * | 'archive-failed'
+ * | 'quarantined'} eventType - Audit event type describing the processing transition.
+ * @param {string} summary - Human-readable description of the event.
+ * @param {Record<string, unknown>} details - Structured details to include in the event or audit record.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 async function addDocumentAudit(
   transaction: Transaction,
   job: Pick<ClaimedJob, 'documentUuid' | 'ownerUuid' | 'kind'>,
@@ -803,6 +946,12 @@ async function addDocumentAudit(
     { transaction },
   );
 }
+/**
+ * Waits between polling iterations while allowing shutdown to be requested.
+ *
+ * @param {number} milliseconds - Delay duration in milliseconds.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 function delay(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }

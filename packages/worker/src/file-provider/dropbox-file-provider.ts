@@ -22,6 +22,14 @@ interface DropboxListFolderResponse {
 }
 
 export class DropboxFileProvider extends FileProvider {
+  /**
+   * Creates a Dropbox adapter using either refresh-token credentials or a one-time access token.
+   *
+   * @param {string | null} refreshToken - OAuth refresh token for the remote provider.
+   * @param {string | null} appKey - Dropbox application key.
+   * @param {string | null} appSecret - Dropbox application secret.
+   * @param {string} oneTimeAccessToken - Short-lived access token used for this operation.
+   */
   constructor(
     private readonly refreshToken: string | null,
     private readonly appKey: string | null,
@@ -31,6 +39,13 @@ export class DropboxFileProvider extends FileProvider {
     super();
   }
 
+  /**
+   * Uploads a file, using Dropbox upload sessions when it exceeds the single-request limit.
+   *
+   * @param {string} localPath - Local filesystem path used for the file operation.
+   * @param {string} remotePath - Path of the file in remote storage.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async storeFile(localPath: string, remotePath: string): Promise<void> {
     const accessToken = await this.accessToken();
     const stats = await fs.stat(localPath);
@@ -58,6 +73,8 @@ export class DropboxFileProvider extends FileProvider {
       const sessionId = String(started.session_id);
       let offset = firstRead.bytesRead;
 
+      // Dropbox requires each chunk to advance the session cursor; the final
+      // chunk commits the remote file instead of using the append endpoint.
       while (offset < stats.size) {
         const length = Math.min(CHUNK_SIZE, stats.size - offset);
         const chunk = Buffer.alloc(length);
@@ -78,6 +95,13 @@ export class DropboxFileProvider extends FileProvider {
     }
   }
 
+  /**
+   * Downloads a remote Dropbox file to the requested local path.
+   *
+   * @param {string} remotePath - Path of the file in remote storage.
+   * @param {string} localPath - Local filesystem path used for the file operation.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async readFile(remotePath: string, localPath: string): Promise<void> {
     const accessToken = await this.accessToken();
     const response = await fetch(`${DROPBOX_CONTENT_URL}/files/download`, {
@@ -103,11 +127,23 @@ export class DropboxFileProvider extends FileProvider {
     });
   }
 
+  /**
+   * Deletes a remote Dropbox file and treats a missing path as already deleted.
+   *
+   * @param {string} remotePath - Path of the file in remote storage.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async deleteFile(remotePath: string): Promise<void> {
     const accessToken = await this.accessToken();
     await this.request('files/delete_v2', accessToken, undefined, { path: remotePath });
   }
 
+  /**
+   * Lists file entries in a Dropbox folder, following all cursor-based result pages.
+   *
+   * @param {string} remoteFolder - Remote folder path to list or use as the backup destination.
+   * @returns {Promise<FileProviderEntry[]>} - Lists file entries in a Dropbox folder, following all cursor-based result pages.
+   */
   async listFiles(remoteFolder: string): Promise<FileProviderEntry[]> {
     const accessToken = await this.accessToken();
     const entries: FileProviderEntry[] = [];

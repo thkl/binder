@@ -23,6 +23,7 @@ import { RouterLink } from '@angular/router';
 import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
 import { InboxService } from '../../../inbox/services/inbox.service';
 
+/** Owns the search page, document uploads, saved searches, and result drawer. */
 @Component({
   selector: 'binder-home',
   standalone: true,
@@ -71,6 +72,7 @@ export class HomeComponent {
   readonly uploadedCount = signal(0);
   private lastDocumentChangeRevision = 0;
 
+  /** Re-runs an active search when the inbox reports a changed result document. */
   private readonly documentChangeEffect = effect(() => {
     const revision = this.inbox.documentChangeRevision();
     if (revision === 0 || revision === this.lastDocumentChangeRevision) return;
@@ -92,6 +94,9 @@ export class HomeComponent {
     return count;
   });
 
+  /**
+   * Loads saved searches as soon as the home page is created.
+   */
   constructor() {
     void this.savedSearches.load();
   }
@@ -138,6 +143,12 @@ export class HomeComponent {
     return String(value);
   }
 
+  /**
+   * Validates and submits the current text and filter options to search.
+   *
+   * @param {Event} event - Queued notification or pipeline event to process.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async submitSearch(event: Event): Promise<void> {
     event.preventDefault();
     this.selectedSavedSearchUuid.set(null);

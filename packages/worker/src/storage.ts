@@ -5,6 +5,12 @@ import { config } from './config.js';
 import { Document } from './models.js';
 import { logger } from './logger.js';
 
+/**
+ * Resolves a storage-relative key and rejects paths that escape the configured storage root.
+ *
+ * @param {string} storageKey - Storage-relative key of the document or derived file.
+ * @returns {string} - Resolves a storage-relative key and rejects paths that escape the configured storage root.
+ */
 export function resolveStoragePath(storageKey: string): string {
   const absolute = normalize(
     isAbsolute(storageKey) ? storageKey : join(config.storageRoot, storageKey),
@@ -13,6 +19,12 @@ export function resolveStoragePath(storageKey: string): string {
   if (rel.startsWith('..') || isAbsolute(rel)) throw new Error('Invalid document storage path');
   return absolute;
 }
+/**
+ * Checks whether a storage-relative file can be accessed.
+ *
+ * @param {string} storageKey - Storage-relative key of the document or derived file.
+ * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+ */
 export async function storageExists(storageKey: string): Promise<boolean> {
   try {
     await fs.access(resolveStoragePath(storageKey));
@@ -21,12 +33,27 @@ export async function storageExists(storageKey: string): Promise<boolean> {
     return false;
   }
 }
+/**
+ * Builds the year/month/document directory used for generated document artifacts.
+ *
+ * @param {string} documentUuid - UUID of the document.
+ * @param {Date} createdAt - Creation time used to derive storage paths.
+ * @returns {string} - Builds the year/month/document directory used for generated document artifacts.
+ */
 export function derivedDirectory(documentUuid: string, createdAt: Date): string {
   const year = createdAt.getUTCFullYear();
   const month = String(createdAt.getUTCMonth() + 1).padStart(2, '0');
   return `derived/${year}/${month}/${documentUuid}`;
 }
 
+/**
+ * Atomically writes extracted text to the document's derived-storage directory.
+ *
+ * @param {string} documentUuid - UUID of the document.
+ * @param {string} text - Extracted or user-entered text to process.
+ * @param {Date} createdAt - Creation time used to derive storage paths.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function writeDerivedText(
   documentUuid: string,
   text: string,
@@ -38,6 +65,14 @@ export async function writeDerivedText(
   await fs.writeFile(temporary, text, { encoding: 'utf8', mode: 0o640 });
   await fs.rename(temporary, target);
 }
+/**
+ * Renders the first PDF page to a PNG, stores it atomically, and updates the document record.
+ *
+ * @param {string} storageKey - Storage-relative key of the document or derived file.
+ * @param {string} documentUuid - UUID of the document.
+ * @param {Date} createdAt - Creation time used to derive storage paths.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function createThumbnail(
   storageKey: string,
   documentUuid: string,
@@ -74,6 +109,11 @@ export async function createThumbnail(
   await Document.update({ thumbnailKey }, { where: { uuid: documentUuid } });
 }
 
+/**
+ * Moves artifacts from the legacy flat layout into date-partitioned derived storage.
+ *
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function migrateLegacyDerivedStorage(): Promise<void> {
   const documents = await Document.findAll({
     attributes: ['uuid', 'createdAt', 'thumbnailKey', 'archiveKey'],

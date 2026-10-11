@@ -1,10 +1,23 @@
 import { readFileSync, statSync } from 'node:fs';
 
+/** Resolves configuration secrets from direct environment values or secret files. */
 export class SecretResolver {
   private readonly cache = new Map<string, string>();
 
+  /**
+   * Creates a resolver backed by an environment object.
+   *
+   * @param {NodeJS.ProcessEnv} environment - Environment variables used to resolve secrets.
+   */
   constructor(private readonly environment: NodeJS.ProcessEnv = process.env) {}
 
+  /**
+   * Returns a cached secret, a non-empty direct value, or the contents of its `_FILE` path. Direct values take precedence over file-based values.
+   *
+   * @param {string} name - Secret environment variable name.
+   * @returns {string | undefined} - The trimmed secret, or `undefined` when neither source is configured.
+   * @throws {Error} - When a configured secret file cannot be read or is empty.
+   */
   get(name: string): string | undefined {
     const cached = this.cache.get(name);
     if (cached !== undefined) return cached;
@@ -32,6 +45,13 @@ export class SecretResolver {
     }
   }
 
+  /**
+   * Resolves a required secret and fails fast when it is not configured.
+   *
+   * @param {string} name - Required secret environment variable name.
+   * @returns {string} - The resolved secret.
+   * @throws {Error} - When neither the direct value nor its `_FILE` alternative exists.
+   */
   require(name: string): string {
     const value = this.get(name);
     if (!value) throw new Error(`Missing required secret ${name} or ${name}_FILE`);

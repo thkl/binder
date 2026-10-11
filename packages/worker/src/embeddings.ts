@@ -38,6 +38,11 @@ class OpenAICompatibleProvider implements EmbeddingProvider {
   }
 }
 
+/**
+ * Creates the configured embedding provider after validating its type and credentials.
+ *
+ * @returns {EmbeddingProvider} - Creates the configured embedding provider after validating its type and credentials.
+ */
 export function createEmbeddingProvider(): EmbeddingProvider {
   if (config.embeddings.provider !== 'openai-compatible')
     throw new Error(`Unsupported embedding provider: ${config.embeddings.provider}`);
@@ -45,6 +50,12 @@ export function createEmbeddingProvider(): EmbeddingProvider {
   return new OpenAICompatibleProvider();
 }
 
+/**
+ * Chunks a document's extracted pages, requests vectors in batches, and replaces stored embeddings.
+ *
+ * @param {string} documentUuid - UUID of the document.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function embedDocument(documentUuid: string): Promise<void> {
   const pages = await DocumentPage.findAll({
     where: { documentUuid, text: { [Op.ne]: '' } },

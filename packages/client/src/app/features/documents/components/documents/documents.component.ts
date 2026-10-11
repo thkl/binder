@@ -67,6 +67,7 @@ type DocumentFilterValues = {
   reviewState: Array<'new' | 'reviewed'> | undefined;
 };
 
+/** Coordinates the owned-document list, folder selection, filters, bulk actions, and drawer. */
 @Component({
   selector: 'binder-documents',
   standalone: true,
@@ -168,6 +169,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   private readonly processingRefreshIntervalMs = 2_000;
 
   private lastDocumentChangeRevision = 0;
+  /** Refreshes visible records when the inbox reports changes to active documents. */
   private readonly documentChangeEffect = effect(() => {
     const revision = this.inbox.documentChangeRevision();
     if (revision === 0 || revision === this.lastDocumentChangeRevision) return;

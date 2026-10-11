@@ -87,6 +87,7 @@ export interface UploadedDocumentFile {
   originalname: string;
 }
 
+/** Coordinates document storage, metadata, search, versioning, and pipeline operations. */
 @Injectable()
 export class DocumentService {
   private readonly logger = new BinderLogger(DocumentService.name);
@@ -97,6 +98,28 @@ export class DocumentService {
   private static readonly MAX_CONCURRENT_UPLOADS = 2;
   private static readonly MAX_CONCURRENT_THUMBNAIL_GENERATIONS = 3;
 
+  /**
+   * Injects persistence, storage, pipeline, and feature services used by document workflows.
+   *
+   * @param {Sequelize} sequelize - Database connection used for transactions.
+   * @param {DocumentStore} documents - Document store or service used by this operation.
+   * @param {DocumentStorageService} storage - Document storage service used to read or write files.
+   * @param {PipelineService} pipeline - Pipeline service used to queue or inspect document work.
+   * @param {MetadataService} metadata - Metadata service used to load or update document fields.
+   * @param {SemanticSearchService} semanticSearch - Service used to run semantic document search.
+   * @param {TitleSuggestionService} titleSuggestions - Existing title suggestion state to update.
+   * @param {ConfigService<BinderConfig>} config - Runtime or application configuration used by this operation.
+   * @param {FolderStore} folders - Folder store used to resolve folder and document links.
+   * @param {DocumentStorageIssueStore} storageIssues - Store of detected storage-integrity issues.
+   * @param {InboxItemStore} inboxItems - Inbox store used to queue documents for review.
+   * @param {EventEmitter2} eventEmitter - Event emitter used to notify other API features.
+   * @param {DocumentAuditService} audit - Audit service used to record document activity.
+   * @param {CalendarEventStore} calendarEvents - Calendar event store used to look up document events.
+   * @param {ApplicationSettingsService} settings - Settings service or values used by this operation.
+   * @param {ClassificationFeedbackService} classificationFeedback - Service used to save classification corrections.
+   * @param {IssuerService} issuers - Issuer records to compare against extracted text.
+   * @param {SharingService} sharing - Sharing service used to check grants and readable resources.
+   */
   constructor(
     @InjectConnection() private readonly sequelize: Sequelize,
     private readonly documents: DocumentStore,
@@ -118,6 +141,13 @@ export class DocumentService {
     private readonly sharing: SharingService,
   ) {}
 
+  /**
+   * Stores a PDF, creates its document record, and queues the configured processing pipeline.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {UploadedDocumentFile} file - PDF or other file supplied for this operation.
+   * @returns Stores a PDF, creates its document record, and queues the configured processing pipeline.
+   */
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
     if (!file?.path) {
       throw new BadRequestException('Only PDF documents are supported');
@@ -213,6 +243,18 @@ export class DocumentService {
     }
   }
 
+  /**
+   * Adds a split/composed PDF to the inbox using the same flow as a manual upload.
+   *
+   * @param {string} documentUuid - UUID of the document.
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {{ originalname: string; buffer?: Buffer; mimetype?: string }} file - PDF or other file supplied for this operation.
+   * @param {string} checksumSha256 - SHA-256 checksum of the file contents.
+   * @param {number} sizeBytes - Size of the file in bytes.
+   * @param {boolean} autoApplyAi - Whether AI suggestions should be applied automatically.
+   * @param {boolean | null} aiAutoApplyOverride - Optional override for automatically applying AI suggestions.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   private async addManualUploadToInbox(
     documentUuid: string,
     ownerUuid: string,
@@ -250,6 +292,13 @@ export class DocumentService {
     }
   }
 
+  /**
+   * Returns a paginated, filtered document list for one owner.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {DocumentListQuery} query - Validated search or document-list criteria.
+   * @returns {Promise<DocumentListResponse>} - A paginated, filtered document list for one owner.
+   */
   async list(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListResponse> {
     const result = await this.documents.findOwnedPage(ownerUuid, query);
     const summaries = await this.metadata.getDocumentMetadataSummaries(ownerUuid, result.items);
@@ -270,6 +319,12 @@ export class DocumentService {
     });
   }
 
+  /**
+   * Lists storage inconsistencies that need administrator attention.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @returns Lists storage inconsistencies that need administrator attention.
+   */
   async listStorageIssues(ownerUuid: string) {
     const issues = await this.storageIssues.findOpenOwned(ownerUuid);
     const documents = await this.documents.findOwnedByUuids(
@@ -306,6 +361,13 @@ export class DocumentService {
     });
   }
 
+  /**
+   * Builds a ZIP archive for all documents contained in a folder subtree.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} folderUuid - UUID of the folder.
+   * @returns {Promise<{ stream: Readable; filename: string }>} - Builds a ZIP archive for all documents contained in a folder subtree.
+   */
   async exportFolder(
     ownerUuid: string,
     folderUuid: string,
@@ -363,6 +425,13 @@ export class DocumentService {
     };
   }
 
+  /**
+   * Builds a ZIP archive for a validated set of selected documents.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string[]} documentUuids - Document UUIDs included in the operation.
+   * @returns {Promise<{ stream: Readable; filename: string }>} - Builds a ZIP archive for a validated set of selected documents.
+   */
   async exportSelected(
     ownerUuid: string,
     documentUuids: string[],
@@ -378,6 +447,13 @@ export class DocumentService {
     return archive;
   }
 
+  /**
+   * Builds a ZIP archive for all documents matching the supplied list filters.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {DocumentListQuery} query - Validated search or document-list criteria.
+   * @returns {Promise<{ stream: Readable; filename: string }>} - Builds a ZIP archive for all documents matching the supplied list filters.
+   */
   async exportFiltered(
     ownerUuid: string,
     query: DocumentListQuery,
@@ -393,12 +469,26 @@ export class DocumentService {
     return archive;
   }
 
+  /**
+   * Computes available filter counts for the current owner and list query.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {DocumentListQuery} query - Validated search or document-list criteria.
+   * @returns {Promise<DocumentListFacetsResponse>} - Computes available filter counts for the current owner and list query.
+   */
   async facets(ownerUuid: string, query: DocumentListQuery): Promise<DocumentListFacetsResponse> {
     return DocumentListFacetsResponseSchema.parse(
       await this.documents.findOwnedFacets(ownerUuid, query),
     );
   }
 
+  /**
+   * Searches document text and metadata within the owner's accessible records.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {DocumentSearchQuery} query - Validated search or document-list criteria.
+   * @returns Searches document text and metadata within the owner's accessible records.
+   */
   async search(ownerUuid: string, query: DocumentSearchQuery) {
     const [keywordResult, semanticResult] = await Promise.all([
       this.documents.searchOwned(ownerUuid, query),
@@ -433,11 +523,23 @@ export class DocumentService {
     });
   }
 
+  /**
+   * Lists documents shared directly or through folders with the current user.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @returns Lists documents shared directly or through folders with the current user.
+   */
   async listShared(ownerUuid: string) {
     const grants = await this.sharing.listReceivedDocumentGrants(ownerUuid);
     return this.sharedDocumentResponse([...grants.keys()], grants);
   }
 
+  /**
+   * Lists directly shared documents that are not included in a shared folder.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @returns Lists directly shared documents that are not included in a shared folder.
+   */
   async listSharedUnfiled(ownerUuid: string) {
     const [documentUuids, grants] = await Promise.all([
       this.sharing.listReceivedUnfiledDocumentUuids(ownerUuid),
@@ -446,6 +548,13 @@ export class DocumentService {
     return this.sharedDocumentResponse(documentUuids, grants);
   }
 
+  /**
+   * Lists documents visible through a shared folder, including descendant folders.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} folderUuid - UUID of the folder.
+   * @returns Lists documents visible through a shared folder, including descendant folders.
+   */
   async listSharedFolderDocuments(ownerUuid: string, folderUuid: string) {
     const [documentUuids, grants] = await Promise.all([
       this.sharing.listReceivedFolderDocumentUuids(ownerUuid, folderUuid),
@@ -454,6 +563,13 @@ export class DocumentService {
     return this.sharedDocumentResponse(documentUuids, grants);
   }
 
+  /**
+   * Shapes a shared document using only metadata available to its recipient.
+   *
+   * @param {string[]} documentUuids - Document UUIDs included in the operation.
+   * @param {Map<string, Date>} grants - Share grants used to build the recipient response.
+   * @returns Shapes a shared document using only metadata available to its recipient.
+   */
   private async sharedDocumentResponse(
     documentUuids: string[],
     grants: Map<string, Date>,
@@ -470,14 +586,34 @@ export class DocumentService {
     });
   }
 
+  /**
+   * Returns a cache token representing the latest change visible to the owner.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @returns {Promise<{ token: string; updatedAt: Date | null }>} - A cache token representing the latest change visible to the owner.
+   */
   async documentChangeToken(ownerUuid: string): Promise<{ token: string; updatedAt: Date | null }> {
     return this.documents.changeToken(ownerUuid);
   }
 
+  /**
+   * Lists visible document IDs changed after the supplied timestamp.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {Date} since - Timestamp used as the lower bound for change lookup.
+   * @returns {Promise<string[]>} - Lists visible document IDs changed after the supplied timestamp.
+   */
   async changedDocumentUuidsSince(ownerUuid: string, since: Date): Promise<string[]> {
     return this.documents.findChangedUuidsSince(ownerUuid, since);
   }
 
+  /**
+   * Applies a supported bulk action to owned documents and records its audit change set.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {DocumentBulkActionInput} input - Validated input describing the requested operation.
+   * @returns Applies a supported bulk action to owned documents and records its audit change set.
+   */
   async bulkAction(ownerUuid: string, input: DocumentBulkActionInput) {
     const items = [];
 
@@ -528,6 +664,24 @@ export class DocumentService {
     });
   }
 
+  /**
+   * Merges lexical and semantic matches while preserving the best score per document.
+   *
+   * @param {Array<{
+   * document: import('../models/document.entity').Document;
+   * pageNumber: number | null;
+   * text: string;
+   * score: number;
+   * }>} keywordResult - Results from the lexical keyword search.
+   * @param {Array<{
+   * document: import('../models/document.entity').Document;
+   * pageNumber: number;
+   * text: string;
+   * score: number;
+   * }>} semanticResult - Results from the semantic similarity search.
+   * @param {number} limit - Maximum number of results to return.
+   * @returns Merges lexical and semantic matches while preserving the best score per document.
+   */
   private mergeSearchResults(
     keywordResult: Array<{
       document: import('../models/document.entity').Document;
@@ -580,6 +734,13 @@ export class DocumentService {
     return [...merged.values()].sort((left, right) => right.score - left.score).slice(0, limit);
   }
 
+  /**
+   * Maps archived document IDs to their relative folder paths.
+   *
+   * @param {Array<import('../../folder/models/folder.entity').Folder>} folders - Folder store used to resolve folder and document links.
+   * @param {string} rootUuid - UUID of the root folder for path construction.
+   * @returns {Map<string, string>} - Maps archived document IDs to their relative folder paths.
+   */
   private createArchiveFolderPaths(
     folders: Array<import('../../folder/models/folder.entity').Folder>,
     rootUuid: string,
@@ -604,6 +765,14 @@ export class DocumentService {
     return paths;
   }
 
+  /**
+   * Generates a collision-safe filename for one document inside a ZIP archive.
+   *
+   * @param {import('../models/document.entity').Document} document - Document being read or updated.
+   * @param {string} folderPath - Relative folder path to use inside the archive.
+   * @param {Set<string>} usedNames - Archive paths already taken, used to avoid filename collisions.
+   * @returns {string} - Generates a collision-safe filename for one document inside a ZIP archive.
+   */
   private createArchiveFilename(
     document: import('../models/document.entity').Document,
     folderPath: string,
@@ -639,6 +808,13 @@ export class DocumentService {
     return candidate;
   }
 
+  /**
+   * Streams documents into a ZIP archive with safe paths and source-file checks.
+   *
+   * @param {Array<import('../models/document.entity').Document>} documents - Document store or service used by this operation.
+   * @param {string} filename - Source or destination filename for the file operation.
+   * @returns {Promise<{ stream: Readable; filename: string }>} - Streams documents into a ZIP archive with safe paths and source-file checks.
+   */
   private async createFlatArchive(
     documents: Array<import('../models/document.entity').Document>,
     filename: string,
@@ -670,6 +846,13 @@ export class DocumentService {
     return { stream: archive, filename };
   }
 
+  /**
+   * Removes path separators and unsafe characters from one archive path segment.
+   *
+   * @param {string} value - Value to store, parse, or compare.
+   * @param {string} fallback - Fallback value used when the configured value is missing.
+   * @returns {string} - Removes path separators and unsafe characters from one archive path segment.
+   */
   private sanitizeArchiveSegment(value: string, fallback: string): string {
     const sanitized = value
       .normalize('NFKC')
@@ -680,6 +863,13 @@ export class DocumentService {
     return sanitized || fallback;
   }
 
+  /**
+   * Returns one document when it is owned by or shared with the requesting user.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns One document when it is owned by or shared with the requesting user.
+   */
   async get(ownerUuid: string, uuid: string) {
     const document = await this.findReadableDocument(ownerUuid, uuid);
     const isOwner = document.ownerUuid === ownerUuid;
@@ -695,6 +885,13 @@ export class DocumentService {
     );
   }
 
+  /**
+   * Deletes an owned document and its related storage and metadata records.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns Deletes an owned document and its related storage and metadata records.
+   */
   async remove(ownerUuid: string, uuid: string) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) {
@@ -757,6 +954,14 @@ export class DocumentService {
     return DocumentDeleteResponseSchema.parse({ deleted: true, uuid });
   }
 
+  /**
+   * Removes references to a deleted document from stored bulk change sets.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} documentUuid - UUID of the document.
+   * @param {import('sequelize').Transaction} transaction - Database transaction for related writes.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   private async removeDocumentFromChangeSets(
     ownerUuid: string,
     documentUuid: string,
@@ -788,6 +993,14 @@ export class DocumentService {
     }
   }
 
+  /**
+   * Updates a document's title and writes the corresponding audit event.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {SetDocumentTitleInput} input - Validated input describing the requested operation.
+   * @returns Updates a document's title and writes the corresponding audit event.
+   */
   async updateTitle(ownerUuid: string, uuid: string, input: SetDocumentTitleInput) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
@@ -828,6 +1041,13 @@ export class DocumentService {
     return this.toDocumentResponse(updated ?? document);
   }
 
+  /**
+   * Lists the version family containing a document owned by the caller.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns Lists the version family containing a document owned by the caller.
+   */
   async listVersions(ownerUuid: string, uuid: string) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
@@ -841,6 +1061,15 @@ export class DocumentService {
     };
   }
 
+  /**
+   * Assigns a document to another document's version family, optionally copying metadata.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {string} targetUuid - UUID of the target document.
+   * @param {boolean} copyMetadata - Whether metadata should be copied to the resulting document.
+   * @returns Assigns a document to another document's version family, optionally copying metadata.
+   */
   async assignAsVersion(ownerUuid: string, uuid: string, targetUuid: string, copyMetadata = false) {
     if (uuid === targetUuid) {
       throw new BadRequestException('A document cannot be a version of itself');
@@ -894,6 +1123,14 @@ export class DocumentService {
     return this.toDocumentResponse(updated);
   }
 
+  /**
+   * Splits a PDF into two documents and queues processing for both new files.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {SplitDocumentInput} input - Validated input describing the requested operation.
+   * @returns Splits a PDF into two documents and queues processing for both new files.
+   */
   async split(ownerUuid: string, uuid: string, input: SplitDocumentInput) {
     this.logger.info('Splitting document', {
       documentUuid: uuid,
@@ -920,6 +1157,8 @@ export class DocumentService {
       this.storage.storePdf(remainingBuffer, remainingUuid, remainingName),
       this.storage.storePdf(extractedBuffer, extractedUuid, extractedName),
     ]);
+    // Persist both output files before creating database rows so no document
+    // can become visible with only one half of the split PDF available.
     const malwareScanRequired = await this.isMalwareScanRequired();
     const family = await this.documents.findOwnedVersionFamily(
       ownerUuid,
@@ -927,6 +1166,8 @@ export class DocumentService {
     );
     const nextVersion = Math.max(...family.map((version) => version.versionNumber), 0) + 1;
 
+    // Track record creation so the failure handler can clean up files without
+    // deleting storage that a committed document row now references.
     let documentsCreated = false;
     try {
       const remaining = await this.documents.create({
@@ -1082,6 +1323,14 @@ export class DocumentService {
     }
   }
 
+  /**
+   * Inserts one PDF into another and creates a new document version for the result.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {ComposeDocumentInput} input - Validated input describing the requested operation.
+   * @returns Inserts one PDF into another and creates a new document version for the result.
+   */
   async compose(ownerUuid: string, uuid: string, input: ComposeDocumentInput) {
     if (uuid === input.sourceDocumentUuid) {
       throw new BadRequestException('A document cannot be inserted into itself');
@@ -1106,6 +1355,8 @@ export class DocumentService {
     const malwareScanRequired = await this.isMalwareScanRequired();
     const family = await this.documents.findOwnedVersionFamily(ownerUuid, target.versionFamilyUuid);
     const nextVersion = Math.max(...family.map((version) => version.versionNumber), 0) + 1;
+    // Until the document row exists, any failure can safely remove the stored
+    // composite file; after that point, normal document cleanup owns it.
     let documentCreated = false;
 
     try {
@@ -1188,11 +1439,25 @@ export class DocumentService {
     }
   }
 
+  /**
+   * Adds a split descriptor to a source filename while preserving the PDF extension.
+   *
+   * @param {string} filename - Source or destination filename for the file operation.
+   * @param {string} suffix - Filename suffix to identify the split output.
+   * @returns {string} - Adds a split descriptor to a source filename while preserving the PDF extension.
+   */
   private splitFilename(filename: string, suffix: string): string {
     const extension = extname(filename) || '.pdf';
     return `${filename.slice(0, -extension.length)} (${suffix})${extension}`.slice(0, 255);
   }
 
+  /**
+   * Builds a filename identifying both source PDFs in a composed document.
+   *
+   * @param {string} targetFilename - Original filename of the target document.
+   * @param {string} sourceFilename - Original filename of the source document.
+   * @returns {string} - Builds a filename identifying both source PDFs in a composed document.
+   */
   private composeFilename(targetFilename: string, sourceFilename: string): string {
     const extension = extname(targetFilename) || '.pdf';
     const targetBase = targetFilename.slice(0, -extension.length);
@@ -1200,6 +1465,13 @@ export class DocumentService {
     return `${targetBase} + ${sourceBase}${extension}`.slice(0, 255);
   }
 
+  /**
+   * Generates or returns an AI title and metadata suggestion for a document.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns Generates or returns an AI title and metadata suggestion for a document.
+   */
   async suggestTitle(ownerUuid: string, uuid: string) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
@@ -1217,6 +1489,14 @@ export class DocumentService {
     return suggestion;
   }
 
+  /**
+   * Clears an AI suggestion and optionally records the user's dismissal in the audit log.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {boolean} recordDismissalAudit - Whether to record an audit event for the dismissed suggestion.
+   * @returns Clears an AI suggestion and optionally records the user's dismissal in the audit log.
+   */
   async clearSuggestion(ownerUuid: string, uuid: string, recordDismissalAudit = true) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
@@ -1237,6 +1517,13 @@ export class DocumentService {
     return ClearDocumentSuggestionResponseSchema.parse({ cleared });
   }
 
+  /**
+   * Resolves the authorized original PDF for download or viewing.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns Resolves the authorized original PDF for download or viewing.
+   */
   async getFile(ownerUuid: string, uuid: string) {
     const document = await this.findReadableDocument(ownerUuid, uuid);
     this.assertDocumentContentAvailable(document);
@@ -1246,6 +1533,13 @@ export class DocumentService {
     };
   }
 
+  /**
+   * Marks a document as opened and returns its updated review state.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<{ isNew: boolean; updatedAt: Date }>} - Marks a document as opened and returns its updated review state.
+   */
   async markOpened(ownerUuid: string, uuid: string): Promise<{ isNew: boolean; updatedAt: Date }> {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) {
@@ -1282,6 +1576,13 @@ export class DocumentService {
     return { isNew: updated.isNew, updatedAt: updated.updatedAt };
   }
 
+  /**
+   * Queues PDF/A archive conversion for a document when one is not already running.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns Queues PDF/A archive conversion for a document when one is not already running.
+   */
   async queueArchive(ownerUuid: string, uuid: string) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
@@ -1323,6 +1624,13 @@ export class DocumentService {
     return { document: this.toDocumentResponse(updated), job };
   }
 
+  /**
+   * Resolves the generated PDF/A archive when it is ready.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns Resolves the generated PDF/A archive when it is ready.
+   */
   async getArchive(ownerUuid: string, uuid: string) {
     const document = await this.findReadableDocument(ownerUuid, uuid);
     this.assertDocumentContentAvailable(document);
@@ -1350,6 +1658,13 @@ export class DocumentService {
     };
   }
 
+  /**
+   * Returns OCR text and extraction status for the document.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns OCR text and extraction status for the document.
+   */
   async getExtractedText(ownerUuid: string, uuid: string) {
     const document = await this.findReadableDocument(ownerUuid, uuid);
     const pages = await DocumentPage.findAll({ where: { documentUuid: uuid }, order: [['pageNumber', 'ASC']] });
@@ -1360,6 +1675,13 @@ export class DocumentService {
     });
   }
 
+  /**
+   * Returns an existing thumbnail or generates one while limiting concurrent work.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns An existing thumbnail or generates one while limiting concurrent work.
+   */
   async getThumbnail(ownerUuid: string, uuid: string) {
     const document = await this.findReadableDocument(ownerUuid, uuid);
 
@@ -1373,6 +1695,12 @@ export class DocumentService {
     };
   }
 
+  /**
+   * Returns a saved thumbnail or reuses an in-flight generation for this document.
+   *
+   * @param {import('../models/document.entity').Document} document - Document being read or updated.
+   * @returns {Promise<string>} - A saved thumbnail or reuses an in-flight generation for this document.
+   */
   private async ensureThumbnail(
     document: import('../models/document.entity').Document,
   ): Promise<string> {
@@ -1389,6 +1717,12 @@ export class DocumentService {
     return generation;
   }
 
+  /**
+   * Converts and stores a thumbnail, updating the document's thumbnail key.
+   *
+   * @param {import('../models/document.entity').Document} document - Document being read or updated.
+   * @returns {Promise<string>} - Converts and stores a thumbnail, updating the document's thumbnail key.
+   */
   private async generateThumbnail(
     document: import('../models/document.entity').Document,
   ): Promise<string> {
@@ -1414,6 +1748,11 @@ export class DocumentService {
     }
   }
 
+  /**
+   * Waits until the configured limit allows another thumbnail conversion.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   private async acquireThumbnailGenerationSlot(): Promise<void> {
     if (
       this.activeThumbnailGenerations >=
@@ -1425,6 +1764,11 @@ export class DocumentService {
     this.activeThumbnailGenerations += 1;
   }
 
+  /**
+   * Releases a conversion slot and wakes the next waiting thumbnail request.
+   *
+   * @returns {void} - No value.
+   */
   private releaseThumbnailGenerationSlot(): void {
     const next = this.thumbnailGenerationWaiters.shift();
     if (next) {
@@ -1434,6 +1778,13 @@ export class DocumentService {
     this.activeThumbnailGenerations -= 1;
   }
 
+  /**
+   * Returns pipeline state and recent processing events for the document.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns Pipeline state and recent processing events for the document.
+   */
   async getPipeline(ownerUuid: string, uuid: string) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) {
@@ -1442,6 +1793,13 @@ export class DocumentService {
     return this.pipeline.getForDocument(ownerUuid, uuid);
   }
 
+  /**
+   * Requeues eligible failed processing steps for the owned document.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns Requeues eligible failed processing steps for the owned document.
+   */
   async requeue(ownerUuid: string, uuid: string) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) {
@@ -1493,6 +1851,11 @@ export class DocumentService {
     };
   }
 
+  /**
+   * Reads the current malware-scanning policy, failing closed if it is unavailable.
+   *
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   private async isMalwareScanRequired(): Promise<boolean> {
     try {
       const value = await this.settings.get('security.malwareScan.required', 'true');
@@ -1505,6 +1868,12 @@ export class DocumentService {
     }
   }
 
+  /**
+   * Rejects actions on documents whose PDF is quarantined or not yet scanned.
+   *
+   * @param {import('../models/document.entity').Document} document - Document being read or updated.
+   * @returns {void} - No value.
+   */
   private assertDocumentContentAvailable(
     document: import('../models/document.entity').Document,
   ): void {
@@ -1516,6 +1885,13 @@ export class DocumentService {
     }
   }
 
+  /**
+   * Resolves an owned or shared document and hides inaccessible records as not found.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<Document>} - Resolves an owned or shared document and hides inaccessible records as not found.
+   */
   private async findReadableDocument(ownerUuid: string, uuid: string): Promise<Document> {
     const document = (await this.documents.findAccessibleCandidates([uuid]))[0];
     if (!document || (document.ownerUuid !== ownerUuid && !(await this.sharing.canReadDocument(ownerUuid, uuid)))) {
@@ -1524,12 +1900,27 @@ export class DocumentService {
     return document;
   }
 
+  /**
+   * Loads editable metadata and pending suggestions for a document.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns Loads editable metadata and pending suggestions for a document.
+   */
   async getMetadata(ownerUuid: string, uuid: string) {
     const document = await this.findReadableDocument(ownerUuid, uuid);
     if (document.ownerUuid !== ownerUuid) throw new NotFoundException('Document metadata not found');
     return this.metadata.getDocumentMetadata(ownerUuid, uuid);
   }
 
+  /**
+   * Saves document metadata, reconciles folder/tag links, and records audit changes.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {SetDocumentMetadataInput} input - Validated input describing the requested operation.
+   * @returns Saves document metadata, reconciles folder/tag links, and records audit changes.
+   */
   async setMetadata(ownerUuid: string, uuid: string, input: SetDocumentMetadataInput) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) {
@@ -1571,14 +1962,29 @@ export class DocumentService {
     return metadata;
   }
 
+  /**
+   * Checks whether saving metadata should clear the document's new marker.
+   *
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   private async shouldClearNewMarkerOnMetadataSave(): Promise<boolean> {
     return (await this.reviewStateClearPolicy()) === 'metadata';
   }
 
+  /**
+   * Checks whether opening a document should clear its new marker.
+   *
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   private async shouldClearNewMarkerOnOpen(): Promise<boolean> {
     return (await this.reviewStateClearPolicy()) === 'open';
   }
 
+  /**
+   * Returns the configured action that clears the new-document review marker.
+   *
+   * @returns {Promise<'metadata' | 'open'>} - The configured action that clears the new-document review marker.
+   */
   private async reviewStateClearPolicy(): Promise<'metadata' | 'open'> {
     try {
       const value = await this.settings.get('documents.reviewState.clearOn', 'metadata');
@@ -1593,6 +1999,15 @@ export class DocumentService {
     }
   }
 
+  /**
+   * Copies suggested values only into metadata fields that are currently empty.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {DocumentTitleSuggestion} suggestion - AI-generated metadata suggestion to apply or inspect.
+   * @param {ClassificationFeedbackField[]} onlyFields - Allowlist of metadata fields to apply.
+   * @returns {Promise<{ appliedFields: string[] }>} - Copies suggested values only into metadata fields that are currently empty.
+   */
   async applySuggestionToEmptyFields(
     ownerUuid: string,
     uuid: string,
@@ -1684,6 +2099,14 @@ export class DocumentService {
     return { appliedFields };
   }
 
+  /**
+   * Records which documents the user exported and by which export operation.
+   *
+   * @param {string} ownerUuid - UUID of the user who owns the resource.
+   * @param {Array<import('../models/document.entity').Document>} documents - Document store or service used by this operation.
+   * @param {string} summary - Human-readable description of the event.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   private async recordExportAudit(
     ownerUuid: string,
     documents: Array<import('../models/document.entity').Document>,
@@ -1703,6 +2126,12 @@ export class DocumentService {
     );
   }
 
+  /**
+   * Lists metadata fields present in the submitted update for audit reporting.
+   *
+   * @param {SetDocumentMetadataInput} input - Validated input describing the requested operation.
+   * @returns {string[]} - Lists metadata fields present in the submitted update for audit reporting.
+   */
   private metadataFields(input: SetDocumentMetadataInput): string[] {
     const fields: string[] = [];
     if (input.documentTypeUuid !== undefined) fields.push('documentType');
@@ -1718,6 +2147,12 @@ export class DocumentService {
     return [...new Set(fields)];
   }
 
+  /**
+   * Lists fields populated by an AI metadata suggestion.
+   *
+   * @param {DocumentTitleSuggestion} suggestion - AI-generated metadata suggestion to apply or inspect.
+   * @returns {string[]} - Lists fields populated by an AI metadata suggestion.
+   */
   private suggestionFields(suggestion: DocumentTitleSuggestion): string[] {
     const fields = ['title'];
     if (suggestion.documentTypeUuid) fields.push('documentType');
@@ -1728,6 +2163,12 @@ export class DocumentService {
     return fields;
   }
 
+  /**
+   * Persists a document audit event through the audit service.
+   *
+   * @param {Parameters<DocumentAuditService['record']>[0]} input - Validated input describing the requested operation.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   private async recordAudit(input: Parameters<DocumentAuditService['record']>[0]): Promise<void> {
     try {
       await this.audit.record(input);
@@ -1739,6 +2180,14 @@ export class DocumentService {
     }
   }
 
+  /**
+   * Converts a document model and optional derived data into the public API shape.
+   *
+   * @param {import('../models/document.entity').Document} document - Document being read or updated.
+   * @param {DocumentMetadataSummary} metadataSummary - Optional metadata summary included in the document response.
+   * @param {string | null} calendarEventUrl - Calendar URL associated with the document.
+   * @returns {DocumentResponse} - Converts a document model and optional derived data into the public API shape.
+   */
   private toDocumentResponse(
     document: import('../models/document.entity').Document,
     metadataSummary?: DocumentMetadataSummary,
@@ -1782,6 +2231,12 @@ export class DocumentService {
     };
   }
 
+  /**
+   * Converts a document into the restricted shape exposed to share recipients.
+   *
+   * @param {import('../models/document.entity').Document} document - Document being read or updated.
+   * @returns {DocumentResponse} - Converts a document into the restricted shape exposed to share recipients.
+   */
   private toSharedDocumentResponse(
     document: import('../models/document.entity').Document,
   ): DocumentResponse {
@@ -1798,21 +2253,46 @@ export class DocumentService {
     };
   }
 
+  /**
+   * Builds the API route for a document thumbnail.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {string} - Builds the API route for a document thumbnail.
+   */
   private thumbnailUrl(uuid: string): string {
     const apiPrefix = this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
     return `/${apiPrefix}/documents/${uuid}/thumbnail`;
   }
 
+  /**
+   * Builds the API route for a generated PDF/A archive.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {string} - Builds the API route for a generated PDF/A archive.
+   */
   private archiveUrl(uuid: string): string {
     const apiPrefix = this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
     return `/${apiPrefix}/documents/${uuid}/archive`;
   }
 
+  /**
+   * Builds the API route for a document's calendar event.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {string} - Builds the API route for a document's calendar event.
+   */
   private calendarUrl(uuid: string): string {
     const apiPrefix = this.config.get<string>(ConfigKeys.API_PREFIX) ?? 'api/v1';
     return `/${apiPrefix}/calendar/documents/${uuid}/ics`;
   }
 
+  /**
+   * Extracts a short excerpt around the first matching query term.
+   *
+   * @param {string} text - Extracted or user-entered text to process.
+   * @param {string} query - Validated search or document-list criteria.
+   * @returns {string} - Extracts a short excerpt around the first matching query term.
+   */
   private createSnippet(text: string, query: string): string {
     const normalized = text.replace(/\s+/g, ' ').trim();
     if (normalized.length <= 320) return normalized;
@@ -1827,6 +2307,12 @@ export class DocumentService {
     return `${start > 0 ? '…' : ''}${normalized.slice(start, end)}${end < normalized.length ? '…' : ''}`;
   }
 
+  /**
+   * Determines whether a metadata value can be filled by an AI suggestion.
+   *
+   * @param {unknown} value - Value to store, parse, or compare.
+   * @returns {boolean} - true when the operation succeeds; otherwise, false.
+   */
   private isEmptyMetadataValue(value: unknown): boolean {
     return (
       value === null ||

@@ -13,6 +13,7 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
 
+/** Loads search filters and submits text/semantic document searches. */
 @Injectable({ providedIn: 'root' })
 export class SearchService {
   readonly result = signal<DocumentSearchResponse | null>(null);
@@ -21,6 +22,12 @@ export class SearchService {
   readonly vocabulary = signal<VocabularyResponse | null>(null);
   readonly issuers = signal<Issuer[]>([]);
 
+  /**
+   * Injects API access and loads the filter vocabularies at service startup.
+   *
+   * @param {HttpClient} http - HTTP client used to call the API.
+   * @param {ApplicationService} appService - Application service used to construct API URLs.
+   */
   constructor(
     private readonly http: HttpClient,
     private readonly appService: ApplicationService,
@@ -28,6 +35,11 @@ export class SearchService {
     void this.loadVocabulary();
   }
 
+  /**
+   * Loads document type/category vocabulary before loading issuer filters.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async loadVocabulary(): Promise<void> {
     try {
       const response = await firstValueFrom(
@@ -43,6 +55,11 @@ export class SearchService {
     }
   }
 
+  /**
+   * Loads issuer choices used to narrow search results.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async loadIssuers(): Promise<void> {
     try {
       const response = await firstValueFrom(
@@ -54,6 +71,19 @@ export class SearchService {
     }
   }
 
+  /**
+   * Validates filters, calls document search, and stores results or a UI error.
+   *
+   * @param {string} query - Validated search or document-list criteria.
+   * @param {{
+   * documentTypeUuid?: string;
+   * categoryUuid?: string;
+   * issuerUuid?: string;
+   * tagUuids?: string[];
+   * semanticThreshold?: number;
+   * }} filters - Optional filters to apply to the search.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async search(
     query: string,
     filters: {

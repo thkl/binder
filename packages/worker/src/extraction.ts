@@ -8,6 +8,12 @@ export interface ExtractedPdfPages {
   requiresOcr: boolean;
 }
 
+/**
+ * Validates a PDF signature and confirms MuPDF can open at least one page.
+ *
+ * @param {Buffer} pdfData - PDF bytes to validate or inspect.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function validatePdfBuffer(pdfData: Buffer): Promise<void> {
   const header = pdfData.subarray(0, Math.min(pdfData.length, 1024));
   if (!header.includes(Buffer.from('%PDF-'))) {
@@ -26,10 +32,10 @@ export async function validatePdfBuffer(pdfData: Buffer): Promise<void> {
 }
 
 /**
- * Extracts searchable text from every page of a PDF.
+ * Extracts and normalizes text page by page without altering the source PDF.
  *
- * The original PDF is never modified. The returned page text is normalized
- * before it is persisted by the pipeline worker.
+ * @param {string} storageKey - Storage-relative key of the document or derived file.
+ * @returns {Promise<ExtractedPdfPages>} - Normalized text for each page, combined text, and whether OCR is required.
  */
 export async function extractPdfPages(storageKey: string): Promise<ExtractedPdfPages> {
   const storagePath = resolveStoragePath(storageKey);
@@ -68,10 +74,10 @@ export async function extractPdfPages(storageKey: string): Promise<ExtractedPdfP
 }
 
 /**
- * MuPDF uses the replacement character when a PDF text layer contains glyphs
- * without a usable Unicode mapping. Such text looks like `����` in the UI and
- * is not useful for search or AI analysis, even though it is technically
- * non-empty. Send it through OCR instead of persisting the broken text.
+ * Determines whether extracted text is empty or too corrupted to search reliably. MuPDF uses the replacement character when a PDF text layer has glyphs without a usable Unicode mapping. That text cannot support useful search or AI analysis, so it must go through OCR even when it is technically non-empty.
+ *
+ * @param {string} text - Extracted or user-entered text to process.
+ * @returns {boolean} - `true` when the extracted text needs OCR; otherwise, `false`.
  */
 export function requiresOcr(text: string): boolean {
   if (!text.trim()) return true;

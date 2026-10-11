@@ -20,8 +20,19 @@ type AuthenticatedRequest = SessionRequest & Request & { user?: ScopedUser };
  */
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
+  /**
+   * Resolves the persisted session identity through the authentication service.
+   *
+   * @param {AuthenticationService} authentication - Authentication service used to validate the session.
+   */
   constructor(private readonly authentication: AuthenticationService) {}
 
+  /**
+   * Rejects missing, inactive, or password-change-required sessions before the route runs.
+   *
+   * @param {ExecutionContext} context - Framework execution context for the current request.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const userId = request.session?.userId;
@@ -52,6 +63,12 @@ export class AuthenticationGuard implements CanActivate {
     return true;
   }
 
+  /**
+   * Removes a session from the store after its user is no longer valid.
+   *
+   * @param {AuthenticatedRequest} request - Incoming HTTP request to inspect.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   private async destroySession(request: AuthenticatedRequest): Promise<void> {
     if (!request.session) {
       return;

@@ -45,7 +45,14 @@ const FINANCIAL_CONTEXT_MARKERS = [
   'beneficiary',
 ];
 
-/** Assigns an existing issuer only when the extracted text contains a unique, strong match. */
+/**
+ * Scores configured issuers against extracted text and stores a unique, confident match. Existing issuer metadata is left unchanged when no candidate meets the threshold.
+ *
+ * @param {string} documentUuid - UUID of the document.
+ * @param {string} ownerUuid - UUID of the user who owns the resource.
+ * @param {string} text - Extracted or user-entered text to process.
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function matchDocumentIssuer(
   documentUuid: string,
   ownerUuid: string,
@@ -119,6 +126,13 @@ export async function matchDocumentIssuer(
   }
 }
 
+/**
+ * Returns a normalized issuer candidate and confidence score, or `null` below the match threshold.
+ *
+ * @param {Issuer} issuer - Issuer record being evaluated.
+ * @param {string} text - Extracted or user-entered text to process.
+ * @returns {Candidate | null} - A normalized issuer candidate and confidence score, or `null` below the match threshold.
+ */
 export function scoreIssuer(issuer: Issuer, text: string): Candidate | null {
   const nameMatch = matchValue(text, issuer.name);
   if (!nameMatch.matched) return null;
@@ -170,6 +184,12 @@ export function scoreIssuer(issuer: Issuer, text: string): Candidate | null {
   return { issuer, score: Math.min(1, score), matchedFields };
 }
 
+/**
+ * Normalizes punctuation, spacing, and diacritics for stable issuer-name comparisons.
+ *
+ * @param {string} value - Value to store, parse, or compare.
+ * @returns {string} - Normalizes punctuation, spacing, and diacritics for stable issuer-name comparisons.
+ */
 export function normalize(value: string): string {
   return value
     .normalize('NFKD')

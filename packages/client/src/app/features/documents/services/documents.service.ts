@@ -41,6 +41,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
 import { InboxService } from '../../inbox/services/inbox.service';
 
+/** Loads document lists and coordinates document actions with the API. */
 @Injectable({ providedIn: 'root' })
 export class DocumentsService {
   readonly page = signal<DocumentListResponse | null>(null);
@@ -57,21 +58,48 @@ export class DocumentsService {
   private readonly document = inject(DOCUMENT);
   private currentQuery = DocumentListQuerySchema.parse({});
 
+  /**
+   * Provides HTTP access for validated document API requests.
+   *
+   * @param {HttpClient} http - HTTP client used to call the API.
+   */
   constructor(private readonly http: HttpClient) {}
 
+  /**
+   * Clears the duplicate-upload notice after the user has seen it.
+   *
+   * @returns {void} - No value.
+   */
   clearUploadNotice(): void {
     this.duplicateUpload.set(false);
     this.duplicateUploadUuid.set(null);
   }
 
+  /**
+   * Returns the validated query currently used for document listing.
+   *
+   * @returns {DocumentListQuery} - The validated query currently used for document listing.
+   */
   getCurrentQuery(): DocumentListQuery {
     return this.currentQuery;
   }
 
+  /**
+   * Builds the API URL used by the browser PDF viewer for a document.
+   *
+   * @param {string} documentUuid - UUID of the document.
+   * @returns {string} - Builds the API URL used by the browser PDF viewer for a document.
+   */
   fileUrl(documentUuid: string): string {
     return this.appService.getApiUrl('v1', `documents/${documentUuid}/file`);
   }
 
+  /**
+   * Loads a document page, then refreshes its facets and storage health information.
+   *
+   * @param {Partial<DocumentListQuery>} query - Validated search or document-list criteria.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async load(query: Partial<DocumentListQuery> = {}): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
@@ -97,6 +125,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Fetches the version history for one document.
+   *
+   * @param {string} documentUuid - UUID of the document.
+   * @returns {Promise<BinderDocument[]>} - Fetches the version history for one document.
+   */
   async loadVersions(documentUuid: string): Promise<BinderDocument[]> {
     const response = await firstValueFrom(
       this.http.get<ApiResponse<unknown>>(
@@ -107,6 +141,14 @@ export class DocumentsService {
     return DocumentVersionListResponseSchema.parse(response.data).items;
   }
 
+  /**
+   * Marks an existing document as a version of another document.
+   *
+   * @param {string} documentUuid - UUID of the document.
+   * @param {string} targetDocumentUuid - UUID of the target document.
+   * @param {boolean} copyMetadata - Whether metadata should be copied to the resulting document.
+   * @returns {Promise<BinderDocument>} - Marks an existing document as a version of another document.
+   */
   async assignAsVersion(
     documentUuid: string,
     targetDocumentUuid: string,
@@ -123,6 +165,14 @@ export class DocumentsService {
     return DocumentSchema.parse(response.data);
   }
 
+  /**
+   * Splits a PDF after the selected page and refreshes the current list on success.
+   *
+   * @param {string} documentUuid - UUID of the document.
+   * @param {number} splitAfterPage - Page after which to split the source PDF.
+   * @param {boolean} autoApplySuggestions - Whether AI suggestions should be applied to the new document.
+   * @returns {Promise<{ remainingDocument: BinderDocument; extractedDocument: BinderDocument } | null>} - Splits a PDF after the selected page and refreshes the current list on success.
+   */
   async splitDocument(
     documentUuid: string,
     splitAfterPage: number,
@@ -150,6 +200,16 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Inserts one PDF into another at the requested page and refreshes the current list.
+   *
+   * @param {string} targetDocumentUuid - UUID of the target document.
+   * @param {string} sourceDocumentUuid - UUID of the source document.
+   * @param {number} insertAfterPage - Target page after which source PDF pages are inserted.
+   * @param {boolean} copyMetadata - Whether metadata should be copied to the resulting document.
+   * @param {boolean} autoApplySuggestions - Whether AI suggestions should be applied to the new document.
+   * @returns {Promise<BinderDocument | null>} - Inserts one PDF into another at the requested page and refreshes the current list.
+   */
   async composeDocument(
     targetDocumentUuid: string,
     sourceDocumentUuid: string,
@@ -181,6 +241,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Loads filter counts for the same criteria as the current document page.
+   *
+   * @param {DocumentListQuery} query - Validated search or document-list criteria.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   private async loadFacets(query: DocumentListQuery): Promise<void> {
     try {
       const response = await firstValueFrom(
@@ -199,6 +265,11 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Loads storage health warnings shown alongside document results.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   private async loadStorageIssues(): Promise<void> {
     try {
       const response = await firstValueFrom(
@@ -213,6 +284,13 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Converts validated list filters into the API's query-string format.
+   *
+   * @param {DocumentListQuery} query - Validated search or document-list criteria.
+   * @param {boolean} includePagination - Whether to include page and ordering parameters.
+   * @returns {URLSearchParams} - Converts validated list filters into the API's query-string format.
+   */
   private buildParams(query: DocumentListQuery, includePagination = true): URLSearchParams {
     const params = new URLSearchParams();
     if (includePagination) {
@@ -238,10 +316,24 @@ export class DocumentsService {
     return params;
   }
 
+  /**
+   * Encodes a list filter using the comma-separated format expected by the API.
+   *
+   * @param {URLSearchParams} params - URL query parameters to populate.
+   * @param {string} key - Setting, header, or metadata key to read or update.
+   * @param {string[] | undefined} values - Values to store, remove, or encode.
+   * @returns {void} - No value.
+   */
   private setArrayParam(params: URLSearchParams, key: string, values: string[] | undefined): void {
     if (values !== undefined) params.set(key, values.join(','));
   }
 
+  /**
+   * Requeues a failed document and refreshes its visible list data.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<BinderDocument | null>} - Requeues a failed document and refreshes its visible list data.
+   */
   async requeueDocument(uuid: string): Promise<BinderDocument | null> {
     this.error.set(null);
     try {
@@ -263,6 +355,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Requests PDF/A generation and polls until the archive is ready, failed, or timed out.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async generateArchive(uuid: string): Promise<boolean> {
     this.error.set(null);
     try {
@@ -275,6 +373,8 @@ export class DocumentsService {
       );
       await this.load();
 
+      // Conversion runs asynchronously, so check for a terminal worker state
+      // before giving up after this bounded wait.
       for (let attempt = 0; attempt < 30; attempt += 1) {
         await this.delay(1_000);
         const document = await this.getDocument(uuid);
@@ -299,6 +399,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Fetches and validates the latest state for a single document.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<BinderDocument | null>} - Fetches and validates the latest state for a single document.
+   */
   private async getDocument(uuid: string): Promise<BinderDocument | null> {
     const response = await firstValueFrom(
       this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1', `documents/${uuid}`), {
@@ -308,6 +414,12 @@ export class DocumentsService {
     return DocumentSchema.parse(response.data);
   }
 
+  /**
+   * Loads one document and stores a readable error instead of throwing to the view.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<BinderDocument | null>} - Loads one document and stores a readable error instead of throwing to the view.
+   */
   async loadDocument(uuid: string): Promise<BinderDocument | null> {
     try {
       return await this.getDocument(uuid);
@@ -317,6 +429,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Refreshes one document and replaces its entry in the current page.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<BinderDocument | null>} - Refreshes one document and replaces its entry in the current page.
+   */
   async refreshDocument(uuid: string): Promise<BinderDocument | null> {
     const document = await this.loadDocument(uuid);
     if (document) {
@@ -325,10 +443,22 @@ export class DocumentsService {
     return document;
   }
 
+  /**
+   * Refreshes several documents concurrently after a bulk background operation.
+   *
+   * @param {string[]} uuids - Resource UUIDs included in the operation.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async refreshDocuments(uuids: string[]): Promise<void> {
     await Promise.all(uuids.map((uuid) => this.refreshDocument(uuid)));
   }
 
+  /**
+   * Marks a document as opened and updates its new/unread state in the current page.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async markOpened(uuid: string): Promise<boolean> {
     try {
       const response = await firstValueFrom(
@@ -358,6 +488,11 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Reloads the current page and clamps the page index if its last rows disappeared.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async refreshCurrentPage(): Promise<void> {
     await this.load();
 
@@ -367,6 +502,12 @@ export class DocumentsService {
     await this.load({ page: page.totalPages || 1 });
   }
 
+  /**
+   * Replaces a document row in the cached page without reloading every list facet.
+   *
+   * @param {BinderDocument} document - Document being read or updated.
+   * @returns {void} - No value.
+   */
   private updateDocumentInPage(document: BinderDocument): void {
     this.page.update((page) =>
       page
@@ -378,10 +519,22 @@ export class DocumentsService {
     );
   }
 
+  /**
+   * Waits between asynchronous archive status checks.
+   *
+   * @param {number} milliseconds - Delay duration in milliseconds.
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   private delay(milliseconds: number): Promise<void> {
     return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
   }
 
+  /**
+   * Applies a bulk document action and reloads the affected list state.
+   *
+   * @param {DocumentBulkActionInput} input - Validated input describing the requested operation.
+   * @returns {Promise<DocumentBulkActionResponse | null>} - Applies a bulk document action and reloads the affected list state.
+   */
   async bulkAction(input: DocumentBulkActionInput): Promise<DocumentBulkActionResponse | null> {
     this.error.set(null);
     try {
@@ -401,6 +554,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Previews bulk metadata changes without applying them.
+   *
+   * @param {BulkMetadataInput} input - Validated input describing the requested operation.
+   * @returns {Promise<BulkMetadataPreviewResponse | null>} - Previews bulk metadata changes without applying them.
+   */
   async previewBulkMetadata(input: BulkMetadataInput): Promise<BulkMetadataPreviewResponse | null> {
     this.error.set(null);
     try {
@@ -418,6 +577,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Applies bulk metadata changes and reloads the document page.
+   *
+   * @param {BulkMetadataInput} input - Validated input describing the requested operation.
+   * @returns {Promise<BulkMetadataApplyResponse | null>} - Applies bulk metadata changes and reloads the document page.
+   */
   async applyBulkMetadata(input: BulkMetadataInput): Promise<BulkMetadataApplyResponse | null> {
     this.error.set(null);
     try {
@@ -437,6 +602,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Reverts a prior bulk change set and reloads the current page.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<DocumentChangeSetRollbackResponse | null>} - Reverts a prior bulk change set and reloads the current page.
+   */
   async rollbackChangeSet(uuid: string): Promise<DocumentChangeSetRollbackResponse | null> {
     this.error.set(null);
     try {
@@ -456,6 +627,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Downloads a ZIP containing the selected documents.
+   *
+   * @param {string[]} documentUuids - Document UUIDs included in the operation.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async exportSelected(documentUuids: string[]): Promise<boolean> {
     this.exporting.set(true);
     this.error.set(null);
@@ -480,6 +657,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Downloads a ZIP containing all documents matching the supplied filters.
+   *
+   * @param {Partial<DocumentListQuery>} query - Validated search or document-list criteria.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async exportFiltered(query: Partial<DocumentListQuery> = {}): Promise<boolean> {
     this.exporting.set(true);
     this.error.set(null);
@@ -506,6 +689,13 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Updates one document's title and reports validation or API errors in service state.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @param {string} title - Title to apply or include in the notification.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async updateTitle(uuid: string, title: string): Promise<boolean> {
     const input = SetDocumentTitleInputSchema.safeParse({ title });
     if (!input.success) {
@@ -529,6 +719,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Requests an AI title suggestion and validates the returned payload.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<DocumentTitleSuggestion | null>} - Requests an AI title suggestion and validates the returned payload.
+   */
   async suggestTitle(uuid: string): Promise<DocumentTitleSuggestion | null> {
     this.error.set(null);
     try {
@@ -546,6 +742,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Clears the saved AI suggestion for a document.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<boolean | null>} - Clears the saved AI suggestion for a document.
+   */
   async clearSuggestion(uuid: string): Promise<boolean | null> {
     this.error.set(null);
     try {
@@ -562,6 +764,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Uploads a PDF, tracks duplicate responses, and refreshes the current list.
+   *
+   * @param {File} file - PDF or other file supplied for this operation.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async upload(file: File): Promise<boolean> {
     this.uploading.set(true);
     this.error.set(null);
@@ -591,6 +799,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Detects the API's duplicate-upload response shape.
+   *
+   * @param {unknown} error - Error value to handle or convert into a user-facing message.
+   * @returns {error is HttpErrorResponse} - Detects the API's duplicate-upload response shape.
+   */
   private isDuplicateUploadError(error: unknown): error is HttpErrorResponse {
     return (
       error instanceof HttpErrorResponse &&
@@ -599,6 +813,12 @@ export class DocumentsService {
     );
   }
 
+  /**
+   * Deletes a document and refreshes the current page when removal succeeds.
+   *
+   * @param {string} uuid - UUID of the target document or record.
+   * @returns {Promise<boolean>} - true when the operation succeeds; otherwise, false.
+   */
   async remove(uuid: string): Promise<boolean> {
     this.error.set(null);
 
@@ -618,6 +838,12 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * Converts HTTP or parsing failures to text suitable for document views.
+   *
+   * @param {unknown} error - Error value to handle or convert into a user-facing message.
+   * @returns {string} - Converts HTTP or parsing failures to text suitable for document views.
+   */
   private getErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse && error.status === 401) {
       return 'Your session has expired. Please sign in again.';
@@ -628,6 +854,13 @@ export class DocumentsService {
     return 'The documents could not be loaded. Please try again.';
   }
 
+  /**
+   * Creates a temporary browser download for an archive response.
+   *
+   * @param {HttpResponse<Blob>} response - HTTP response to populate with headers or content.
+   * @param {string} fallbackFilename - Filename to use when the response has no suggested filename.
+   * @returns {void} - No value.
+   */
   private downloadArchive(response: HttpResponse<Blob>, fallbackFilename: string): void {
     if (!response.body) {
       throw new Error('The export archive was empty');
@@ -645,6 +878,12 @@ export class DocumentsService {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  /**
+   * Parses a filename from Content-Disposition, including UTF-8 encoded names.
+   *
+   * @param {string | null} contentDisposition - Content-Disposition header to parse for a filename.
+   * @returns {string | null} - Parses a filename from Content-Disposition, including UTF-8 encoded names.
+   */
   private archiveFilename(contentDisposition: string | null): string | null {
     if (!contentDisposition) return null;
 

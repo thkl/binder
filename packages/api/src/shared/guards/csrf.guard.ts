@@ -6,10 +6,22 @@ import { BinderConfig, ConfigKeys } from '../config/config.keys';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+/** Protects cookie-authenticated state changes against cross-site request forgery. */
 @Injectable()
 export class CsrfGuard implements CanActivate {
+  /**
+   * Uses the application origin configuration to validate trusted browser requests.
+   *
+   * @param {ConfigService<BinderConfig>} config - Runtime or application configuration used by this operation.
+   */
   constructor(private readonly config: ConfigService<BinderConfig>) {}
 
+  /**
+   * Validates a session CSRF token or one of the narrowly defined trusted-origin exceptions.
+   *
+   * @param {ExecutionContext} context - Framework execution context for the current request.
+   * @returns {boolean} - true when the operation succeeds; otherwise, false.
+   */
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
     if (!MUTATING_METHODS.has(request.method.toUpperCase())) return true;
@@ -46,6 +58,12 @@ export class CsrfGuard implements CanActivate {
     throw new ForbiddenException('CSRF validation failed');
   }
 
+  /**
+   * Matches the request Origin or Referer to the configured application origin.
+   *
+   * @param {Request} request - Incoming HTTP request to inspect.
+   * @returns {boolean} - true when the operation succeeds; otherwise, false.
+   */
   private isTrustedBrowserOrigin(request: Request): boolean {
     const configuredRoot = this.config.get<string>(ConfigKeys.ROOT_URI);
     if (!configuredRoot) return false;
@@ -69,10 +87,23 @@ export class CsrfGuard implements CanActivate {
     }
   }
 
+  /**
+   * Returns the first value from a potentially repeated HTTP header.
+   *
+   * @param {string | string[] | undefined} value - Value to store, parse, or compare.
+   * @returns {string | undefined} - The first value from a potentially repeated HTTP header.
+   */
   private headerValue(value: string | string[] | undefined): string | undefined {
     return Array.isArray(value) ? value[0] : value;
   }
 
+  /**
+   * Compares CSRF tokens without exposing an early-exit timing difference.
+   *
+   * @param {string} left - First string or value to compare.
+   * @param {string} right - Second string or value to compare.
+   * @returns {boolean} - true when the operation succeeds; otherwise, false.
+   */
   private tokensMatch(left: string, right: string): boolean {
     const leftBuffer = Buffer.from(left, 'utf8');
     const rightBuffer = Buffer.from(right, 'utf8');

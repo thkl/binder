@@ -91,6 +91,11 @@ export class MaintenanceScheduler {
   private activeTick?: Promise<void>;
   private lastPipelineJobCleanupDay?: string;
 
+  /**
+   * Initializes recovery state and starts polling scheduled maintenance requests.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async start(): Promise<void> {
     try {
       await this.ensureRecoverySchema();
@@ -164,6 +169,11 @@ export class MaintenanceScheduler {
     });
   }
 
+  /**
+   * Stops future maintenance ticks and waits for any active tick to finish.
+   *
+   * @returns {Promise<void>} - Resolves when the operation completes.
+   */
   async stop(): Promise<void> {
     this.stopping = true;
     if (this.timer) clearInterval(this.timer);

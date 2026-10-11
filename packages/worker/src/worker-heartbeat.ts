@@ -5,11 +5,21 @@ import { logger } from './logger.js';
 let heartbeatTimer: NodeJS.Timeout | undefined;
 const startedAt = new Date();
 
+/**
+ * Writes an initial worker heartbeat and schedules updates every 15 seconds.
+ *
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function startWorkerHeartbeat(): Promise<void> {
   await writeHeartbeat();
   heartbeatTimer = setInterval(() => void writeHeartbeat(), 15_000);
 }
 
+/**
+ * Stops heartbeat updates and removes this worker's database registration.
+ *
+ * @returns {Promise<void>} - Resolves when the operation completes.
+ */
 export async function stopWorkerHeartbeat(): Promise<void> {
   if (heartbeatTimer) clearInterval(heartbeatTimer);
   heartbeatTimer = undefined;
