@@ -99,6 +99,7 @@ export class HomeComponent {
    */
   constructor() {
     void this.savedSearches.load();
+    void this.documents.loadSupportedFormats();
   }
 
   readonly drawerDocument = computed(() => {
@@ -216,21 +217,26 @@ export class HomeComponent {
 
     if (files.length === 0) return;
 
-    const pdfFiles = files.filter((file) => this.isPdf(file));
-    const invalidFileCount = files.length - pdfFiles.length;
-    this.uploadQueueTotal.set(pdfFiles.length);
+    await this.documents.loadSupportedFormats();
+    const supportedFiles = files.filter((file) => this.documents.isLikelySupportedUpload(file));
+    const invalidFileCount = files.length - supportedFiles.length;
+    this.uploadQueueTotal.set(supportedFiles.length);
 
     if (invalidFileCount > 0) {
-      this.uploadError.set(this.i18n.t('home.uploadOnlyPdf'));
+      this.uploadError.set(
+        this.i18n.t('home.uploadUnsupportedFormats', {
+          formats: this.documents.supportedUploadFormatNames(),
+        }),
+      );
     }
 
-    if (pdfFiles.length === 0) return;
+    if (supportedFiles.length === 0) return;
 
     this.uploadingFiles.set(true);
     let failedCount = 0;
 
     try {
-      for (const file of pdfFiles) {
+      for (const file of supportedFiles) {
         const uploaded = await this.documents.upload(file);
 
         if (uploaded) {
@@ -252,10 +258,6 @@ export class HomeComponent {
     if (failedCount > 0 && !this.uploadError() && !this.documents.duplicateUpload()) {
       this.uploadError.set(this.documents.error() ?? this.i18n.t('home.uploadFailed'));
     }
-  }
-
-  private isPdf(file: File): boolean {
-    return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
   }
 
   async saveCurrentSearch(name: string): Promise<void> {

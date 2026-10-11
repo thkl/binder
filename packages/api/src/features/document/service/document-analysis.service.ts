@@ -17,6 +17,7 @@ import { BinderLogger } from '../../../shared/service/logger.helper';
 import { DocumentStore } from '../store/document.store';
 import { DocumentAnalysisSessionStore } from '../store/document-analysis-session.store';
 import { DocumentStorageService } from './document-storage.service';
+import { DocumentFormatRegistry } from './document-format.registry';
 import type { DocumentAnalysisSession } from '../models/document-analysis-session.entity';
 
 interface UploadedFileResponse {
@@ -38,6 +39,7 @@ export class DocumentAnalysisService {
     private readonly documents: DocumentStore,
     private readonly sessions: DocumentAnalysisSessionStore,
     private readonly storage: DocumentStorageService,
+    private readonly formats: DocumentFormatRegistry,
     private readonly settings: ApplicationSettingsService,
     private readonly aiProviders: AiProviderService,
   ) {}
@@ -189,9 +191,7 @@ export class DocumentAnalysisService {
   private async loadPdf(ownerUuid: string, documentUuid: string) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, documentUuid);
     if (!document) throw new NotFoundException('Document not found');
-    if (document.mimeType !== 'application/pdf') {
-      throw new BadRequestException('PDF analysis is currently available for PDF documents only');
-    }
+    this.formats.getAdapterForMimeType(document.mimeType, 'file-analysis');
     if (document.status === 'uploaded' || document.status === 'scanning') {
       throw new BadRequestException('The document is waiting for malware scanning');
     }

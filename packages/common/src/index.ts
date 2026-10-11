@@ -7,6 +7,68 @@
  */
 import { z } from 'zod';
 
+/** Stable identifiers used to select document-format implementations. */
+export const DocumentFormatIdSchema = z.string().trim().min(1).max(64).regex(/^[a-z][a-z0-9-]*$/u);
+export type DocumentFormatId = z.infer<typeof DocumentFormatIdSchema>;
+
+/** Operations that clients and processing services may offer for a format. */
+export const DocumentFormatCapabilitySchema = z.enum([
+  'upload',
+  'download',
+  'preview',
+  'text-extraction',
+  'ocr',
+  'file-analysis',
+  'page-count',
+  'page-rotation',
+  'split',
+  'compose',
+  'pdfa',
+]);
+export type DocumentFormatCapability = z.infer<typeof DocumentFormatCapabilitySchema>;
+
+/** Client-safe description of one format supported by the running server. */
+export const DocumentFormatDescriptorSchema = z.object({
+  id: DocumentFormatIdSchema,
+  displayName: z.string().trim().min(1).max(100),
+  extensions: z.array(z.string().regex(/^\.[a-z0-9]+$/u)).min(1),
+  mimeTypes: z.array(z.string().regex(/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/iu)).min(1),
+  capabilities: z.array(DocumentFormatCapabilitySchema),
+});
+export type DocumentFormatDescriptor = z.infer<typeof DocumentFormatDescriptorSchema>;
+
+/** Format discovery response returned by the authenticated API. */
+export const DocumentFormatsResponseSchema = z.object({
+  formats: z.array(DocumentFormatDescriptorSchema),
+});
+export type DocumentFormatsResponse = z.infer<typeof DocumentFormatsResponseSchema>;
+
+/** The reference format descriptor; executable PDF operations remain package-local. */
+export const PDF_DOCUMENT_FORMAT: DocumentFormatDescriptor = {
+  id: 'pdf',
+  displayName: 'PDF',
+  extensions: ['.pdf'],
+  mimeTypes: ['application/pdf'],
+  capabilities: [
+    'upload',
+    'download',
+    'preview',
+    'text-extraction',
+    'ocr',
+    'file-analysis',
+    'page-count',
+    'page-rotation',
+    'split',
+    'compose',
+    'pdfa',
+  ],
+};
+
+/** Canonical descriptors compiled into this release and exposed by the API. */
+export const DOCUMENT_FORMAT_CATALOG: readonly DocumentFormatDescriptor[] = [
+  PDF_DOCUMENT_FORMAT,
+];
+
 export const DocumentStatusSchema = z.enum([
   'uploaded',
   'scanning',
@@ -183,7 +245,7 @@ export const DocumentSchema = z.object({
   archiveStatus: DocumentArchiveStatusSchema,
   archiveError: z.string().max(2000).nullable(),
   calendarEventUrl: z.string().min(1).nullable().optional(),
-  pageCount: z.number().int().min(1),
+  pageCount: z.number().int().min(1).nullable(),
   issuerUuid: z.uuid().nullable(),
   isNew: z.boolean(),
   metadataSummary: DocumentMetadataSummarySchema,
@@ -394,8 +456,17 @@ export const DocumentExtractedTextPageSchema = z.object({
 });
 export type DocumentExtractedTextPage = z.infer<typeof DocumentExtractedTextPageSchema>;
 
+export const DocumentExtractedTextSegmentSchema = z.object({
+  segmentIndex: z.number().int().positive(),
+  pageNumber: z.number().int().positive().nullable(),
+  text: z.string(),
+});
+export type DocumentExtractedTextSegment = z.infer<typeof DocumentExtractedTextSegmentSchema>;
+
 export const DocumentExtractedTextResponseSchema = z.object({
   text: z.string(),
+  segments: z.array(DocumentExtractedTextSegmentSchema),
+  /** Backward-compatible list of segments that map to physical pages. */
   pages: z.array(DocumentExtractedTextPageSchema),
 });
 export type DocumentExtractedTextResponse = z.infer<typeof DocumentExtractedTextResponseSchema>;

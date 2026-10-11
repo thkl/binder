@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { DocumentStoreModule } from './document.store.module';
 import { DocumentService } from './service/document.service';
 import { DocumentStorageService } from './service/document-storage.service';
+import { DocumentFormatRegistry } from './service/document-format.registry';
+import { PdfDocumentFormatAdapter } from './service/pdf-document-format.adapter';
 import { PipelineServiceModule } from '../pipeline/pipeline.service.module';
 import { MetadataServiceModule } from '../metadata/metadata.service.module';
 import { SharedModule } from '../../shared/shared.service.module';
@@ -38,6 +40,8 @@ import { SharingServiceModule } from '../sharing/sharing.service.module';
   providers: [
     DocumentService,
     DocumentStorageService,
+    PdfDocumentFormatAdapter,
+    DocumentFormatRegistry,
     SemanticSearchService,
     TitleSuggestionService,
     DocumentAnalysisService,
@@ -45,6 +49,8 @@ import { SharingServiceModule } from '../sharing/sharing.service.module';
   ],
   exports: [
     DocumentService,
+    DocumentStorageService,
+    DocumentFormatRegistry,
     TitleSuggestionService,
     DocumentAnalysisService,
     DocumentAuditServiceModule,

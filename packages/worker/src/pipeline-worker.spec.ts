@@ -92,6 +92,7 @@ function job(kind: ClaimedJob['kind'], overrides: Partial<ClaimedJob> = {}): Cla
     attempts: 1,
     maxAttempts: 3,
     storageKey: 'documents/2026/10/document-1.pdf',
+    mimeType: 'application/pdf',
     createdAt: now,
     ...overrides,
   };
@@ -137,10 +138,16 @@ describe('claimed document pipeline jobs', () => {
       expect.arrayContaining([
         expect.objectContaining({
           documentUuid: 'document-1',
+          segmentIndex: 1,
           pageNumber: 1,
           text: 'Invoice 2026',
         }),
-        expect.objectContaining({ documentUuid: 'document-1', pageNumber: 2, text: 'Payment due' }),
+        expect.objectContaining({
+          documentUuid: 'document-1',
+          segmentIndex: 2,
+          pageNumber: 2,
+          text: 'Payment due',
+        }),
       ]),
       expect.any(Object),
     );
@@ -154,6 +161,16 @@ describe('claimed document pipeline jobs', () => {
       expect.any(Object),
     );
     expect(mocks.documentUpdate).toHaveBeenCalledWith({ status: 'ready' }, expect.any(Object));
+  });
+
+  it('does not send a non-PDF document to the PDF extraction adapter', async () => {
+    await processClaimedJob(job('text-extraction', { mimeType: 'image/png' }));
+
+    expect(mocks.extractPdfPages).not.toHaveBeenCalled();
+    expect(mocks.pipelineJobUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'queued', lastError: expect.stringContaining('image/png') }),
+      expect.any(Object),
+    );
   });
 
   it('queues OCR when a valid PDF has no usable text layer', async () => {

@@ -18,7 +18,7 @@
     }
   </button>
 
-  @if (contentAvailable()) {
+  @if (contentAvailable() && canDownload()) {
     @if (archiveAvailable()) {
       <div class="download-control">
         <button
@@ -146,7 +146,7 @@
     </button>
   }
 
-  @if (document().pageCount > 1) {
+  @if (canSplit() && (document().pageCount ?? 0) > 1) {
     <button
       type="button"
       class="document-action"

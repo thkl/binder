@@ -48,6 +48,7 @@ import type { Readable } from 'node:stream';
 import type { Express } from 'express';
 import { DocumentStore } from '../store/document.store';
 import { DocumentStorageService } from './document-storage.service';
+import { DocumentFormatRegistry } from './document-format.registry';
 import { PipelineService } from '../../pipeline/service/pipeline.service';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { MetadataService } from '../../metadata/service/metadata.service';
@@ -107,6 +108,7 @@ export class DocumentService {
    * @param {Sequelize} sequelize - Database connection used for transactions.
    * @param {DocumentStore} documents - Document store or service used by this operation.
    * @param {DocumentStorageService} storage - Document storage service used to read or write files.
+   * @param {DocumentFormatRegistry} formats - Registry that identifies and validates uploaded content.
    * @param {PipelineService} pipeline - Pipeline service used to queue or inspect document work.
    * @param {MetadataService} metadata - Metadata service used to load or update document fields.
    * @param {SemanticSearchService} semanticSearch - Service used to run semantic document search.
@@ -127,6 +129,7 @@ export class DocumentService {
     @InjectConnection() private readonly sequelize: Sequelize,
     private readonly documents: DocumentStore,
     private readonly storage: DocumentStorageService,
+    private readonly formats: DocumentFormatRegistry,
     private readonly pipeline: PipelineService,
     private readonly metadata: MetadataService,
     private readonly semanticSearch: SemanticSearchService,
@@ -145,15 +148,15 @@ export class DocumentService {
   ) {}
 
   /**
-   * Stores a PDF, creates its document record, and queues the configured processing pipeline.
+   * Validates and stores a supported document, creates its record, and queues processing.
    *
    * @param {string} ownerUuid - UUID of the user who owns the resource.
-   * @param {UploadedDocumentFile} file - PDF or other file supplied for this operation.
-   * @returns Stores a PDF, creates its document record, and queues the configured processing pipeline.
+   * @param {UploadedDocumentFile} file - Uploaded file and untrusted client-supplied metadata.
+   * @returns The created document after its validated source bytes are stored.
    */
   async upload(ownerUuid: string, file: UploadedDocumentFile) {
     if (!file?.path) {
-      throw new BadRequestException('Only PDF documents are supported');
+      throw new BadRequestException('A supported document file is required');
     }
 
     if (this.activeUploads >= DocumentService.MAX_CONCURRENT_UPLOADS) {
@@ -165,11 +168,14 @@ export class DocumentService {
     this.activeUploads += 1;
 
     try {
+      await this.storage.assertUploadSize(file.size);
       const buffer = await readFile(file.path);
-      await this.storage.validatePdf(buffer);
+      await this.storage.assertUploadSize(buffer.length);
+      const detectedFormat = await this.formats.detectAndValidate(buffer);
 
       const uuid = randomUUID();
-      const stored = await this.storage.storePdf(buffer, uuid, file.originalname);
+      const adapter = this.formats.getAdapterForMimeType(detectedFormat.mimeType, 'upload');
+      const stored = await adapter.storeOriginal(buffer, uuid, file.originalname);
 
       try {
         const duplicate = await this.documents.findByChecksum(stored.checksumSha256);
@@ -192,7 +198,7 @@ export class DocumentService {
 
         const input = CreateDocumentInputSchema.parse({
           originalFilename: file.originalname,
-          mimeType: 'application/pdf',
+          mimeType: detectedFormat.mimeType,
           sizeBytes: stored.sizeBytes,
           checksumSha256: stored.checksumSha256,
         });
@@ -677,10 +683,11 @@ export class DocumentService {
    * pageNumber: number | null;
    * text: string;
    * score: number;
+   * matchType: 'text' | 'title';
    * }>} keywordResult - Results from the lexical keyword search.
    * @param {Array<{
    * document: import('../models/document.entity').Document;
-   * pageNumber: number;
+   * pageNumber: number | null;
    * text: string;
    * score: number;
    * }>} semanticResult - Results from the semantic similarity search.
@@ -693,10 +700,11 @@ export class DocumentService {
       pageNumber: number | null;
       text: string;
       score: number;
+      matchType: 'text' | 'title';
     }>,
     semanticResult: Array<{
       document: import('../models/document.entity').Document;
-      pageNumber: number;
+      pageNumber: number | null;
       text: string;
       score: number;
     }>,
@@ -717,7 +725,7 @@ export class DocumentService {
       merged.set(hit.document.uuid, {
         ...hit,
         semanticScore: null,
-        matchType: hit.pageNumber === null ? 'title' : 'text',
+        matchType: hit.matchType,
       });
     }
     for (const hit of semanticResult) {
@@ -1227,8 +1235,12 @@ export class DocumentService {
     const original = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!original) throw new NotFoundException('Document not found');
     this.assertDocumentContentAvailable(original);
+    if (original.pageCount === null) {
+      throw new BadRequestException('The document has no physical pages to split');
+    }
 
-    const [remainingBuffer, extractedBuffer] = await this.storage.splitPdf(
+    const adapter = this.formats.getAdapterForMimeType(original.mimeType, 'split');
+    const [remainingBuffer, extractedBuffer] = await adapter.split(
       original.storageKey,
       input.splitAfterPage,
     );
@@ -1240,8 +1252,8 @@ export class DocumentService {
       `pages-${input.splitAfterPage + 1}-to-${original.pageCount}`,
     );
     const [remainingStored, extractedStored] = await Promise.all([
-      this.storage.storePdf(remainingBuffer, remainingUuid, remainingName),
-      this.storage.storePdf(extractedBuffer, extractedUuid, extractedName),
+      adapter.storeOriginal(remainingBuffer, remainingUuid, remainingName),
+      adapter.storeOriginal(extractedBuffer, extractedUuid, extractedName),
     ]);
     // Persist both output files before creating database rows so no document
     // can become visible with only one half of the split PDF available.
@@ -1264,7 +1276,7 @@ export class DocumentService {
         versionParentUuid: null,
         title: original.title,
         originalFilename: remainingName,
-        mimeType: 'application/pdf',
+        mimeType: adapter.descriptor.mimeTypes[0]!,
         sizeBytes: remainingStored.sizeBytes,
         checksumSha256: remainingStored.checksumSha256,
         storageKey: remainingStored.storageKey,
@@ -1283,7 +1295,7 @@ export class DocumentService {
         versionParentUuid: null,
         title: original.title,
         originalFilename: extractedName,
-        mimeType: 'application/pdf',
+        mimeType: adapter.descriptor.mimeTypes[0]!,
         sizeBytes: extractedStored.sizeBytes,
         checksumSha256: extractedStored.checksumSha256,
         storageKey: extractedStored.storageKey,
@@ -1319,7 +1331,11 @@ export class DocumentService {
         this.addManualUploadToInbox(
           remaining.uuid,
           ownerUuid,
-          { buffer: remainingBuffer, mimetype: 'application/pdf', originalname: remainingName },
+          {
+            buffer: remainingBuffer,
+            mimetype: adapter.descriptor.mimeTypes[0]!,
+            originalname: remainingName,
+          },
           remainingStored.checksumSha256,
           remainingStored.sizeBytes,
           input.autoApplySuggestions,
@@ -1328,7 +1344,11 @@ export class DocumentService {
         this.addManualUploadToInbox(
           extracted.uuid,
           ownerUuid,
-          { buffer: extractedBuffer, mimetype: 'application/pdf', originalname: extractedName },
+          {
+            buffer: extractedBuffer,
+            mimetype: adapter.descriptor.mimeTypes[0]!,
+            originalname: extractedName,
+          },
           extractedStored.checksumSha256,
           extractedStored.sizeBytes,
           input.autoApplySuggestions,
@@ -1422,13 +1442,14 @@ export class DocumentService {
     if (!original) throw new NotFoundException('Document not found');
     this.assertDocumentContentAvailable(original);
 
-    const rotatedBuffer = await this.storage.rotatePdfPage(
+    const adapter = this.formats.getAdapterForMimeType(original.mimeType, 'page-rotation');
+    const rotatedBuffer = await adapter.rotatePage(
       original.storageKey,
       input.pageNumber,
       input.rotationDegrees,
     );
     const rotatedUuid = randomUUID();
-    const stored = await this.storage.storePdf(
+    const stored = await adapter.storeOriginal(
       rotatedBuffer,
       rotatedUuid,
       original.originalFilename,
@@ -1450,7 +1471,7 @@ export class DocumentService {
         versionParentUuid: null,
         title: original.title,
         originalFilename: original.originalFilename,
-        mimeType: 'application/pdf',
+        mimeType: adapter.descriptor.mimeTypes[0]!,
         sizeBytes: stored.sizeBytes,
         checksumSha256: stored.checksumSha256,
         storageKey: stored.storageKey,
@@ -1481,7 +1502,7 @@ export class DocumentService {
         ownerUuid,
         {
           buffer: rotatedBuffer,
-          mimetype: 'application/pdf',
+          mimetype: adapter.descriptor.mimeTypes[0]!,
           originalname: original.originalFilename,
         },
         stored.checksumSha256,
@@ -1544,14 +1565,16 @@ export class DocumentService {
     this.assertDocumentContentAvailable(target);
     this.assertDocumentContentAvailable(source);
 
-    const composed = await this.storage.composePdf(
+    const adapter = this.formats.getAdapterForMimeType(target.mimeType, 'compose');
+    this.formats.getAdapterForMimeType(source.mimeType, 'compose');
+    const composed = await adapter.compose(
       target.storageKey,
       source.storageKey,
       input.insertAfterPage,
     );
     const composedUuid = randomUUID();
     const composedName = this.composeFilename(target.originalFilename, source.originalFilename);
-    const stored = await this.storage.storePdf(composed.buffer, composedUuid, composedName);
+    const stored = await adapter.storeOriginal(composed.buffer, composedUuid, composedName);
     const malwareScanRequired = await this.isMalwareScanRequired();
     const family = await this.documents.findOwnedVersionFamily(ownerUuid, target.versionFamilyUuid);
     const nextVersion = Math.max(...family.map((version) => version.versionNumber), 0) + 1;
@@ -1568,7 +1591,7 @@ export class DocumentService {
         versionParentUuid: null,
         title: target.title,
         originalFilename: composedName,
-        mimeType: 'application/pdf',
+        mimeType: adapter.descriptor.mimeTypes[0]!,
         sizeBytes: stored.sizeBytes,
         checksumSha256: stored.checksumSha256,
         storageKey: stored.storageKey,
@@ -1599,7 +1622,11 @@ export class DocumentService {
       await this.addManualUploadToInbox(
         created.uuid,
         ownerUuid,
-        { buffer: composed.buffer, mimetype: 'application/pdf', originalname: composedName },
+        {
+          buffer: composed.buffer,
+          mimetype: adapter.descriptor.mimeTypes[0]!,
+          originalname: composedName,
+        },
         stored.checksumSha256,
         stored.sizeBytes,
         input.autoApplySuggestions,
@@ -1787,6 +1814,7 @@ export class DocumentService {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) throw new NotFoundException('Document not found');
     this.assertDocumentContentAvailable(document);
+    this.formats.getAdapterForMimeType(document.mimeType, 'pdfa');
     if (!(await this.storage.exists(document.storageKey))) {
       throw new BadRequestException('The original document file is not available in storage');
     }
@@ -1834,6 +1862,7 @@ export class DocumentService {
   async getArchive(ownerUuid: string, uuid: string) {
     const document = await this.findReadableDocument(ownerUuid, uuid);
     this.assertDocumentContentAvailable(document);
+    this.formats.getAdapterForMimeType(document.mimeType, 'pdfa');
     if (document.archiveStatus !== 'ready' || !document.archiveKey) {
       throw new NotFoundException('The PDF/A archive is not available');
     }
@@ -1869,12 +1898,19 @@ export class DocumentService {
     const document = await this.findReadableDocument(ownerUuid, uuid);
     const pages = await DocumentPage.findAll({
       where: { documentUuid: uuid },
-      order: [['pageNumber', 'ASC']],
+      order: [['segmentIndex', 'ASC']],
     });
     this.assertDocumentContentAvailable(document);
     return DocumentExtractedTextResponseSchema.parse({
       text: pages.map((page) => page.text).join('\n\n'),
-      pages: pages.map((page) => ({ pageNumber: page.pageNumber, text: page.text })),
+      segments: pages.map((page) => ({
+        segmentIndex: page.segmentIndex,
+        pageNumber: page.pageNumber,
+        text: page.text,
+      })),
+      pages: pages.flatMap((page) =>
+        page.pageNumber === null ? [] : [{ pageNumber: page.pageNumber, text: page.text }],
+      ),
     });
   }
 
@@ -1889,6 +1925,7 @@ export class DocumentService {
     const document = await this.findReadableDocument(ownerUuid, uuid);
 
     this.assertDocumentContentAvailable(document);
+    this.formats.getAdapterForMimeType(document.mimeType, 'preview');
 
     const thumbnailKey = await this.ensureThumbnail(document);
 
@@ -1936,7 +1973,8 @@ export class DocumentService {
         return document.thumbnailKey;
       }
 
-      const thumbnailKey = await this.storage.createThumbnail(
+      const adapter = this.formats.getAdapterForMimeType(document.mimeType, 'preview');
+      const thumbnailKey = await adapter.createPreview(
         document.storageKey,
         document.uuid,
         document.createdAt,
@@ -2421,7 +2459,7 @@ export class DocumentService {
       archiveStatus: document.archiveStatus,
       archiveError: document.archiveError,
       calendarEventUrl,
-      pageCount: document.pageCount || 1,
+      pageCount: document.pageCount,
       issuerUuid: document.issuerUuid,
       isNew: document.isNew,
       metadataSummary: metadataSummary ?? {

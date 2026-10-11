@@ -82,11 +82,11 @@ export class DocumentController implements OnModuleDestroy {
   }
 
   /**
-   * Validates and queues a new PDF upload, then removes its temporary file.
+   * Validates and queues a new document upload, then removes its temporary file.
    *
-   * @param {UploadedDocumentFile | undefined} file - PDF or other file supplied for this operation.
+   * @param {UploadedDocumentFile | undefined} file - File supplied for this operation.
    * @param {ScopedUser} user - Authenticated user making the request.
-   * @returns Validates and queues a new PDF upload, then removes its temporary file.
+   * @returns The created document after it has been validated and queued.
    */
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
@@ -107,8 +107,8 @@ export class DocumentController implements OnModuleDestroy {
   ) {
     this.logger.debug('Uploading File ....');
     if (!file) {
-      this.logger.error('No file sumbitted');
-      throw new BadRequestException('A PDF file is required');
+      this.logger.error('No file submitted');
+      throw new BadRequestException('A document file is required');
     }
     try {
       return { data: await this.documents.upload(user.userId, file) };

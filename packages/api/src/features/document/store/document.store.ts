@@ -165,7 +165,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
     if (!document) return null;
     const pages = await DocumentPage.findAll({
       where: { documentUuid: uuid },
-      order: [['pageNumber', 'ASC']],
+      order: [['segmentIndex', 'ASC']],
     });
     return { document, pages };
   }
@@ -630,7 +630,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
     const pageRows = await DocumentPage.findAll({
       where: { searchVector: { [Op.match]: textQuery } },
       include: [{ model: Document, required: true, where: documentWhere }],
-      order: [['pageNumber', 'ASC']],
+      order: [['segmentIndex', 'ASC']],
       limit: Math.min(250, Math.max(query.limit * 8, 25)),
     });
     const titleRows = await this.model.findAll({
@@ -649,6 +649,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
         pageNumber: page.pageNumber,
         text: page.text,
         score: 0.5,
+        matchType: 'text' as const,
       }))
       .sort((left, right) => right.score - left.score);
     const pageDocumentUuids = new Set(pageHits.map((hit) => hit.document.uuid));
@@ -659,6 +660,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
         pageNumber: null,
         text: document.title ?? document.originalFilename,
         score: 1,
+        matchType: 'title' as const,
       }));
 
     return [...pageHits, ...titleHits].slice(0, query.limit);

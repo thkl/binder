@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import {
   ApiResponse,
   DocumentBulkActionInput,
@@ -39,6 +39,10 @@ import {
   ClearDocumentSuggestionResponseSchema,
   DocumentDeleteResponseSchema,
   DocumentOpenResponseSchema,
+  DocumentFormatsResponseSchema,
+  PDF_DOCUMENT_FORMAT,
+  type DocumentFormatCapability,
+  type DocumentFormatDescriptor,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
@@ -47,6 +51,7 @@ import { InboxService } from '../../inbox/services/inbox.service';
 /** Loads document lists and coordinates document actions with the API. */
 @Injectable({ providedIn: 'root' })
 export class DocumentsService {
+  private static readonly FORMAT_CACHE_KEY = 'binder.document-formats.v1';
   readonly page = signal<DocumentListResponse | null>(null);
   readonly facets = signal<DocumentListFacetsResponse | null>(null);
   readonly storageIssues = signal<DocumentStorageIssue[]>([]);
@@ -56,10 +61,16 @@ export class DocumentsService {
   readonly error = signal<string | null>(null);
   readonly duplicateUpload = signal(false);
   readonly duplicateUploadUuid = signal<string | null>(null);
+  private readonly document = inject(DOCUMENT);
+  readonly supportedFormats = signal<DocumentFormatDescriptor[]>(this.readCachedFormats());
+  readonly uploadAccept = computed(() => {
+    const formats = this.uploadFormats();
+    return [...new Set(formats.flatMap((format) => [...format.mimeTypes, ...format.extensions]))].join(',');
+  });
   readonly appService = inject(ApplicationService);
   readonly inboxService = inject(InboxService);
-  private readonly document = inject(DOCUMENT);
   private currentQuery = DocumentListQuerySchema.parse({});
+  private formatDiscoveryPromise: Promise<void> | null = null;
 
   /**
    * Provides HTTP access for validated document API requests.
@@ -67,6 +78,127 @@ export class DocumentsService {
    * @param {HttpClient} http - HTTP client used to call the API.
    */
   constructor(private readonly http: HttpClient) {}
+
+  /**
+   * Loads the server's supported formats and refreshes the offline guidance cache.
+   *
+   * @returns {Promise<void>} - Resolves when discovery succeeds or a fallback is selected.
+   */
+  loadSupportedFormats(): Promise<void> {
+    if (this.formatDiscoveryPromise) return this.formatDiscoveryPromise;
+    this.formatDiscoveryPromise = this.fetchSupportedFormats().finally(() => {
+      this.formatDiscoveryPromise = null;
+    });
+    return this.formatDiscoveryPromise;
+  }
+
+  /**
+   * Returns whether the descriptor for a MIME type advertises one capability.
+   *
+   * @param {string} mimeType - Canonical MIME type stored on the document.
+   * @param {DocumentFormatCapability} capability - Capability needed by the UI action.
+   * @returns {boolean} - True when the matching format advertises the capability.
+   */
+  supportsMimeCapability(mimeType: string, capability: DocumentFormatCapability): boolean {
+    return this.formatForMimeType(mimeType)?.capabilities.includes(capability) ?? false;
+  }
+
+  /**
+   * Returns true only for the PDF format currently understood by the embedded viewer.
+   *
+   * @param {string} mimeType - Canonical MIME type stored on the document.
+   * @returns {boolean} - True when the document can use the current PDF viewer.
+   */
+  hasPdfPreview(mimeType: string): boolean {
+    const format = this.formatForMimeType(mimeType);
+    return format?.id === 'pdf' && format.capabilities.includes('preview');
+  }
+
+  /**
+   * Checks file hints against upload descriptors while leaving unknown MIME types to the API.
+   *
+   * @param {File} file - File selected by the user.
+   * @returns {boolean} - True when its MIME type or extension is supported or needs server detection.
+   */
+  isLikelySupportedUpload(file: File): boolean {
+    const mimeType = file.type.trim().toLowerCase();
+    if (!mimeType || mimeType === 'application/octet-stream') return true;
+    const extension = this.fileExtension(file.name);
+    return this.uploadFormats().some(
+      (format) =>
+        format.mimeTypes.some((candidate) => candidate.toLowerCase() === mimeType) ||
+        format.extensions.some((candidate) => candidate.toLowerCase() === extension),
+    );
+  }
+
+  /**
+   * Lists user-facing names for formats currently advertised for upload.
+   *
+   * @returns {string} - Comma-separated format names, with PDF as the offline fallback.
+   */
+  supportedUploadFormatNames(): string {
+    return this.uploadFormats()
+      .map((format) => format.displayName)
+      .join(', ') || 'PDF';
+  }
+
+  private uploadFormats(): DocumentFormatDescriptor[] {
+    const formats = this.supportedFormats().filter((format) =>
+      format.capabilities.includes('upload'),
+    );
+    return formats.length > 0 ? formats : [PDF_DOCUMENT_FORMAT];
+  }
+
+  private formatForMimeType(mimeType: string): DocumentFormatDescriptor | undefined {
+    const normalizedMimeType = mimeType.trim().toLowerCase();
+    return this.supportedFormats().find((format) =>
+      format.mimeTypes.some((candidate) => candidate.toLowerCase() === normalizedMimeType),
+    );
+  }
+
+  private fileExtension(filename: string): string {
+    const dotIndex = filename.lastIndexOf('.');
+    return dotIndex < 0 ? '' : filename.slice(dotIndex).toLowerCase();
+  }
+
+  private async fetchSupportedFormats(): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<unknown>>(this.appService.getApiUrl('v1', 'document-formats'), {
+          withCredentials: true,
+        }),
+      );
+      const formats = DocumentFormatsResponseSchema.parse(response.data).formats;
+      if (formats.length === 0) throw new Error('The server returned no supported formats');
+      this.supportedFormats.set(formats);
+      this.writeCachedFormats(formats);
+    } catch {
+      // A valid cached descriptor or the built-in PDF baseline keeps picker guidance available offline.
+      if (this.supportedFormats().length === 0) this.supportedFormats.set([PDF_DOCUMENT_FORMAT]);
+    }
+  }
+
+  private readCachedFormats(): DocumentFormatDescriptor[] {
+    try {
+      const raw = this.document.defaultView?.localStorage.getItem(DocumentsService.FORMAT_CACHE_KEY);
+      if (!raw) return [PDF_DOCUMENT_FORMAT];
+      const parsed = DocumentFormatsResponseSchema.parse(JSON.parse(raw));
+      return parsed.formats.length > 0 ? parsed.formats : [PDF_DOCUMENT_FORMAT];
+    } catch {
+      return [PDF_DOCUMENT_FORMAT];
+    }
+  }
+
+  private writeCachedFormats(formats: DocumentFormatDescriptor[]): void {
+    try {
+      this.document.defaultView?.localStorage.setItem(
+        DocumentsService.FORMAT_CACHE_KEY,
+        JSON.stringify({ formats }),
+      );
+    } catch {
+      // Storage may be unavailable in private browsing; live discovery still works.
+    }
+  }
 
   /**
    * Clears the duplicate-upload notice after the user has seen it.

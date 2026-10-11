@@ -9,7 +9,7 @@
     <label class="upload-button">
       <input
         type="file"
-        accept="application/pdf,.pdf"
+        [attr.accept]="documents.uploadAccept()"
         (change)="fileSelected($event)"
         [disabled]="documents.uploading()"
       />
@@ -301,6 +301,7 @@
         @if (selectedCount() > 0) {
           <div class="bulk-actions" role="group" [attr.aria-label]="'documents.bulkActions' | t">
             @if (selectedVersionPair(); as versionPair) {
+              @if (canComposeSelected()) {
               <button
                 type="button"
                 class="bulk-action-button primary"
@@ -317,6 +318,7 @@
               >
                 {{ 'documents.compose' | t }}
               </button>
+              }
               <span class="version-selection-hint" aria-live="polite">
                 {{ versionPair.source.originalFilename }} →
                 {{ versionPair.target.originalFilename }}
@@ -437,7 +439,7 @@
           <label class="empty-upload-button">
             <input
               type="file"
-              accept="application/pdf,.pdf"
+              [attr.accept]="documents.uploadAccept()"
               multiple
               (change)="emptyFilesSelected($event)"
               [disabled]="documents.uploading()"
@@ -895,8 +897,8 @@
         <binder-document-compose-dialog
           [targetTitle]="targetDocument.title || targetDocument.originalFilename"
           [sourceTitle]="sourceDocument.title || sourceDocument.originalFilename"
-          [targetPageCount]="targetDocument.pageCount"
-          [sourcePageCount]="sourceDocument.pageCount"
+          [targetPageCount]="targetDocument.pageCount ?? 0"
+          [sourcePageCount]="sourceDocument.pageCount ?? 0"
           [errorMessage]="documents.error()"
           (closed)="cancelComposeDocuments()"
           (submitted)="composeDocumentsFromRequest($event)"
@@ -912,7 +914,7 @@
     ) {
       <binder-document-split-dialog
         [documentTitle]="selectedSplitDocument.title || selectedSplitDocument.originalFilename"
-        [pageCount]="selectedSplitDocument.pageCount"
+        [pageCount]="selectedSplitDocument.pageCount ?? 0"
         [errorMessage]="documents.error()"
         (closed)="cancelSplitDocument()"
         (submitted)="splitDocument($event)"
@@ -925,7 +927,7 @@
       @if (selectedRotateDocument.uuid === rotateUuid) {
         <binder-document-rotate-dialog
           [documentTitle]="selectedRotateDocument.title || selectedRotateDocument.originalFilename"
-          [pageCount]="selectedRotateDocument.pageCount"
+          [pageCount]="selectedRotateDocument.pageCount ?? 0"
           [errorMessage]="documents.error()"
           [busy]="rotateLoading()"
           (closed)="cancelRotateDocument()"

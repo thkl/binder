@@ -264,7 +264,7 @@ export class ClassificationFeedbackService {
 
     const pages = await DocumentPage.findAll({
       where: { documentUuid },
-      order: [['pageNumber', 'ASC']],
+      order: [['segmentIndex', 'ASC']],
       attributes: ['text'],
     });
     const text = pages.map((page) => page.text).join('\n');

@@ -6,6 +6,8 @@ import { ConflictException } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DocumentService } from './document.service.js';
 import { DocumentStorageService } from './document-storage.service.js';
+import { DocumentFormatRegistry } from './document-format.registry.js';
+import { PdfDocumentFormatAdapter } from './pdf-document-format.adapter.js';
 import { ConfigKeys } from '../../../shared/config/config.keys.js';
 import { createPdfFixture } from './pdf-test-fixture.js';
 
@@ -13,7 +15,11 @@ const temporaryDirectories: string[] = [];
 const ownerUuid = '11111111-1111-4111-8111-111111111111';
 
 async function createFixture(
-  options: { malwareScanRequired?: string; duplicateOwnerUuid?: string } = {},
+  options: {
+    malwareScanRequired?: string;
+    duplicateOwnerUuid?: string;
+    maxUploadBytes?: string;
+  } = {},
 ) {
   const root = await mkdtemp(join(tmpdir(), 'binder-api-document-service-test-'));
   temporaryDirectories.push(root);
@@ -24,7 +30,7 @@ async function createFixture(
     {
       get: (key: string) => (key === ConfigKeys.DOCUMENT_STORAGE_ROOT ? root : undefined),
     } as never,
-    { get: async () => '52428800' } as never,
+    { get: async () => options.maxUploadBytes ?? '52428800' } as never,
   );
   const removeStoredFile = vi.spyOn(storage, 'remove');
   const created: Array<Record<string, unknown>> = [];
@@ -65,6 +71,7 @@ async function createFixture(
     {} as never,
     documents as never,
     storage,
+    new DocumentFormatRegistry(new PdfDocumentFormatAdapter(storage)),
     pipeline as never,
     {} as never,
     {} as never,
@@ -103,21 +110,22 @@ afterEach(async () => {
 });
 
 describe('document upload service', () => {
-  it('validates the actual PDF bytes, preserves the original, and queues the malware scan first', async () => {
+  it('detects PDF bytes despite misleading MIME and extension hints, then stores canonical PDF metadata', async () => {
     const fixture = await createFixture();
     const originalBytes = await readFile(fixture.inputPath);
 
     const response = await fixture.service.upload(ownerUuid, {
       path: fixture.inputPath,
       size: originalBytes.length,
-      mimetype: 'application/octet-stream',
-      originalname: 'invoice.pdf',
+      mimetype: 'image/png',
+      originalname: 'invoice.png',
     });
 
     assert.equal(response.mimeType, 'application/pdf');
     assert.equal(response.status, 'scanning');
     assert.equal(fixture.created[0]?.['ownerUuid'], ownerUuid);
-    assert.equal(fixture.created[0]?.['originalFilename'], 'invoice.pdf');
+    assert.equal(fixture.created[0]?.['originalFilename'], 'invoice.png');
+    assert.match(String(fixture.created[0]?.['storageKey']), /\.pdf$/u);
     assert.equal(fixture.pipeline.enqueue.mock.calls[0]?.[2], 'malware-scan');
     assert.equal(await fixture.storage.exists(String(fixture.created[0]?.['storageKey'])), true);
     assert.deepEqual(await readFile(fixture.inputPath), originalBytes);
@@ -125,7 +133,7 @@ describe('document upload service', () => {
     expect(fixture.audit.record).toHaveBeenCalledOnce();
   });
 
-  it('rejects content that is not a PDF before creating a document record', async () => {
+  it('rejects non-PDF bytes even when the MIME type and extension claim PDF', async () => {
     const fixture = await createFixture();
     await writeFile(fixture.inputPath, Buffer.from('renamed executable payload'));
 
@@ -136,11 +144,64 @@ describe('document upload service', () => {
         mimetype: 'application/pdf',
         originalname: 'looks-like-a-pdf.pdf',
       }),
-      /valid PDF signature/,
+      /format is not supported/,
     );
 
     expect(fixture.documents.create).not.toHaveBeenCalled();
     expect(fixture.pipeline.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed content with a PDF signature before creating a document record', async () => {
+    const fixture = await createFixture();
+    await writeFile(fixture.inputPath, Buffer.from('%PDF-1.7\nnot a valid PDF object tree'));
+
+    await assert.rejects(
+      fixture.service.upload(ownerUuid, {
+        path: fixture.inputPath,
+        size: 37,
+        mimetype: 'application/pdf',
+        originalname: 'malformed.pdf',
+      }),
+      /not a valid PDF/,
+    );
+
+    expect(fixture.documents.create).not.toHaveBeenCalled();
+    expect(fixture.pipeline.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('rejects empty and over-limit files before the PDF parser runs', async () => {
+    const emptyFixture = await createFixture();
+    await writeFile(emptyFixture.inputPath, Buffer.alloc(0));
+    const validateEmptyPdf = vi.spyOn(emptyFixture.storage, 'validatePdf');
+
+    await assert.rejects(
+      emptyFixture.service.upload(ownerUuid, {
+        path: emptyFixture.inputPath,
+        size: 0,
+        mimetype: 'application/pdf',
+        originalname: 'empty.pdf',
+      }),
+      /document is empty/,
+    );
+    expect(validateEmptyPdf).not.toHaveBeenCalled();
+    expect(emptyFixture.documents.create).not.toHaveBeenCalled();
+
+    const oversizedFixture = await createFixture({ maxUploadBytes: '10' });
+    const validateLargePdf = vi.spyOn(oversizedFixture.storage, 'validatePdf');
+    const pdfBytes = await readFile(oversizedFixture.inputPath);
+
+    await assert.rejects(
+      oversizedFixture.service.upload(ownerUuid, {
+        path: oversizedFixture.inputPath,
+        size: pdfBytes.length,
+        mimetype: 'application/pdf',
+        originalname: 'too-large.pdf',
+      }),
+      /maximum size of 10 bytes/,
+    );
+    expect(validateLargePdf).not.toHaveBeenCalled();
+    expect(oversizedFixture.documents.create).not.toHaveBeenCalled();
+    expect(oversizedFixture.pipeline.enqueue).not.toHaveBeenCalled();
   });
 
   it('starts text extraction directly when malware scanning is explicitly disabled', async () => {

@@ -17,10 +17,11 @@
         <h3 id="document-drawer-title">
           {{ documentData().title || documentData().originalFilename }}
         </h3>
-        @if (documentData().archiveStatus === 'ready') {
+        @if (canCreateArchive() && documentData().archiveStatus === 'ready') {
           <span class="archive-indicator">{{ 'documents.pdfaAvailable' | t }}</span>
         }
         <div class="drawer-downloads">
+          @if (canDownload()) {
           <a
             class="drawer-download-link"
             [href]="fileUrl()"
@@ -28,6 +29,7 @@
           >
             {{ 'documents.download' | t }}
           </a>
+          }
           @if (!readOnly()) {
             <button
               type="button"
@@ -47,7 +49,7 @@
                 >
               }
             </button>
-            @if (archiveReady() && archiveUrl(); as archiveUrl) {
+            @if (canCreateArchive() && archiveReady() && archiveUrl(); as archiveUrl) {
               <a
                 class="drawer-download-link"
                 [href]="archiveUrl"
@@ -55,7 +57,7 @@
               >
                 {{ 'documents.downloadArchive' | t }}
               </a>
-            } @else {
+            } @else if (canCreateArchive()) {
               <button
                 type="button"
                 class="drawer-download-link"
@@ -100,7 +102,7 @@
             >
               {{ suggestionLoading() ? ('documents.analyzing' | t) : ('documents.suggest' | t) }}
             </button>
-            @if (documentData().pageCount > 0) {
+            @if (canRotate() && (documentData().pageCount ?? 0) > 0) {
               <button
                 type="button"
                 class="drawer-download-link"
@@ -110,7 +112,7 @@
                 {{ 'documents.rotatePage' | t }}
               </button>
             }
-            @if (documentData().pageCount > 1) {
+            @if (canSplit() && (documentData().pageCount ?? 0) > 1) {
               <button
                 type="button"
                 class="drawer-download-link"
@@ -223,6 +225,7 @@
             [firstMaxSize]="90"
             [secondMinSize]="20"
           >
+            @if (canPreviewPdf()) {
             <div class="pdf-pane" splitPaneFirst>
               <iframe
                 class="document-frame"
@@ -231,6 +234,16 @@
                 [title]="'viewer.preview' | t"
               ></iframe>
             </div>
+            } @else {
+              <div class="pdf-pane preview-unavailable" splitPaneFirst>
+                <p>{{ 'viewer.previewUnavailable' | t }}</p>
+                @if (canDownload()) {
+                  <a class="drawer-download-link" [href]="fileUrl()" [download]="documentData().originalFilename">
+                    {{ 'documents.download' | t }}
+                  </a>
+                }
+              </div>
+            }
             @if (showAnalysis()) {
               <div class="analysis-pane" splitPaneSecond>
                 <binder-document-analysis

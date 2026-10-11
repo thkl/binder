@@ -15,7 +15,7 @@ import {
 } from './models.js';
 import { logger } from './logger.js';
 import { resolveStoragePath } from './storage.js';
-import { validatePdfBuffer } from './extraction.js';
+import { detectAndValidateWorkerFormat } from './document-format.registry.js';
 
 let lastScanAt = 0;
 
@@ -172,7 +172,7 @@ async function importFile(
 
   try {
     const buffer = await fs.readFile(claimedPath);
-    await validatePdfBuffer(buffer);
+    const detectedFormat = await detectAndValidateWorkerFormat(buffer);
     const checksumSha256 = createHash('sha256').update(buffer).digest('hex');
     const duplicate = await Document.findOne({ where: { checksumSha256 } });
     if (duplicate) {
@@ -193,7 +193,7 @@ async function importFile(
 
     const documentUuid = randomUUID();
     const now = new Date();
-    const storageKey = `documents/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${documentUuid}.pdf`;
+    const storageKey = `documents/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${documentUuid}${detectedFormat.extensions[0]}`;
     const targetPath = await resolveStoragePath(storageKey);
     await fs.mkdir(dirname(targetPath), { recursive: true, mode: 0o750 });
     await fs.rename(claimedPath, targetPath);
@@ -209,7 +209,7 @@ async function importFile(
             versionParentUuid: null,
             originalFilename: safeFilename(filename),
             title: safeFilename(filename),
-            mimeType: 'application/pdf',
+            mimeType: detectedFormat.mimeTypes[0],
             sizeBytes: buffer.length,
             checksumSha256,
             storageKey,

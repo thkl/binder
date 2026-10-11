@@ -17,5 +17,6 @@ graphify-out/
 .agents
 docs/security-findings.md
 product-plan.md
-docs/int/
+docs/int/*
+!docs/int/document-format-adapter-plan.md
 .pnpm-store/

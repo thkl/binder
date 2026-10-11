@@ -145,6 +145,13 @@ export class DatabaseMigrator {
         /^alter\s+table\s+(?:"?[a-z_][a-z0-9_$]*"?\.)?"?[a-z_][a-z0-9_$]*"?\s+drop\s+constraint\s+(?:if\s+exists\s+)?"?[a-z_][a-z0-9_$]*"?$/i.test(
           stmt,
         );
+      // Page references are becoming optional for unpaged formats. Permit only
+      // explicit nullability changes on one named column; arbitrary ALTER
+      // operations remain blocked by the allowlist below.
+      const safeColumnNullabilityChange =
+        /^alter\s+table\s+(?:"?[a-z_][a-z0-9_$]*"?\.)?"?[a-z_][a-z0-9_$]*"?\s+alter\s+column\s+"?[a-z_][a-z0-9_$]*"?\s+(?:drop|set)\s+not\s+null$/i.test(
+          stmt,
+        );
       const destructiveStatement =
         /^(drop|truncate|delete|merge|exec|execute|backup|restore|grant|revoke|deny)\b/i.test(stmt);
       if (
@@ -159,7 +166,7 @@ export class DatabaseMigrator {
       // before adding the new one. This is safe DDL when restricted to a named
       // constraint; data-destructive DROP statements remain blocked above.
       if (lowered.includes('alter')) {
-        if (safeConstraintDrop) {
+        if (safeConstraintDrop || safeColumnNullabilityChange) {
           continue;
         }
 

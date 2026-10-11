@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Pipe, PipeTransform } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import type { Document } from '@binder/common';
 import { describe, expect, it, beforeEach } from 'vitest';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
@@ -62,6 +64,7 @@ describe('DocumentActionsComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DocumentActionsComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     })
       .overrideComponent(DocumentActionsComponent, {
         remove: { imports: [TranslatePipe] },

@@ -1,5 +1,32 @@
 import Foundation
 
+struct BinderDocumentFormat: Codable, Identifiable {
+    let id: String
+    let displayName: String
+    let extensions: [String]
+    let mimeTypes: [String]
+    let capabilities: [String]
+
+    var supportsUpload: Bool { capabilities.contains("upload") }
+    func supports(_ capability: String) -> Bool { capabilities.contains(capability) }
+
+    static let pdfFallback = BinderDocumentFormat(
+        id: "pdf",
+        displayName: "PDF",
+        extensions: [".pdf"],
+        mimeTypes: ["application/pdf"],
+        capabilities: ["upload", "download", "preview", "text-extraction", "ocr", "page-count", "page-rotation", "split", "compose", "pdfa"]
+    )
+}
+
+private struct DocumentFormatsEnvelope: Decodable {
+    let data: DocumentFormatsResponse
+}
+
+private struct DocumentFormatsResponse: Decodable {
+    let formats: [BinderDocumentFormat]
+}
+
 struct BinderUser: Decodable {
     let uuid: String?
     let username: String?
@@ -1114,6 +1141,14 @@ final class BinderAPI {
         return data
     }
 
+    func supportedDocumentFormats(serverURL: String) async throws -> [BinderDocumentFormat] {
+        let (data, _) = try await request(path: "document-formats", serverURL: serverURL)
+        let formats = try JSONDecoder().decode(DocumentFormatsEnvelope.self, from: data).data.formats
+        guard !formats.isEmpty else { throw BinderAPIError.invalidResponse }
+        cacheDocumentFormats(formats, serverURL: serverURL)
+        return formats
+    }
+
     func uploadDocument(serverURL: String, fileURL: URL) async throws {
         var hasSession = false
         do {
@@ -1124,6 +1159,26 @@ final class BinderAPI {
             // The server rejected the session; try the opted-in password below.
         }
         if !hasSession { try await signInWithSavedPassword(serverURL: serverURL) }
+
+        let formats: [BinderDocumentFormat]
+        do {
+            formats = try await supportedDocumentFormats(serverURL: serverURL)
+        } catch {
+            // Older servers may not expose discovery. Let their upload endpoint make the final decision.
+            if let cached = cachedDocumentFormats(serverURL: serverURL), cached.contains(where: {
+                $0.supportsUpload &&
+                $0.mimeTypes.contains(where: { $0.caseInsensitiveCompare("application/pdf") == .orderedSame })
+            }) {
+                formats = cached
+            } else {
+                formats = [.pdfFallback]
+            }
+        }
+        let supportsPDFUpload = formats.contains {
+            $0.supportsUpload &&
+            $0.mimeTypes.contains(where: { $0.caseInsensitiveCompare("application/pdf") == .orderedSame })
+        }
+        guard supportsPDFUpload else { throw BinderAPIError.unsupportedDocumentFormat }
 
         guard let cookie = KeychainStore.sessionCookie(origin: origin(for: serverURL)),
               let csrfToken = csrfToken ?? KeychainStore.csrfToken(origin: origin(for: serverURL)) else {
@@ -1245,6 +1300,22 @@ final class BinderAPI {
         csrfToken = nil
     }
 
+    private func cacheDocumentFormats(_ formats: [BinderDocumentFormat], serverURL: String) {
+        guard let data = try? JSONEncoder().encode(formats) else { return }
+        UserDefaults.standard.set(data, forKey: documentFormatsCacheKey(serverURL: serverURL))
+    }
+
+    private func cachedDocumentFormats(serverURL: String) -> [BinderDocumentFormat]? {
+        guard let data = UserDefaults.standard.data(forKey: documentFormatsCacheKey(serverURL: serverURL)) else {
+            return nil
+        }
+        return try? JSONDecoder().decode([BinderDocumentFormat].self, from: data)
+    }
+
+    private func documentFormatsCacheKey(serverURL: String) -> String {
+        "binder.documentFormats.\(origin(for: serverURL))"
+    }
+
     private func request(path: String, serverURL: String) async throws -> (Data, URLResponse) {
         let request = try makeRequest(path: path, serverURL: serverURL, method: "GET")
         let (data, response) = try await urlSession.data(for: request)
@@ -1354,6 +1425,7 @@ enum BinderAPIError: LocalizedError {
     case ssoNotConfigured
     case sessionCookieMissing
     case loginRequired
+    case unsupportedDocumentFormat
 
     var errorDescription: String? {
         switch self {
@@ -1365,6 +1437,8 @@ enum BinderAPIError: LocalizedError {
         case .ssoNotConfigured: "Single sign-on is not configured on this server."
         case .sessionCookieMissing: "The server did not establish a session. Check the server URL and cookie configuration."
         case .loginRequired: "Open Binder and sign in before uploading this PDF."
+        case .unsupportedDocumentFormat: "This server does not currently support PDF uploads. The PDF remains queued on this device."
         }
+
     }
 }

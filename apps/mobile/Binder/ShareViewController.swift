@@ -89,6 +89,8 @@ final class ShareViewController: UIViewController {
             try await BinderAPI.shared.uploadDocument(serverURL: serverURL, fileURL: queuedURL)
             try SharedPDFQueue.remove(fileAt: queuedURL)
             showFinished("PDF added to Binder.")
+        } catch BinderAPIError.unsupportedDocumentFormat {
+            showFinished(BinderAPIError.unsupportedDocumentFormat.localizedDescription)
         } catch {
             showFinished("PDF queued. Open Binder to retry when the server is available or sign in.")
         }

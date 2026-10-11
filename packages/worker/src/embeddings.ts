@@ -59,11 +59,16 @@ export function createEmbeddingProvider(): EmbeddingProvider {
 export async function embedDocument(documentUuid: string): Promise<void> {
   const pages = await DocumentPage.findAll({
     where: { documentUuid, text: { [Op.ne]: '' } },
-    order: [['pageNumber', 'ASC']],
+    order: [['segmentIndex', 'ASC']],
   });
   const chunks = pages.flatMap((page) =>
     chunk(page.text, config.embeddings.chunkSize, config.embeddings.chunkOverlap).map(
-      (content, chunkIndex) => ({ pageNumber: page.pageNumber, chunkIndex, content }),
+      (content, chunkIndex) => ({
+        segmentIndex: page.segmentIndex,
+        pageNumber: page.pageNumber,
+        chunkIndex,
+        content,
+      }),
     ),
   );
   if (!chunks.length) {
@@ -81,6 +86,7 @@ export async function embedDocument(documentUuid: string): Promise<void> {
       ...batch.map((chunk, i) => ({
         uuid: randomUUID(),
         documentUuid,
+        segmentIndex: chunk.segmentIndex,
         pageNumber: chunk.pageNumber,
         chunkIndex: chunk.chunkIndex,
         content: chunk.content,

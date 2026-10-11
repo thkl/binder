@@ -29,19 +29,7 @@ export class DocumentStorageService {
     uuid: string,
     originalFilename: string,
   ): Promise<StoredDocumentFile> {
-    if (buffer.length === 0) {
-      throw new BadRequestException('The uploaded document is empty');
-    }
-
-    const maxBytes = Number(
-      await this.settings.get('documents.maxUploadBytes', String(this.defaultMaxUploadBytes)),
-    );
-    if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) {
-      throw new Error('documents.maxUploadBytes must be a positive integer');
-    }
-    if (buffer.length > maxBytes) {
-      throw new BadRequestException(`The document exceeds the maximum size of ${maxBytes} bytes`);
-    }
+    await this.assertUploadSize(buffer.length);
 
     const root = await this.getStorageRoot();
     const now = new Date();
@@ -58,6 +46,31 @@ export class DocumentStorageService {
     await fs.rename(temporaryPath, absolutePath);
 
     return { storageKey, absolutePath, checksumSha256, sizeBytes: buffer.length };
+  }
+
+  /**
+   * Checks an upload size before document parsers inspect its contents.
+   *
+   * @param {number} sizeBytes - Number of bytes in the uploaded file.
+   * @returns {Promise<void>} Resolves when the file is nonempty and within the configured limit.
+   */
+  async assertUploadSize(sizeBytes: number): Promise<void> {
+    if (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0) {
+      throw new BadRequestException('The uploaded document has an invalid size');
+    }
+    if (sizeBytes === 0) {
+      throw new BadRequestException('The uploaded document is empty');
+    }
+
+    const maxBytes = Number(
+      await this.settings.get('documents.maxUploadBytes', String(this.defaultMaxUploadBytes)),
+    );
+    if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) {
+      throw new Error('documents.maxUploadBytes must be a positive integer');
+    }
+    if (sizeBytes > maxBytes) {
+      throw new BadRequestException(`The document exceeds the maximum size of ${maxBytes} bytes`);
+    }
   }
 
   async splitPdf(storageKey: string, splitAfterPage: number): Promise<[Buffer, Buffer]> {

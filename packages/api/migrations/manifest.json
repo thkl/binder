@@ -480,6 +480,14 @@
                "required": [
                     "users"
                ]
+          },
+          "75": {
+               "created": [],
+               "required": [
+                    "documents",
+                    "document_pages",
+                    "document_embeddings"
+               ]
           }
      }
 }

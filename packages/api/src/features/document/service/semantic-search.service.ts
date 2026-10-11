@@ -10,7 +10,7 @@ import { AiProviderService } from '../../ai-provider/service/ai-provider.service
 
 export interface SemanticHit {
   document: Document;
-  pageNumber: number;
+  pageNumber: number | null;
   text: string;
   score: number;
 }

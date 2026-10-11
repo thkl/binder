@@ -12,6 +12,7 @@ import {
 import type { Document } from '@binder/common';
 import { ApplicationService } from '../../../../common/application.service';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { DocumentsService } from '../../services/documents.service';
 
 @Component({
   selector: 'binder-document-actions',
@@ -34,6 +35,7 @@ export class DocumentActionsComponent {
   readonly splitRequested = output<void>();
 
   private readonly application = inject(ApplicationService);
+  private readonly documents = inject(DocumentsService);
   private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly fileUrl = computed(() =>
@@ -41,7 +43,19 @@ export class DocumentActionsComponent {
   );
   readonly archiveUrl = computed(() => this.document().archiveUrl);
   readonly archiveAvailable = computed(
-    () => this.document().archiveStatus === 'ready' && this.archiveUrl() !== null,
+    () =>
+      this.canCreateArchive() &&
+      this.document().archiveStatus === 'ready' &&
+      this.archiveUrl() !== null,
+  );
+  readonly canDownload = computed(() =>
+    this.documents.supportsMimeCapability(this.document().mimeType, 'download'),
+  );
+  readonly canCreateArchive = computed(() =>
+    this.documents.supportsMimeCapability(this.document().mimeType, 'pdfa'),
+  );
+  readonly canSplit = computed(() =>
+    this.documents.supportsMimeCapability(this.document().mimeType, 'split'),
   );
   readonly downloadMenuOpen = signal(false);
   readonly contentAvailable = computed(

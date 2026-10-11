@@ -12,10 +12,8 @@ import {
   JobKind,
 } from './models.js';
 import { logger } from './logger.js';
-import { createThumbnail, migrateLegacyDerivedStorage, writeDerivedText } from './storage.js';
-import { extractPdfPages } from './extraction.js';
-import { runOcr } from './ocr.js';
-import { runPdfa } from './pdfa.js';
+import { migrateLegacyDerivedStorage, writeDerivedText } from './storage.js';
+import { getWorkerDocumentFormatAdapter } from './document-format.registry.js';
 import { embedDocument } from './embeddings.js';
 import { importInboxDocuments } from './inbox-importer.js';
 import { matchDocumentIssuer } from './issuer-matcher.js';
@@ -37,6 +35,8 @@ export interface ClaimedJob {
   maxAttempts: number;
   /** Storage key resolved by the database row for the source PDF. */
   storageKey: string;
+  /** Canonical MIME type used to select a registered processing adapter. */
+  mimeType: string;
   /** Creation time used for queue ordering and diagnostics. */
   createdAt: Date;
 }
@@ -324,6 +324,7 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
       attempts,
       maxAttempts: job.maxAttempts,
       storageKey: job.document?.storageKey ?? '',
+      mimeType: job.document?.mimeType ?? '',
       createdAt: job.document?.createdAt ?? new Date(),
     };
   });
@@ -357,7 +358,8 @@ export async function processClaimedJob(job: ClaimedJob): Promise<void> {
         break;
 
       case 'text-extraction': {
-        const extracted = await extractPdfPages(job.storageKey);
+        const adapter = getWorkerDocumentFormatAdapter(job.mimeType, 'text-extraction');
+        const extracted = await adapter.extractText(job.storageKey);
 
         if (extracted.requiresOcr) {
           logger.warn('Unusable PDF text layer detected; queueing OCR', {
@@ -365,46 +367,53 @@ export async function processClaimedJob(job: ClaimedJob): Promise<void> {
             jobUuid: job.jobUuid,
           });
           await writeDerivedText(job.documentUuid, '', job.createdAt);
-          await persistPages(job.documentUuid, []);
+          await persistSegments(job.documentUuid, [], extracted.pageCount);
           await completeJob(job, true);
           break;
         }
 
         await writeDerivedText(job.documentUuid, extracted.text, job.createdAt);
-        await persistPages(job.documentUuid, extracted.pages);
+        await persistSegments(job.documentUuid, extracted.segments, extracted.pageCount);
         await matchDocumentIssuer(job.documentUuid, job.ownerUuid, extracted.text);
         await completeJob(job, false);
         break;
       }
 
       case 'thumbnail':
-        await createThumbnail(job.storageKey, job.documentUuid, job.createdAt);
+        await getWorkerDocumentFormatAdapter(job.mimeType, 'preview').createPreview(
+          job.storageKey,
+          job.documentUuid,
+          job.createdAt,
+        );
         await completeJob(job, false);
         break;
 
       case 'ocr': {
+        const adapter = getWorkerDocumentFormatAdapter(job.mimeType, 'ocr');
         // With deskew enabled, skip-text can leave a broken existing text layer
         // untouched. Detect that case before OCR so it goes straight to the
         // force pass instead of doing two complete OCR runs.
-        const sourceText = config.ocrDeskew ? await extractPdfPages(job.storageKey) : undefined;
+        const sourceText = config.ocrDeskew ? await adapter.extractText(job.storageKey) : undefined;
         const needsForceForBrokenText = Boolean(
           sourceText?.requiresOcr && sourceText.text.trim().length > 0,
         );
-        const key = await runOcr(
+        const key = await adapter.runOcr(
           job.storageKey,
           job.documentUuid,
           job.createdAt,
           needsForceForBrokenText ? { forceOcr: true } : {},
         );
-        let extracted = await extractPdfPages(key);
+        let extracted = await adapter.extractText(key);
 
         if (extracted.requiresOcr) {
           logger.warn('OCR pass produced no usable text; forcing OCR', {
             documentUuid: job.documentUuid,
             jobUuid: job.jobUuid,
           });
-          await runOcr(job.storageKey, job.documentUuid, job.createdAt, { forceOcr: true });
-          extracted = await extractPdfPages(key);
+          await adapter.runOcr(job.storageKey, job.documentUuid, job.createdAt, {
+            forceOcr: true,
+          });
+          extracted = await adapter.extractText(key);
         }
 
         if (extracted.requiresOcr) {
@@ -412,7 +421,7 @@ export async function processClaimedJob(job: ClaimedJob): Promise<void> {
         }
 
         await writeDerivedText(job.documentUuid, extracted.text, job.createdAt);
-        await persistPages(job.documentUuid, extracted.pages);
+        await persistSegments(job.documentUuid, extracted.segments, extracted.pageCount);
         await matchDocumentIssuer(job.documentUuid, job.ownerUuid, extracted.text);
         await completeJob(job, false);
         break;
@@ -424,7 +433,11 @@ export async function processClaimedJob(job: ClaimedJob): Promise<void> {
         break;
 
       case 'pdfa': {
-        const archiveKey = await runPdfa(job.storageKey, job.documentUuid, job.createdAt);
+        const archiveKey = await getWorkerDocumentFormatAdapter(job.mimeType, 'pdfa').createArchive(
+          job.storageKey,
+          job.documentUuid,
+          job.createdAt,
+        );
         await completePdfaJob(job, archiveKey);
         break;
       }
@@ -514,20 +527,24 @@ async function quarantineJob(job: ClaimedJob, message: string): Promise<void> {
   });
 }
 /**
- * Stores extracted page text and updates the document's searchable text fields.
+ * Stores extracted text segments and updates physical page count when available.
  *
  * @param {string} documentUuid - UUID of the document.
- * @param {string[]} pages - Extracted text for each page of the PDF.
+ * @param {Array<{segmentIndex: number; pageNumber: number | null; text: string}>} segments - Ordered text units from the format adapter.
+ * @param {number | null} pageCount - Physical page count, or null for an unpaged format.
  * @returns {Promise<void>} - Resolves when the operation completes.
  */
-async function persistPages(documentUuid: string, pages: string[]): Promise<void> {
+async function persistSegments(
+  documentUuid: string,
+  segments: Array<{ segmentIndex: number; pageNumber: number | null; text: string }>,
+  pageCount: number | null,
+): Promise<void> {
   const { DocumentPage } = await import('./document-page.model.js');
-  const pageCount = Math.max(1, pages.length);
   await sequelize.transaction(async (transaction) => {
     await DocumentPage.destroy({ where: { documentUuid }, transaction });
-    if (pages.length)
+    if (segments.length)
       await DocumentPage.bulkCreate(
-        pages.map((text, i) => ({ uuid: randomUUID(), documentUuid, pageNumber: i + 1, text })),
+        segments.map((segment) => ({ uuid: randomUUID(), documentUuid, ...segment })),
         { transaction },
       );
     await Document.update({ pageCount }, { where: { uuid: documentUuid }, transaction });
@@ -535,7 +552,8 @@ async function persistPages(documentUuid: string, pages: string[]): Promise<void
   logger.info('Persisted extracted document pages', {
     documentUuid,
     pageCount,
-    textLength: pages.join('').length,
+    segmentCount: segments.length,
+    textLength: segments.reduce((total, segment) => total + segment.text.length, 0),
   });
 }
 /**

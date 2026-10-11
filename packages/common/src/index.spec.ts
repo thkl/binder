@@ -2,7 +2,15 @@
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { DocumentListQuerySchema, DocumentSchema, DocumentSearchQuerySchema } from './index.js';
+import {
+  DOCUMENT_FORMAT_CATALOG,
+  DocumentFormatDescriptorSchema,
+  DocumentFormatsResponseSchema,
+  DocumentExtractedTextResponseSchema,
+  DocumentListQuerySchema,
+  DocumentSchema,
+  DocumentSearchQuerySchema,
+} from './index.js';
 
 const documentUuid = '11111111-1111-4111-8111-111111111111';
 const ownerUuid = '22222222-2222-4222-8222-222222222222';
@@ -43,10 +51,68 @@ function createDocument(): unknown {
 }
 
 describe('common document contracts', () => {
+  it('describes PDF as the initial supported document format', () => {
+    assert.deepEqual(
+      DocumentFormatsResponseSchema.parse({ formats: DOCUMENT_FORMAT_CATALOG }).formats[0],
+      {
+        id: 'pdf',
+        displayName: 'PDF',
+        extensions: ['.pdf'],
+        mimeTypes: ['application/pdf'],
+        capabilities: [
+          'upload',
+          'download',
+          'preview',
+          'text-extraction',
+          'ocr',
+          'file-analysis',
+          'page-count',
+          'page-rotation',
+          'split',
+          'compose',
+          'pdfa',
+        ],
+      },
+    );
+  });
+
+  it('rejects invalid format identifiers, extensions, MIME types, and capabilities', () => {
+    const pdf = DOCUMENT_FORMAT_CATALOG[0];
+
+    assert.equal(DocumentFormatDescriptorSchema.safeParse({ ...pdf, id: 'PDF' }).success, false);
+    assert.equal(
+      DocumentFormatDescriptorSchema.safeParse({ ...pdf, extensions: ['pdf'] }).success,
+      false,
+    );
+    assert.equal(
+      DocumentFormatDescriptorSchema.safeParse({ ...pdf, mimeTypes: ['not-a-mime-type'] }).success,
+      false,
+    );
+    assert.equal(
+      DocumentFormatDescriptorSchema.safeParse({ ...pdf, capabilities: ['unsupported'] }).success,
+      false,
+    );
+  });
+
   it('accepts a document response with nullable archive fields', () => {
     const result = DocumentSchema.safeParse(createDocument());
 
     assert.equal(result.success, true);
+  });
+
+  it('accepts an unpaged document and extracted segments without physical page numbers', () => {
+    const document = DocumentSchema.safeParse({
+      ...(createDocument() as Record<string, unknown>),
+      pageCount: null,
+    });
+    const extractedText = DocumentExtractedTextResponseSchema.safeParse({
+      text: 'Plain text content',
+      segments: [{ segmentIndex: 1, pageNumber: null, text: 'Plain text content' }],
+      pages: [],
+    });
+
+    assert.equal(document.success, true);
+    assert.equal(extractedText.success, true);
   });
 
   it('rejects a document response with an invalid checksum', () => {

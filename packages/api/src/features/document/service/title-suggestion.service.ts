@@ -59,7 +59,7 @@ export class TitleSuggestionService {
     );
     const pages = await DocumentPage.findAll({
       where: { documentUuid },
-      order: [['pageNumber', 'ASC']],
+      order: [['segmentIndex', 'ASC']],
       limit: 12,
     });
     const extractedText = pages

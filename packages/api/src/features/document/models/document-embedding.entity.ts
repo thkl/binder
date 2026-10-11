@@ -24,8 +24,11 @@ export class DocumentEmbedding extends Model {
   @BelongsTo(() => Document, { foreignKey: 'documentUuid' })
   declare document?: Document;
 
-  @Column({ field: 'page_number', type: DataType.INTEGER, allowNull: false })
-  declare pageNumber: number;
+  @Column({ field: 'page_number', type: DataType.INTEGER, allowNull: true })
+  declare pageNumber: number | null;
+
+  @Column({ field: 'segment_index', type: DataType.INTEGER, allowNull: false })
+  declare segmentIndex: number;
 
   @Column({ field: 'chunk_index', type: DataType.INTEGER, allowNull: false })
   declare chunkIndex: number;

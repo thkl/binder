@@ -224,7 +224,7 @@
         #uploadInput
         class="home-upload-input"
         type="file"
-        accept="application/pdf,.pdf"
+        [attr.accept]="documents.uploadAccept()"
         multiple
         [disabled]="uploadInProgress()"
         (change)="onUploadSelected($event)"

@@ -35,7 +35,7 @@ describe('document upload controller', () => {
     await assert.rejects(
       controller.upload(undefined, { userId: 'owner-1' } as never),
       (error: unknown) =>
-        error instanceof BadRequestException && /PDF file is required/.test(error.message),
+        error instanceof BadRequestException && /document file is required/.test(error.message),
     );
     expect(upload).not.toHaveBeenCalled();
   });

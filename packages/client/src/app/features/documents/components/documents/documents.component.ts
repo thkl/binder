@@ -216,6 +216,14 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       .filter((document): document is Document => document !== undefined);
     return selected.length === 2 ? { source: selected[0], target: selected[1] } : null;
   });
+  readonly canComposeSelected = computed(() => {
+    const pair = this.selectedVersionPair();
+    return Boolean(
+      pair &&
+        this.documents.supportsMimeCapability(pair.source.mimeType, 'compose') &&
+        this.documents.supportsMimeCapability(pair.target.mimeType, 'compose'),
+    );
+  });
   readonly versionAssignment = signal<{ sourceUuid: string; targetUuid: string } | null>(null);
   readonly copyVersionMetadata = signal(true);
   readonly versionAssignmentLoading = signal(false);
@@ -326,6 +334,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    void this.documents.loadSupportedFormats();
     this.lastDocumentChangeRevision = this.inbox.documentChangeRevision();
     this.unassignedFolderSelected.set(false);
     this.newDocumentsSelected.set(false);
@@ -491,7 +500,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   requestComposeDocuments(): void {
     const pair = this.selectedVersionPair();
-    if (!pair || this.composeLoading() || !this.canLeaveMetadata()) return;
+    if (!pair || !this.canComposeSelected() || this.composeLoading() || !this.canLeaveMetadata())
+      return;
     this.composeDocuments.set({ targetUuid: pair.target.uuid, sourceUuid: pair.source.uuid });
   }
 
@@ -546,7 +556,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   requestSplitDocument(uuid: string): void {
     const document = this.documents.page()?.items.find((item) => item.uuid === uuid);
-    if (!document || document.pageCount < 2) return;
+    if (
+      !document ||
+      document.pageCount === null ||
+      document.pageCount < 2 ||
+      !this.documents.supportsMimeCapability(document.mimeType, 'split')
+    ) return;
     this.documents.error.set(null);
     this.splitDocumentUuid.set(uuid);
   }
@@ -584,7 +599,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       this.drawerDocument()?.uuid === uuid
         ? this.drawerDocument()
         : this.documents.page()?.items.find((item) => item.uuid === uuid);
-    if (!document || document.pageCount < 1) return;
+    if (
+      !document ||
+      document.pageCount === null ||
+      document.pageCount < 1 ||
+      !this.documents.supportsMimeCapability(document.mimeType, 'page-rotation')
+    ) return;
     this.documents.error.set(null);
     this.rotateDocumentUuid.set(uuid);
   }
@@ -624,8 +644,13 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     if (!file) {
       return;
     }
-    if (file.type !== 'application/pdf') {
-      this.documents.error.set('Only PDF documents are supported.');
+    await this.documents.loadSupportedFormats();
+    if (!this.documents.isLikelySupportedUpload(file)) {
+      this.documents.error.set(
+        this.i18n.t('home.uploadUnsupportedFormats', {
+          formats: this.documents.supportedUploadFormatNames(),
+        }),
+      );
       return;
     }
     await this.documents.upload(file);
@@ -668,15 +693,20 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.emptyUploadedCount.set(0);
     if (files.length === 0) return;
 
-    const pdfFiles = files.filter((file) => this.isPdf(file));
-    if (pdfFiles.length !== files.length) {
-      this.emptyUploadError.set(this.i18n.t('home.uploadOnlyPdf'));
+    await this.documents.loadSupportedFormats();
+    const supportedFiles = files.filter((file) => this.documents.isLikelySupportedUpload(file));
+    if (supportedFiles.length !== files.length) {
+      this.emptyUploadError.set(
+        this.i18n.t('home.uploadUnsupportedFormats', {
+          formats: this.documents.supportedUploadFormatNames(),
+        }),
+      );
     }
-    this.emptyUploadTotal.set(pdfFiles.length);
-    if (pdfFiles.length === 0) return;
+    this.emptyUploadTotal.set(supportedFiles.length);
+    if (supportedFiles.length === 0) return;
 
     let failedCount = 0;
-    for (const file of pdfFiles) {
+    for (const file of supportedFiles) {
       const uploaded = await this.documents.upload(file);
       if (uploaded) this.emptyUploadedCount.update((count) => count + 1);
       else failedCount += 1;
@@ -687,10 +717,6 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     if (failedCount > 0 && !this.emptyUploadError()) {
       this.emptyUploadError.set(this.documents.error() ?? this.i18n.t('home.uploadFailed'));
     }
-  }
-
-  private isPdf(file: File): boolean {
-    return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
   }
 
   async nextPage(): Promise<void> {

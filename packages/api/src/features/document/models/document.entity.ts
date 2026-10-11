@@ -30,7 +30,7 @@ export interface DocumentAttributes {
   archiveKey: string | null;
   archiveStatus: DocumentArchiveStatus;
   archiveError: string | null;
-  pageCount: number;
+  pageCount: number | null;
   issuerUuid: string | null;
   isNew: boolean;
   aiSuggestion: Record<string, unknown> | null;
@@ -63,7 +63,7 @@ export type DocumentCreationAttributes = Omit<
   archiveKey?: string | null;
   archiveStatus?: DocumentArchiveStatus;
   archiveError?: string | null;
-  pageCount?: number;
+  pageCount?: number | null;
   issuerUuid?: string | null;
   isNew?: boolean;
   aiSuggestion?: Record<string, unknown> | null;
@@ -129,8 +129,9 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   @Column({ field: 'archive_error', type: DataType.STRING(2000), allowNull: true })
   declare archiveError: string | null;
 
-  @Column({ field: 'page_count', type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
-  declare pageCount: number;
+  @AllowNull
+  @Column({ field: 'page_count', type: DataType.INTEGER, allowNull: true })
+  declare pageCount: number | null;
 
   @AllowNull
   @Column({ field: 'document_type_id', type: DataType.UUID })

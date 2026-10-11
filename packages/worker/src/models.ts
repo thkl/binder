@@ -520,8 +520,8 @@ export class Document extends Model {
   @Column({ field: 'archive_error', type: DataType.STRING(2000), allowNull: true })
   declare archiveError: string | null;
 
-  @Column({ field: 'page_count', type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
-  declare pageCount: number;
+  @Column({ field: 'page_count', type: DataType.INTEGER, allowNull: true })
+  declare pageCount: number | null;
 
   @Column({ field: 'issuer_id', type: DataType.UUID, allowNull: true })
   declare issuerUuid: string | null;
@@ -549,7 +549,8 @@ export class DocumentEmbedding extends Model {
   @ForeignKey(() => Document)
   @Column({ field: 'document_id', type: DataType.UUID })
   declare documentUuid: string;
-  @Column({ field: 'page_number', type: DataType.INTEGER }) declare pageNumber: number;
+  @Column({ field: 'page_number', type: DataType.INTEGER, allowNull: true }) declare pageNumber: number | null;
+  @Column({ field: 'segment_index', type: DataType.INTEGER, allowNull: false }) declare segmentIndex: number;
   @Column({ field: 'chunk_index', type: DataType.INTEGER }) declare chunkIndex: number;
   @Column({ type: DataType.TEXT }) declare content: string;
   @Column({ type: DataType.JSONB }) declare embedding: number[];

@@ -86,7 +86,22 @@ export class DocumentDrawerComponent {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   });
   readonly archiveUrl = computed(() => this.documentData().archiveUrl);
-  readonly archiveReady = computed(() => this.documentData().archiveStatus === 'ready');
+  readonly canDownload = computed(() =>
+    this.documents.supportsMimeCapability(this.documentData().mimeType, 'download'),
+  );
+  readonly canCreateArchive = computed(() =>
+    this.documents.supportsMimeCapability(this.documentData().mimeType, 'pdfa'),
+  );
+  readonly canPreviewPdf = computed(() => this.documents.hasPdfPreview(this.documentData().mimeType));
+  readonly canRotate = computed(() =>
+    this.documents.supportsMimeCapability(this.documentData().mimeType, 'page-rotation'),
+  );
+  readonly canSplit = computed(() =>
+    this.documents.supportsMimeCapability(this.documentData().mimeType, 'split'),
+  );
+  readonly archiveReady = computed(
+    () => this.canCreateArchive() && this.documentData().archiveStatus === 'ready',
+  );
   readonly archiveBusy = computed(() =>
     ['queued', 'processing'].includes(this.documentData().archiveStatus),
   );
