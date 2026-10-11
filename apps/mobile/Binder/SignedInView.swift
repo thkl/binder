@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct SignedInView: View {
     @ObservedObject var model: AuthViewModel
@@ -15,7 +16,8 @@ struct SignedInView: View {
     @State private var queuedUploadMessage: String?
     @State private var canRetryQueuedPDFs = false
     @State private var isShowingScanner = false
-    @State private var scannerError: String?
+    @State private var isShowingDocumentPicker = false
+    @State private var documentEntryError: String?
 
     var body: some View {
         TabView {
@@ -123,7 +125,7 @@ struct SignedInView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         guard DocumentScanner.isSupported else {
-                            scannerError = "Document scanning is not available on this device."
+                            documentEntryError = "Document scanning is not available on this device."
                             return
                         }
                         isShowingScanner = true
@@ -132,22 +134,43 @@ struct SignedInView: View {
                     }
                     .accessibilityLabel("Scan document")
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingDocumentPicker = true
+                    } label: {
+                        Image(systemName: "doc.badge.plus")
+                    }
+                    .accessibilityLabel("Add document")
+                }
             }
             .sheet(isPresented: $isShowingScanner) {
                 DocumentScanner(
                     isPresented: $isShowingScanner,
                     onScan: saveScannedPDF,
-                    onError: { scannerError = $0 }
+                    onError: { documentEntryError = $0 }
                 )
                 .ignoresSafeArea()
             }
-            .alert("Document scanner", isPresented: Binding(
-                get: { scannerError != nil },
-                set: { if !$0 { scannerError = nil } }
+            .fileImporter(
+                isPresented: $isShowingDocumentPicker,
+                allowedContentTypes: [.pdf, .jpeg, .png],
+                allowsMultipleSelection: true,
+                onCompletion: { result in
+                    switch result {
+                    case .success(let files):
+                        Task { await enqueueSelectedDocuments(files) }
+                    case .failure(let error):
+                        documentEntryError = error.localizedDescription
+                    }
+                }
+            )
+            .alert("Document", isPresented: Binding(
+                get: { documentEntryError != nil },
+                set: { if !$0 { documentEntryError = nil } }
             )) {
-                Button("OK", role: .cancel) { scannerError = nil }
+                Button("OK", role: .cancel) { documentEntryError = nil }
             } message: {
-                Text(scannerError ?? "")
+                Text(documentEntryError ?? "")
             }
             .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         }
@@ -254,8 +277,45 @@ struct SignedInView: View {
             canRetryQueuedPDFs = false
             Task { await uploadQueuedPDFs() }
         } catch {
-            scannerError = error.localizedDescription
+            documentEntryError = error.localizedDescription
         }
+    }
+
+    @MainActor
+    private func enqueueSelectedDocuments(_ files: [URL]) async {
+        guard !files.isEmpty else { return }
+
+        var queuedCount = 0
+        do {
+            for file in files {
+                try enqueueSelectedDocument(file)
+                queuedCount += 1
+            }
+        } catch {
+            if queuedCount == 0 {
+                documentEntryError = error.localizedDescription
+                return
+            }
+            queuedUploadMessage = "Added \(queuedCount) of \(files.count) documents. Uploading the queued files…"
+            canRetryQueuedPDFs = true
+            await uploadQueuedPDFs()
+            documentEntryError = error.localizedDescription
+            return
+        }
+
+        queuedUploadMessage = "Added \(queuedCount) document(s). Uploading…"
+        canRetryQueuedPDFs = false
+        await uploadQueuedPDFs()
+    }
+
+    private func enqueueSelectedDocument(_ file: URL) throws {
+        let hasSecurityScopedAccess = file.startAccessingSecurityScopedResource()
+        defer {
+            if hasSecurityScopedAccess {
+                file.stopAccessingSecurityScopedResource()
+            }
+        }
+        _ = try SharedPDFQueue.enqueue(from: file, filename: file.lastPathComponent)
     }
 
 }

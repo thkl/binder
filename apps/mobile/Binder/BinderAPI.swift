@@ -19,10 +19,6 @@ struct BinderDocumentFormat: Codable, Identifiable {
     )
 }
 
-private struct DocumentFormatsEnvelope: Decodable {
-    let data: DocumentFormatsResponse
-}
-
 private struct DocumentFormatsResponse: Decodable {
     let formats: [BinderDocumentFormat]
 }
@@ -1144,7 +1140,7 @@ final class BinderAPI {
 
     func supportedDocumentFormats(serverURL: String) async throws -> [BinderDocumentFormat] {
         let (data, _) = try await request(path: "document-formats", serverURL: serverURL)
-        let formats = try JSONDecoder().decode(DocumentFormatsEnvelope.self, from: data).data.formats
+        let formats = try JSONDecoder().decode(DocumentFormatsResponse.self, from: data).formats
         guard !formats.isEmpty else { throw BinderAPIError.invalidResponse }
         cacheDocumentFormats(formats, serverURL: serverURL)
         return formats

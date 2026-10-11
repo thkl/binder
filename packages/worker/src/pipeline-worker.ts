@@ -362,7 +362,7 @@ export async function processClaimedJob(job: ClaimedJob): Promise<void> {
         const extracted = await adapter.extractText(job.storageKey);
 
         if (extracted.requiresOcr) {
-          logger.warn('Unusable PDF text layer detected; queueing OCR', {
+          logger.warn('No usable text found; queueing OCR', {
             documentUuid: job.documentUuid,
             jobUuid: job.jobUuid,
           });

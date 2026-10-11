@@ -78,11 +78,14 @@ export class ImageDocumentFormatAdapter {
   ): Promise<ExtractedDocumentText> {
     const text = await runTesseract(resolveStoragePath(storageKey), config.ocrLanguages);
     const normalized = text.replace(/\r\n?/gu, '\n').trim();
+    // Tesseract exits successfully with empty output for valid images that
+    // contain no readable text; that is a completed extraction, not a retry.
+    const needsAnotherPass = normalized.length > 0 && requiresOcr(normalized);
     return {
       segments: normalized ? [{ segmentIndex: 1, pageNumber: 1, text: normalized }] : [],
       pageCount: 1,
       text: normalized,
-      requiresOcr: requiresOcr(normalized),
+      requiresOcr: needsAnotherPass,
     };
   }
 
