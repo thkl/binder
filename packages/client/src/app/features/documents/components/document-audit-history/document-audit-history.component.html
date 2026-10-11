@@ -43,7 +43,7 @@
               >
                 {{ 'audit.openVersion' | t }}
               </a>
-              @if (version.versionParentUuid !== null) {
+              @if (versions().length > 1) {
                 <button
                   type="button"
                   class="history-version-delete"

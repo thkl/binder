@@ -375,6 +375,14 @@ private struct DocumentRotateEnvelope: Decodable {
     }
 }
 
+private struct DocumentVersionDeleteEnvelope: Decodable {
+    let data: Result
+
+    struct Result: Decodable {
+        let currentDocument: BinderDocumentSummary
+    }
+}
+
 private struct DocumentRotatePayload: Encodable {
     let pageNumber: Int
     let rotationDegrees: Int
@@ -968,13 +976,14 @@ final class BinderAPI {
         return try JSONDecoder().decode(DocumentVersionListEnvelope.self, from: data).data.items
     }
 
-    func deleteDocumentVersion(serverURL: String, documentUUID: String) async throws {
-        _ = try await mutate(
+    func deleteDocumentVersion(serverURL: String, documentUUID: String) async throws -> BinderDocumentSummary {
+        let data = try await mutate(
             path: "documents/\(documentUUID)/version",
             serverURL: serverURL,
             method: "DELETE",
             payload: EmptyMutationPayload()
         )
+        return try JSONDecoder().decode(DocumentVersionDeleteEnvelope.self, from: data).data.currentDocument
     }
 
     func splitDocument(

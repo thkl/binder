@@ -324,7 +324,7 @@
     "audit.openVersion": "Open version",
     "audit.deleteVersion": "Delete version",
     "audit.deletingVersion": "Deleting version…",
-    "audit.deleteVersionConfirm": "Permanently delete version “{title}”? The current version will remain available.",
+    "audit.deleteVersionConfirm": "Permanently delete version “{title}”? The previous version becomes current if you delete the current one.",
     "audit.event.version-assigned": "Version assigned",
     "audit.event.document-split": "Document split",
     "audit.event.document-composed": "Documents combined",

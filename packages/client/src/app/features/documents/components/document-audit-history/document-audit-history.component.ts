@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
 
 import type { Document, DocumentAuditEvent, DocumentAuditResponse } from '@binder/common';
 import { TranslatePipe, I18nService } from '../../../../common/i18n/i18n.service';
@@ -24,6 +24,7 @@ export class DocumentAuditHistoryComponent {
   readonly rollingBack = signal<string | null>(null);
   readonly deletingVersion = signal<string | null>(null);
   readonly versions = signal<Document[]>([]);
+  readonly currentVersionChanged = output<Document>();
 
   private readonly audit = inject(DocumentAuditService);
   readonly documents = inject(DocumentsService);
@@ -92,7 +93,7 @@ export class DocumentAuditHistoryComponent {
   }
 
   async deleteVersion(version: Document): Promise<void> {
-    if (version.versionParentUuid === null || this.deletingVersion()) return;
+    if (this.versions().length <= 1 || this.deletingVersion()) return;
     const title = version.title?.trim() || version.originalFilename;
     if (
       !window.confirm(
@@ -105,8 +106,11 @@ export class DocumentAuditHistoryComponent {
     this.deletingVersion.set(version.uuid);
     this.error.set(null);
     try {
-      await this.documents.deleteVersion(version.uuid);
-      await this.load(this.documentUuid(), 1);
+      const currentDocument = await this.documents.deleteVersion(version.uuid);
+      const shouldSelectCurrent =
+        version.uuid === this.documentUuid() || version.versionParentUuid === null;
+      if (shouldSelectCurrent) this.currentVersionChanged.emit(currentDocument);
+      await this.load(shouldSelectCurrent ? currentDocument.uuid : this.documentUuid(), 1);
     } catch (error) {
       this.error.set(this.audit.errorMessage(error));
     } finally {

@@ -319,7 +319,7 @@
     "audit.openVersion": "Version öffnen",
     "audit.deleteVersion": "Version löschen",
     "audit.deletingVersion": "Version wird gelöscht…",
-    "audit.deleteVersionConfirm": "Version „{title}“ dauerhaft löschen? Die aktuelle Version bleibt erhalten.",
+    "audit.deleteVersionConfirm": "Version „{title}“ dauerhaft löschen? Beim Löschen der aktuellen Version wird die vorherige Version zur aktuellen.",
     "audit.event.version-assigned": "Version zugeordnet",
     "audit.event.document-split": "Dokument geteilt",
     "audit.event.document-composed": "Dokumente kombiniert",

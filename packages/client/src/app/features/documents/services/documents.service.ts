@@ -25,6 +25,7 @@ import {
   Document as BinderDocument,
   DocumentSchema,
   DocumentVersionListResponseSchema,
+  DocumentVersionDeleteResponseSchema,
   AssignDocumentVersionInputSchema,
   ComposeDocumentInputSchema,
   ComposeDocumentResponseSchema,
@@ -144,18 +145,19 @@ export class DocumentsService {
   }
 
   /**
-   * Deletes an older version from a document family.
+   * Deletes a version from a family and returns the version that remains current.
    *
    * @param {string} documentUuid - UUID of the historical document version.
-   * @returns {Promise<void>} - Resolves when the version and its stored files are removed.
+   * @returns {Promise<BinderDocument>} - The version that remains current after deletion.
    */
-  async deleteVersion(documentUuid: string): Promise<void> {
-    await firstValueFrom(
+  async deleteVersion(documentUuid: string): Promise<BinderDocument> {
+    const response = await firstValueFrom(
       this.http.delete<ApiResponse<unknown>>(
         this.appService.getApiUrl('v1', `documents/${documentUuid}/version`),
         { withCredentials: true },
       ),
     );
+    return DocumentVersionDeleteResponseSchema.parse(response.data).currentDocument;
   }
 
   /**

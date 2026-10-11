@@ -3,8 +3,9 @@ import UIKit
 import PDFKit
 
 struct DocumentPDFView: View {
-    let document: BinderDocumentSummary
+    @State private var document: BinderDocumentSummary
     let serverURL: String
+    private let onCurrentVersionDeleted: (BinderDocumentSummary) -> Void
 
     @State private var loadedPDF: PreparedPDFDocument?
     @State private var pdfFileURL: URL?
@@ -15,6 +16,16 @@ struct DocumentPDFView: View {
     @State private var errorMessage: String?
     @State private var activeSheet: DocumentPDFSheet?
     @State private var actionAlert: DocumentPDFAlert?
+
+    init(
+        document: BinderDocumentSummary,
+        serverURL: String,
+        onCurrentVersionDeleted: @escaping (BinderDocumentSummary) -> Void = { _ in }
+    ) {
+        _document = State(initialValue: document)
+        self.serverURL = serverURL
+        self.onCurrentVersionDeleted = onCurrentVersionDeleted
+    }
 
     private var filename: String {
         let original = document.originalFilename.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -138,7 +149,14 @@ struct DocumentPDFView: View {
             case .share(let fileURL):
                 PDFShareSheet(fileURL: fileURL)
             case .metadata(let document):
-                DocumentMetadataSheet(document: document, serverURL: serverURL)
+                DocumentMetadataSheet(
+                    document: document,
+                    serverURL: serverURL,
+                    onCurrentVersionChanged: { currentDocument in
+                        self.document = currentDocument
+                        onCurrentVersionDeleted(currentDocument)
+                    }
+                )
             case .sharing(let documentUUID):
                 ShareManagementView(
                     resource: .documents,
@@ -170,6 +188,11 @@ struct DocumentPDFView: View {
         isLoading = true
         isWaitingForMalwareScan = false
         errorMessage = nil
+        loadedPDF = nil
+        if let pdfFileURL {
+            try? FileManager.default.removeItem(at: pdfFileURL.deletingLastPathComponent())
+        }
+        pdfFileURL = nil
         defer { isLoading = false }
         do {
             // Let the navigation push finish before starting network and PDF work.
@@ -300,11 +323,17 @@ private struct DocumentMetadataSheet: View {
     @State private var isDeletingVersion = false
     @State private var navigationPath: [DocumentMetadataRoute] = []
     let serverURL: String
+    let onCurrentVersionChanged: (BinderDocumentSummary) -> Void
     @Environment(\.dismiss) private var dismiss
 
-    init(document: BinderDocumentSummary, serverURL: String) {
+    init(
+        document: BinderDocumentSummary,
+        serverURL: String,
+        onCurrentVersionChanged: @escaping (BinderDocumentSummary) -> Void
+    ) {
         _document = State(initialValue: document)
         self.serverURL = serverURL
+        self.onCurrentVersionChanged = onCurrentVersionChanged
     }
 
     private var metadataRows: [(label: String, value: String)] {
@@ -352,20 +381,15 @@ private struct DocumentMetadataSheet: View {
                             let isCurrent = version.versionParentUuid == nil
                             if version.uuid == document.uuid {
                                 DocumentVersionRow(version: version, isCurrent: isCurrent)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        versionDeleteAction(version)
+                                    }
                             } else {
                                 NavigationLink(value: DocumentMetadataRoute.version(version.uuid)) {
                                     DocumentVersionRow(version: version, isCurrent: isCurrent)
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    if !isCurrent {
-                                        Button(role: .destructive) {
-                                            versionToDelete = version
-                                            confirmVersionDelete = true
-                                        } label: {
-                                            Label("Delete version", systemImage: "trash")
-                                        }
-                                        .disabled(isDeletingVersion)
-                                    }
+                                    versionDeleteAction(version)
                                 }
                             }
                         }
@@ -434,7 +458,14 @@ private struct DocumentMetadataSheet: View {
                     }
                 case .version(let uuid):
                     if let version = versions.first(where: { $0.uuid == uuid }) {
-                        DocumentPDFView(document: version, serverURL: serverURL)
+                        DocumentPDFView(
+                            document: version,
+                            serverURL: serverURL,
+                            onCurrentVersionDeleted: { currentDocument in
+                                document = currentDocument
+                                onCurrentVersionChanged(currentDocument)
+                            }
+                        )
                     } else {
                         ContentUnavailableView("Version unavailable", systemImage: "doc.questionmark")
                     }
@@ -455,7 +486,7 @@ private struct DocumentMetadataSheet: View {
         .presentationDragIndicator(navigationPath.isEmpty ? .visible : .hidden)
         .task { await loadDocumentInfo() }
         .confirmationDialog(
-            "Delete this older version?",
+            "Delete this version?",
             isPresented: $confirmVersionDelete,
             titleVisibility: .visible
         ) {
@@ -464,7 +495,7 @@ private struct DocumentMetadataSheet: View {
             }
             Button("Cancel", role: .cancel) { versionToDelete = nil }
         } message: {
-            Text("This permanently deletes the PDF version. The current version will remain available.")
+            Text("This permanently deletes the PDF version. If it is current, the previous version becomes current.")
         }
         .alert(
             "Couldn’t delete version",
@@ -487,6 +518,19 @@ private struct DocumentMetadataSheet: View {
 
     private var sortedVersions: [BinderDocumentSummary] {
         versions.sorted { ($0.versionNumber ?? 0) > ($1.versionNumber ?? 0) }
+    }
+
+    @ViewBuilder
+    private func versionDeleteAction(_ version: BinderDocumentSummary) -> some View {
+        if sortedVersions.count > 1 {
+            Button(role: .destructive) {
+                versionToDelete = version
+                confirmVersionDelete = true
+            } label: {
+                Label("Delete version", systemImage: "trash")
+            }
+            .disabled(isDeletingVersion)
+        }
     }
 
     @MainActor
@@ -557,10 +601,15 @@ private struct DocumentMetadataSheet: View {
             versionToDelete = nil
         }
         do {
-            try await BinderAPI.shared.deleteDocumentVersion(
+            let currentDocument = try await BinderAPI.shared.deleteDocumentVersion(
                 serverURL: serverURL,
                 documentUUID: version.uuid
             )
+            if version.uuid == document.uuid || version.versionParentUuid == nil {
+                document = currentDocument
+                navigationPath = []
+                onCurrentVersionChanged(currentDocument)
+            }
             await loadVersionHistory()
         } catch {
             versionDeleteError = error.localizedDescription

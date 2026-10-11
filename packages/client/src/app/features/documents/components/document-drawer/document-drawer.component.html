@@ -260,6 +260,7 @@
           <binder-document-audit-history
             [documentUuid]="documentUuid()"
             [refreshKey]="documentData().updatedAt"
+            (currentVersionChanged)="versionSelected.emit($event.uuid)"
           />
         </section>
       }

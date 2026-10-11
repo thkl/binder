@@ -53,12 +53,32 @@ export class DocumentStore extends BaseCrudStore<Document> {
   async reparentVersionChildren(
     ownerUuid: string,
     previousParentUuid: string,
-    nextParentUuid: string,
+    nextParentUuid: string | null,
     transaction?: Transaction,
+    exceptUuid?: string,
   ): Promise<void> {
     await this.model.update(
       { versionParentUuid: nextParentUuid },
-      { where: { ownerUuid, versionParentUuid: previousParentUuid }, transaction },
+      {
+        where: {
+          ownerUuid,
+          versionParentUuid: previousParentUuid,
+          ...(exceptUuid ? { uuid: { [Op.ne]: exceptUuid } } : {}),
+        },
+        transaction,
+      },
+    );
+  }
+
+  async setVersionParent(
+    ownerUuid: string,
+    uuid: string,
+    versionParentUuid: string | null,
+    transaction?: Transaction,
+  ): Promise<void> {
+    await this.model.update(
+      { versionParentUuid },
+      { where: { ownerUuid, uuid }, transaction },
     );
   }
 

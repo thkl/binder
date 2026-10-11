@@ -25,6 +25,7 @@ import {
   SharedDocumentListResponseSchema,
   DocumentStorageIssueListResponseSchema,
   DocumentDeleteResponseSchema,
+  DocumentVersionDeleteResponseSchema,
   ComposeDocumentInput,
   ComposeDocumentResponseSchema,
   RotateDocumentInput,
@@ -894,7 +895,11 @@ export class DocumentService {
    * @param {string} uuid - UUID of the target document or record.
    * @returns Deletes an owned document and its related storage and metadata records.
    */
-  async remove(ownerUuid: string, uuid: string, reparentVersionsTo?: string) {
+  async remove(
+    ownerUuid: string,
+    uuid: string,
+    versionReparent?: { nextParentUuid: string | null; promoteUuid?: string },
+  ) {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) {
       throw new NotFoundException('Document not found');
@@ -926,11 +931,25 @@ export class DocumentService {
       await DocumentStorageIssue.destroy({ where: { documentUuid: uuid }, transaction });
       await DocumentAuditEventEntity.destroy({ where: { documentUuid: uuid }, transaction });
       await this.removeDocumentFromChangeSets(ownerUuid, uuid, transaction);
-      if (reparentVersionsTo) {
+      if (versionReparent?.promoteUuid) {
+        await this.documents.setVersionParent(
+          ownerUuid,
+          versionReparent.promoteUuid,
+          null,
+          transaction,
+        );
         await this.documents.reparentVersionChildren(
           ownerUuid,
           uuid,
-          reparentVersionsTo,
+          versionReparent.promoteUuid,
+          transaction,
+          versionReparent.promoteUuid,
+        );
+      } else if (versionReparent) {
+        await this.documents.reparentVersionChildren(
+          ownerUuid,
+          uuid,
+          versionReparent.nextParentUuid,
           transaction,
         );
       }
@@ -1072,11 +1091,11 @@ export class DocumentService {
   }
 
   /**
-   * Deletes a non-current version and reconnects any older versions to its parent.
+   * Deletes a version and promotes the preceding version when the current version is removed.
    *
    * @param {string} ownerUuid - UUID of the authenticated document owner.
-   * @param {string} uuid - UUID of the historical version to remove.
-   * @returns Resolves with the deleted document identifier.
+   * @param {string} uuid - UUID of the version to remove.
+   * @returns Resolves with the deleted identifier and the remaining current document.
    */
   async removeVersion(ownerUuid: string, uuid: string) {
     const version = await this.documents.findOwnedByUuid(ownerUuid, uuid);
@@ -1084,13 +1103,41 @@ export class DocumentService {
 
     const family = await this.documents.findOwnedVersionFamily(ownerUuid, version.versionFamilyUuid);
     if (family.length <= 1) {
-      throw new ConflictException('The only version in a document family cannot be removed as history');
-    }
-    if (version.versionParentUuid === null) {
-      throw new ConflictException('The current document version cannot be removed from version history');
+      throw new ConflictException('The only version in a document family cannot be removed');
     }
 
-    return this.remove(ownerUuid, uuid, version.versionParentUuid);
+    let versionReparent: { nextParentUuid: string | null; promoteUuid?: string };
+    if (version.versionParentUuid === null) {
+      const precedingVersion =
+        family
+          .filter((candidate) => candidate.versionParentUuid === version.uuid)
+          .sort((left, right) => right.versionNumber - left.versionNumber)[0] ??
+        family
+          .filter((candidate) => candidate.uuid !== version.uuid)
+          .sort((left, right) => right.versionNumber - left.versionNumber)[0];
+      if (!precedingVersion) {
+        throw new ConflictException('There is no previous version to promote');
+      }
+      versionReparent = { nextParentUuid: null, promoteUuid: precedingVersion.uuid };
+    } else {
+      versionReparent = { nextParentUuid: version.versionParentUuid };
+    }
+
+    await this.remove(ownerUuid, uuid, versionReparent);
+    const remainingVersions = await this.documents.findOwnedVersionFamily(
+      ownerUuid,
+      version.versionFamilyUuid,
+    );
+    const currentDocument =
+      remainingVersions.find((candidate) => candidate.versionParentUuid === null) ??
+      remainingVersions.sort((left, right) => right.versionNumber - left.versionNumber)[0];
+    if (!currentDocument) throw new ConflictException('No document version remains after deletion');
+
+    return DocumentVersionDeleteResponseSchema.parse({
+      deleted: true,
+      uuid,
+      currentDocument: this.toDocumentResponse(currentDocument),
+    });
   }
 
   /**

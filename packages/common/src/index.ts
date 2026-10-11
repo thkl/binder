@@ -245,6 +245,11 @@ export const DocumentDeleteResponseSchema = z.object({
 });
 export type DocumentDeleteResponse = z.infer<typeof DocumentDeleteResponseSchema>;
 
+export const DocumentVersionDeleteResponseSchema = DocumentDeleteResponseSchema.extend({
+  currentDocument: DocumentSchema,
+});
+export type DocumentVersionDeleteResponse = z.infer<typeof DocumentVersionDeleteResponseSchema>;
+
 export const DocumentOpenResponseSchema = z.object({
   isNew: z.boolean(),
   updatedAt: z.iso.datetime(),

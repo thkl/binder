@@ -310,11 +310,11 @@ export class DocumentController implements OnModuleDestroy {
   }
 
   /**
-   * Deletes an older document version while preserving the current version.
+   * Deletes a document version and promotes the preceding version when needed.
    *
-   * @param {string} uuid - UUID of the historical version to delete.
+   * @param {string} uuid - UUID of the version to delete.
    * @param {ScopedUser} user - Authenticated user making the request.
-   * @returns Resolves with the deleted document identifier.
+   * @returns Resolves with the deleted identifier and the version that remains current.
    */
   @Delete(':uuid/version')
   async removeVersion(@Param('uuid') uuid: string, @CurrentUser() user: ScopedUser) {
