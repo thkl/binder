@@ -156,10 +156,13 @@ private enum DocumentPDFSheet: Identifiable {
 private struct DocumentMetadataSheet: View {
     @State private var document: BinderDocumentSummary
     @State private var folders: [BinderFolder] = []
+    @State private var versions: [BinderDocumentSummary] = []
     @State private var isLoadingFolders = true
     @State private var isLoadingMetadata = true
+    @State private var isLoadingVersions = true
     @State private var folderError: String?
     @State private var metadataError: String?
+    @State private var versionError: String?
     @State private var navigationPath: [DocumentMetadataRoute] = []
     let serverURL: String
     @Environment(\.dismiss) private var dismiss
@@ -192,6 +195,37 @@ private struct DocumentMetadataSheet: View {
                     LabeledContent("Filename", value: document.originalFilename)
                     if let pageCount = document.pageCount {
                         LabeledContent("Pages", value: String(pageCount))
+                    }
+                }
+
+                Section("Version history") {
+                    if isLoadingVersions {
+                        ProgressView("Loading versions…")
+                    } else if let versionError {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label(versionError, systemImage: "exclamationmark.triangle")
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Button("Retry") { Task { await loadVersionHistory() } }
+                                .frame(minHeight: 44)
+                        }
+                    } else if sortedVersions.isEmpty {
+                        Text("No version history available")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(sortedVersions) { version in
+                            if version.uuid == document.uuid {
+                                DocumentVersionRow(version: version, isCurrent: true)
+                            } else {
+                                NavigationLink(value: DocumentMetadataRoute.version(version.uuid)) {
+                                    DocumentVersionRow(version: version, isCurrent: false)
+                                }
+                            }
+                        }
+                        if sortedVersions.count == 1 {
+                            Text("No previous versions")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
@@ -251,6 +285,12 @@ private struct DocumentMetadataSheet: View {
                         metadataError = nil
                         Task { await loadDocumentInfo() }
                     }
+                case .version(let uuid):
+                    if let version = versions.first(where: { $0.uuid == uuid }) {
+                        DocumentPDFView(document: version, serverURL: serverURL)
+                    } else {
+                        ContentUnavailableView("Version unavailable", systemImage: "doc.questionmark")
+                    }
                 }
             }
             .toolbar {
@@ -275,6 +315,10 @@ private struct DocumentMetadataSheet: View {
         }
     }
 
+    private var sortedVersions: [BinderDocumentSummary] {
+        versions.sorted { ($0.versionNumber ?? 0) > ($1.versionNumber ?? 0) }
+    }
+
     @MainActor
     private func loadDocumentInfo() async {
         isLoadingFolders = true
@@ -287,6 +331,10 @@ private struct DocumentMetadataSheet: View {
             documentUUID: document.uuid
         )
         async let foldersRequest = BinderAPI.shared.foldersForDocument(
+            serverURL: serverURL,
+            documentUUID: document.uuid
+        )
+        async let versionsRequest = BinderAPI.shared.documentVersions(
             serverURL: serverURL,
             documentUUID: document.uuid
         )
@@ -304,11 +352,88 @@ private struct DocumentMetadataSheet: View {
             folderError = error.localizedDescription
         }
         isLoadingFolders = false
+
+        do {
+            versions = try await versionsRequest
+            versionError = nil
+        } catch {
+            versionError = error.localizedDescription
+        }
+        isLoadingVersions = false
+    }
+
+    @MainActor
+    private func loadVersionHistory() async {
+        isLoadingVersions = true
+        versionError = nil
+        defer { isLoadingVersions = false }
+        do {
+            versions = try await BinderAPI.shared.documentVersions(
+                serverURL: serverURL,
+                documentUUID: document.uuid
+            )
+            versionError = nil
+        } catch {
+            versionError = error.localizedDescription
+        }
     }
 }
 
 private enum DocumentMetadataRoute: Hashable {
     case edit
+    case version(String)
+}
+
+private struct DocumentVersionRow: View {
+    let version: BinderDocumentSummary
+    let isCurrent: Bool
+
+    private var title: String {
+        let candidate = version.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return candidate.isEmpty ? version.originalFilename : candidate
+    }
+
+    private var createdDate: String? {
+        guard let createdAt = version.createdAt else { return nil }
+        let fractionalFormatter = ISO8601DateFormatter()
+        fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = fractionalFormatter.date(from: createdAt)
+            ?? ISO8601DateFormatter().date(from: createdAt)
+        return date?.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Version \(version.versionNumber ?? 1)")
+                    .font(.headline)
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                HStack(spacing: 8) {
+                    if let createdDate {
+                        Text(createdDate)
+                    }
+                    if let pageCount = version.pageCount {
+                        Text("\(pageCount) pages")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            if isCurrent {
+                Label("Current", systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.tint)
+                    .labelStyle(.titleAndIcon)
+            }
+        }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
 }
 
 private struct PDFDocumentView: UIViewRepresentable {

@@ -133,13 +133,23 @@ struct DocumentMetadataEditorView: View {
             }
 
             Section("Folders") {
-                if folders.isEmpty {
-                    Text("No folders are available")
+                if selectedFolders.isEmpty {
+                    Text("No folders selected")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(sortedFolders) { folder in
-                        Toggle(folder.path(in: folders), isOn: folderBinding(folder.uuid))
+                    ForEach(selectedFolders) { folder in
+                        Text(folder.path(in: folders))
                     }
+                    .onDelete(perform: removeSelectedFolders)
+                }
+
+                NavigationLink {
+                    FolderSelectionView(
+                        folders: sortedFolders,
+                        selectedFolderUUIDs: $selectedFolderUUIDs
+                    )
+                } label: {
+                    Label("Add folder", systemImage: "folder.badge.plus")
                 }
             }
 
@@ -183,15 +193,82 @@ struct DocumentMetadataEditorView: View {
                     Toggle(option, isOn: multiSelectBinding(definition.key, option: option))
                 }
             }
+        case "date":
+            DatePicker(
+                definition.label,
+                selection: dateBinding(definition.key, includesTime: false),
+                displayedComponents: .date
+            )
+            .datePickerStyle(.compact)
+        case "datetime":
+            DatePicker(
+                definition.label,
+                selection: dateBinding(definition.key, includesTime: true),
+                displayedComponents: [.date, .hourAndMinute]
+            )
+            .datePickerStyle(.compact)
         case "number":
             TextField(definition.label, text: textBinding(definition.key))
                 .keyboardType(.decimalPad)
-        case "date", "datetime":
+        case "text":
             TextField(definition.label, text: textBinding(definition.key))
-                .textInputAutocapitalization(.never)
         default:
             TextField(definition.label, text: textBinding(definition.key))
         }
+    }
+
+    private func dateBinding(_ key: String, includesTime: Bool) -> Binding<Date> {
+        Binding(
+            get: {
+                guard case .string(let value) = customValues[key],
+                      let date = parseDate(value, includesTime: includesTime) else {
+                    return Date()
+                }
+                return date
+            },
+            set: { customValues[key] = .string(formatDate($0, includesTime: includesTime)) }
+        )
+    }
+
+    private func parseDate(_ value: String, includesTime: Bool) -> Date? {
+        if includesTime {
+            let isoFormatter = ISO8601DateFormatter()
+            isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = isoFormatter.date(from: value) { return date }
+            isoFormatter.formatOptions = [.withInternetDateTime]
+            if let date = isoFormatter.date(from: value) { return date }
+        } else if value.count >= 10 {
+            // Date fields may arrive as a date-only value or as an ISO timestamp.
+            let datePrefix = String(value.prefix(10))
+            if let date = parseLocalDate(datePrefix, format: "yyyy-MM-dd") { return date }
+        }
+
+        let formats = includesTime
+            ? ["yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss.SSS"]
+            : ["yyyy-MM-dd"]
+        for format in formats {
+            if let date = parseLocalDate(value, format: format) { return date }
+        }
+        return nil
+    }
+
+    private func parseLocalDate(_ value: String, format: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.isLenient = false
+        formatter.dateFormat = format
+        return formatter.date(from: value)
+    }
+
+    private func formatDate(_ date: Date, includesTime: Bool) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.dateFormat = includesTime ? "yyyy-MM-dd'T'HH:mm" : "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
 
     private func tagBinding(_ uuid: String) -> Binding<Bool> {
@@ -210,14 +287,14 @@ struct DocumentMetadataEditorView: View {
         }
     }
 
-    private func folderBinding(_ uuid: String) -> Binding<Bool> {
-        Binding(
-            get: { selectedFolderUUIDs.contains(uuid) },
-            set: { selected in
-                if selected { selectedFolderUUIDs.insert(uuid) }
-                else { selectedFolderUUIDs.remove(uuid) }
-            }
-        )
+    private var selectedFolders: [BinderFolder] {
+        sortedFolders.filter { selectedFolderUUIDs.contains($0.uuid) }
+    }
+
+    private func removeSelectedFolders(at offsets: IndexSet) {
+        let activeFolders = selectedFolders
+        let removedUUIDs = offsets.compactMap { activeFolders[$0].uuid }
+        selectedFolderUUIDs = selectedFolderUUIDs.subtracting(removedUUIDs)
     }
 
     private func booleanBinding(_ key: String) -> Binding<Bool> {
@@ -270,6 +347,9 @@ struct DocumentMetadataEditorView: View {
 
     @MainActor
     private func loadOptions() async {
+        // The view can reappear after navigating back from the folder picker. Preserve
+        // in-progress edits instead of reloading server state over the user's selection.
+        guard options == nil else { return }
         isLoading = true
         loadError = nil
         defer { isLoading = false }
@@ -287,8 +367,9 @@ struct DocumentMetadataEditorView: View {
             )
             options = loadedOptions
             folders = loadedFolders
-            originalFolderUUIDs = Set(loadedAssignedFolders.map(\.uuid))
-            selectedFolderUUIDs = originalFolderUUIDs
+            let assignedFolderUUIDs = Set(loadedAssignedFolders.map(\.uuid))
+            originalFolderUUIDs = assignedFolderUUIDs
+            selectedFolderUUIDs = assignedFolderUUIDs
         } catch {
             loadError = error.localizedDescription
         }
@@ -326,22 +407,19 @@ struct DocumentMetadataEditorView: View {
                 custom: customValues
             )
 
-            var routingFolderUUIDs: Set<String> = []
-            if let folderUUID = options.issuers.first(where: { $0.uuid == issuerUUID })?.folderUuid {
-                routingFolderUUIDs.insert(folderUUID)
-            }
-            if let folderUUID = options.vocabulary.documentTypes.first(where: { $0.uuid == documentTypeUUID })?.folderUuid {
-                routingFolderUUIDs.insert(folderUUID)
-            }
-            if let folderUUID = options.vocabulary.categories.first(where: { $0.uuid == categoryUUID })?.folderUuid {
-                routingFolderUUIDs.insert(folderUUID)
-            }
-            if selectedFolderUUIDs != originalFolderUUIDs {
+            let folderSelectionChanged = selectedFolderUUIDs != originalFolderUUIDs
+            if folderSelectionChanged {
+                // Metadata saving can add automatic routing folders. Reconcile against
+                // the server's latest links so both additions and swipe deletions apply.
+                let currentlyAssignedFolders = try await BinderAPI.shared.foldersForDocument(
+                    serverURL: serverURL,
+                    documentUUID: document.uuid
+                )
                 try await BinderAPI.shared.updateDocumentFolders(
                     serverURL: serverURL,
                     documentUUID: document.uuid,
                     selectedFolderUUIDs: selectedFolderUUIDs,
-                    originalFolderUUIDs: originalFolderUUIDs.union(routingFolderUUIDs)
+                    originalFolderUUIDs: Set(currentlyAssignedFolders.map(\.uuid))
                 )
             }
 
@@ -350,6 +428,9 @@ struct DocumentMetadataEditorView: View {
                 serverURL: serverURL,
                 documentUUID: document.uuid
             )
+            if folderSelectionChanged, Set(updatedFolders.map(\.uuid)) != selectedFolderUUIDs {
+                throw BinderAPIError.server("The folder assignments could not be saved. Please try again.")
+            }
             onSaved(updatedDocument, updatedFolders)
             dismiss()
         } catch {
@@ -382,8 +463,68 @@ struct DocumentMetadataEditorView: View {
             pageCount: document.pageCount,
             metadataSummary: metadata,
             status: document.status,
-            isNew: document.isNew
+            isNew: document.isNew,
+            versionNumber: document.versionNumber,
+            createdAt: document.createdAt
         )
+    }
+}
+
+private struct FolderSelectionView: View {
+    let folders: [BinderFolder]
+    @Binding var selectedFolderUUIDs: Set<String>
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    private var filteredFolders: [BinderFolder] {
+        guard !searchText.isEmpty else { return folders }
+        return folders.filter { $0.path(in: folders).localizedCaseInsensitiveContains(searchText) }
+    }
+
+    var body: some View {
+        List(filteredFolders) { folder in
+            Button {
+                var updatedSelection = selectedFolderUUIDs
+                if updatedSelection.contains(folder.uuid) {
+                    updatedSelection.remove(folder.uuid)
+                } else {
+                    updatedSelection.insert(folder.uuid)
+                }
+                selectedFolderUUIDs = updatedSelection
+            } label: {
+                HStack(spacing: 12) {
+                    Text(folder.path(in: folders))
+                        .foregroundStyle(.primary)
+                    Spacer(minLength: 12)
+                    if selectedFolderUUIDs.contains(folder.uuid) {
+                        Image(systemName: "checkmark")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.tint)
+                            .accessibilityLabel("Selected")
+                    }
+                }
+                .contentShape(Rectangle())
+                .frame(minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(selectedFolderUUIDs.contains(folder.uuid) ? .isSelected : [])
+        }
+        .overlay {
+            if folders.isEmpty {
+                ContentUnavailableView("No folders available", systemImage: "folder")
+            } else if filteredFolders.isEmpty {
+                ContentUnavailableView.search(text: searchText)
+            }
+        }
+        .searchable(text: $searchText, prompt: "Search folders")
+        .navigationTitle("Add folders")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
+            }
+        }
     }
 }
 

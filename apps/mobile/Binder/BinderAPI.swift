@@ -65,6 +65,8 @@ struct BinderDocumentSummary: Decodable, Identifiable {
     let metadataSummary: BinderDocumentMetadataSummary?
     let status: String?
     let isNew: Bool?
+    let versionNumber: Int?
+    let createdAt: String?
 
     var id: String { uuid }
 }
@@ -304,6 +306,14 @@ private struct DocumentListEnvelope: Decodable {
 
 private struct DocumentSummaryEnvelope: Decodable {
     let data: BinderDocumentSummary
+}
+
+private struct DocumentVersionListEnvelope: Decodable {
+    let data: Items
+
+    struct Items: Decodable {
+        let items: [BinderDocumentSummary]
+    }
 }
 
 private struct ShareRecipientsEnvelope: Decodable {
@@ -829,6 +839,14 @@ final class BinderAPI {
     func documentSummary(serverURL: String, documentUUID: String) async throws -> BinderDocumentSummary {
         let (data, _) = try await request(path: "documents/\(documentUUID)", serverURL: serverURL)
         return try JSONDecoder().decode(DocumentSummaryEnvelope.self, from: data).data
+    }
+
+    func documentVersions(serverURL: String, documentUUID: String) async throws -> [BinderDocumentSummary] {
+        let (data, _) = try await request(
+            path: "documents/\(documentUUID)/versions",
+            serverURL: serverURL
+        )
+        return try JSONDecoder().decode(DocumentVersionListEnvelope.self, from: data).data.items
     }
 
     func search(serverURL: String, query: String, limit: Int = 20) async throws -> BinderSearchResponse {
