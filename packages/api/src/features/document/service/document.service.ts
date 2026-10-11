@@ -1440,7 +1440,7 @@ export class DocumentService {
    * @param {string} ownerUuid - UUID of the authenticated document owner.
    * @param {string} uuid - UUID of the document to rotate.
    * @param {RotateDocumentInput} input - Page number and clockwise rotation step.
-   * @returns The rotated PDF as a new, queued document version.
+   * @returns The rotated document as a new, queued version.
    */
   async rotatePage(ownerUuid: string, uuid: string, input: RotateDocumentInput) {
     const original = await this.documents.findOwnedByUuid(ownerUuid, uuid);
@@ -1458,6 +1458,7 @@ export class DocumentService {
       rotatedBuffer,
       rotatedUuid,
       original.originalFilename,
+      original.mimeType,
     );
     const malwareScanRequired = await this.isMalwareScanRequired();
     const family = await this.documents.findOwnedVersionFamily(
@@ -1476,7 +1477,7 @@ export class DocumentService {
         versionParentUuid: null,
         title: original.title,
         originalFilename: original.originalFilename,
-        mimeType: adapter.descriptor.mimeTypes[0]!,
+        mimeType: original.mimeType,
         sizeBytes: stored.sizeBytes,
         checksumSha256: stored.checksumSha256,
         storageKey: stored.storageKey,
@@ -1507,7 +1508,7 @@ export class DocumentService {
         ownerUuid,
         {
           buffer: rotatedBuffer,
-          mimetype: adapter.descriptor.mimeTypes[0]!,
+          mimetype: original.mimeType,
           originalname: original.originalFilename,
         },
         stored.checksumSha256,
@@ -1526,7 +1527,7 @@ export class DocumentService {
         actorUuid: ownerUuid,
         actorType: 'user',
         eventType: 'document-rotated',
-        summary: 'PDF page rotated; result became a new document version',
+        summary: 'Document page rotated; result became a new document version',
         details: {
           sourceDocumentUuid: original.uuid,
           pageNumber: input.pageNumber,

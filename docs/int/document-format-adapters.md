@@ -50,10 +50,11 @@ archive generation. Its current implementation uses MuPDF and OCRmyPDF.
 ### JPEG and PNG (`image`)
 
 JPEG and PNG share one image adapter and one document record. One image is one
-document and one logical page. Original images stay in their original format.
-The worker uses Tesseract for searchable text and MuPDF to create a cached PNG
-thumbnail. Images do not claim PDF analysis, PDF/A, page rotation, split, or
-compose capabilities.
+document and one logical page. Original versions stay in their original format.
+The API supports right-angle rotation by creating a new version; PNG rotation is
+lossless and JPEG rotation is re-encoded at high quality. The worker uses
+Tesseract for searchable text and MuPDF to create a cached PNG thumbnail.
+Images do not claim PDF analysis, PDF/A, split, or compose capabilities.
 
 The initial image guardrails are:
 

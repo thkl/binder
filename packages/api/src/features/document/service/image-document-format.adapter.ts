@@ -10,7 +10,9 @@ export class ImageDocumentFormatAdapter {
     displayName: 'Image',
     extensions: ['.jpg', '.jpeg', '.png'],
     mimeTypes: ['image/jpeg', 'image/png'],
-    capabilities: ['upload', 'download', 'preview', 'text-extraction', 'ocr', 'page-count'],
+    capabilities: [
+      'upload', 'download', 'preview', 'text-extraction', 'ocr', 'page-count', 'page-rotation',
+    ],
   };
 
   constructor(private readonly storage: DocumentStorageService) {}
@@ -51,11 +53,15 @@ export class ImageDocumentFormatAdapter {
   }
 
   rotatePage(
-    _storageKey: string,
-    _pageNumber: number,
-    _rotationDegrees: -90 | 90 | 180,
-  ): never {
-    throw new BadRequestException('Image documents cannot be rotated through the page-rotation action');
+    storageKey: string,
+    pageNumber: number,
+    rotationDegrees: -90 | 90 | 180,
+  ): Promise<Buffer> {
+    if (pageNumber !== 1) {
+      throw new BadRequestException('An image document has only one page');
+    }
+    const mimeType = storageKey.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+    return this.storage.rotateImage(storageKey, mimeType, rotationDegrees);
   }
 
   compose(

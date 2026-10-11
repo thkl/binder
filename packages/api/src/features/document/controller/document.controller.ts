@@ -363,7 +363,7 @@ export class DocumentController implements OnModuleDestroy {
   }
 
   /**
-   * Rotates one PDF page by a quarter-turn and creates a new document version.
+   * Rotates one supported document page by a right angle and creates a new version.
    *
    * @param {string} uuid - UUID of the document to rotate.
    * @param {unknown} body - Untrusted page number and rotation direction.

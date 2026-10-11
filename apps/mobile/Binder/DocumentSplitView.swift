@@ -111,7 +111,7 @@ struct DocumentSplitView: View {
     private func resultRow(document: BinderDocumentSummary, description: String) -> some View {
         if isContentAvailable(document) {
             NavigationLink {
-                DocumentPDFView(document: document, serverURL: serverURL)
+                DocumentView(document: document, serverURL: serverURL)
             } label: {
                 DocumentSplitResultRow(document: document, description: description)
             }

@@ -37,9 +37,11 @@ struct DocumentRotateView: View {
 
     private var rotationForm: some View {
         Form {
-            Section("Page") {
-                Stepper(value: $pageNumber, in: 1...pageCount) {
-                    LabeledContent("Page number", value: "\(pageNumber) of \(pageCount)")
+            if pageCount > 1 {
+                Section("Page") {
+                    Stepper(value: $pageNumber, in: 1...pageCount) {
+                        LabeledContent("Page number", value: "\(pageNumber) of \(pageCount)")
+                    }
                 }
             }
 
@@ -75,7 +77,7 @@ struct DocumentRotateView: View {
             }
 
             Section {
-                Text("The original PDF stays in version history. Rotating a page creates a new version and queues it for processing.")
+                Text("The original document stays in version history. Rotating a page creates a new version and queues it for processing.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -104,7 +106,7 @@ struct DocumentRotateView: View {
                     .foregroundStyle(.secondary)
                 if !["uploaded", "scanning", "quarantined"].contains(result.status ?? "") {
                     NavigationLink("Open rotated version") {
-                        DocumentPDFView(document: result, serverURL: serverURL)
+                        DocumentView(document: result, serverURL: serverURL)
                     }
                 }
             } footer: {

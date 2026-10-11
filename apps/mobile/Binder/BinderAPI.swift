@@ -1218,6 +1218,19 @@ final class BinderAPI {
         return formats
     }
 
+    func documentCapabilities(serverURL: String, mimeType: String?) async -> Set<String> {
+        guard let mimeType else { return [] }
+        let formats: [BinderDocumentFormat]
+        do {
+            formats = try await supportedDocumentFormats(serverURL: serverURL)
+        } catch {
+            formats = cachedDocumentFormats(serverURL: serverURL) ?? []
+        }
+        return Set(formats.first(where: { format in
+            format.mimeTypes.contains(where: { $0.caseInsensitiveCompare(mimeType) == .orderedSame })
+        })?.capabilities ?? [])
+    }
+
     func uploadDocument(serverURL: String, fileURL: URL) async throws {
         var hasSession = false
         do {

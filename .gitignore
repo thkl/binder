@@ -21,3 +21,4 @@ docs/int/*
 !docs/int/document-format-adapter-plan.md
 !docs/int/document-format-adapters.md
 .pnpm-store/
+apps/mobile/build-and-install-device.sh

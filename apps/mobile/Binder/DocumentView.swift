@@ -3,7 +3,7 @@ import UIKit
 import PDFKit
 import ImageIO
 
-struct DocumentPDFView: View {
+struct DocumentView: View {
     @State private var document: BinderDocumentSummary
     let serverURL: String
     private let onCurrentVersionDeleted: (BinderDocumentSummary) -> Void
@@ -14,6 +14,7 @@ struct DocumentPDFView: View {
 
     @State private var loadedPDF: PreparedPDFDocument?
     @State private var loadedImage: UIImage?
+    @State private var documentCapabilities: Set<String> = []
     @State private var pdfFileURL: URL?
     @State private var isLoading = true
     @State private var isWaitingForMalwareScan = false
@@ -53,20 +54,20 @@ struct DocumentPDFView: View {
     }
 
     private var canSplitDocument: Bool {
-        guard isPDFDocument else { return false }
+        guard documentCapabilities.contains("split") else { return false }
         guard (document.pageCount ?? 0) > 1 else { return false }
         return !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
     }
 
     private var canComposeDocument: Bool {
-        guard isPDFDocument else { return false }
+        guard documentCapabilities.contains("compose") else { return false }
         return (document.pageCount ?? 0) > 0 &&
             !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
     }
 
     private var canRotateDocument: Bool {
-        guard isPDFDocument else { return false }
-        return (document.pageCount ?? 0) > 0 &&
+        documentCapabilities.contains("page-rotation") &&
+            (document.pageCount ?? 0) > 0 &&
             !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
     }
 
@@ -266,6 +267,10 @@ struct DocumentPDFView: View {
         do {
             // Let the navigation push finish before starting network and PDF work.
             try await Task.sleep(for: .milliseconds(450))
+            documentCapabilities = await BinderAPI.shared.documentCapabilities(
+                serverURL: serverURL,
+                mimeType: document.mimeType
+            )
             let data: Data
             while true {
                 try Task.checkCancellation()
@@ -585,7 +590,7 @@ private struct DocumentMetadataSheet: View {
                     }
                 case .version(let uuid):
                     if let version = versions.first(where: { $0.uuid == uuid }) {
-                        DocumentPDFView(
+                        DocumentView(
                             document: version,
                             serverURL: serverURL,
                             onCurrentVersionDeleted: { currentDocument in

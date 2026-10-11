@@ -359,9 +359,9 @@ server's rejection for an unsupported file.
 ### Phase 7 — Enable one additional format
 
 - **Selected: JPEG and PNG images**, with one image per document. They have
-  clear preview and OCR uses, but they still need
-  size, pixel-dimension, decompression-bomb, multi-image, rotation, and
-  thumbnail policies. Office formats introduce conversion dependencies and
+  clear preview and OCR uses. Their initial size, pixel-dimension,
+  decompression-bomb, multi-image, rotation, and thumbnail policies are now
+  implemented. Office formats introduce conversion dependencies and
   additional parser/renderer risks, so evaluate them independently.
 - Implement its adapter end to end, including upload detection, safe storage,
   scan gating, worker processing, preview/download, search representation,

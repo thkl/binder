@@ -15,7 +15,7 @@
 		A10000000000000000000006 /* NativeSSO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* NativeSSO.swift */; };
 		A10000000000000000000007 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* AppSettings.swift */; };
 		A10000000000000000000008 /* SignedInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* SignedInView.swift */; };
-		A10000000000000000000009 /* DocumentPDFView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* DocumentPDFView.swift */; };
+		A10000000000000000000009 /* DocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* DocumentView.swift */; };
 		A10000000000000000000010 /* SharedPDFQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SharedPDFQueue.swift */; };
 		A10000000000000000000011 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* ShareViewController.swift */; };
 		A10000000000000000000012 /* SharedPDFQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SharedPDFQueue.swift */; };
@@ -78,7 +78,7 @@
 		A20000000000000000000009 /* Binder.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Binder.entitlements; sourceTree = "<group>"; };
 		A20000000000000000000010 /* Binder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Binder.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000011 /* SignedInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignedInView.swift; sourceTree = "<group>"; };
-		A20000000000000000000012 /* DocumentPDFView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPDFView.swift; sourceTree = "<group>"; };
+		A20000000000000000000012 /* DocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentView.swift; sourceTree = "<group>"; };
 		A20000000000000000000014 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		A20000000000000000000015 /* SharedPDFQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedPDFQueue.swift; sourceTree = "<group>"; };
 		A20000000000000000000016 /* ShareExtension-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "ShareExtension-Info.plist"; sourceTree = "<group>"; };
@@ -141,7 +141,7 @@
 				A20000000000000000000006 /* NativeSSO.swift */,
 				A20000000000000000000007 /* AppSettings.swift */,
 				A20000000000000000000011 /* SignedInView.swift */,
-				A20000000000000000000012 /* DocumentPDFView.swift */,
+				A20000000000000000000012 /* DocumentView.swift */,
 				A20000000000000000000019 /* DocumentScanner.swift */,
 				A20000000000000000000020 /* DocumentListRow.swift */,
 				A20000000000000000000021 /* BrowseView.swift */,
@@ -288,7 +288,7 @@
 				A10000000000000000000006 /* NativeSSO.swift in Sources */,
 				A10000000000000000000007 /* AppSettings.swift in Sources */,
 				A10000000000000000000008 /* SignedInView.swift in Sources */,
-				A10000000000000000000009 /* DocumentPDFView.swift in Sources */,
+				A10000000000000000000009 /* DocumentView.swift in Sources */,
 				A10000000000000000000010 /* SharedPDFQueue.swift in Sources */,
 				A10000000000000000000017 /* DocumentScanner.swift in Sources */,
 				A10000000000000000000018 /* DocumentListRow.swift in Sources */,

@@ -169,6 +169,90 @@ export class DocumentStorageService {
     }
   }
 
+  /**
+   * Rotates an image's pixels by a right angle while preserving its image format.
+   *
+   * JPEG output is re-encoded at high quality; PNG output stays lossless.
+   * The caller keeps the source file as the previous document version.
+   *
+   * @param {string} storageKey - Storage key of the validated source image.
+   * @param {'image/jpeg' | 'image/png'} mimeType - Canonical source image format.
+   * @param {-90 | 90 | 180} rotationDegrees - Clockwise rotation step.
+   * @returns {Promise<Buffer>} Encoded rotated image bytes in the same format.
+   */
+  async rotateImage(
+    storageKey: string,
+    mimeType: 'image/jpeg' | 'image/png',
+    rotationDegrees: -90 | 90 | 180,
+  ): Promise<Buffer> {
+    const sourceBuffer = await fs.readFile(await this.resolveStoragePath(storageKey));
+    const mupdf = await import('mupdf');
+    const image = new mupdf.Image(sourceBuffer);
+    let source: InstanceType<typeof mupdf.Pixmap> | null = null;
+    let rotated: InstanceType<typeof mupdf.Pixmap> | null = null;
+    let colorSpace: ReturnType<InstanceType<typeof mupdf.Pixmap>['getColorSpace']> = null;
+
+    try {
+      source = image.toPixmap();
+      colorSpace = source.getColorSpace();
+      if (!colorSpace) {
+        throw new BadRequestException('The image has no supported color space');
+      }
+
+      const sourceWidth = source.getWidth();
+      const sourceHeight = source.getHeight();
+      const swapsDimensions = rotationDegrees === -90 || rotationDegrees === 90;
+      const outputWidth = swapsDimensions ? sourceHeight : sourceWidth;
+      const outputHeight = swapsDimensions ? sourceWidth : sourceHeight;
+      const hasAlpha = source.getAlpha() !== 0;
+      const components = source.getNumberOfComponents();
+      const sourceStride = source.getStride();
+      const sourcePixels = source.getPixels();
+
+      rotated = new mupdf.Pixmap(colorSpace, [0, 0, outputWidth, outputHeight], hasAlpha);
+      rotated.setResolution(
+        swapsDimensions ? source.getYResolution() : source.getXResolution(),
+        swapsDimensions ? source.getXResolution() : source.getYResolution(),
+      );
+      const outputStride = rotated.getStride();
+      const outputPixels = rotated.getPixels();
+
+      // Right-angle rotations only move pixel samples; they do not rescale them.
+      for (let y = 0; y < sourceHeight; y += 1) {
+        for (let x = 0; x < sourceWidth; x += 1) {
+          let outputX: number;
+          let outputY: number;
+          if (rotationDegrees === 90) {
+            outputX = sourceHeight - 1 - y;
+            outputY = x;
+          } else if (rotationDegrees === -90) {
+            outputX = y;
+            outputY = sourceWidth - 1 - x;
+          } else {
+            outputX = sourceWidth - 1 - x;
+            outputY = sourceHeight - 1 - y;
+          }
+
+          const sourceOffset = y * sourceStride + x * components;
+          const outputOffset = outputY * outputStride + outputX * components;
+          for (let component = 0; component < components; component += 1) {
+            outputPixels[outputOffset + component] = sourcePixels[sourceOffset + component]!;
+          }
+        }
+      }
+
+      const encoded = mimeType === 'image/png' ? rotated.asPNG() : rotated.asJPEG(95);
+      const result = Buffer.from(encoded);
+      await this.assertUploadSize(result.length);
+      return result;
+    } finally {
+      colorSpace?.destroy();
+      rotated?.destroy();
+      source?.destroy();
+      image.destroy();
+    }
+  }
+
   async composePdf(
     targetStorageKey: string,
     sources: string | Array<{ storageKey: string; startPage: number; endPage: number }>,

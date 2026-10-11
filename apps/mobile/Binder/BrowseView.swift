@@ -277,7 +277,7 @@ private struct BrowseDocumentListView: View {
                     } else {
                         ForEach(documents) { document in
                             NavigationLink {
-                                DocumentPDFView(
+                                DocumentView(
                                     document: document,
                                     serverURL: model.serverURL,
                                     onDocumentDeleted: { deletedUUID in
@@ -826,7 +826,7 @@ private struct FolderContentsView: View {
         ForEach(rows) { document in
             HStack(spacing: 12) {
                 NavigationLink {
-                    DocumentPDFView(
+                    DocumentView(
                         document: document,
                         serverURL: model.serverURL,
                         onDocumentDeleted: { deletedUUID in

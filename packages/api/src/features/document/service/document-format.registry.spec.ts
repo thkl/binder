@@ -41,11 +41,11 @@ describe('document format adapter registry', () => {
       new ImageDocumentFormatAdapter({} as never),
     );
     const adapter = registry.getAdapterForMimeType('application/pdf', 'page-rotation');
-    const imageAdapter = registry.getAdapterForMimeType('image/png', 'preview');
+    const imageAdapter = registry.getAdapterForMimeType('image/png', 'page-rotation');
 
     expect(adapter.descriptor.id).toBe('pdf');
     expect(imageAdapter.descriptor.id).toBe('image');
-    assert.throws(() => registry.getAdapterForMimeType('image/png', 'page-rotation'),
+    assert.throws(() => registry.getAdapterForMimeType('image/png', 'compose'),
       (error: unknown) => error instanceof BadRequestException);
   });
 });
