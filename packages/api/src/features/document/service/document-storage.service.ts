@@ -171,24 +171,42 @@ export class DocumentStorageService {
 
   async composePdf(
     targetStorageKey: string,
-    sourceStorageKey: string,
+    sources: string | Array<{ storageKey: string; startPage: number; endPage: number }>,
     insertAfterPage: number,
   ): Promise<{ buffer: Buffer; pageCount: number }> {
-    const [targetBuffer, sourceBuffer] = await Promise.all([
+    // Keep the original storage helper signature usable by internal callers
+    // while the adapter passes explicit source page ranges.
+    const sourceSelections = typeof sources === 'string'
+      ? [{ storageKey: sources, startPage: 1, endPage: undefined }]
+      : sources;
+    const [targetBuffer, ...sourceBuffers] = await Promise.all([
       fs.readFile(await this.resolveStoragePath(targetStorageKey)),
-      fs.readFile(await this.resolveStoragePath(sourceStorageKey)),
+      ...sourceSelections.map(async (source) => fs.readFile(await this.resolveStoragePath(source.storageKey))),
     ]);
     const mupdf = await import('mupdf');
     const target = new mupdf.PDFDocument(targetBuffer);
-    const source = new mupdf.PDFDocument(sourceBuffer);
+    const sourceDocuments = sourceBuffers.map((buffer) => new mupdf.PDFDocument(buffer));
     const targetPageCount = target.countPages();
     if (insertAfterPage < 0 || insertAfterPage > targetPageCount) {
       target.destroy();
-      source.destroy();
+      sourceDocuments.forEach((source) => source.destroy());
       throw new BadRequestException(
         `The insertion point must be between page 0 and page ${targetPageCount}`,
       );
     }
+
+    const resolvedSelections = sourceSelections.map((source, index) => {
+      const pageCount = sourceDocuments[index]!.countPages();
+      const endPage = source.endPage ?? pageCount;
+      if (source.startPage < 1 || endPage < source.startPage || endPage > pageCount) {
+        target.destroy();
+        sourceDocuments.forEach((document) => document.destroy());
+        throw new BadRequestException(
+          `The selected source page range must be between page 1 and page ${pageCount}`,
+        );
+      }
+      return { ...source, endPage };
+    });
 
     const output = new mupdf.PDFDocument();
     let outputPage = 0;
@@ -205,14 +223,16 @@ export class DocumentStorageService {
 
     try {
       graftPages(target, 0, insertAfterPage);
-      graftPages(source, 0, source.countPages());
+      for (const [index, source] of resolvedSelections.entries()) {
+        graftPages(sourceDocuments[index]!, source.startPage - 1, source.endPage);
+      }
       graftPages(target, insertAfterPage, targetPageCount);
       const saved = output.saveToBuffer({ garbage: 4 });
       return { buffer: Buffer.from(saved.asUint8Array()), pageCount: outputPage };
     } finally {
       output.destroy();
       target.destroy();
-      source.destroy();
+      sourceDocuments.forEach((source) => source.destroy());
     }
   }
 

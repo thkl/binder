@@ -7,7 +7,8 @@ struct DocumentComposeView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
     @State private var documents: [BinderDocumentSummary] = []
-    @State private var selectedSource: BinderDocumentSummary?
+    @State private var selectedSources: [ComposeSourceSelection] = []
+    @State private var isConfiguring = false
     @State private var insertAfterPage: Int
     @State private var copyMetadata = true
     @State private var autoApplySuggestions = false
@@ -31,8 +32,8 @@ struct DocumentComposeView: View {
             Group {
                 if let composedDocument {
                     compositionResult(composedDocument)
-                } else if let selectedSource {
-                    compositionForm(source: selectedSource)
+                } else if isConfiguring {
+                    compositionForm
                 } else {
                     sourcePicker
                 }
@@ -41,9 +42,11 @@ struct DocumentComposeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(selectedSource == nil && composedDocument == nil ? "Cancel" : "Done") {
-                        if selectedSource != nil && composedDocument == nil {
-                            selectedSource = nil
+                    Button(
+                        composedDocument != nil ? "Done" : (isConfiguring ? "Back" : "Cancel")
+                    ) {
+                        if isConfiguring && composedDocument == nil {
+                            isConfiguring = false
                             errorMessage = nil
                         } else {
                             dismiss()
@@ -51,19 +54,23 @@ struct DocumentComposeView: View {
                     }
                     .disabled(isComposing)
                 }
-                if selectedSource != nil && composedDocument == nil {
+                if composedDocument == nil {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
-                            Task { await compose() }
+                            if isConfiguring {
+                                Task { await compose() }
+                            } else {
+                                isConfiguring = true
+                            }
                         } label: {
                             if isComposing {
                                 ProgressView()
                             } else {
-                                Text("Combine")
+                                Text(isConfiguring ? "Combine" : "Continue")
                                     .fontWeight(.semibold)
                             }
                         }
-                        .disabled(isComposing)
+                        .disabled(isComposing || (!isConfiguring && selectedSources.isEmpty))
                     }
                 }
             }
@@ -72,7 +79,7 @@ struct DocumentComposeView: View {
         .presentationDragIndicator(.visible)
         .interactiveDismissDisabled(isComposing)
         .task(id: searchText) {
-            guard selectedSource == nil, composedDocument == nil else { return }
+            guard !isConfiguring, composedDocument == nil else { return }
             do {
                 try await Task.sleep(for: .milliseconds(300))
                 try Task.checkCancellation()
@@ -87,7 +94,7 @@ struct DocumentComposeView: View {
 
     private var navigationTitle: String {
         if composedDocument != nil { return "Combine complete" }
-        return selectedSource == nil ? "Choose a PDF" : "Combine PDFs"
+        return isConfiguring ? "Combine PDFs" : "Choose PDFs"
     }
 
     private var sourcePicker: some View {
@@ -96,7 +103,7 @@ struct DocumentComposeView: View {
                 DocumentComposeRow(document: targetDocument, detail: "First PDF")
             }
 
-            Section("Choose the PDF to insert") {
+            Section("Choose PDFs to insert") {
                 if documents.isEmpty && isLoading {
                     HStack { Spacer(); ProgressView("Loading documents…"); Spacer() }
                 } else if documents.isEmpty {
@@ -106,14 +113,21 @@ struct DocumentComposeView: View {
                         description: Text("Search for another owned document to insert.")
                     )
                 } else {
-                    ForEach(documents.filter { $0.uuid != targetDocument.uuid && isContentAvailable($0) }) { document in
+                    ForEach(documents.filter { $0.uuid != targetDocument.uuid && isPDFDocument($0) && isContentAvailable($0) }) { document in
                         Button {
-                            selectedSource = document
-                            insertAfterPage = targetPageCount
+                            toggleSource(document)
                             errorMessage = nil
                         } label: {
-                            DocumentComposeRow(document: document, detail: "\(document.pageCount ?? 1) pages")
+                            HStack(spacing: 12) {
+                                Image(systemName: isSelected(document) ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(isSelected(document) ? Color.accentColor : Color.secondary)
+                                    .accessibilityHidden(true)
+                                DocumentComposeRow(
+                                    document: document,
+                                    detail: "\(document.pageCount ?? 1) pages"
+                                )
                                 .contentShape(Rectangle())
+                            }
                         }
                         .buttonStyle(.plain)
                     }
@@ -140,11 +154,41 @@ struct DocumentComposeView: View {
         .searchable(text: $searchText, prompt: "Search your documents")
     }
 
-    private func compositionForm(source: BinderDocumentSummary) -> some View {
+    private var compositionForm: some View {
         Form {
-            Section("Documents") {
+            Section("Target document") {
                 DocumentComposeRow(document: targetDocument, detail: "Target · \(targetPageCount) pages")
-                DocumentComposeRow(document: source, detail: "Inserted · \(source.pageCount ?? 1) pages")
+            }
+
+            ForEach(selectedSources.indices, id: \.self) { index in
+                let selection = selectedSources[index]
+                let pageCount = max(1, selection.document.pageCount ?? 1)
+                Section("Source PDF \(index + 1)") {
+                    DocumentComposeRow(
+                        document: selection.document,
+                        detail: "Pages \(selection.startPage)–\(selection.endPage) of \(pageCount)"
+                    )
+                    Stepper(
+                        "First page: \(selection.startPage)",
+                        value: Binding(
+                            get: { selectedSources[index].startPage },
+                            set: { setStartPage($0, at: index) }
+                        ),
+                        in: 1...pageCount
+                    )
+                    Stepper(
+                        "Last page: \(selection.endPage)",
+                        value: Binding(
+                            get: { selectedSources[index].endPage },
+                            set: { selectedSources[index].endPage = $0 }
+                        ),
+                        in: selection.startPage...pageCount
+                    )
+                    Button("Remove source", role: .destructive) {
+                        selectedSources.remove(at: index)
+                        if selectedSources.isEmpty { isConfiguring = false }
+                    }
+                }
             }
 
             Section("Insertion point") {
@@ -154,7 +198,7 @@ struct DocumentComposeView: View {
                         value: insertAfterPage == 0 ? "—" : "\(insertAfterPage)"
                     )
                 }
-                Text("The selected PDF’s pages will be inserted at this point. The target stays in version history, and the combined PDF becomes its next version.")
+                Text("Selected pages are inserted in the order shown above. The target stays in version history, and the combined PDF becomes its next version.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -193,6 +237,32 @@ struct DocumentComposeView: View {
         !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
     }
 
+    private func isPDFDocument(_ document: BinderDocumentSummary) -> Bool {
+        document.mimeType == nil || document.mimeType == "application/pdf"
+    }
+
+    private func isSelected(_ document: BinderDocumentSummary) -> Bool {
+        selectedSources.contains { $0.document.uuid == document.uuid }
+    }
+
+    private func toggleSource(_ document: BinderDocumentSummary) {
+        if let index = selectedSources.firstIndex(where: { $0.document.uuid == document.uuid }) {
+            selectedSources.remove(at: index)
+        } else {
+            let pageCount = max(1, document.pageCount ?? 1)
+            selectedSources.append(
+                ComposeSourceSelection(document: document, startPage: 1, endPage: pageCount)
+            )
+        }
+    }
+
+    private func setStartPage(_ page: Int, at index: Int) {
+        selectedSources[index].startPage = page
+        if selectedSources[index].endPage < page {
+            selectedSources[index].endPage = page
+        }
+    }
+
     @MainActor
     private func loadDocuments(reset: Bool) async {
         guard !isLoading else { return }
@@ -220,7 +290,7 @@ struct DocumentComposeView: View {
 
     @MainActor
     private func compose() async {
-        guard let source = selectedSource, !isComposing else { return }
+        guard isConfiguring, !selectedSources.isEmpty, !isComposing else { return }
         isComposing = true
         errorMessage = nil
         defer { isComposing = false }
@@ -229,7 +299,9 @@ struct DocumentComposeView: View {
             composedDocument = try await BinderAPI.shared.composeDocuments(
                 serverURL: serverURL,
                 targetDocumentUUID: targetDocument.uuid,
-                sourceDocumentUUID: source.uuid,
+                sources: selectedSources.map {
+                    (documentUUID: $0.document.uuid, startPage: $0.startPage, endPage: $0.endPage)
+                },
                 insertAfterPage: insertAfterPage,
                 copyMetadata: copyMetadata,
                 autoApplySuggestions: autoApplySuggestions
@@ -238,6 +310,14 @@ struct DocumentComposeView: View {
             errorMessage = error.localizedDescription
         }
     }
+}
+
+private struct ComposeSourceSelection: Identifiable {
+    let document: BinderDocumentSummary
+    var startPage: Int
+    var endPage: Int
+
+    var id: String { document.uuid }
 }
 
 private struct DocumentComposeRow: View {

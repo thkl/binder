@@ -1550,35 +1550,64 @@ export class DocumentService {
   }
 
   /**
-   * Inserts one PDF into another and creates a new document version for the result.
+   * Inserts selected pages from one or more PDFs into a target and creates a new version.
    *
    * @param {string} ownerUuid - UUID of the user who owns the resource.
    * @param {string} uuid - UUID of the target document or record.
    * @param {ComposeDocumentInput} input - Validated input describing the requested operation.
-   * @returns Inserts one PDF into another and creates a new document version for the result.
+   * @returns The composed PDF after it has been stored and queued for processing.
    */
   async compose(ownerUuid: string, uuid: string, input: ComposeDocumentInput) {
-    if (uuid === input.sourceDocumentUuid) {
+    const requestedSources = input.sources ?? [
+      {
+        documentUuid: input.sourceDocumentUuid!,
+        startPage: undefined,
+        endPage: undefined,
+      },
+    ];
+    if (requestedSources.some((source) => source.documentUuid === uuid)) {
       throw new BadRequestException('A document cannot be inserted into itself');
     }
+    if (new Set(requestedSources.map((source) => source.documentUuid)).size !== requestedSources.length) {
+      throw new BadRequestException('A source document can only be added once');
+    }
 
-    const [target, source] = await Promise.all([
+    const [target, ...sourceDocuments] = await Promise.all([
       this.documents.findOwnedByUuid(ownerUuid, uuid),
-      this.documents.findOwnedByUuid(ownerUuid, input.sourceDocumentUuid),
+      ...requestedSources.map((source) => this.documents.findOwnedByUuid(ownerUuid, source.documentUuid)),
     ]);
-    if (!target || !source) throw new NotFoundException('Document not found');
+    if (!target || sourceDocuments.some((source) => !source)) {
+      throw new NotFoundException('Document not found');
+    }
     this.assertDocumentContentAvailable(target);
-    this.assertDocumentContentAvailable(source);
+    sourceDocuments.forEach((source) => this.assertDocumentContentAvailable(source!));
 
     const adapter = this.formats.getAdapterForMimeType(target.mimeType, 'compose');
-    this.formats.getAdapterForMimeType(source.mimeType, 'compose');
+    const compositionSources = requestedSources.map((selection, index) => {
+      const source = sourceDocuments[index]!;
+      this.formats.getAdapterForMimeType(source.mimeType, 'compose');
+      const pageCount = source.pageCount ?? 1;
+      const startPage = selection.startPage ?? 1;
+      const endPage = selection.endPage ?? pageCount;
+      if (startPage > endPage || endPage > pageCount) {
+        throw new BadRequestException(`The selected pages must be between page 1 and page ${pageCount}`);
+      }
+      return { document: source, startPage, endPage };
+    });
     const composed = await adapter.compose(
       target.storageKey,
-      source.storageKey,
+      compositionSources.map(({ document, startPage, endPage }) => ({
+        storageKey: document.storageKey,
+        startPage,
+        endPage,
+      })),
       input.insertAfterPage,
     );
     const composedUuid = randomUUID();
-    const composedName = this.composeFilename(target.originalFilename, source.originalFilename);
+    const composedName = this.composeFilename(
+      target.originalFilename,
+      compositionSources.map(({ document }) => document.originalFilename),
+    );
     const stored = await adapter.storeOriginal(composed.buffer, composedUuid, composedName);
     const malwareScanRequired = await this.isMalwareScanRequired();
     const family = await this.documents.findOwnedVersionFamily(ownerUuid, target.versionFamilyUuid);
@@ -1651,7 +1680,11 @@ export class DocumentService {
         summary: 'Document composed from another document',
         details: {
           targetDocumentUuid: target.uuid,
-          sourceDocumentUuid: source.uuid,
+          sources: compositionSources.map(({ document, startPage, endPage }) => ({
+            documentUuid: document.uuid,
+            startPage,
+            endPage,
+          })),
           insertAfterPage: input.insertAfterPage,
           copyMetadata: input.copyMetadata,
           autoApplySuggestions: input.autoApplySuggestions,
@@ -1663,7 +1696,7 @@ export class DocumentService {
       if (!documentCreated) await this.storage.remove(stored.storageKey).catch(() => undefined);
       this.logger.error('Document composition failed', {
         targetDocumentUuid: target.uuid,
-        sourceDocumentUuid: source.uuid,
+        sourceDocumentUuids: compositionSources.map(({ document }) => document.uuid),
         composedDocumentUuid: composedUuid,
         error: error instanceof Error ? error.message : String(error),
       });
@@ -1684,17 +1717,23 @@ export class DocumentService {
   }
 
   /**
-   * Builds a filename identifying both source PDFs in a composed document.
+   * Builds a filename identifying the target and its inserted source documents.
    *
    * @param {string} targetFilename - Original filename of the target document.
-   * @param {string} sourceFilename - Original filename of the source document.
-   * @returns {string} - Builds a filename identifying both source PDFs in a composed document.
+   * @param {string[]} sourceFilenames - Original filenames of the inserted source documents.
+   * @returns {string} - Filename for the composed document.
    */
-  private composeFilename(targetFilename: string, sourceFilename: string): string {
+  private composeFilename(targetFilename: string, sourceFilenames: string[]): string {
     const extension = extname(targetFilename) || '.pdf';
     const targetBase = targetFilename.slice(0, -extension.length);
-    const sourceBase = sourceFilename.slice(0, -extname(sourceFilename).length);
-    return `${targetBase} + ${sourceBase}${extension}`.slice(0, 255);
+    const sourceBases = sourceFilenames.map((filename) => {
+      const sourceExtension = extname(filename);
+      return sourceExtension ? filename.slice(0, -sourceExtension.length) : filename;
+    });
+    const suffix = sourceBases.length > 1
+      ? `${sourceBases[0]} + ${sourceBases.length - 1} more`
+      : sourceBases[0]!;
+    return `${targetBase} + ${suffix}${extension}`.slice(0, 255);
   }
 
   /**

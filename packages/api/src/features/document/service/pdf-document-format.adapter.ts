@@ -45,10 +45,10 @@ export class PdfDocumentFormatAdapter {
 
   compose(
     targetStorageKey: string,
-    sourceStorageKey: string,
+    sources: Array<{ storageKey: string; startPage: number; endPage: number }>,
     insertAfterPage: number,
   ): Promise<{ buffer: Buffer; pageCount: number }> {
-    return this.storage.composePdf(targetStorageKey, sourceStorageKey, insertAfterPage);
+    return this.storage.composePdf(targetStorageKey, sources, insertAfterPage);
   }
 
   createPreview(storageKey: string, uuid: string, createdAt: Date): Promise<string> {

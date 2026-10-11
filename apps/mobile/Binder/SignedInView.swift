@@ -102,7 +102,15 @@ struct SignedInView: View {
                             Section("\(resultCount) results for “\(searchedQuery)”") {
                                 ForEach(results) { result in
                                     NavigationLink {
-                                        DocumentPDFView(document: result.document, serverURL: model.serverURL)
+                                        DocumentPDFView(
+                                            document: result.document,
+                                            serverURL: model.serverURL,
+                                            onDocumentDeleted: { deletedUUID in
+                                                let previousCount = results.count
+                                                results.removeAll { $0.document.uuid == deletedUUID }
+                                                if results.count < previousCount { resultCount = max(0, resultCount - 1) }
+                                            }
+                                        )
                                     } label: {
                                         DocumentListRow(
                                             document: result.document,

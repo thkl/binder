@@ -256,12 +256,24 @@ export type RotateDocumentInput = z.infer<typeof RotateDocumentInputSchema>;
 export const RotateDocumentResponseSchema = z.object({ document: DocumentSchema });
 export type RotateDocumentResponse = z.infer<typeof RotateDocumentResponseSchema>;
 
+export const ComposeDocumentSourceSchema = z.object({
+  documentUuid: z.uuid(),
+  startPage: z.number().int().min(1).optional(),
+  endPage: z.number().int().min(1).optional(),
+});
+export type ComposeDocumentSource = z.infer<typeof ComposeDocumentSourceSchema>;
+
 export const ComposeDocumentInputSchema = z.object({
-  sourceDocumentUuid: z.uuid(),
+  // Keep the original fields accepted while older web clients are still deployed.
+  sourceDocumentUuid: z.uuid().optional(),
+  sources: z.array(ComposeDocumentSourceSchema).min(1).max(20).optional(),
   insertAfterPage: z.number().int().min(0),
   copyMetadata: z.boolean().default(true),
   autoApplySuggestions: z.boolean().default(false),
-});
+}).refine(
+  (input) => Boolean(input.sourceDocumentUuid) !== Boolean(input.sources?.length),
+  { message: 'Specify either sourceDocumentUuid or sources' },
+);
 export type ComposeDocumentInput = z.infer<typeof ComposeDocumentInputSchema>;
 
 export const ComposeDocumentResponseSchema = z.object({

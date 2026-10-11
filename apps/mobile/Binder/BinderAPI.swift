@@ -385,8 +385,14 @@ private struct DocumentComposeEnvelope: Decodable {
     let data: BinderComposedDocumentResult
 }
 
+private struct DocumentComposeSourcePayload: Encodable {
+    let documentUuid: String
+    let startPage: Int
+    let endPage: Int
+}
+
 private struct DocumentComposePayload: Encodable {
-    let sourceDocumentUuid: String
+    let sources: [DocumentComposeSourcePayload]
     let insertAfterPage: Int
     let copyMetadata: Bool
     let autoApplySuggestions: Bool
@@ -824,6 +830,45 @@ final class BinderAPI {
         return try JSONDecoder().decode(DocumentListEnvelope.self, from: data).data
     }
 
+    func browseDocuments(
+        serverURL: String,
+        folderUUID: String? = nil,
+        unassigned: Bool = false,
+        newOnly: Bool = false,
+        page: Int = 1,
+        pageSize: Int = 25
+    ) async throws -> BinderFolderDocumentPage {
+        var request = try makeRequest(path: "documents", serverURL: serverURL, method: "GET")
+        guard let url = request.url,
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw BinderAPIError.invalidServerURL
+        }
+
+        var queryItems = [
+            URLQueryItem(name: "page", value: String(page)),
+            URLQueryItem(name: "pageSize", value: String(pageSize)),
+            URLQueryItem(name: "sort", value: "createdAt"),
+            URLQueryItem(name: "direction", value: "desc"),
+        ]
+        if let folderUUID {
+            queryItems.append(URLQueryItem(name: "folderUuid", value: folderUUID))
+        }
+        if unassigned {
+            queryItems.append(URLQueryItem(name: "unassigned", value: "true"))
+        }
+        if newOnly {
+            queryItems.append(URLQueryItem(name: "reviewStates", value: "new"))
+        }
+        components.queryItems = queryItems
+        guard let documentsURL = components.url else { throw BinderAPIError.invalidServerURL }
+        request.url = documentsURL
+
+        let (data, response) = try await urlSession.data(for: request)
+        try absorbSessionCookie(from: response, for: request)
+        try validate(response, data: data)
+        return try JSONDecoder().decode(DocumentListEnvelope.self, from: data).data
+    }
+
     func ownedDocuments(
         serverURL: String,
         query: String,
@@ -992,6 +1037,27 @@ final class BinderAPI {
         return try JSONDecoder().decode(DocumentSummaryEnvelope.self, from: data).data
     }
 
+    func deleteDocument(serverURL: String, documentUUID: String) async throws {
+        _ = try await mutate(
+            path: "documents/\(documentUUID)",
+            serverURL: serverURL,
+            method: "DELETE",
+            payload: EmptyMutationPayload()
+        )
+    }
+
+    func deleteDocumentOrVersion(
+        serverURL: String,
+        documentUUID: String
+    ) async throws -> BinderDocumentSummary? {
+        let versions = try await documentVersions(serverURL: serverURL, documentUUID: documentUUID)
+        if versions.count > 1 {
+            return try await deleteDocumentVersion(serverURL: serverURL, documentUUID: documentUUID)
+        }
+        try await deleteDocument(serverURL: serverURL, documentUUID: documentUUID)
+        return nil
+    }
+
     func documentVersions(serverURL: String, documentUUID: String) async throws -> [BinderDocumentSummary] {
         let (data, _) = try await request(
             path: "documents/\(documentUUID)/versions",
@@ -1031,7 +1097,7 @@ final class BinderAPI {
     func composeDocuments(
         serverURL: String,
         targetDocumentUUID: String,
-        sourceDocumentUUID: String,
+        sources: [(documentUUID: String, startPage: Int, endPage: Int)],
         insertAfterPage: Int,
         copyMetadata: Bool,
         autoApplySuggestions: Bool
@@ -1041,7 +1107,13 @@ final class BinderAPI {
             serverURL: serverURL,
             method: "POST",
             payload: DocumentComposePayload(
-                sourceDocumentUuid: sourceDocumentUUID,
+                sources: sources.map {
+                    DocumentComposeSourcePayload(
+                        documentUuid: $0.documentUUID,
+                        startPage: $0.startPage,
+                        endPage: $0.endPage
+                    )
+                },
                 insertAfterPage: insertAfterPage,
                 copyMetadata: copyMetadata,
                 autoApplySuggestions: autoApplySuggestions

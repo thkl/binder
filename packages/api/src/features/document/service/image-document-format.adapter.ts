@@ -60,7 +60,7 @@ export class ImageDocumentFormatAdapter {
 
   compose(
     _targetStorageKey: string,
-    _sourceStorageKey: string,
+    _sources: Array<{ storageKey: string; startPage: number; endPage: number }>,
     _insertAfterPage: number,
   ): never {
     throw new BadRequestException('Image documents cannot be combined as PDFs');

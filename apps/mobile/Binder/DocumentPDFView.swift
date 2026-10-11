@@ -7,6 +7,8 @@ struct DocumentPDFView: View {
     @State private var document: BinderDocumentSummary
     let serverURL: String
     private let onCurrentVersionDeleted: (BinderDocumentSummary) -> Void
+    private let onDocumentDeleted: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
 
     @State private var loadedPDF: PreparedPDFDocument?
     @State private var loadedImage: UIImage?
@@ -15,6 +17,8 @@ struct DocumentPDFView: View {
     @State private var isWaitingForMalwareScan = false
     @State private var isRequeuing = false
     @State private var hasRequeued = false
+    @State private var isDeleting = false
+    @State private var showingDeleteConfirmation = false
     @State private var errorMessage: String?
     @State private var activeSheet: DocumentPDFSheet?
     @State private var actionAlert: DocumentPDFAlert?
@@ -22,11 +26,13 @@ struct DocumentPDFView: View {
     init(
         document: BinderDocumentSummary,
         serverURL: String,
-        onCurrentVersionDeleted: @escaping (BinderDocumentSummary) -> Void = { _ in }
+        onCurrentVersionDeleted: @escaping (BinderDocumentSummary) -> Void = { _ in },
+        onDocumentDeleted: @escaping (String) -> Void = { _ in }
     ) {
         _document = State(initialValue: document)
         self.serverURL = serverURL
         self.onCurrentVersionDeleted = onCurrentVersionDeleted
+        self.onDocumentDeleted = onDocumentDeleted
     }
 
     private var filename: String {
@@ -158,6 +164,14 @@ struct DocumentPDFView: View {
                             Label("Combine with another PDF", systemImage: "doc.on.doc")
                         }
                     }
+
+                    Divider()
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Label("Delete document", systemImage: "trash")
+                    }
+                    .disabled(isDeleting)
                 } label: {
                     Label("Document actions", systemImage: "ellipsis.circle")
                 }
@@ -197,6 +211,18 @@ struct DocumentPDFView: View {
                 message: Text(alert.message),
                 dismissButton: .default(Text("OK"))
             )
+        }
+        .confirmationDialog(
+            "Delete document?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                Task { await deleteDocument() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently deletes the document. If it has versions, only this version is deleted and the remaining version history is kept.")
         }
         .task(id: "\(serverURL)-\(document.uuid)") {
             await loadPDFWhenViewIsReady()
@@ -334,6 +360,28 @@ struct DocumentPDFView: View {
             )
         } catch {
             actionAlert = DocumentPDFAlert(title: "Couldn’t requeue document", message: error.localizedDescription)
+        }
+    }
+
+    @MainActor
+    private func deleteDocument() async {
+        guard !isDeleting else { return }
+        isDeleting = true
+        defer { isDeleting = false }
+        do {
+            if let newCurrentVersion = try await BinderAPI.shared.deleteDocumentOrVersion(
+                serverURL: serverURL,
+                documentUUID: document.uuid
+            ) {
+                onCurrentVersionDeleted(newCurrentVersion)
+            }
+            onDocumentDeleted(document.uuid)
+            dismiss()
+        } catch {
+            actionAlert = DocumentPDFAlert(
+                title: "Couldn’t delete document",
+                message: error.localizedDescription
+            )
         }
     }
 }

@@ -18,22 +18,6 @@ struct BrowseView: View {
                 if isLoading && allFolders.isEmpty {
                     ProgressView("Loading folders…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let errorMessage, allFolders.isEmpty {
-                    ContentUnavailableView {
-                        Label("Couldn’t load folders", systemImage: "folder.badge.questionmark")
-                    } description: {
-                        Text(errorMessage)
-                    } actions: {
-                        Button("Retry") { Task { await loadFolders() } }
-                    }
-                } else if rootFolders.isEmpty {
-                    ContentUnavailableView {
-                        Label("No folders yet", systemImage: "folder")
-                    } description: {
-                        Text("Create a folder to organize your documents.")
-                    } actions: {
-                        Button("Create folder") { beginCreateFolder(parentUUID: nil) }
-                    }
                 } else {
                     List {
                         if let errorMessage {
@@ -44,8 +28,25 @@ struct BrowseView: View {
                             }
                         }
 
-                        Section("Folders") {
-                            ForEach(rootFolders) { folder in folderRow(folder) }
+                        Section("Documents") {
+                            collectionRow("All Documents", symbol: "doc.on.doc", kind: .all)
+                            collectionRow("Docs without folders", symbol: "tray", kind: .unassigned)
+                            collectionRow("New Docs", symbol: "sparkle", kind: .new)
+                        }
+
+                        if rootFolders.isEmpty {
+                            Section("Folders") {
+                                ContentUnavailableView(
+                                    "No folders yet",
+                                    systemImage: "folder",
+                                    description: Text("Create a folder to organize your documents.")
+                                )
+                                .listRowBackground(Color.clear)
+                            }
+                        } else {
+                            Section("Folders") {
+                                ForEach(rootFolders) { folder in folderRow(folder) }
+                            }
                         }
                     }
                     .listStyle(.insetGrouped)
@@ -131,6 +132,18 @@ struct BrowseView: View {
         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 8))
     }
 
+    private func collectionRow(
+        _ title: String,
+        symbol: String,
+        kind: BrowseDocumentCollectionKind
+    ) -> some View {
+        NavigationLink {
+            BrowseDocumentListView(title: title, kind: kind, model: model)
+        } label: {
+            Label(title, systemImage: symbol)
+        }
+    }
+
     private func beginCreateFolder(parentUUID: String?) {
         folderEditorRequest = FolderManagementRequest(folder: nil, parentUUID: parentUUID)
     }
@@ -166,6 +179,154 @@ struct BrowseView: View {
         } catch {
             managementError = error.localizedDescription
         }
+    }
+}
+
+private enum BrowseDocumentCollectionKind: Equatable {
+    case all
+    case unassigned
+    case new
+}
+
+private struct BrowseDocumentListView: View {
+    let title: String
+    let kind: BrowseDocumentCollectionKind
+    @ObservedObject var model: AuthViewModel
+
+    @State private var documents: [BinderDocumentSummary] = []
+    @State private var page = 1
+    @State private var hasNextPage = false
+    @State private var isLoading = true
+    @State private var isLoadingMore = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        Group {
+            if isLoading && documents.isEmpty {
+                ProgressView("Loading documents…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let errorMessage, documents.isEmpty {
+                ContentUnavailableView {
+                    Label("Couldn’t load documents", systemImage: "doc.badge.questionmark")
+                } description: {
+                    Text(errorMessage)
+                } actions: {
+                    Button("Retry") { Task { await load(reset: true) } }
+                }
+            } else {
+                List {
+                    if let errorMessage {
+                        Section {
+                            ErrorBanner(message: errorMessage) {
+                                Task { await load(reset: true) }
+                            }
+                        }
+                    }
+
+                    if documents.isEmpty {
+                        ContentUnavailableView(
+                            emptyTitle,
+                            systemImage: emptySymbol,
+                            description: Text(emptyDescription)
+                        )
+                        .listRowBackground(Color.clear)
+                    } else {
+                        ForEach(documents) { document in
+                            NavigationLink {
+                                DocumentPDFView(
+                                    document: document,
+                                    serverURL: model.serverURL,
+                                    onDocumentDeleted: { deletedUUID in
+                                        documents.removeAll { $0.uuid == deletedUUID }
+                                    }
+                                )
+                            } label: {
+                                DocumentListRow(document: document, serverURL: model.serverURL)
+                            }
+                            .buttonStyle(.plain)
+                            .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                        }
+                        if hasNextPage {
+                            Button {
+                                Task { await loadNextPage() }
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    if isLoadingMore {
+                                        ProgressView("Loading more…")
+                                    } else {
+                                        Text("Load more documents")
+                                    }
+                                    Spacer()
+                                }
+                                .frame(minHeight: 44)
+                            }
+                            .disabled(isLoadingMore)
+                        }
+                    }
+                }
+                .listStyle(.insetGrouped)
+                .refreshable { await load(reset: true) }
+            }
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await load(reset: true) }
+    }
+
+    private var emptyTitle: String {
+        switch kind {
+        case .all: "No documents yet"
+        case .unassigned: "No unfiled documents"
+        case .new: "No new documents"
+        }
+    }
+
+    private var emptySymbol: String {
+        switch kind {
+        case .all: "doc.on.doc"
+        case .unassigned: "tray"
+        case .new: "sparkle"
+        }
+    }
+
+    private var emptyDescription: String {
+        switch kind {
+        case .all: "Your documents will appear here."
+        case .unassigned: "Every document is assigned to at least one folder."
+        case .new: "There are no documents awaiting review."
+        }
+    }
+
+    @MainActor
+    private func load(reset: Bool) async {
+        guard !isLoading || documents.isEmpty else { return }
+        isLoading = true
+        defer { isLoading = false }
+        errorMessage = nil
+        if reset { page = 1 }
+
+        do {
+            let response = try await BinderAPI.shared.browseDocuments(
+                serverURL: model.serverURL,
+                unassigned: kind == .unassigned,
+                newOnly: kind == .new,
+                page: page
+            )
+            if reset { documents = response.items } else { documents.append(contentsOf: response.items) }
+            hasNextPage = response.hasNext
+            page = response.page + 1
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func loadNextPage() async {
+        guard hasNextPage, !isLoadingMore else { return }
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+        await load(reset: false)
     }
 }
 
@@ -422,7 +583,13 @@ private struct FolderContentsView: View {
     private func documentRows(_ rows: [BinderDocumentSummary]) -> some View {
         ForEach(rows) { document in
             NavigationLink {
-                DocumentPDFView(document: document, serverURL: model.serverURL)
+                DocumentPDFView(
+                    document: document,
+                    serverURL: model.serverURL,
+                    onDocumentDeleted: { deletedUUID in
+                        documents.removeAll { $0.uuid == deletedUUID }
+                    }
+                )
             } label: {
                 DocumentListRow(document: document, serverURL: model.serverURL)
             }
