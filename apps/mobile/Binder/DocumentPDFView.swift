@@ -8,6 +8,8 @@ struct DocumentPDFView: View {
     let serverURL: String
     private let onCurrentVersionDeleted: (BinderDocumentSummary) -> Void
     private let onDocumentDeleted: (String) -> Void
+    private let onComposeRequested: ((BinderDocumentSummary) -> Void)?
+    private let isCombineModeActive: Bool
     @Environment(\.dismiss) private var dismiss
 
     @State private var loadedPDF: PreparedPDFDocument?
@@ -27,12 +29,16 @@ struct DocumentPDFView: View {
         document: BinderDocumentSummary,
         serverURL: String,
         onCurrentVersionDeleted: @escaping (BinderDocumentSummary) -> Void = { _ in },
-        onDocumentDeleted: @escaping (String) -> Void = { _ in }
+        onDocumentDeleted: @escaping (String) -> Void = { _ in },
+        onComposeRequested: ((BinderDocumentSummary) -> Void)? = nil,
+        isCombineModeActive: Bool = false
     ) {
         _document = State(initialValue: document)
         self.serverURL = serverURL
         self.onCurrentVersionDeleted = onCurrentVersionDeleted
         self.onDocumentDeleted = onDocumentDeleted
+        self.onComposeRequested = onComposeRequested
+        self.isCombineModeActive = isCombineModeActive
     }
 
     private var filename: String {
@@ -114,7 +120,7 @@ struct DocumentPDFView: View {
                     } label: {
                         Label(isImageDocument ? "Share image" : "Share PDF", systemImage: "square.and.arrow.up")
                     }
-                    .disabled(pdfFileURL == nil)
+                    .disabled(pdfFileURL == nil || isCombineModeActive)
                     .accessibilityIdentifier("share-document-pdf")
 
                     Button {
@@ -129,6 +135,7 @@ struct DocumentPDFView: View {
                     } label: {
                         Label("Share access", systemImage: "person.2")
                     }
+                    .disabled(isCombineModeActive)
                     .accessibilityIdentifier("manage-document-sharing")
 
                     if canRequeueDocument || canSplitDocument || canComposeDocument || canRotateDocument {
@@ -141,7 +148,7 @@ struct DocumentPDFView: View {
                         } label: {
                             Label(isRequeuing ? "Requeueing…" : "Requeue", systemImage: "arrow.clockwise")
                         }
-                        .disabled(isRequeuing)
+                        .disabled(isRequeuing || isCombineModeActive)
                     }
                     if canRotateDocument {
                         Button {
@@ -149,6 +156,7 @@ struct DocumentPDFView: View {
                         } label: {
                             Label("Rotate a page", systemImage: "rotate.right")
                         }
+                        .disabled(isCombineModeActive)
                     }
                     if canSplitDocument {
                         Button {
@@ -156,13 +164,27 @@ struct DocumentPDFView: View {
                         } label: {
                             Label("Split PDF", systemImage: "scissors")
                         }
+                        .disabled(isCombineModeActive)
                     }
                     if canComposeDocument {
                         Button {
-                            activeSheet = .compose(document)
+                            if let onComposeRequested {
+                                let target = document
+                                dismiss()
+                                Task { @MainActor in
+                                    try? await Task.sleep(for: .milliseconds(350))
+                                    onComposeRequested(target)
+                                }
+                            } else {
+                                activeSheet = .compose(document)
+                            }
                         } label: {
-                            Label("Combine with another PDF", systemImage: "doc.on.doc")
+                            Label(
+                                onComposeRequested == nil ? "Combine with another PDF" : "Select PDFs to combine",
+                                systemImage: "doc.on.doc"
+                            )
                         }
+                        .disabled(isCombineModeActive)
                     }
 
                     Divider()
@@ -171,7 +193,7 @@ struct DocumentPDFView: View {
                     } label: {
                         Label("Delete document", systemImage: "trash")
                     }
-                    .disabled(isDeleting)
+                    .disabled(isDeleting || isCombineModeActive)
                 } label: {
                     Label("Document actions", systemImage: "ellipsis.circle")
                 }

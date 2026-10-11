@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import UniformTypeIdentifiers
 
 struct BrowseView: View {
     @ObservedObject var model: AuthViewModel
@@ -11,6 +13,7 @@ struct BrowseView: View {
     @State private var folderToDelete: BinderFolder?
     @State private var showingDeleteConfirmation = false
     @State private var managementError: String?
+    @State private var intakeMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -56,10 +59,12 @@ struct BrowseView: View {
             .navigationTitle("Folders")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { beginCreateFolder(parentUUID: nil) } label: {
-                        Label("New folder", systemImage: "plus")
-                    }
-                    .accessibilityIdentifier("create-folder")
+                    DocumentAddMenu(
+                        onScan: handleScannedDocument,
+                        onFiles: handleSelectedDocuments,
+                        onCreateFolder: { beginCreateFolder(parentUUID: nil) },
+                        onError: { intakeMessage = $0 }
+                    )
                 }
             }
             .sheet(item: $folderEditorRequest) { request in
@@ -97,6 +102,14 @@ struct BrowseView: View {
                 Button("OK", role: .cancel) { managementError = nil }
             } message: {
                 Text(managementError ?? "")
+            }
+            .alert("Document upload", isPresented: Binding(
+                get: { intakeMessage != nil },
+                set: { if !$0 { intakeMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) { intakeMessage = nil }
+            } message: {
+                Text(intakeMessage ?? "")
             }
             .task { await loadFolders() }
         }
@@ -158,6 +171,36 @@ struct BrowseView: View {
     }
 
     @MainActor
+    private func handleScannedDocument(_ pages: [UIImage]) {
+        do {
+            _ = try ScannedDocumentQueue.enqueue(pages: pages)
+            Task { await uploadQueuedDocuments() }
+        } catch {
+            intakeMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func handleSelectedDocuments(_ files: [URL]) {
+        do {
+            try DocumentIntakeQueue.enqueue(files: files)
+            Task { await uploadQueuedDocuments() }
+        } catch {
+            intakeMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func uploadQueuedDocuments() async {
+        do {
+            let uploaded = try await DocumentIntakeQueue.uploadPending(serverURL: model.serverURL)
+            intakeMessage = "Uploaded \(uploaded) document(s)."
+        } catch {
+            intakeMessage = "The document is queued for upload. \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
     private func loadFolders() async {
         guard !isLoading || allFolders.isEmpty else { return }
         isLoading = true
@@ -199,6 +242,7 @@ private struct BrowseDocumentListView: View {
     @State private var isLoading = true
     @State private var isLoadingMore = false
     @State private var errorMessage: String?
+    @State private var intakeMessage: String?
 
     var body: some View {
         Group {
@@ -271,6 +315,25 @@ private struct BrowseDocumentListView: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if kind == .new {
+                ToolbarItem(placement: .topBarTrailing) {
+                    DocumentAddMenu(
+                        onScan: handleScannedDocument,
+                        onFiles: handleSelectedDocuments,
+                        onError: { intakeMessage = $0 }
+                    )
+                }
+            }
+        }
+        .alert("Document upload", isPresented: Binding(
+            get: { intakeMessage != nil },
+            set: { if !$0 { intakeMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { intakeMessage = nil }
+        } message: {
+            Text(intakeMessage ?? "")
+        }
         .task { await load(reset: true) }
     }
 
@@ -295,6 +358,37 @@ private struct BrowseDocumentListView: View {
         case .all: "Your documents will appear here."
         case .unassigned: "Every document is assigned to at least one folder."
         case .new: "There are no documents awaiting review."
+        }
+    }
+
+    @MainActor
+    private func handleScannedDocument(_ pages: [UIImage]) {
+        do {
+            _ = try ScannedDocumentQueue.enqueue(pages: pages)
+            Task { await uploadQueuedDocuments() }
+        } catch {
+            intakeMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func handleSelectedDocuments(_ files: [URL]) {
+        do {
+            try DocumentIntakeQueue.enqueue(files: files)
+            Task { await uploadQueuedDocuments() }
+        } catch {
+            intakeMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func uploadQueuedDocuments() async {
+        do {
+            let uploaded = try await DocumentIntakeQueue.uploadPending(serverURL: model.serverURL)
+            intakeMessage = "Uploaded \(uploaded) document(s)."
+            if kind == .new { await load(reset: true) }
+        } catch {
+            intakeMessage = "The document is queued for upload. \(error.localizedDescription)"
         }
     }
 
@@ -350,6 +444,13 @@ private struct FolderContentsView: View {
     @State private var folderToDelete: BinderFolder?
     @State private var showingDeleteConfirmation = false
     @State private var managementError: String?
+    @State private var intakeMessage: String?
+    @State private var compositionTarget: BinderDocumentSummary?
+    @State private var compositionSources: [BinderDocumentSummary] = []
+    @State private var composeRequest: FolderComposeRequest?
+    @AppStorage("binder.compose-selection-help.dismissed") private var hasDismissedComposeHelp = false
+
+    private var isSelectingComposeSources: Bool { compositionTarget != nil }
 
     init(
         folder: BinderFolder,
@@ -383,6 +484,42 @@ private struct FolderContentsView: View {
                 }
             } else {
                 List {
+                    if isSelectingComposeSources {
+                        if !hasDismissedComposeHelp {
+                            Section {
+                                HStack(alignment: .top, spacing: 12) {
+                                    Image(systemName: "hand.tap")
+                                        .foregroundStyle(.tint)
+                                    Text("Tap a checkmark to add a PDF. Tap its title to open the document. Select Done when you’re ready to choose pages and order.")
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                    Button {
+                                        hasDismissedComposeHelp = true
+                                    } label: {
+                                        Image(systemName: "xmark")
+                                            .font(.caption.weight(.semibold))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("Dismiss combine instructions")
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+
+                        if let compositionTarget {
+                            Section("Target document") {
+                                HStack(spacing: 12) {
+                                    DocumentListRow(document: compositionTarget, serverURL: model.serverURL)
+                                    Spacer(minLength: 8)
+                                    Label("Target", systemImage: "arrow.down.to.line")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.tint)
+                                }
+                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                            }
+                        }
+                    }
+
                     if let errorMessage {
                         Section {
                             ErrorBanner(message: errorMessage) {
@@ -391,7 +528,7 @@ private struct FolderContentsView: View {
                         }
                     }
 
-                    if !subfolders.isEmpty {
+                    if !isSelectingComposeSources && !subfolders.isEmpty {
                         Section("Folders") {
                             ForEach(subfolders) { child in
                                 folderRow(child)
@@ -405,19 +542,21 @@ private struct FolderContentsView: View {
                                 Task { await loadDocuments(reset: true) }
                             }
                         }
-                    } else if documents.isEmpty && !isLoading {
+                    } else if documentsForCurrentMode.isEmpty && !isLoading {
                         Section("Documents") {
                             ContentUnavailableView(
-                                "No documents in this folder",
+                                isSelectingComposeSources ? "No other documents in this folder" : "No documents in this folder",
                                 systemImage: "doc.text",
-                                description: Text("Documents assigned directly to this folder will appear here.")
+                                description: Text(isSelectingComposeSources
+                                    ? "Choose another PDF from this folder to add it to the composition."
+                                    : "Documents assigned directly to this folder will appear here.")
                             )
                             .listRowBackground(Color.clear)
                         }
-                    } else if !documents.isEmpty {
+                    } else if !documentsForCurrentMode.isEmpty {
                         if sortOptions.groupBy == .none {
                             Section("Documents") {
-                                documentRows(documents)
+                                documentRows(documentsForCurrentMode)
                                 loadMoreRow
                             }
                         } else {
@@ -439,41 +578,58 @@ private struct FolderContentsView: View {
         .navigationTitle(folder.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 12) {
-                    Button { beginCreateFolder(parentUUID: folder.uuid) } label: {
-                        Image(systemName: "folder.badge.plus")
-                    }
-                    .accessibilityLabel("Create subfolder")
+            if isSelectingComposeSources {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { cancelComposeSelection() }
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("Select PDFs")
+                        .font(.headline)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { finishComposeSelection() }
+                        .fontWeight(.semibold)
+                        .disabled(compositionSources.isEmpty)
+                }
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 12) {
+                        DocumentAddMenu(
+                            onScan: handleScannedDocument,
+                            onFiles: handleSelectedDocuments,
+                            onCreateFolder: { beginCreateFolder(parentUUID: folder.uuid) },
+                            onError: { intakeMessage = $0 }
+                        )
 
-                    Button {
-                        shareRequest = ShareManagementRequest(resource: .folders, uuid: folder.uuid)
-                    } label: {
-                        Label("Share folder", systemImage: "person.2")
-                    }
+                        Button {
+                            shareRequest = ShareManagementRequest(resource: .folders, uuid: folder.uuid)
+                        } label: {
+                            Label("Share folder", systemImage: "person.2")
+                        }
 
-                    Menu {
-                        Picker("Group by", selection: $sortOptions.groupBy) {
-                            ForEach(BinderGroupMode.allCases) { mode in
-                                Text(mode.label).tag(mode)
+                        Menu {
+                            Picker("Group by", selection: $sortOptions.groupBy) {
+                                ForEach(BinderGroupMode.allCases) { mode in
+                                    Text(mode.label).tag(mode)
+                                }
                             }
-                        }
-                        Picker("Sort order", selection: $sortOptions.direction) {
-                            ForEach(BinderSortDirection.allCases) { direction in
-                                Text(direction.label).tag(direction)
-                            }
-                        }
-                        if sortOptions.groupBy != .none {
-                            Picker("Group order", selection: $sortOptions.groupDirection) {
+                            Picker("Sort order", selection: $sortOptions.direction) {
                                 ForEach(BinderSortDirection.allCases) { direction in
                                     Text(direction.label).tag(direction)
                                 }
                             }
+                            if sortOptions.groupBy != .none {
+                                Picker("Group order", selection: $sortOptions.groupDirection) {
+                                    ForEach(BinderSortDirection.allCases) { direction in
+                                        Text(direction.label).tag(direction)
+                                    }
+                                }
+                            }
+                        } label: {
+                            Label("Sort", systemImage: "arrow.up.arrow.down")
                         }
-                    } label: {
-                        Label("Sort", systemImage: "arrow.up.arrow.down")
+                        .accessibilityLabel("Sort and group documents")
                     }
-                    .accessibilityLabel("Sort and group documents")
                 }
             }
         }
@@ -496,6 +652,13 @@ private struct FolderContentsView: View {
                 serverURL: model.serverURL
             )
         }
+        .sheet(item: $composeRequest) { request in
+            DocumentComposeView(
+                targetDocument: request.target,
+                serverURL: model.serverURL,
+                initialSources: request.sources
+            )
+        }
         .confirmationDialog(
             "Delete folder?",
             isPresented: $showingDeleteConfirmation,
@@ -515,6 +678,14 @@ private struct FolderContentsView: View {
             Button("OK", role: .cancel) { managementError = nil }
         } message: {
             Text(managementError ?? "")
+        }
+        .alert("Document upload", isPresented: Binding(
+            get: { intakeMessage != nil },
+            set: { if !$0 { intakeMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { intakeMessage = nil }
+        } message: {
+            Text(intakeMessage ?? "")
         }
         .task(id: "\(model.serverURL)-\(folder.uuid)") {
             await loadContentsWhenViewSettles()
@@ -568,6 +739,77 @@ private struct FolderContentsView: View {
     }
 
     @MainActor
+    private func handleScannedDocument(_ pages: [UIImage]) {
+        do {
+            _ = try ScannedDocumentQueue.enqueue(pages: pages)
+            Task { await uploadQueuedDocuments() }
+        } catch {
+            intakeMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func handleSelectedDocuments(_ files: [URL]) {
+        do {
+            try DocumentIntakeQueue.enqueue(files: files)
+            Task { await uploadQueuedDocuments() }
+        } catch {
+            intakeMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func uploadQueuedDocuments() async {
+        do {
+            let uploaded = try await DocumentIntakeQueue.uploadPending(serverURL: model.serverURL)
+            intakeMessage = "Uploaded \(uploaded) document(s)."
+            await loadDocuments(reset: true)
+        } catch {
+            intakeMessage = "The document is queued for upload. \(error.localizedDescription)"
+        }
+    }
+
+    private var documentsForCurrentMode: [BinderDocumentSummary] {
+        guard let compositionTarget else { return documents }
+        return documents.filter { $0.uuid != compositionTarget.uuid }
+    }
+
+    private func beginComposeSelection(for document: BinderDocumentSummary) {
+        compositionTarget = document
+        compositionSources = []
+    }
+
+    private func cancelComposeSelection() {
+        compositionTarget = nil
+        compositionSources = []
+    }
+
+    private func toggleComposeSource(_ document: BinderDocumentSummary) {
+        guard isSelectableComposeSource(document) else { return }
+        if let index = compositionSources.firstIndex(where: { $0.uuid == document.uuid }) {
+            compositionSources.remove(at: index)
+        } else {
+            compositionSources.append(document)
+        }
+    }
+
+    private func isComposeSourceSelected(_ document: BinderDocumentSummary) -> Bool {
+        compositionSources.contains { $0.uuid == document.uuid }
+    }
+
+    private func isSelectableComposeSource(_ document: BinderDocumentSummary) -> Bool {
+        let isPDF = document.mimeType == nil || document.mimeType == "application/pdf"
+        let isReady = !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
+        return isPDF && isReady && document.uuid != compositionTarget?.uuid
+    }
+
+    private func finishComposeSelection() {
+        guard let compositionTarget, !compositionSources.isEmpty else { return }
+        composeRequest = FolderComposeRequest(target: compositionTarget, sources: compositionSources)
+        cancelComposeSelection()
+    }
+
+    @MainActor
     private func deleteFolder(_ folderToRemove: BinderFolder) async {
         folderToDelete = nil
         do {
@@ -582,18 +824,37 @@ private struct FolderContentsView: View {
     @ViewBuilder
     private func documentRows(_ rows: [BinderDocumentSummary]) -> some View {
         ForEach(rows) { document in
-            NavigationLink {
-                DocumentPDFView(
-                    document: document,
-                    serverURL: model.serverURL,
-                    onDocumentDeleted: { deletedUUID in
-                        documents.removeAll { $0.uuid == deletedUUID }
+            HStack(spacing: 12) {
+                NavigationLink {
+                    DocumentPDFView(
+                        document: document,
+                        serverURL: model.serverURL,
+                        onDocumentDeleted: { deletedUUID in
+                            documents.removeAll { $0.uuid == deletedUUID }
+                        },
+                        onComposeRequested: beginComposeSelection,
+                        isCombineModeActive: isSelectingComposeSources
+                    )
+                } label: {
+                    DocumentListRow(document: document, serverURL: model.serverURL)
+                }
+                .buttonStyle(.plain)
+
+                if isSelectingComposeSources {
+                    Button {
+                        toggleComposeSource(document)
+                    } label: {
+                        Image(systemName: isComposeSourceSelected(document) ? "checkmark.circle.fill" : "circle")
+                            .font(.title3)
+                            .foregroundStyle(isComposeSourceSelected(document) ? Color.accentColor : Color.secondary)
+                            .frame(width: 36, height: 44)
+                            .contentShape(Rectangle())
                     }
-                )
-            } label: {
-                DocumentListRow(document: document, serverURL: model.serverURL)
+                    .buttonStyle(.plain)
+                    .disabled(!isSelectableComposeSource(document))
+                    .accessibilityLabel(isComposeSourceSelected(document) ? "Remove from composition" : "Add to composition")
+                }
             }
-            .buttonStyle(.plain)
             .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
         }
     }
@@ -621,7 +882,7 @@ private struct FolderContentsView: View {
 
     private var documentGroups: [FolderDocumentGroup] {
         var grouped: [String: FolderDocumentGroup] = [:]
-        for document in documents {
+        for document in documentsForCurrentMode {
             let values = groupValues(for: document)
             let groupValues = values.isEmpty ? [(key: "__unassigned", label: "Unassigned")] : values
             for value in groupValues {
@@ -735,6 +996,12 @@ private struct FolderDocumentGroup: Identifiable {
     var id: String { key }
 }
 
+private struct FolderComposeRequest: Identifiable {
+    let id = UUID()
+    let target: BinderDocumentSummary
+    let sources: [BinderDocumentSummary]
+}
+
 private enum FolderSortPreferenceStore {
     private static let defaults = UserDefaults(suiteName: "group.com.binder.shared") ?? .standard
 
@@ -807,5 +1074,89 @@ private struct ErrorBanner: View {
                 .frame(minHeight: 44)
         }
         .padding(.vertical, 4)
+    }
+}
+
+struct DocumentAddMenu: View {
+    let onScan: ([UIImage]) -> Void
+    let onFiles: ([URL]) -> Void
+    var onCreateFolder: (() -> Void)? = nil
+    let onError: (String) -> Void
+
+    @State private var isShowingScanner = false
+    @State private var isShowingDocumentPicker = false
+
+    var body: some View {
+        Menu {
+            Button {
+                guard DocumentScanner.isSupported else {
+                    onError("Document scanning is not available on this device.")
+                    return
+                }
+                isShowingScanner = true
+            } label: {
+                Label("Scan document", systemImage: "doc.viewfinder")
+            }
+
+            Button {
+                isShowingDocumentPicker = true
+            } label: {
+                Label("Add from Files", systemImage: "doc.badge.plus")
+            }
+
+            if let onCreateFolder {
+                Button(action: onCreateFolder) {
+                    Label("New folder", systemImage: "folder.badge.plus")
+                }
+                .accessibilityIdentifier("create-folder")
+            }
+        } label: {
+            Image(systemName: "plus")
+        }
+        .accessibilityLabel(onCreateFolder == nil ? "Add document" : "Add document or folder")
+        .sheet(isPresented: $isShowingScanner) {
+            DocumentScanner(
+                isPresented: $isShowingScanner,
+                onScan: onScan,
+                onError: onError
+            )
+            .ignoresSafeArea()
+        }
+        .fileImporter(
+            isPresented: $isShowingDocumentPicker,
+            allowedContentTypes: [.pdf, .jpeg, .png],
+            allowsMultipleSelection: true
+        ) { result in
+            switch result {
+            case .success(let files): onFiles(files)
+            case .failure(let error): onError(error.localizedDescription)
+            }
+        }
+    }
+}
+
+@MainActor
+private enum DocumentIntakeQueue {
+    static func enqueue(files: [URL]) throws {
+        for file in files {
+            let hasSecurityScopedAccess = file.startAccessingSecurityScopedResource()
+            defer {
+                if hasSecurityScopedAccess {
+                    file.stopAccessingSecurityScopedResource()
+                }
+            }
+            _ = try SharedPDFQueue.enqueue(from: file, filename: file.lastPathComponent)
+        }
+    }
+
+    static func uploadPending(serverURL: String) async throws -> Int {
+        let files = try SharedPDFQueue.pendingFiles()
+        var uploaded = 0
+        for file in files {
+            try await BinderAPI.shared.uploadDocument(serverURL: serverURL, fileURL: file)
+            try SharedPDFQueue.remove(fileAt: file)
+            uploaded += 1
+        }
+        return uploaded
     }
 }

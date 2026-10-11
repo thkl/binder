@@ -15,8 +15,6 @@ struct SignedInView: View {
     @State private var isUploadingQueuedPDFs = false
     @State private var queuedUploadMessage: String?
     @State private var canRetryQueuedPDFs = false
-    @State private var isShowingScanner = false
-    @State private var isShowingDocumentPicker = false
     @State private var documentEntryError: String?
 
     var body: some View {
@@ -130,48 +128,14 @@ struct SignedInView: View {
             }
             .navigationTitle("Binder")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        guard DocumentScanner.isSupported else {
-                            documentEntryError = "Document scanning is not available on this device."
-                            return
-                        }
-                        isShowingScanner = true
-                    } label: {
-                        Image(systemName: "doc.viewfinder")
-                    }
-                    .accessibilityLabel("Scan document")
-                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        isShowingDocumentPicker = true
-                    } label: {
-                        Image(systemName: "doc.badge.plus")
-                    }
-                    .accessibilityLabel("Add document")
+                    DocumentAddMenu(
+                        onScan: saveScannedPDF,
+                        onFiles: { files in Task { await enqueueSelectedDocuments(files) } },
+                        onError: { documentEntryError = $0 }
+                    )
                 }
             }
-            .sheet(isPresented: $isShowingScanner) {
-                DocumentScanner(
-                    isPresented: $isShowingScanner,
-                    onScan: saveScannedPDF,
-                    onError: { documentEntryError = $0 }
-                )
-                .ignoresSafeArea()
-            }
-            .fileImporter(
-                isPresented: $isShowingDocumentPicker,
-                allowedContentTypes: [.pdf, .jpeg, .png],
-                allowsMultipleSelection: true,
-                onCompletion: { result in
-                    switch result {
-                    case .success(let files):
-                        Task { await enqueueSelectedDocuments(files) }
-                    case .failure(let error):
-                        documentEntryError = error.localizedDescription
-                    }
-                }
-            )
             .alert("Document", isPresented: Binding(
                 get: { documentEntryError != nil },
                 set: { if !$0 { documentEntryError = nil } }

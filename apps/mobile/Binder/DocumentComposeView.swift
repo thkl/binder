@@ -27,6 +27,21 @@ struct DocumentComposeView: View {
         _insertAfterPage = State(initialValue: max(1, targetDocument.pageCount ?? 1))
     }
 
+    init(
+        targetDocument: BinderDocumentSummary,
+        serverURL: String,
+        initialSources: [BinderDocumentSummary]
+    ) {
+        self.targetDocument = targetDocument
+        self.serverURL = serverURL
+        _insertAfterPage = State(initialValue: max(1, targetDocument.pageCount ?? 1))
+        _selectedSources = State(initialValue: initialSources.map { document in
+            let pageCount = max(1, document.pageCount ?? 1)
+            return ComposeSourceSelection(document: document, startPage: 1, endPage: pageCount)
+        })
+        _isConfiguring = State(initialValue: !initialSources.isEmpty)
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -94,13 +109,13 @@ struct DocumentComposeView: View {
 
     private var navigationTitle: String {
         if composedDocument != nil { return "Combine complete" }
-        return isConfiguring ? "Combine PDFs" : "Choose PDFs"
+        return isConfiguring ? "Choose pages and order" : "Choose PDFs"
     }
 
     private var sourcePicker: some View {
         List {
             Section("Target document") {
-                DocumentComposeRow(document: targetDocument, detail: "First PDF")
+                DocumentListRow(document: targetDocument, serverURL: serverURL, footer: "First PDF")
             }
 
             Section("Choose PDFs to insert") {
@@ -122,9 +137,10 @@ struct DocumentComposeView: View {
                                 Image(systemName: isSelected(document) ? "checkmark.circle.fill" : "circle")
                                     .foregroundStyle(isSelected(document) ? Color.accentColor : Color.secondary)
                                     .accessibilityHidden(true)
-                                DocumentComposeRow(
+                                DocumentListRow(
                                     document: document,
-                                    detail: "\(document.pageCount ?? 1) pages"
+                                    serverURL: serverURL,
+                                    footer: "\(document.pageCount ?? 1) pages"
                                 )
                                 .contentShape(Rectangle())
                             }
@@ -157,19 +173,29 @@ struct DocumentComposeView: View {
     private var compositionForm: some View {
         Form {
             Section("Target document") {
-                DocumentComposeRow(document: targetDocument, detail: "Target · \(targetPageCount) pages")
+                DocumentListRow(
+                    document: targetDocument,
+                    serverURL: serverURL,
+                    footer: "Target · \(targetPageCount) pages"
+                )
             }
 
             ForEach(selectedSources.indices, id: \.self) { index in
                 let selection = selectedSources[index]
                 let pageCount = max(1, selection.document.pageCount ?? 1)
+                let canMoveUp = selectedSources.count > 1 && index > 0
+                let canMoveDown = selectedSources.count > 1 && index < selectedSources.count - 1
                 Section("Source PDF \(index + 1)") {
-                    DocumentComposeRow(
+                    DocumentListRow(
                         document: selection.document,
-                        detail: "Pages \(selection.startPage)–\(selection.endPage) of \(pageCount)"
+                        serverURL: serverURL,
+                        footer: "Source PDF \(index + 1) · \(pageCount) pages"
                     )
+                    Text("Include pages \(selection.startPage)–\(selection.endPage) of \(pageCount)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     Stepper(
-                        "First page: \(selection.startPage)",
+                        "First page",
                         value: Binding(
                             get: { selectedSources[index].startPage },
                             set: { setStartPage($0, at: index) }
@@ -177,13 +203,29 @@ struct DocumentComposeView: View {
                         in: 1...pageCount
                     )
                     Stepper(
-                        "Last page: \(selection.endPage)",
+                        "Last page",
                         value: Binding(
                             get: { selectedSources[index].endPage },
                             set: { selectedSources[index].endPage = $0 }
                         ),
                         in: selection.startPage...pageCount
                     )
+                    HStack {
+                        Button {
+                            moveSource(at: index, by: -1)
+                        } label: {
+                            Label("Move up", systemImage: "arrow.up")
+                        }
+                        .disabled(!canMoveUp)
+
+                        Button {
+                            moveSource(at: index, by: 1)
+                        } label: {
+                            Label("Move down", systemImage: "arrow.down")
+                        }
+                        .disabled(!canMoveDown)
+                    }
+                    .buttonStyle(.bordered)
                     Button("Remove source", role: .destructive) {
                         selectedSources.remove(at: index)
                         if selectedSources.isEmpty { isConfiguring = false }
@@ -198,7 +240,7 @@ struct DocumentComposeView: View {
                         value: insertAfterPage == 0 ? "—" : "\(insertAfterPage)"
                     )
                 }
-                Text("Selected pages are inserted in the order shown above. The target stays in version history, and the combined PDF becomes its next version.")
+                Text("The chosen page ranges are inserted in the order shown above. The target stays in version history, and the combined PDF becomes its next version.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -261,6 +303,12 @@ struct DocumentComposeView: View {
         if selectedSources[index].endPage < page {
             selectedSources[index].endPage = page
         }
+    }
+
+    private func moveSource(at index: Int, by offset: Int) {
+        let destination = index + offset
+        guard selectedSources.indices.contains(index), selectedSources.indices.contains(destination) else { return }
+        selectedSources.swapAt(index, destination)
     }
 
     @MainActor
