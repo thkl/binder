@@ -19,4 +19,5 @@ docs/security-findings.md
 product-plan.md
 docs/int/*
 !docs/int/document-format-adapter-plan.md
+!docs/int/document-format-adapters.md
 .pnpm-store/

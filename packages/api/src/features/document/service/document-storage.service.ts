@@ -48,6 +48,30 @@ export class DocumentStorageService {
     return { storageKey, absolutePath, checksumSha256, sizeBytes: buffer.length };
   }
 
+  async storeImage(
+    buffer: Buffer,
+    uuid: string,
+    extension: '.jpg' | '.png',
+  ): Promise<StoredDocumentFile> {
+    await this.assertUploadSize(buffer.length);
+
+    const root = await this.getStorageRoot();
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const storageKey = `documents/${year}/${month}/${uuid}${extension}`;
+    const absolutePath = await this.resolveStoragePath(storageKey);
+    const temporaryPath = join(root, 'tmp', `${uuid}.upload`);
+    const checksumSha256 = createHash('sha256').update(buffer).digest('hex');
+
+    await fs.mkdir(dirname(absolutePath), { recursive: true, mode: 0o750 });
+    await fs.mkdir(dirname(temporaryPath), { recursive: true, mode: 0o750 });
+    await fs.writeFile(temporaryPath, buffer, { mode: 0o640 });
+    await fs.rename(temporaryPath, absolutePath);
+
+    return { storageKey, absolutePath, checksumSha256, sizeBytes: buffer.length };
+  }
+
   /**
    * Checks an upload size before document parsers inspect its contents.
    *
@@ -212,6 +236,80 @@ export class DocumentStorageService {
       if (error instanceof BadRequestException) throw error;
       throw new BadRequestException('The uploaded file is not a valid PDF');
     }
+  }
+
+  async validateImage(buffer: Buffer, mimeType: 'image/jpeg' | 'image/png'): Promise<void> {
+    try {
+      const mupdf = await import('mupdf');
+      const document = mupdf.Document.openDocument(buffer, mimeType);
+      try {
+        if (document.countPages() !== 1) {
+          throw new BadRequestException('An image document must contain exactly one image');
+        }
+        const page = document.loadPage(0);
+        try {
+          const bounds = page.getBounds();
+          const width = Math.ceil((bounds[2] - bounds[0]) * (4 / 3));
+          const height = Math.ceil((bounds[3] - bounds[1]) * (4 / 3));
+          if (
+            !Number.isSafeInteger(width) ||
+            !Number.isSafeInteger(height) ||
+            width < 1 ||
+            height < 1 ||
+            width > 20_000 ||
+            height > 20_000 ||
+            width * height > 100_000_000
+          ) {
+            throw new BadRequestException('The image dimensions exceed the supported limit');
+          }
+        } finally {
+          page.destroy();
+        }
+      } finally {
+        document.destroy();
+      }
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException('The uploaded file is not a valid JPEG or PNG image');
+    }
+  }
+
+  async createImageThumbnail(
+    storageKey: string,
+    uuid: string,
+    createdAt: Date,
+    mimeType: 'image/jpeg' | 'image/png',
+  ): Promise<string> {
+    const imageBuffer = await fs.readFile(await this.resolveStoragePath(storageKey));
+    const thumbnailKey = `${this.derivedDirectory(uuid, createdAt)}/thumbnail.png`;
+    const thumbnailPath = await this.resolveStoragePath(thumbnailKey);
+    const temporaryPath = `${thumbnailPath}.${randomUUID()}.tmp`;
+    const mupdf = await import('mupdf');
+    const document = mupdf.Document.openDocument(imageBuffer, mimeType);
+
+    try {
+      const page = document.loadPage(0);
+      try {
+        const bounds = page.getBounds();
+        const width = Math.max(1, bounds[2] - bounds[0]);
+        const height = Math.max(1, bounds[3] - bounds[1]);
+        const scale = Math.min(480 / width, 1280 / height);
+        const pixmap = page.toPixmap(mupdf.Matrix.scale(scale, scale), mupdf.ColorSpace.DeviceRGB);
+        try {
+          await fs.mkdir(dirname(thumbnailPath), { recursive: true, mode: 0o750 });
+          await fs.writeFile(temporaryPath, pixmap.asPNG(), { mode: 0o640 });
+          await fs.rename(temporaryPath, thumbnailPath);
+        } finally {
+          pixmap.destroy();
+        }
+      } finally {
+        page.destroy();
+      }
+    } finally {
+      document.destroy();
+    }
+
+    return thumbnailKey;
   }
 
   async createThumbnail(storageKey: string, uuid: string, createdAt = new Date()): Promise<string> {

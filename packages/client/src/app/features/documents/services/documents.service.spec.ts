@@ -44,12 +44,19 @@ describe('DocumentsService format discovery', () => {
             mimeTypes: ['text/plain'],
             capabilities: ['upload', 'download', 'text-extraction'],
           },
+          {
+            id: 'image',
+            displayName: 'Image',
+            extensions: ['.jpg', '.jpeg', '.png'],
+            mimeTypes: ['image/jpeg', 'image/png'],
+            capabilities: ['upload', 'download', 'preview', 'text-extraction', 'ocr', 'page-count'],
+          },
         ],
       },
     });
     await loading;
 
-    expect(service.uploadAccept()).toBe('application/pdf,.pdf,text/plain,.txt');
+    expect(service.uploadAccept()).toBe('application/pdf,.pdf,text/plain,.txt,image/jpeg,image/png,.jpg,.jpeg,.png');
     expect(service.isLikelySupportedUpload(new File(['x'], 'notes.txt', { type: 'text/plain' }))).toBe(
       true,
     );
@@ -62,9 +69,10 @@ describe('DocumentsService format discovery', () => {
     expect(service.isLikelySupportedUpload(new File(['x'], 'unknown.bin'))).toBe(true);
     expect(service.supportsMimeCapability('application/pdf', 'split')).toBe(true);
     expect(service.supportsMimeCapability('text/plain', 'split')).toBe(false);
-    expect(service.hasPdfPreview('text/plain')).toBe(false);
+    expect(service.hasPreview('text/plain')).toBe(false);
+    expect(service.hasPreview('image/png')).toBe(true);
     expect(JSON.parse(localStorage.getItem('binder.document-formats.v1') ?? '{}').formats).toHaveLength(
-      2,
+      3,
     );
   });
 

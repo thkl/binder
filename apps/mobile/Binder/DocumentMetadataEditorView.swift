@@ -709,6 +709,7 @@ struct DocumentMetadataEditorView: View {
             uuid: document.uuid,
             title: title,
             originalFilename: document.originalFilename,
+            mimeType: document.mimeType,
             pageCount: document.pageCount,
             metadataSummary: metadata,
             status: document.status,

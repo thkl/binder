@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import PDFKit
+import ImageIO
 
 struct DocumentPDFView: View {
     @State private var document: BinderDocumentSummary
@@ -8,6 +9,7 @@ struct DocumentPDFView: View {
     private let onCurrentVersionDeleted: (BinderDocumentSummary) -> Void
 
     @State private var loadedPDF: PreparedPDFDocument?
+    @State private var loadedImage: UIImage?
     @State private var pdfFileURL: URL?
     @State private var isLoading = true
     @State private var isWaitingForMalwareScan = false
@@ -29,7 +31,8 @@ struct DocumentPDFView: View {
 
     private var filename: String {
         let original = document.originalFilename.trimmingCharacters(in: .whitespacesAndNewlines)
-        return original.isEmpty ? "document.pdf" : original
+        if !original.isEmpty { return original }
+        return isImageDocument ? "document.jpg" : "document.pdf"
     }
 
     private var displayTitle: String {
@@ -38,17 +41,20 @@ struct DocumentPDFView: View {
     }
 
     private var canSplitDocument: Bool {
+        guard isPDFDocument else { return false }
         guard (document.pageCount ?? 0) > 1 else { return false }
         return !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
     }
 
     private var canComposeDocument: Bool {
-        (document.pageCount ?? 0) > 0 &&
+        guard isPDFDocument else { return false }
+        return (document.pageCount ?? 0) > 0 &&
             !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
     }
 
     private var canRotateDocument: Bool {
-        (document.pageCount ?? 0) > 0 &&
+        guard isPDFDocument else { return false }
+        return (document.pageCount ?? 0) > 0 &&
             !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
     }
 
@@ -56,18 +62,32 @@ struct DocumentPDFView: View {
         !hasRequeued && ["failed", "ready", "quarantined"].contains(document.status ?? "")
     }
 
+    private var isPDFDocument: Bool {
+        document.mimeType == nil || document.mimeType == "application/pdf"
+    }
+
+    private var isImageDocument: Bool {
+        document.mimeType?.hasPrefix("image/") == true
+    }
+
     var body: some View {
         Group {
             if let loadedPDF {
                 PDFDocumentView(document: loadedPDF.document)
                     .background(Color(uiColor: .secondarySystemBackground))
+            } else if let loadedImage {
+                Image(uiImage: loadedImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(uiColor: .secondarySystemBackground))
             } else if isLoading {
-                ProgressView(isWaitingForMalwareScan ? "Waiting for malware scan…" : "Loading PDF…")
+                ProgressView(isWaitingForMalwareScan ? "Waiting for malware scan…" : "Loading document…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 VStack(spacing: 12) {
                     ContentUnavailableView(
-                        "Couldn’t load PDF",
+                        isImageDocument ? "Couldn’t load image" : "Couldn’t load PDF",
                         systemImage: "doc.questionmark",
                         description: Text(errorMessage ?? "Check your connection and try again.")
                     )
@@ -86,7 +106,7 @@ struct DocumentPDFView: View {
                     Button {
                         if let pdfFileURL { activeSheet = .share(pdfFileURL) }
                     } label: {
-                        Label("Share PDF", systemImage: "square.and.arrow.up")
+                        Label(isImageDocument ? "Share image" : "Share PDF", systemImage: "square.and.arrow.up")
                     }
                     .disabled(pdfFileURL == nil)
                     .accessibilityIdentifier("share-document-pdf")
@@ -189,6 +209,7 @@ struct DocumentPDFView: View {
         isWaitingForMalwareScan = false
         errorMessage = nil
         loadedPDF = nil
+        loadedImage = nil
         if let pdfFileURL {
             try? FileManager.default.removeItem(at: pdfFileURL.deletingLastPathComponent())
         }
@@ -228,20 +249,36 @@ struct DocumentPDFView: View {
                 }
             }
             let safeFilename = URL(fileURLWithPath: filename).lastPathComponent
-            let preparedPDF = try await Task.detached(priority: .userInitiated) {
-                let shareURL = FileManager.default.temporaryDirectory
-                    .appendingPathComponent("Binder-\(UUID().uuidString)", isDirectory: true)
-                    .appendingPathComponent(safeFilename)
-                try FileManager.default.createDirectory(
-                    at: shareURL.deletingLastPathComponent(),
-                    withIntermediateDirectories: true
-                )
-                try data.write(to: shareURL, options: .atomic)
-                guard let pdfDocument = PDFDocument(url: shareURL) else {
-                    try? FileManager.default.removeItem(at: shareURL.deletingLastPathComponent())
-                    throw BinderPDFError.unreadablePDF
+            let localURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("Binder-\(UUID().uuidString)", isDirectory: true)
+                .appendingPathComponent(safeFilename)
+            try FileManager.default.createDirectory(
+                at: localURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try data.write(to: localURL, options: .atomic)
+            if isImageDocument {
+                let imageData = await Task.detached(priority: .userInitiated) {
+                    Self.previewImageData(at: localURL)
+                }.value
+                guard let imageData, let image = UIImage(data: imageData) else {
+                    try? FileManager.default.removeItem(at: localURL.deletingLastPathComponent())
+                    throw BinderPDFError.unreadableDocument
                 }
-                return PreparedPDFDocument(document: pdfDocument, fileURL: shareURL)
+                if Task.isCancelled {
+                    try? FileManager.default.removeItem(at: localURL.deletingLastPathComponent())
+                    return
+                }
+                loadedImage = image
+                pdfFileURL = localURL
+                return
+            }
+            let preparedPDF = try await Task.detached(priority: .userInitiated) {
+                guard let pdfDocument = PDFDocument(url: localURL) else {
+                    try? FileManager.default.removeItem(at: localURL.deletingLastPathComponent())
+                    throw BinderPDFError.unreadableDocument
+                }
+                return PreparedPDFDocument(document: pdfDocument, fileURL: localURL)
             }.value
             if Task.isCancelled {
                 try? FileManager.default.removeItem(at: preparedPDF.fileURL.deletingLastPathComponent())
@@ -252,12 +289,32 @@ struct DocumentPDFView: View {
         } catch {
             if error is CancellationError { return }
             isWaitingForMalwareScan = false
-            if loadedPDF == nil {
+            if loadedPDF == nil && loadedImage == nil {
                 errorMessage = error.localizedDescription
             } else {
-                actionAlert = DocumentPDFAlert(title: "Couldn’t share PDF", message: error.localizedDescription)
+                actionAlert = DocumentPDFAlert(title: "Couldn’t share document", message: error.localizedDescription)
             }
         }
+    }
+
+    nonisolated private static func previewImageData(at url: URL) -> Data? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let image = CGImageSourceCreateThumbnailAtIndex(
+                source,
+                0,
+                [
+                    kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceThumbnailMaxPixelSize: 2400,
+                    kCGImageSourceCreateThumbnailWithTransform: true,
+                ] as CFDictionary
+              ) else { return nil }
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil) else {
+            return nil
+        }
+        CGImageDestinationAddImage(destination, image, nil)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return data as Data
     }
 
     @MainActor
@@ -699,12 +756,12 @@ private struct PreparedPDFDocument: @unchecked Sendable {
 }
 
 private enum BinderPDFError: LocalizedError {
-    case unreadablePDF
+    case unreadableDocument
 
     var errorDescription: String? {
         switch self {
-        case .unreadablePDF:
-            "The server response isn’t a readable PDF."
+        case .unreadableDocument:
+            "The server response isn’t a readable document."
         }
     }
 }

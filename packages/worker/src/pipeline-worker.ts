@@ -384,6 +384,7 @@ export async function processClaimedJob(job: ClaimedJob): Promise<void> {
           job.storageKey,
           job.documentUuid,
           job.createdAt,
+          job.mimeType,
         );
         await completeJob(job, false);
         break;
@@ -397,23 +398,21 @@ export async function processClaimedJob(job: ClaimedJob): Promise<void> {
         const needsForceForBrokenText = Boolean(
           sourceText?.requiresOcr && sourceText.text.trim().length > 0,
         );
-        const key = await adapter.runOcr(
+        let extracted = await adapter.runOcr(
           job.storageKey,
           job.documentUuid,
           job.createdAt,
           needsForceForBrokenText ? { forceOcr: true } : {},
         );
-        let extracted = await adapter.extractText(key);
 
         if (extracted.requiresOcr) {
           logger.warn('OCR pass produced no usable text; forcing OCR', {
             documentUuid: job.documentUuid,
             jobUuid: job.jobUuid,
           });
-          await adapter.runOcr(job.storageKey, job.documentUuid, job.createdAt, {
+          extracted = await adapter.runOcr(job.storageKey, job.documentUuid, job.createdAt, {
             forceOcr: true,
           });
-          extracted = await adapter.extractText(key);
         }
 
         if (extracted.requiresOcr) {

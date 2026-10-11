@@ -15,7 +15,7 @@ import {
 } from './models.js';
 import { logger } from './logger.js';
 import { resolveStoragePath } from './storage.js';
-import { detectAndValidateWorkerFormat } from './document-format.registry.js';
+import { detectAndValidateWorkerFormat, WORKER_DOCUMENT_FORMATS } from './document-format.registry.js';
 
 let lastScanAt = 0;
 
@@ -80,7 +80,7 @@ export async function importInboxDocuments(force = false): Promise<void> {
  * @param {string} ownerUuid - UUID of the user who owns the resource.
  * @returns {Promise<'imported' | 'duplicate' | 'rejected'>} - Writes an email attachment to the inbox and imports it through the normal validation flow.
  */
-export async function importEmailPdf(
+export async function importEmailDocument(
   buffer: Buffer,
   filename: string,
   ownerUuid: string,
@@ -98,6 +98,9 @@ export async function importEmailPdf(
   const result = await importFile(inboxPath, storedFilename, ownerUuid, await getCompletionStage());
   return result === 'skipped' ? 'rejected' : result;
 }
+
+/** @deprecated Use importEmailDocument for all registered document formats. */
+export const importEmailPdf = importEmailDocument;
 
 async function importFile(
   inboxPath: string,
@@ -137,13 +140,17 @@ async function importFile(
     return 'rejected';
   }
 
+  const extension = extname(filename).toLowerCase();
+  const supportedExtension = WORKER_DOCUMENT_FORMATS.some((format) =>
+    format.extensions.includes(extension),
+  );
   if (Date.now() - initial.mtimeMs < config.inbox.stabilityMs) return 'skipped';
-  if (extname(filename).toLowerCase() !== '.pdf' || initial.size > config.maxUploadBytes) {
+  if (!supportedExtension || initial.size > config.maxUploadBytes) {
     await moveTo(sourcePath, join(inboxPath, 'rejected'), filename);
     await inboxItem.update({
       status: 'rejected',
       lastError:
-        extname(filename).toLowerCase() !== '.pdf'
+        !supportedExtension
           ? 'Unsupported file type'
           : 'File exceeds the configured upload limit',
     });
@@ -151,7 +158,7 @@ async function importFile(
       filename,
       sizeBytes: initial.size,
       reason:
-        extname(filename).toLowerCase() !== '.pdf' ? 'unsupported-file-type' : 'file-too-large',
+        !supportedExtension ? 'unsupported-file-type' : 'file-too-large',
     });
     return 'rejected';
   }
@@ -193,7 +200,7 @@ async function importFile(
 
     const documentUuid = randomUUID();
     const now = new Date();
-    const storageKey = `documents/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${documentUuid}${detectedFormat.extensions[0]}`;
+    const storageKey = `documents/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${documentUuid}${detectedFormat.extension}`;
     const targetPath = await resolveStoragePath(storageKey);
     await fs.mkdir(dirname(targetPath), { recursive: true, mode: 0o750 });
     await fs.rename(claimedPath, targetPath);
@@ -209,7 +216,7 @@ async function importFile(
             versionParentUuid: null,
             originalFilename: safeFilename(filename),
             title: safeFilename(filename),
-            mimeType: detectedFormat.mimeTypes[0],
+            mimeType: detectedFormat.mimeType,
             sizeBytes: buffer.length,
             checksumSha256,
             storageKey,
@@ -356,5 +363,7 @@ async function ensureWritableDirectory(directory: string): Promise<void> {
 
 function safeFilename(filename: string): string {
   const value = basename(filename).replace(/[\r\n]/g, '_');
-  return value.length <= 255 ? value : value.slice(0, 251) + '.pdf';
+  if (value.length <= 255) return value;
+  const extension = extname(value).slice(0, 16);
+  return value.slice(0, 255 - extension.length) + extension;
 }

@@ -8,6 +8,7 @@ import { DocumentService } from './document.service.js';
 import { DocumentStorageService } from './document-storage.service.js';
 import { DocumentFormatRegistry } from './document-format.registry.js';
 import { PdfDocumentFormatAdapter } from './pdf-document-format.adapter.js';
+import { ImageDocumentFormatAdapter } from './image-document-format.adapter.js';
 import { ConfigKeys } from '../../../shared/config/config.keys.js';
 import { createPdfFixture } from './pdf-test-fixture.js';
 
@@ -71,7 +72,10 @@ async function createFixture(
     {} as never,
     documents as never,
     storage,
-    new DocumentFormatRegistry(new PdfDocumentFormatAdapter(storage)),
+    new DocumentFormatRegistry(
+      new PdfDocumentFormatAdapter(storage),
+      new ImageDocumentFormatAdapter(storage),
+    ),
     pipeline as never,
     {} as never,
     {} as never,
@@ -131,6 +135,28 @@ describe('document upload service', () => {
     assert.deepEqual(await readFile(fixture.inputPath), originalBytes);
     expect(fixture.inboxItems.create).toHaveBeenCalledOnce();
     expect(fixture.audit.record).toHaveBeenCalledOnce();
+  });
+
+  it('detects and stores a real PNG from its bytes despite a misleading PDF filename', async () => {
+    const fixture = await createFixture();
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/7XcAAAAASUVORK5CYII=',
+      'base64',
+    );
+    await writeFile(fixture.inputPath, png);
+
+    const response = await fixture.service.upload(ownerUuid, {
+      path: fixture.inputPath,
+      size: png.length,
+      mimetype: 'application/pdf',
+      originalname: 'invoice.pdf',
+    });
+
+    assert.equal(response.mimeType, 'image/png');
+    assert.equal(fixture.created[0]?.['originalFilename'], 'invoice.pdf');
+    assert.match(String(fixture.created[0]?.['storageKey']), /\.png$/u);
+    assert.equal(fixture.created[0]?.['pageCount'], 1);
+    assert.equal(await fixture.storage.exists(String(fixture.created[0]?.['storageKey'])), true);
   });
 
   it('rejects non-PDF bytes even when the MIME type and extension claim PDF', async () => {

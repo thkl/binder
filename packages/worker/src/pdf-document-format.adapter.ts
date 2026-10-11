@@ -1,4 +1,4 @@
-import { PDF_DOCUMENT_FORMAT } from '@binder/common';
+import type { DocumentFormatDescriptor } from '@binder/common';
 import { extractPdfPages, validatePdfBuffer, type ExtractedPdfPages } from './extraction.js';
 import { runOcr, type OcrOptions } from './ocr.js';
 import { runPdfa } from './pdfa.js';
@@ -19,9 +19,18 @@ export interface ExtractedDocumentText {
 
 /** PDF operations implemented by the worker's existing PDF tools. */
 export class PdfDocumentFormatAdapter {
-  readonly descriptor = PDF_DOCUMENT_FORMAT;
+  readonly descriptor: DocumentFormatDescriptor = {
+    id: 'pdf',
+    displayName: 'PDF',
+    extensions: ['.pdf'],
+    mimeTypes: ['application/pdf'],
+    capabilities: [
+      'upload', 'download', 'preview', 'text-extraction', 'ocr', 'file-analysis',
+      'page-count', 'page-rotation', 'split', 'compose', 'pdfa',
+    ],
+  };
 
-  validate(buffer: Buffer): Promise<void> {
+  validate(buffer: Buffer, _mimeType?: string): Promise<void> {
     return validatePdfBuffer(buffer);
   }
 
@@ -39,17 +48,23 @@ export class PdfDocumentFormatAdapter {
     };
   }
 
-  createPreview(storageKey: string, documentUuid: string, createdAt: Date): Promise<void> {
+  createPreview(
+    storageKey: string,
+    documentUuid: string,
+    createdAt: Date,
+    _mimeType?: string,
+  ): Promise<void> {
     return createThumbnail(storageKey, documentUuid, createdAt);
   }
 
-  runOcr(
+  async runOcr(
     storageKey: string,
     documentUuid: string,
     createdAt: Date,
     options?: OcrOptions,
-  ): Promise<string> {
-    return runOcr(storageKey, documentUuid, createdAt, options);
+  ): Promise<ExtractedDocumentText> {
+    const key = await runOcr(storageKey, documentUuid, createdAt, options);
+    return this.extractText(key);
   }
 
   createArchive(storageKey: string, documentUuid: string, createdAt: Date): Promise<string> {

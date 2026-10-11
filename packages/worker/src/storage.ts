@@ -109,6 +109,46 @@ export async function createThumbnail(
   await Document.update({ thumbnailKey }, { where: { uuid: documentUuid } });
 }
 
+/** Renders a validated JPEG or PNG source to Binder's cached thumbnail artifact. */
+export async function createImageThumbnail(
+  storageKey: string,
+  documentUuid: string,
+  createdAt: Date,
+  mimeType: 'image/jpeg' | 'image/png',
+): Promise<void> {
+  const mupdf = await import('mupdf');
+  const image = await fs.readFile(resolveStoragePath(storageKey));
+  const document = mupdf.Document.openDocument(image, mimeType);
+  const thumbnailKey = `${derivedDirectory(documentUuid, createdAt)}/thumbnail.png`;
+  const target = resolveStoragePath(thumbnailKey);
+  const temporary = `${target}.${randomUUID()}.tmp`;
+
+  try {
+    const page = document.loadPage(0);
+    try {
+      const bounds = page.getBounds();
+      const width = Math.max(1, bounds[2] - bounds[0]);
+      const height = Math.max(1, bounds[3] - bounds[1]);
+      const scale = Math.min(480 / width, 1280 / height);
+      const pixmap = page.toPixmap(mupdf.Matrix.scale(scale, scale), mupdf.ColorSpace.DeviceRGB);
+      try {
+        await fs.mkdir(dirname(target), { recursive: true, mode: 0o750 });
+        await fs.writeFile(temporary, pixmap.asPNG(), { mode: 0o640 });
+        await fs.rename(temporary, target);
+      } finally {
+        pixmap.destroy();
+      }
+    } finally {
+      page.destroy();
+    }
+  } finally {
+    document.destroy();
+    await fs.rm(temporary, { force: true }).catch(() => undefined);
+  }
+
+  await Document.update({ thumbnailKey }, { where: { uuid: documentUuid } });
+}
+
 /**
  * Moves artifacts from the legacy flat layout into date-partitioned derived storage.
  *

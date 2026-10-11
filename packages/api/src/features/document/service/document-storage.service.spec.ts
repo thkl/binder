@@ -39,6 +39,26 @@ afterEach(async () => {
 });
 
 describe('document PDF storage', () => {
+  it('validates and stores JPEG/PNG images with bounded dimensions', async () => {
+    const service = await storage();
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/7XcAAAAASUVORK5CYII=',
+      'base64',
+    );
+    await service.validateImage(png, 'image/png');
+    const saved = await service.storeImage(png, 'image-document', '.png');
+    assert.match(saved.storageKey, /image-document\.png$/u);
+    assert.deepEqual(await readFile(saved.absolutePath), png);
+    const thumbnailKey = await service.createImageThumbnail(
+      saved.storageKey,
+      'image-document',
+      new Date('2026-10-11T12:00:00Z'),
+      'image/png',
+    );
+    assert.equal(await service.exists(thumbnailKey), true);
+    await assert.rejects(service.validateImage(Buffer.from('not an image'), 'image/png'), /valid JPEG or PNG/);
+  });
+
   it('validates a readable PDF and rejects invalid signatures or malformed files', async () => {
     const service = await storage();
     await service.validatePdf(createPdfFixture(['Invoice 2026']));

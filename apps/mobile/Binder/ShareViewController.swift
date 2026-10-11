@@ -10,7 +10,7 @@ final class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configureView()
-        loadSharedPDF()
+        loadSharedDocument()
     }
 
     private func configureView() {
@@ -19,7 +19,7 @@ final class ShareViewController: UIViewController {
         titleLabel.font = .preferredFont(forTextStyle: .headline)
         titleLabel.textAlignment = .center
 
-        statusLabel.text = "Preparing PDF…"
+        statusLabel.text = "Preparing document…"
         statusLabel.font = .preferredFont(forTextStyle: .subheadline)
         statusLabel.textColor = .secondaryLabel
         statusLabel.textAlignment = .center
@@ -46,21 +46,24 @@ final class ShareViewController: UIViewController {
         activityIndicator.startAnimating()
     }
 
-    private func loadSharedPDF() {
+    private func loadSharedDocument() {
         let providers = (extensionContext?.inputItems as? [NSExtensionItem] ?? [])
             .flatMap { $0.attachments ?? [] }
-        guard let provider = providers.first(where: {
-            $0.hasItemConformingToTypeIdentifier(UTType.pdf.identifier)
-        }) else {
-            showFinished("Select a PDF to add it to Binder.")
+        let supportedTypes = [UTType.pdf, .jpeg, .png]
+        guard let candidate = providers.lazy.compactMap({ provider in
+            supportedTypes.first(where: { provider.hasItemConformingToTypeIdentifier($0.identifier) })
+                .map { (provider, $0) }
+        }).first else {
+            showFinished("Select a PDF, JPEG, or PNG image to add it to Binder.")
             return
         }
+        let (provider, contentType) = candidate
 
-        provider.loadFileRepresentation(forTypeIdentifier: UTType.pdf.identifier) { [weak self] sourceURL, error in
+        provider.loadFileRepresentation(forTypeIdentifier: contentType.identifier) { [weak self] sourceURL, error in
             guard let self else { return }
             guard let sourceURL else {
                 Task { @MainActor in
-                    self.showFinished(error?.localizedDescription ?? "The PDF could not be opened.")
+                    self.showFinished(error?.localizedDescription ?? "The document could not be opened.")
                 }
                 return
             }
@@ -71,7 +74,7 @@ final class ShareViewController: UIViewController {
                 Task { @MainActor in await self.uploadOrQueue(queuedURL) }
             } catch {
                 Task { @MainActor in
-                    self.showFinished("Couldn’t save the PDF for Binder: \(error.localizedDescription)")
+                    self.showFinished("Couldn’t save the document for Binder: \(error.localizedDescription)")
                 }
             }
         }
@@ -81,18 +84,18 @@ final class ShareViewController: UIViewController {
     private func uploadOrQueue(_ queuedURL: URL) async {
         let serverURL = AppSettings.serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !serverURL.isEmpty else {
-            showFinished("PDF queued. Open Binder, set the server URL, and sign in to upload it.")
+            showFinished("Document queued. Open Binder, set the server URL, and sign in to upload it.")
             return
         }
 
         do {
             try await BinderAPI.shared.uploadDocument(serverURL: serverURL, fileURL: queuedURL)
             try SharedPDFQueue.remove(fileAt: queuedURL)
-            showFinished("PDF added to Binder.")
+            showFinished("Document added to Binder.")
         } catch BinderAPIError.unsupportedDocumentFormat {
             showFinished(BinderAPIError.unsupportedDocumentFormat.localizedDescription)
         } catch {
-            showFinished("PDF queued. Open Binder to retry when the server is available or sign in.")
+            showFinished("Document queued. Open Binder to retry when the server is available or sign in.")
         }
     }
 

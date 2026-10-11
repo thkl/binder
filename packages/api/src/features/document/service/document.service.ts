@@ -175,7 +175,12 @@ export class DocumentService {
 
       const uuid = randomUUID();
       const adapter = this.formats.getAdapterForMimeType(detectedFormat.mimeType, 'upload');
-      const stored = await adapter.storeOriginal(buffer, uuid, file.originalname);
+      const stored = await adapter.storeOriginal(
+        buffer,
+        uuid,
+        file.originalname,
+        detectedFormat.mimeType,
+      );
 
       try {
         const duplicate = await this.documents.findByChecksum(stored.checksumSha256);

@@ -47,7 +47,7 @@ struct SignedInView: View {
                 searchBar
 
                 if isUploadingQueuedPDFs {
-                    ProgressView("Uploading queued PDFs…")
+                    ProgressView("Uploading queued documents…")
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
                         .padding(.vertical, 10)
@@ -86,7 +86,7 @@ struct SignedInView: View {
                     ContentUnavailableView(
                         "Search your documents",
                         systemImage: "magnifyingglass",
-                        description: Text("Search document titles and text inside your PDFs.")
+                        description: Text("Search document titles and extracted text.")
                     )
                 } else if results.isEmpty && !isSearching {
                     ContentUnavailableView(
@@ -233,13 +233,13 @@ struct SignedInView: View {
                     uploaded += 1
                 } catch {
                     let remaining = files.count - uploaded
-                    queuedUploadMessage = "\(remaining) PDF(s) remain queued. Check the server connection and retry."
+                    queuedUploadMessage = "\(remaining) document(s) remain queued. Check the server connection and retry."
                     canRetryQueuedPDFs = true
                     return
                 }
             }
 
-            queuedUploadMessage = "Uploaded \(uploaded) queued PDF(s)."
+            queuedUploadMessage = "Uploaded \(uploaded) queued document(s)."
         } catch {
             queuedUploadMessage = error.localizedDescription
             canRetryQueuedPDFs = true

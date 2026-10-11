@@ -88,6 +88,7 @@ struct BinderDocumentSummary: Decodable, Identifiable {
     let uuid: String
     let title: String?
     let originalFilename: String
+    let mimeType: String?
     let pageCount: Int?
     let metadataSummary: BinderDocumentMetadataSummary?
     let status: String?
@@ -1166,19 +1167,19 @@ final class BinderAPI {
         } catch {
             // Older servers may not expose discovery. Let their upload endpoint make the final decision.
             if let cached = cachedDocumentFormats(serverURL: serverURL), cached.contains(where: {
-                $0.supportsUpload &&
-                $0.mimeTypes.contains(where: { $0.caseInsensitiveCompare("application/pdf") == .orderedSame })
+                $0.supportsUpload
             }) {
                 formats = cached
             } else {
                 formats = [.pdfFallback]
             }
         }
-        let supportsPDFUpload = formats.contains {
-            $0.supportsUpload &&
-            $0.mimeTypes.contains(where: { $0.caseInsensitiveCompare("application/pdf") == .orderedSame })
+        guard let mimeType = detectedDocumentMimeType(at: fileURL) else {
+            throw BinderAPIError.unsupportedDocumentFormat
         }
-        guard supportsPDFUpload else { throw BinderAPIError.unsupportedDocumentFormat }
+        guard formats.contains(where: {
+            $0.supportsUpload && $0.mimeTypes.contains(where: { $0.caseInsensitiveCompare(mimeType) == .orderedSame })
+        }) else { throw BinderAPIError.unsupportedDocumentFormat }
 
         guard let cookie = KeychainStore.sessionCookie(origin: origin(for: serverURL)),
               let csrfToken = csrfToken ?? KeychainStore.csrfToken(origin: origin(for: serverURL)) else {
@@ -1199,7 +1200,7 @@ final class BinderAPI {
         }
         let output = try FileHandle(forWritingTo: bodyURL)
         defer { try? output.close() }
-        try output.write(contentsOf: Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(safeFilename)\"\r\nContent-Type: application/pdf\r\n\r\n".utf8))
+        try output.write(contentsOf: Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(safeFilename)\"\r\nContent-Type: \(mimeType)\r\n\r\n".utf8))
 
         let input = try FileHandle(forReadingFrom: fileURL)
         defer { try? input.close() }
@@ -1217,6 +1218,18 @@ final class BinderAPI {
         let (data, response) = try await urlSession.upload(for: request, fromFile: bodyURL)
         try absorbSessionCookie(from: response, for: request)
         try validate(response, data: data)
+    }
+
+    private func detectedDocumentMimeType(at fileURL: URL) -> String? {
+        guard let input = try? FileHandle(forReadingFrom: fileURL) else { return nil }
+        defer { try? input.close() }
+        guard let header = try? input.read(upToCount: 1024), !header.isEmpty else { return nil }
+        if header.range(of: Data("%PDF-".utf8)) != nil { return "application/pdf" }
+        if header.starts(with: Data([137, 80, 78, 71, 13, 10, 26, 10])) { return "image/png" }
+        if header.count >= 3 && header[0] == 0xff && header[1] == 0xd8 && header[2] == 0xff {
+            return "image/jpeg"
+        }
+        return nil
     }
 
     func login(serverURL: String, username: String, password: String) async throws -> BinderUser {
@@ -1436,8 +1449,8 @@ enum BinderAPIError: LocalizedError {
         case .ssoCouldNotStart: "The system sign-in window could not be opened."
         case .ssoNotConfigured: "Single sign-on is not configured on this server."
         case .sessionCookieMissing: "The server did not establish a session. Check the server URL and cookie configuration."
-        case .loginRequired: "Open Binder and sign in before uploading this PDF."
-        case .unsupportedDocumentFormat: "This server does not currently support PDF uploads. The PDF remains queued on this device."
+        case .loginRequired: "Open Binder and sign in before uploading this document."
+        case .unsupportedDocumentFormat: "This server does not currently support this document format. The document remains queued on this device."
         }
 
     }

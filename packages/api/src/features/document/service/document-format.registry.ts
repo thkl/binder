@@ -1,5 +1,4 @@
 import {
-  DOCUMENT_FORMAT_CATALOG,
   type DocumentFormatCapability,
   type DocumentFormatDescriptor,
   type DocumentFormatId,
@@ -7,6 +6,7 @@ import {
 } from '@binder/common';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PdfDocumentFormatAdapter } from './pdf-document-format.adapter';
+import { ImageDocumentFormatAdapter } from './image-document-format.adapter';
 
 export interface DetectedDocumentFormat {
   formatId: DocumentFormatId;
@@ -17,7 +17,15 @@ export interface DetectedDocumentFormat {
 /** Provides the format descriptors currently supported by this API build. */
 @Injectable()
 export class DocumentFormatRegistry {
-  constructor(private readonly pdfAdapter: PdfDocumentFormatAdapter) {}
+  constructor(
+    private readonly pdfAdapter: PdfDocumentFormatAdapter,
+    private readonly imageAdapter: ImageDocumentFormatAdapter,
+  ) {}
+
+  /** Descriptors are sourced from registered implementations, so unimplemented formats stay hidden. */
+  private get formats(): readonly DocumentFormatDescriptor[] {
+    return [this.pdfAdapter.descriptor, this.imageAdapter.descriptor];
+  }
 
   /**
    * Returns a defensive copy of the descriptors advertised to authenticated clients.
@@ -26,7 +34,7 @@ export class DocumentFormatRegistry {
    */
   getSupportedFormats(): DocumentFormatsResponse {
     return {
-      formats: DOCUMENT_FORMAT_CATALOG.map((format): DocumentFormatDescriptor => ({
+      formats: this.formats.map((format): DocumentFormatDescriptor => ({
         ...format,
         extensions: [...format.extensions],
         mimeTypes: [...format.mimeTypes],
@@ -50,18 +58,32 @@ export class DocumentFormatRegistry {
     }
 
     const header = buffer.subarray(0, Math.min(buffer.length, 1024));
-    const pdfFormat = DOCUMENT_FORMAT_CATALOG.find((format) => format.id === 'pdf');
-    if (!pdfFormat || !header.includes(Buffer.from('%PDF-'))) {
-      throw new BadRequestException('The uploaded file format is not supported');
+    const pdfFormat = this.formats.find((format) => format.id === this.pdfAdapter.descriptor.id);
+    if (pdfFormat && header.includes(Buffer.from('%PDF-'))) {
+      await this.pdfAdapter.validate(buffer);
+      return {
+        formatId: pdfFormat.id,
+        mimeType: pdfFormat.mimeTypes[0]!,
+        extension: pdfFormat.extensions[0]!,
+      };
     }
 
-    await this.pdfAdapter.validate(buffer);
+    const imageFormat = this.formats.find((format) => format.id === this.imageAdapter.descriptor.id);
+    const imageMimeType = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff
+      ? 'image/jpeg'
+      : buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+        ? 'image/png'
+        : undefined;
+    if (imageFormat && imageMimeType && imageFormat.mimeTypes.includes(imageMimeType)) {
+      await this.imageAdapter.validate(buffer, imageMimeType);
+      return {
+        formatId: imageFormat.id,
+        mimeType: imageMimeType,
+        extension: imageMimeType === 'image/png' ? '.png' : '.jpg',
+      };
+    }
 
-    return {
-      formatId: pdfFormat.id,
-      mimeType: pdfFormat.mimeTypes[0]!,
-      extension: pdfFormat.extensions[0]!,
-    };
+    throw new BadRequestException('The uploaded file format is not supported');
   }
 
   /**
@@ -74,8 +96,8 @@ export class DocumentFormatRegistry {
   getAdapterForMimeType(
     mimeType: string,
     capability: DocumentFormatCapability,
-  ): PdfDocumentFormatAdapter {
-    const descriptor = DOCUMENT_FORMAT_CATALOG.find((format) => format.mimeTypes.includes(mimeType));
+  ): PdfDocumentFormatAdapter | ImageDocumentFormatAdapter {
+    const descriptor = this.formats.find((format) => format.mimeTypes.includes(mimeType));
     if (!descriptor) {
       throw new BadRequestException(`The document format '${mimeType}' is not supported`);
     }
@@ -83,6 +105,9 @@ export class DocumentFormatRegistry {
       throw new BadRequestException(
         `The ${descriptor.displayName} format does not support ${capability}`,
       );
+    }
+    if (descriptor.id === this.imageAdapter.descriptor.id) {
+      return this.imageAdapter;
     }
     if (descriptor.id !== this.pdfAdapter.descriptor.id) {
       throw new BadRequestException(`No adapter is registered for the ${descriptor.displayName} format`);

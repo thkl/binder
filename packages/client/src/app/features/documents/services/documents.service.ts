@@ -40,13 +40,21 @@ import {
   DocumentDeleteResponseSchema,
   DocumentOpenResponseSchema,
   DocumentFormatsResponseSchema,
-  PDF_DOCUMENT_FORMAT,
   type DocumentFormatCapability,
   type DocumentFormatDescriptor,
 } from '@binder/common';
 import { firstValueFrom } from 'rxjs';
 import { ApplicationService } from '../../../common/application.service';
 import { InboxService } from '../../inbox/services/inbox.service';
+
+/** Minimal upload guidance used when the server cannot be reached yet. */
+const PDF_FALLBACK_FORMAT: DocumentFormatDescriptor = {
+  id: 'pdf',
+  displayName: 'PDF',
+  extensions: ['.pdf'],
+  mimeTypes: ['application/pdf'],
+  capabilities: ['upload', 'download', 'preview', 'text-extraction'],
+};
 
 /** Loads document lists and coordinates document actions with the API. */
 @Injectable({ providedIn: 'root' })
@@ -104,14 +112,13 @@ export class DocumentsService {
   }
 
   /**
-   * Returns true only for the PDF format currently understood by the embedded viewer.
+   * Returns whether the browser has an inline preview for the document format.
    *
    * @param {string} mimeType - Canonical MIME type stored on the document.
-   * @returns {boolean} - True when the document can use the current PDF viewer.
+   * @returns {boolean} - True when the format advertises preview support.
    */
-  hasPdfPreview(mimeType: string): boolean {
-    const format = this.formatForMimeType(mimeType);
-    return format?.id === 'pdf' && format.capabilities.includes('preview');
+  hasPreview(mimeType: string): boolean {
+    return this.supportsMimeCapability(mimeType, 'preview');
   }
 
   /**
@@ -146,7 +153,7 @@ export class DocumentsService {
     const formats = this.supportedFormats().filter((format) =>
       format.capabilities.includes('upload'),
     );
-    return formats.length > 0 ? formats : [PDF_DOCUMENT_FORMAT];
+    return formats.length > 0 ? formats : [PDF_FALLBACK_FORMAT];
   }
 
   private formatForMimeType(mimeType: string): DocumentFormatDescriptor | undefined {
@@ -174,18 +181,18 @@ export class DocumentsService {
       this.writeCachedFormats(formats);
     } catch {
       // A valid cached descriptor or the built-in PDF baseline keeps picker guidance available offline.
-      if (this.supportedFormats().length === 0) this.supportedFormats.set([PDF_DOCUMENT_FORMAT]);
+      if (this.supportedFormats().length === 0) this.supportedFormats.set([PDF_FALLBACK_FORMAT]);
     }
   }
 
   private readCachedFormats(): DocumentFormatDescriptor[] {
     try {
       const raw = this.document.defaultView?.localStorage.getItem(DocumentsService.FORMAT_CACHE_KEY);
-      if (!raw) return [PDF_DOCUMENT_FORMAT];
+      if (!raw) return [PDF_FALLBACK_FORMAT];
       const parsed = DocumentFormatsResponseSchema.parse(JSON.parse(raw));
-      return parsed.formats.length > 0 ? parsed.formats : [PDF_DOCUMENT_FORMAT];
+      return parsed.formats.length > 0 ? parsed.formats : [PDF_FALLBACK_FORMAT];
     } catch {
-      return [PDF_DOCUMENT_FORMAT];
+      return [PDF_FALLBACK_FORMAT];
     }
   }
 

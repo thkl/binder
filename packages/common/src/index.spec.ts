@@ -3,7 +3,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  DOCUMENT_FORMAT_CATALOG,
   DocumentFormatDescriptorSchema,
   DocumentFormatsResponseSchema,
   DocumentExtractedTextResponseSchema,
@@ -51,9 +50,26 @@ function createDocument(): unknown {
 }
 
 describe('common document contracts', () => {
-  it('describes PDF as the initial supported document format', () => {
+  it('validates API format discovery descriptors without owning adapter registrations', () => {
+    const pdf = {
+      id: 'pdf',
+      displayName: 'PDF',
+      extensions: ['.pdf'],
+      mimeTypes: ['application/pdf'],
+      capabilities: [
+        'upload', 'download', 'preview', 'text-extraction', 'ocr', 'file-analysis',
+        'page-count', 'page-rotation', 'split', 'compose', 'pdfa',
+      ],
+    };
+    const image = {
+      id: 'image',
+      displayName: 'Image',
+      extensions: ['.jpg', '.jpeg', '.png'],
+      mimeTypes: ['image/jpeg', 'image/png'],
+      capabilities: ['upload', 'download', 'preview', 'text-extraction', 'ocr', 'page-count'],
+    };
     assert.deepEqual(
-      DocumentFormatsResponseSchema.parse({ formats: DOCUMENT_FORMAT_CATALOG }).formats[0],
+      DocumentFormatsResponseSchema.parse({ formats: [pdf, image] }).formats[0],
       {
         id: 'pdf',
         displayName: 'PDF',
@@ -77,7 +93,13 @@ describe('common document contracts', () => {
   });
 
   it('rejects invalid format identifiers, extensions, MIME types, and capabilities', () => {
-    const pdf = DOCUMENT_FORMAT_CATALOG[0];
+    const pdf = {
+      id: 'pdf',
+      displayName: 'PDF',
+      extensions: ['.pdf'],
+      mimeTypes: ['application/pdf'],
+      capabilities: ['upload'],
+    };
 
     assert.equal(DocumentFormatDescriptorSchema.safeParse({ ...pdf, id: 'PDF' }).success, false);
     assert.equal(

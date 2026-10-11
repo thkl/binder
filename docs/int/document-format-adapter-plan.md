@@ -358,8 +358,8 @@ server's rejection for an unsupported file.
 
 ### Phase 7 — Enable one additional format
 
-- Select one candidate only after Phases 0–6. Images are a likely first
-  candidate because they have clear preview and OCR uses, but they still need
+- **Selected: JPEG and PNG images**, with one image per document. They have
+  clear preview and OCR uses, but they still need
   size, pixel-dimension, decompression-bomb, multi-image, rotation, and
   thumbnail policies. Office formats introduce conversion dependencies and
   additional parser/renderer risks, so evaluate them independently.
@@ -372,10 +372,20 @@ server's rejection for an unsupported file.
 uploaded, safely processed, searched, previewed or downloaded, and handled by
 both API validation and client filtering.
 
+**Phase 7 status: implementation complete.** JPEG and PNG are registered as
+one-image documents. API tests cover content detection, validated storage, and
+thumbnail generation; worker tests cover format detection, dimension validation,
+OCR dispatch, and searchable segment output; client tests cover image upload
+filtering and preview capability. Common, API, worker, and client test suites
+pass, and the iOS simulator build succeeds. Phase 8 still needs deployment and
+a smoke test against the deployed API and worker.
+
 ### Phase 8 — Rollout and cleanup
 
-- Deploy API and worker code that understands the new registry before
-  enabling a new format in the API response.
+- Deploy the worker with image support first. Deploy the API afterward; its
+  format-discovery response then enables JPEG and PNG uploads in clients.
+- Smoke test image upload, malware scanning, thumbnail generation, OCR text
+  search, download, and previews in both the web and iOS clients.
 - Keep the advertised format set configurable or otherwise safely gated for
   staged rollout. Ensure older clients continue to upload PDFs.
 - Monitor unsupported-format rejects, parser failures, processing duration,
@@ -450,4 +460,5 @@ Work through the phases in order. Keep the initial implementation limited to
 the PDF adapter and its regression coverage; choose and enable a second format
 only after the boundary is proven with the existing feature-rich PDF path.
 
-Progress: Phases 0 through 6 are complete; Phase 7 is next.
+Progress: Phases 0 through 7 are complete; Phase 8 is next for deployment and
+smoke testing.

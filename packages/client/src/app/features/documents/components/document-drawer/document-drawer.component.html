@@ -225,14 +225,22 @@
             [firstMaxSize]="90"
             [secondMinSize]="20"
           >
-            @if (canPreviewPdf()) {
+            @if (canPreview()) {
             <div class="pdf-pane" splitPaneFirst>
+              @if (documentData().mimeType.startsWith('image/')) {
+              <img
+                class="image-document-preview"
+                [src]="fileUrl()"
+                [alt]="documentData().title || documentData().originalFilename"
+              />
+              } @else {
               <iframe
                 class="document-frame"
                 style="height: 100%"
                 [src]="fileUrl()"
                 [title]="'viewer.preview' | t"
               ></iframe>
+              }
             </div>
             } @else {
               <div class="pdf-pane preview-unavailable" splitPaneFirst>

@@ -1,11 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { PDF_DOCUMENT_FORMAT } from '@binder/common';
+import type { DocumentFormatDescriptor } from '@binder/common';
 import { DocumentStorageService, type StoredDocumentFile } from './document-storage.service';
 
 /** PDF-specific operations implemented with the API's MuPDF storage helpers. */
 @Injectable()
 export class PdfDocumentFormatAdapter {
-  readonly descriptor = PDF_DOCUMENT_FORMAT;
+  readonly descriptor: DocumentFormatDescriptor = {
+    id: 'pdf',
+    displayName: 'PDF',
+    extensions: ['.pdf'],
+    mimeTypes: ['application/pdf'],
+    capabilities: [
+      'upload', 'download', 'preview', 'text-extraction', 'ocr', 'file-analysis',
+      'page-count', 'page-rotation', 'split', 'compose', 'pdfa',
+    ],
+  };
 
   constructor(private readonly storage: DocumentStorageService) {}
 
@@ -13,7 +22,12 @@ export class PdfDocumentFormatAdapter {
     return this.storage.validatePdf(buffer);
   }
 
-  storeOriginal(buffer: Buffer, uuid: string, originalFilename: string): Promise<StoredDocumentFile> {
+  storeOriginal(
+    buffer: Buffer,
+    uuid: string,
+    originalFilename: string,
+    _mimeType?: string,
+  ): Promise<StoredDocumentFile> {
     return this.storage.storePdf(buffer, uuid, originalFilename);
   }
 

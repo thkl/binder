@@ -4,14 +4,15 @@ import { isIP } from 'node:net';
 import { domainToASCII } from 'node:url';
 import { config, decryptSettingSecret } from './config.js';
 import { EmailImportApprovedServer, EmailImportConfig } from './models.js';
-import { importEmailPdf } from './inbox-importer.js';
+import { importEmailDocument } from './inbox-importer.js';
+import { WORKER_DOCUMENT_FORMATS } from './document-format.registry.js';
 import { logger } from './logger.js';
 
 const MAX_MESSAGE_BYTES = 50 * 1024 * 1024;
 let lastRunAt = 0;
 
 /**
- * Polls enabled mailbox integrations and imports newly discovered PDF attachments.
+ * Polls enabled mailbox integrations and imports newly discovered supported document attachments.
  *
  * @param {boolean} force - Whether to bypass cached state and reload.
  * @returns {Promise<void>} - Resolves when the operation completes.
@@ -156,13 +157,14 @@ async function pollMailbox(mailbox: EmailImportConfig): Promise<void> {
         }
 
         const parsed = await simpleParser(source, { skipHtmlToText: true, skipTextToHtml: true });
-        const pdfs = parsed.attachments.filter(
-          (attachment) =>
-            attachment.contentType.toLowerCase() === 'application/pdf' &&
-            attachment.filename?.toLowerCase().endsWith('.pdf') &&
-            attachment.size <= config.maxUploadBytes,
-        );
-        if (pdfs.length === 0) {
+        const documents = parsed.attachments.filter((attachment) => {
+          const extension = attachment.filename?.slice(attachment.filename.lastIndexOf('.')).toLowerCase();
+          return attachment.size <= config.maxUploadBytes && WORKER_DOCUMENT_FORMATS.some((format) =>
+            format.mimeTypes.includes(attachment.contentType.toLowerCase()) &&
+            extension !== undefined && format.extensions.includes(extension),
+          );
+        });
+        if (documents.length === 0) {
           await mailbox.update({
             lastUidValidity: uidValidity.toString(),
             lastMessageUid: String(uid),
@@ -172,8 +174,8 @@ async function pollMailbox(mailbox: EmailImportConfig): Promise<void> {
         }
 
         let allImported = true;
-        for (const attachment of pdfs) {
-          const result = await importEmailPdf(
+        for (const attachment of documents) {
+          const result = await importEmailDocument(
             attachment.content,
             attachment.filename ?? `email-${uid}.pdf`,
             mailbox.ownerUuid,

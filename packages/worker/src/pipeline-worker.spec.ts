@@ -163,12 +163,12 @@ describe('claimed document pipeline jobs', () => {
     expect(mocks.documentUpdate).toHaveBeenCalledWith({ status: 'ready' }, expect.any(Object));
   });
 
-  it('does not send a non-PDF document to the PDF extraction adapter', async () => {
+  it('queues OCR for a raster image without sending it through PDF text extraction', async () => {
     await processClaimedJob(job('text-extraction', { mimeType: 'image/png' }));
 
     expect(mocks.extractPdfPages).not.toHaveBeenCalled();
-    expect(mocks.pipelineJobUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'queued', lastError: expect.stringContaining('image/png') }),
+    expect(mocks.pipelineJobCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'ocr', status: 'queued', documentUuid: 'document-1' }),
       expect.any(Object),
     );
   });

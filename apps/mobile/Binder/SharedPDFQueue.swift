@@ -30,7 +30,7 @@ enum SharedPDFQueue {
                 at: itemDirectory,
                 includingPropertiesForKeys: [.contentModificationDateKey],
                 options: [.skipsHiddenFiles]
-            ).filter { $0.pathExtension.lowercased() == "pdf" }
+            ).filter { ["pdf", "jpg", "jpeg", "png"].contains($0.pathExtension.lowercased()) }
         }.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
     }
 
@@ -54,7 +54,9 @@ enum SharedPDFQueue {
         let withoutControls = basename.unicodeScalars.map { CharacterSet.controlCharacters.contains($0) ? "_" : String($0) }.joined()
         let trimmed = withoutControls.trimmingCharacters(in: .whitespacesAndNewlines)
         let nonempty = trimmed.isEmpty || trimmed == "." || trimmed == ".." ? "document.pdf" : trimmed
-        return nonempty.lowercased().hasSuffix(".pdf") ? nonempty : "\(nonempty).pdf"
+        let ext = URL(fileURLWithPath: nonempty).pathExtension.lowercased()
+        guard ["pdf", "jpg", "jpeg", "png"].contains(ext) else { return "\(nonempty).pdf" }
+        return nonempty
     }
 }
 

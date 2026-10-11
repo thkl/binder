@@ -43,32 +43,6 @@ export const DocumentFormatsResponseSchema = z.object({
 });
 export type DocumentFormatsResponse = z.infer<typeof DocumentFormatsResponseSchema>;
 
-/** The reference format descriptor; executable PDF operations remain package-local. */
-export const PDF_DOCUMENT_FORMAT: DocumentFormatDescriptor = {
-  id: 'pdf',
-  displayName: 'PDF',
-  extensions: ['.pdf'],
-  mimeTypes: ['application/pdf'],
-  capabilities: [
-    'upload',
-    'download',
-    'preview',
-    'text-extraction',
-    'ocr',
-    'file-analysis',
-    'page-count',
-    'page-rotation',
-    'split',
-    'compose',
-    'pdfa',
-  ],
-};
-
-/** Canonical descriptors compiled into this release and exposed by the API. */
-export const DOCUMENT_FORMAT_CATALOG: readonly DocumentFormatDescriptor[] = [
-  PDF_DOCUMENT_FORMAT,
-];
-
 export const DocumentStatusSchema = z.enum([
   'uploaded',
   'scanning',
@@ -872,7 +846,7 @@ export type LogFileListResponse = z.infer<typeof LogFileListResponseSchema>;
 
 export const CreateDocumentInputSchema = z.object({
   originalFilename: z.string().trim().min(1).max(255),
-  mimeType: z.literal('application/pdf'),
+  mimeType: z.string().regex(/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/iu),
   sizeBytes: z.number().int().positive(),
   checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
 });

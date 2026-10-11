@@ -4,6 +4,7 @@ import { DocumentService } from './service/document.service';
 import { DocumentStorageService } from './service/document-storage.service';
 import { DocumentFormatRegistry } from './service/document-format.registry';
 import { PdfDocumentFormatAdapter } from './service/pdf-document-format.adapter';
+import { ImageDocumentFormatAdapter } from './service/image-document-format.adapter';
 import { PipelineServiceModule } from '../pipeline/pipeline.service.module';
 import { MetadataServiceModule } from '../metadata/metadata.service.module';
 import { SharedModule } from '../../shared/shared.service.module';
@@ -41,6 +42,7 @@ import { SharingServiceModule } from '../sharing/sharing.service.module';
     DocumentService,
     DocumentStorageService,
     PdfDocumentFormatAdapter,
+    ImageDocumentFormatAdapter,
     DocumentFormatRegistry,
     SemanticSearchService,
     TitleSuggestionService,

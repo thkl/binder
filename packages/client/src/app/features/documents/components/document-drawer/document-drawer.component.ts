@@ -92,7 +92,7 @@ export class DocumentDrawerComponent {
   readonly canCreateArchive = computed(() =>
     this.documents.supportsMimeCapability(this.documentData().mimeType, 'pdfa'),
   );
-  readonly canPreviewPdf = computed(() => this.documents.hasPdfPreview(this.documentData().mimeType));
+  readonly canPreview = computed(() => this.documents.hasPreview(this.documentData().mimeType));
   readonly canRotate = computed(() =>
     this.documents.supportsMimeCapability(this.documentData().mimeType, 'page-rotation'),
   );
