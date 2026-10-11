@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Headers,
+  Logger,
   Param,
   Patch,
   Post,
@@ -36,15 +37,20 @@ import { PasswordResetService } from '../service/password-reset.service';
 import { NativeSSOAuthCodeStore } from '../stores/native-sso-auth-code.store';
 import { AuthenticationSessionStore } from '../stores/authentication-session.store';
 import { z } from 'zod';
+import { ConfigService } from '@nestjs/config';
+import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
 
 @Controller('auth')
 export class AuthenticationController {
+  private readonly logger = new Logger(AuthenticationController.name);
+
   constructor(
     private readonly authentication: AuthenticationService,
     private readonly userManagement: UserManagementService,
     private readonly passwordReset: PasswordResetService,
     private readonly nativeSSOAuthCodes: NativeSSOAuthCodeStore,
     private readonly sessions: AuthenticationSessionStore,
+    private readonly appConfig: ConfigService<BinderConfig>,
   ) {}
 
   @Get('users')
@@ -149,6 +155,18 @@ export class AuthenticationController {
     mustChangePassword: boolean,
     responseData: unknown,
   ) {
+    const rootUri = this.appConfig.get<string>(ConfigKeys.ROOT_URI);
+    const trustedProxies = this.appConfig.get<string>(ConfigKeys.TRUST_PROXY) ?? '(unset)';
+    this.logger.debug(
+      `Auth session issuance diagnostics (peer=${request.socket.remoteAddress ?? 'unknown'}, secure=${request.secure}, protocol=${request.protocol}, x-forwarded-proto=${request.get('x-forwarded-proto') ?? 'missing'}, root-uri-https=${rootUri?.startsWith('https://') ?? false}, trust-proxy=${trustedProxies})`,
+    );
+    if (rootUri?.startsWith('https://') && !request.secure) {
+      // express-session suppresses Secure cookies unless Express recognizes
+      // the incoming request as HTTPS through TLS or a trusted proxy header.
+      this.logger.warn(
+        `HTTPS ROOT_URI but authenticated request is not secure (peer=${request.socket.remoteAddress ?? 'unknown'}, protocol=${request.protocol}, x-forwarded-proto=${request.get('x-forwarded-proto') ?? 'missing'}); check TRUST_PROXY and proxy headers`,
+      );
+    }
     await new Promise<void>((resolve, reject) => {
       request.session.regenerate((error) => (error ? reject(error) : resolve()));
     });

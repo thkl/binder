@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   HttpException,
+  Logger,
   Post,
   Query,
   Req,
@@ -22,6 +23,8 @@ import { NativeSSOAuthCodeStore } from '../stores/native-sso-auth-code.store';
 
 @Controller('ssoauth')
 export class AuthenticationController {
+  private readonly logger = new Logger(AuthenticationController.name);
+
   constructor(
     private readonly ssoAuthenticationService: SSOAuthenticationService,
     private readonly settingsService: ApplicationSettingsService,
@@ -40,6 +43,15 @@ export class AuthenticationController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Get('login')
   async login(@Req() request: SessionRequest, @Res() res: Response) {
+    const rootUri = this.appConfig.get<string>(ConfigKeys.ROOT_URI);
+    if (rootUri?.startsWith('https://') && !request.secure) {
+      // express-session intentionally suppresses Secure cookies on requests
+      // Express does not recognize as HTTPS. Include only proxy diagnostics,
+      // never session identifiers or OIDC secrets, to make that failure clear.
+      this.logger.warn(
+        `HTTPS ROOT_URI but SSO request is not secure (peer=${request.socket.remoteAddress ?? 'unknown'}, protocol=${request.protocol}, x-forwarded-proto=${request.get('x-forwarded-proto') ?? 'missing'}); check TRUST_PROXY and proxy headers`,
+      );
+    }
     const ssodata = await this.ssoAuthenticationService.getAuthorizationUrl();
     if (ssodata) {
       // Use a fresh session so logout or stale browser cookies cannot carry an
