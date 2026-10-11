@@ -1,6 +1,7 @@
 import { Sequelize } from 'sequelize-typescript';
 import {
   ApplicationSetting,
+  EmailImportApprovedServer,
   EmailImportConfig,
   AiProviderProfile,
   CalendarEvent,
@@ -16,6 +17,7 @@ import {
   PipelineJob,
   PipelineJobEvent,
   PipelineWorkerHeartbeat,
+  SetupState,
   User,
 } from './models.js';
 import { DocumentPage } from './document-page.model.js';
@@ -33,10 +35,12 @@ export const sequelize = new Sequelize({
 });
 sequelize.addModels([
   ApplicationSetting,
+  EmailImportApprovedServer,
   EmailImportConfig,
   AiProviderProfile,
   CalendarEvent,
   User,
+  SetupState,
   Issuer,
   Document,
   DocumentAuditEvent,

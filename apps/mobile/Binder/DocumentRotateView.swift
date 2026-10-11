@@ -58,6 +58,13 @@ struct DocumentRotateView: View {
                 }
                 .disabled(isRotating)
 
+                Button {
+                    Task { await rotate(by: 180) }
+                } label: {
+                    Label("Rotate 180°", systemImage: "rotate.right")
+                }
+                .disabled(isRotating)
+
                 if isRotating {
                     HStack {
                         ProgressView()

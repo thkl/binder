@@ -472,6 +472,14 @@
                     "documents",
                     "folders"
                ]
+          },
+          "74": {
+               "created": [
+                    "email_import_approved_servers"
+               ],
+               "required": [
+                    "users"
+               ]
           }
      }
 }

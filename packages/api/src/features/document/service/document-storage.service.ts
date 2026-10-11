@@ -95,7 +95,7 @@ export class DocumentStorageService {
   async rotatePdfPage(
     storageKey: string,
     pageNumber: number,
-    rotationDegrees: -90 | 90,
+    rotationDegrees: -90 | 90 | 180,
   ): Promise<Buffer> {
     const sourceBuffer = await fs.readFile(await this.resolveStoragePath(storageKey));
     const mupdf = await import('mupdf');

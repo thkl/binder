@@ -11,6 +11,41 @@
   min-height: 6rem;
 }
 
+.approved-servers {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+}
+
+.approved-servers h3 {
+  margin: 0 0 0.35rem;
+}
+
+.approved-server-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.approved-server-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.approved-server-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 10rem auto;
+  align-items: end;
+  gap: 1rem;
+}
+
 @media (max-width: 700px) {
   .email-import .fields {
     grid-template-columns: 1fr;
@@ -18,6 +53,10 @@
 
   .email-import .wide {
     grid-column: auto;
+  }
+
+  .approved-server-form {
+    grid-template-columns: 1fr;
   }
 }
 

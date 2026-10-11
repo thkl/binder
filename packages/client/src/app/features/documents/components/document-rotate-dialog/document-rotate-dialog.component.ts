@@ -3,7 +3,7 @@ import { TranslatePipe } from '../../../../common/i18n/i18n.service';
 
 export type DocumentRotateRequest = {
   pageNumber: number;
-  rotationDegrees: -90 | 90;
+  rotationDegrees: -90 | 90 | 180;
 };
 
 @Component({
@@ -30,7 +30,7 @@ export class DocumentRotateDialogComponent {
     this.error.set(null);
   }
 
-  rotate(rotationDegrees: -90 | 90): void {
+  rotate(rotationDegrees: -90 | 90 | 180): void {
     const page = this.pageNumber();
     if (!Number.isInteger(page) || page < 1 || page > this.pageCount()) {
       this.error.set('documents.rotateInvalidPage');

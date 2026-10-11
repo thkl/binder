@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { EmailImportConfig, EmailImportService } from '../../services/email-import.service';
 import { ConfirmDialogComponent } from '../../../../common/components/confirm-dialog/confirm-dialog.component';
+import { AuthService } from '../../../authentication/services/auth.service';
 
 @Component({
   selector: 'binder-email-import',
@@ -13,6 +14,7 @@ import { ConfirmDialogComponent } from '../../../../common/components/confirm-di
 })
 export class EmailImportComponent implements OnInit {
   readonly service = inject(EmailImportService);
+  readonly auth = inject(AuthService);
   readonly i18n = inject(I18nService);
   readonly enabled = signal(false);
   readonly host = signal('');
@@ -27,6 +29,8 @@ export class EmailImportComponent implements OnInit {
   readonly passwordChanged = signal(false);
   readonly saved = signal(false);
   readonly confirmDelete = signal(false);
+  readonly approvedHost = signal('');
+  readonly approvedPort = signal(993);
 
   ngOnInit(): void {
     void this.load();
@@ -85,6 +89,16 @@ export class EmailImportComponent implements OnInit {
     this.trustedSenders.set('');
     this.passwordChanged.set(false);
     this.saved.set(false);
+  }
+
+  async approveServer(): Promise<void> {
+    if (!(await this.service.approveServer(this.approvedHost(), Number(this.approvedPort())))) return;
+    this.approvedHost.set('');
+    this.approvedPort.set(993);
+  }
+
+  async removeApprovedServer(uuid: string): Promise<void> {
+    await this.service.removeApprovedServer(uuid);
   }
 
   private setValues(config: EmailImportConfig): void {

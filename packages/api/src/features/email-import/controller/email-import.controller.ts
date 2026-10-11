@@ -1,7 +1,9 @@
-import { Body, Controller, Delete, Get, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { AuthenticationGuard } from '../../authentication/guards/authentication.guard';
 import { CurrentUser, ScopedUser } from '../../authentication/decorators/current-user.decorator';
+import { RolesGuard } from '../../../shared/guards/roles.guard';
+import { Roles } from '../../../shared/decorators/roles.decorator';
 import { ScopeGuard } from '../../../shared/guards/scope.guard';
 import { Scopes } from '../../../shared/decorators/scope.decorator';
 import { EmailImportConfigService } from '../service/email-import-config.service';
@@ -19,11 +21,37 @@ const EmailImportConfigInputSchema = z.object({
   trustedSenders: z.array(z.string().email().max(320)).max(100),
 });
 
+const ApprovedImapServerInputSchema = z.object({
+  host: z.string().trim().min(1).max(255),
+  port: z.number().int().min(1).max(65535),
+});
+
 @Controller('email-import')
 @UseGuards(AuthenticationGuard, ScopeGuard)
 @Scopes(['web'])
 export class EmailImportController {
   constructor(private readonly configs: EmailImportConfigService) {}
+
+  @Get('approved-servers')
+  async listApprovedServers() {
+    return { data: await this.configs.listApprovedServers() };
+  }
+
+  @Post('approved-servers')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async approveServer(@CurrentUser() user: ScopedUser, @Body() body: unknown) {
+    const input = ApprovedImapServerInputSchema.parse(body);
+    return { data: await this.configs.approveServer(input.host, input.port, user.userId) };
+  }
+
+  @Delete('approved-servers/:uuid')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async removeApprovedServer(@Param('uuid') uuid: string): Promise<{ data: null }> {
+    await this.configs.removeApprovedServer(uuid);
+    return { data: null };
+  }
 
   @Get('config')
   async getConfig(

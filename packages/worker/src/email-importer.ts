@@ -1,7 +1,9 @@
 import { ImapFlow } from 'imapflow';
 import { simpleParser } from 'mailparser';
+import { isIP } from 'node:net';
+import { domainToASCII } from 'node:url';
 import { config, decryptSettingSecret } from './config.js';
-import { EmailImportConfig } from './models.js';
+import { EmailImportApprovedServer, EmailImportConfig } from './models.js';
 import { importEmailPdf } from './inbox-importer.js';
 import { logger } from './logger.js';
 
@@ -20,6 +22,22 @@ export async function importEmailMessages(force = false): Promise<void> {
 
   const mailboxes = await EmailImportConfig.findAll({ where: { enabled: true } });
   for (const mailbox of mailboxes) {
+    const host = normalizeImapHost(mailbox.host);
+    const approved = host
+      ? await EmailImportApprovedServer.findOne({ where: { host, port: mailbox.port } })
+      : null;
+    if (!approved) {
+      const approvalError = 'IMAP server host and port require administrator approval';
+      if (mailbox.lastError !== approvalError) {
+        await mailbox.update({ lastError: approvalError });
+      }
+      logger.warn('Skipping email mailbox because its IMAP server is not approved', {
+        mailboxUuid: mailbox.uuid,
+        host: mailbox.host,
+        port: mailbox.port,
+      });
+      continue;
+    }
     if (
       !force &&
       mailbox.lastPolledAt &&
@@ -28,6 +46,18 @@ export async function importEmailMessages(force = false): Promise<void> {
       continue;
     await pollMailbox(mailbox);
   }
+}
+
+function normalizeImapHost(host: string): string | null {
+  const trimmed = host.trim().replace(/^\[|\]$/gu, '').replace(/\.$/u, '').toLowerCase();
+  if (isIP(trimmed)) return trimmed;
+  const normalized = domainToASCII(trimmed);
+  const validHostname =
+    normalized.length <= 253 &&
+    normalized
+      .split('.')
+      .every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(label));
+  return validHostname ? normalized.toLowerCase() : null;
 }
 
 async function pollMailbox(mailbox: EmailImportConfig): Promise<void> {

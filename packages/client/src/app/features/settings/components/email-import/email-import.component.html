@@ -9,6 +9,66 @@
   @if (service.loading()) {
     <div class="settings-status glass-card">{{ 'emailImport.loading' | t }}</div>
   } @else {
+    <section class="approved-servers glass-card">
+      <div>
+        <h3>{{ 'emailImport.approvedServers' | t }}</h3>
+        <p class="muted">{{ 'emailImport.approvedServersHint' | t }}</p>
+      </div>
+      @if (service.approvedServers().length === 0) {
+        <p class="field-hint">{{ 'emailImport.noApprovedServers' | t }}</p>
+      } @else {
+        <ul class="approved-server-list">
+          @for (server of service.approvedServers(); track server.uuid) {
+            <li>
+              <code>{{ server.host }}:{{ server.port }}</code>
+              @if (auth.user()?.isAdmin) {
+                <button
+                  class="danger-button"
+                  type="button"
+                  (click)="removeApprovedServer(server.uuid)"
+                  [disabled]="service.saving()"
+                >
+                  {{ 'emailImport.removeApprovedServer' | t }}
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      }
+      @if (auth.user()?.isAdmin) {
+        <form class="approved-server-form" (submit)="$event.preventDefault(); approveServer()">
+          <label class="text-field">
+            <span class="field-label"><strong>{{ 'emailImport.host' | t }}</strong></span>
+            <input
+              name="approvedHost"
+              [value]="approvedHost()"
+              (input)="approvedHost.set($any($event.target).value)"
+              autocomplete="off"
+              required
+            />
+          </label>
+          <label class="text-field">
+            <span class="field-label"><strong>{{ 'emailImport.port' | t }}</strong></span>
+            <input
+              name="approvedPort"
+              type="number"
+              min="1"
+              max="65535"
+              [value]="approvedPort()"
+              (input)="approvedPort.set(+$any($event.target).value)"
+              required
+            />
+          </label>
+          <button class="primary-button" type="submit" [disabled]="service.saving()">
+            {{ 'emailImport.approveServer' | t }}
+          </button>
+        </form>
+      }
+      @if (service.error(); as error) {
+        <p class="field-hint warning" role="alert">{{ error }}</p>
+      }
+    </section>
+
     <form class="settings-form glass-card" (submit)="$event.preventDefault(); save()">
       <label class="checkbox-field"
         ><input

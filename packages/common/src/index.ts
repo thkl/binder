@@ -213,7 +213,7 @@ export type SplitDocumentInput = z.infer<typeof SplitDocumentInputSchema>;
 
 export const RotateDocumentInputSchema = z.object({
   pageNumber: z.number().int().min(1),
-  rotationDegrees: z.union([z.literal(-90), z.literal(90)]),
+  rotationDegrees: z.union([z.literal(-90), z.literal(90), z.literal(180)]),
 });
 export type RotateDocumentInput = z.infer<typeof RotateDocumentInputSchema>;
 

@@ -1013,7 +1013,7 @@ final class BinderAPI {
         pageNumber: Int,
         rotationDegrees: Int
     ) async throws -> BinderDocumentSummary {
-        guard pageNumber > 0, [-90, 90].contains(rotationDegrees) else {
+        guard pageNumber > 0, [-90, 90, 180].contains(rotationDegrees) else {
             throw BinderAPIError.invalidResponse
         }
         let data = try await mutate(

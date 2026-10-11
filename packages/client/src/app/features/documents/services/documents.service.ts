@@ -248,13 +248,13 @@ export class DocumentsService {
    *
    * @param {string} documentUuid - UUID of the source document.
    * @param {number} pageNumber - One-based page number to rotate.
-   * @param {-90 | 90} rotationDegrees - Clockwise or counter-clockwise quarter turn.
+   * @param {-90 | 90 | 180} rotationDegrees - Clockwise or counter-clockwise turn.
    * @returns {Promise<BinderDocument | null>} - The new version or null on failure.
    */
   async rotatePage(
     documentUuid: string,
     pageNumber: number,
-    rotationDegrees: -90 | 90,
+    rotationDegrees: -90 | 90 | 180,
   ): Promise<BinderDocument | null> {
     this.error.set(null);
     try {

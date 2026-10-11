@@ -99,6 +99,22 @@ export class EmailImportConfig extends Model {
   @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
 }
 
+@Table({ tableName: 'email_import_approved_servers', underscored: true, timestamps: true })
+export class EmailImportApprovedServer extends Model {
+  @PrimaryKey
+  @Column({ field: 'id', type: DataType.UUID })
+  declare uuid: string;
+
+  @Column({ type: DataType.STRING(255) })
+  declare host: string;
+
+  @Column({ type: DataType.INTEGER })
+  declare port: number;
+
+  @CreatedAt @Column({ field: 'created_at', type: DataType.DATE }) declare createdAt: Date;
+  @UpdatedAt @Column({ field: 'updated_at', type: DataType.DATE }) declare updatedAt: Date;
+}
+
 @Table({ tableName: 'pipeline_worker_heartbeats', underscored: true, timestamps: false })
 export class PipelineWorkerHeartbeat extends Model {
   @PrimaryKey
@@ -308,6 +324,16 @@ export class User extends Model {
 
   @Column({ field: 'is_active', type: DataType.BOOLEAN })
   declare isActive: boolean;
+}
+
+@Table({ tableName: 'setup_state', underscored: true, timestamps: false })
+export class SetupState extends Model {
+  @PrimaryKey
+  @Column({ type: DataType.SMALLINT })
+  declare id: number;
+
+  @Column({ field: 'completed_at', type: DataType.DATE, allowNull: true })
+  declare completedAt: Date | null;
 }
 
 @Table({ tableName: 'issuers', underscored: true, timestamps: true })

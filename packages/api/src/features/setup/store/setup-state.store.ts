@@ -4,11 +4,19 @@ import { Sequelize } from 'sequelize-typescript';
 import { Transaction } from 'sequelize';
 import { User } from '../../authentication/models/user.entity';
 import { SetupState } from '../models/setup-state.entity';
+import { MaintenanceRun } from '../../maintenance/models/maintenance-run.entity';
 
 export class SetupAlreadyCompletedError extends Error {
   constructor() {
     super('Initial administrator setup is already complete');
     this.name = SetupAlreadyCompletedError.name;
+  }
+}
+
+export class SetupRecoveryInProgressError extends Error {
+  constructor() {
+    super('A first-run recovery restore is in progress');
+    this.name = SetupRecoveryInProgressError.name;
   }
 }
 
@@ -73,6 +81,14 @@ export class SetupStateStore {
         await this.markCompleted(state, transaction);
         throw new SetupAlreadyCompletedError();
       }
+
+      // The worker claims a first-run restore while holding this same setup-state row lock.
+      // Prevent administrator creation from racing a restore after the worker has claimed it.
+      const runningRestore = await MaintenanceRun.findOne({
+        where: { jobKey: 'restore', status: 'running' },
+        transaction,
+      });
+      if (runningRestore) throw new SetupRecoveryInProgressError();
 
       const user = await User.create(
         {

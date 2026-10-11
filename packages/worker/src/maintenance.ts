@@ -11,6 +11,8 @@ import {
   MaintenanceRun,
   PipelineJob,
   PipelineJobEvent,
+  SetupState,
+  User,
 } from './models.js';
 import { sequelize } from './database.js';
 import { FileBackupService, FileBackupSettings } from './file-backup.service.js';
@@ -44,6 +46,7 @@ interface StorageProblem {
 }
 
 interface RecoveryRequestPayload {
+  publicRecovery?: string;
   filename: string;
   remoteFolder: string;
   password: string;
@@ -277,6 +280,12 @@ export class MaintenanceScheduler {
     const started = Date.now();
     const payload = run.getDataValue('restorePayload') as RecoveryRequestPayload | undefined;
     try {
+      if (payload?.publicRecovery === 'true' && !(await this.isInitialSetupRequired())) {
+        // A first-run restore may have been queued before an administrator finished setup.
+        // Reject it before contacting Dropbox or changing the database and resume normal work.
+        setRecoveryActive(false);
+        throw new Error('Public recovery is only available before administrator setup');
+      }
       if (!payload?.filename || !payload.password || !payload.passwordIv) {
         throw new Error('Recovery request payload is incomplete');
       }
@@ -396,6 +405,11 @@ export class MaintenanceScheduler {
         error: this.errorMessage(error),
       });
     }
+  }
+
+  private async isInitialSetupRequired(): Promise<boolean> {
+    const [state, userCount] = await Promise.all([SetupState.findByPk(1), User.count()]);
+    return !state?.completedAt && userCount === 0;
   }
 
   private async recordRestoreProgress(
@@ -736,6 +750,16 @@ export class MaintenanceScheduler {
         skipLocked: true,
       });
       if (!request) return null;
+
+      if (request.payload?.publicRecovery === 'true') {
+        // Serialize first-run recovery against initial-admin creation using the setup row lock.
+        // The API checks for a running restore under this same lock before creating an admin.
+        await SetupState.findByPk(1, {
+          transaction,
+          lock: transaction.LOCK.UPDATE,
+        });
+      }
+
       setRecoveryActive(true);
 
       const run = await MaintenanceRun.create(

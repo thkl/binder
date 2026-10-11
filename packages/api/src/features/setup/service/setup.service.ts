@@ -25,7 +25,11 @@ import {
   RecoveryStatusResponseSchema,
 } from '@binder/common';
 import { BinderConfig, ConfigKeys } from '../../../shared/config/config.keys';
-import { SetupAlreadyCompletedError, SetupStateStore } from '../store/setup-state.store';
+import {
+  SetupAlreadyCompletedError,
+  SetupRecoveryInProgressError,
+  SetupStateStore,
+} from '../store/setup-state.store';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { SSOAuthenticationService } from '../../authentication/service/ssoauthentication.service';
 import { PipelineWorkerHeartbeatStore } from '../../pipeline/store/pipeline-worker-heartbeat.store';
@@ -99,6 +103,9 @@ export class SetupService {
     } catch (error) {
       if (error instanceof SetupAlreadyCompletedError) {
         throw new ConflictException('Initial administrator setup is already complete');
+      }
+      if (error instanceof SetupRecoveryInProgressError) {
+        throw new ConflictException('A first-run recovery restore is in progress');
       }
       throw error;
     }
@@ -296,6 +303,19 @@ export class SetupService {
   }
 
   async requestRecoveryRestore(input: RecoveryRestoreInput) {
+    return this.enqueueRecoveryRestore(input, false);
+  }
+
+  async requestPublicRecoveryRestore(input: RecoveryRestoreInput) {
+    if (!(await this.setupState.isRequired())) {
+      throw new UnauthorizedException(
+        'Public recovery is only available before administrator setup',
+      );
+    }
+    return this.enqueueRecoveryRestore(input, true);
+  }
+
+  private async enqueueRecoveryRestore(input: RecoveryRestoreInput, publicRecovery: boolean) {
     if (input.backupPassword !== input.backupPasswordConfirmation) {
       throw new BadRequestException('The backup encryption passwords do not match');
     }
@@ -308,6 +328,7 @@ export class SetupService {
     const request = await this.maintenanceRequests.create({
       jobKey: 'restore',
       payload: {
+        ...(publicRecovery ? { publicRecovery: 'true' } : {}),
         filename: input.filename,
         remoteFolder: input.remoteFolder ?? '/',
         password: encryptedPassword.encrypted,

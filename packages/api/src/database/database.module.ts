@@ -44,6 +44,7 @@ import { EmailImportConfig } from '../features/email-import/models/email-import-
 import { PasswordResetToken } from '../features/authentication/models/password-reset-token.entity';
 import { DocumentShare } from '../features/sharing/models/document-share.entity';
 import { FolderShare } from '../features/sharing/models/folder-share.entity';
+import { EmailImportApprovedServer } from '../features/email-import/models/email-import-approved-server.entity';
 
 @Global()
 @Module({
@@ -127,6 +128,7 @@ import { FolderShare } from '../features/sharing/models/folder-share.entity';
       PasswordResetToken,
       DocumentShare,
       FolderShare,
+      EmailImportApprovedServer,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],

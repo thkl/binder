@@ -110,7 +110,7 @@ export class SetupController {
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
   async publicRecoveryRestore(@Body() body: unknown) {
     const input = RecoveryRestoreInputSchema.parse(body);
-    return { data: await this.setup.requestRecoveryRestore(input) };
+    return { data: await this.setup.requestPublicRecoveryRestore(input) };
   }
 
   @Post('recovery/restore')
