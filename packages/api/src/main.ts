@@ -94,9 +94,10 @@ async function bootstrap(): Promise<void> {
 
   app.use(
     session({
-      // Express derives req.secure from the explicitly trusted proxy list.
-      // Do not let express-session trust arbitrary X-Forwarded-Proto headers.
-      proxy: false,
+      // Honor Express's explicitly configured trusted-proxy list when deciding
+      // whether a secure cookie can be sent. Setting proxy:false here would
+      // ignore X-Forwarded-Proto even for the trusted HAProxy and suppress the
+      // session cookie on HTTPS deployments that terminate TLS at the proxy.
       store: new PgSession({
         pool: pgPool,
         tableName: 'user_sessions',
