@@ -580,9 +580,10 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   requestRotateDocument(uuid: string): void {
-    const document = this.drawerDocument()?.uuid === uuid
-      ? this.drawerDocument()
-      : this.documents.page()?.items.find((item) => item.uuid === uuid);
+    const document =
+      this.drawerDocument()?.uuid === uuid
+        ? this.drawerDocument()
+        : this.documents.page()?.items.find((item) => item.uuid === uuid);
     if (!document || document.pageCount < 1) return;
     this.documents.error.set(null);
     this.rotateDocumentUuid.set(uuid);

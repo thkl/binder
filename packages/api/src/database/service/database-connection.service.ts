@@ -47,6 +47,7 @@ import { PushDevice } from '../../features/notifications/models/push-device.enti
 import { PushNotificationEvent } from '../../features/notifications/models/push-notification-event.entity';
 import { DocumentShare } from '../../features/sharing/models/document-share.entity';
 import { FolderShare } from '../../features/sharing/models/folder-share.entity';
+import { EmailImportApprovedServer } from '../../features/email-import/models/email-import-approved-server.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -110,6 +111,7 @@ export class DatabaseConnectionService {
       PushNotificationEvent,
       DocumentShare,
       FolderShare,
+      EmailImportApprovedServer,
     ]);
     await this.initialize();
   }

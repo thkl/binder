@@ -61,10 +61,7 @@
   }
 
   <div class="folder-tree-list" role="tree" [attr.aria-label]="'folders.title' | t">
-    <div
-      class="folder-row folder-row-root"
-      [class.menu-open]="actionMenuUuid() === '__root__'"
-    >
+    <div class="folder-row folder-row-root" [class.menu-open]="actionMenuUuid() === '__root__'">
       <button
         class="folder-root-row"
         type="button"
@@ -176,7 +173,9 @@
                 type="button"
                 role="menuitem"
                 (click)="beginRename(row.folder.uuid, row.folder.name)"
-              >{{ 'folders.rename' | t }}</button>
+              >
+                {{ 'folders.rename' | t }}
+              </button>
               <button type="button" role="menuitem" (click)="beginMove(row.folder.uuid)">
                 {{ 'folders.move' | t }}
               </button>
@@ -192,7 +191,9 @@
                 role="menuitem"
                 class="danger"
                 (click)="remove(row.folder.uuid, row.folder.name)"
-              >{{ 'folders.delete' | t }}</button>
+              >
+                {{ 'folders.delete' | t }}
+              </button>
             </div>
           }
         </div>

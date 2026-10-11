@@ -16,11 +16,6 @@ import { AuthenticationSessionStore } from './stores/authentication-session.stor
     NativeSSOAuthCodeStore,
     AuthenticationSessionStore,
   ],
-  exports: [
-    UserStore,
-    PasswordResetTokenStore,
-    NativeSSOAuthCodeStore,
-    AuthenticationSessionStore,
-  ],
+  exports: [UserStore, PasswordResetTokenStore, NativeSSOAuthCodeStore, AuthenticationSessionStore],
 })
 export class AuthenticationStoreModule {}

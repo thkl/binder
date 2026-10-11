@@ -48,7 +48,9 @@ export class ShareAccessComponent implements OnInit {
     this.busy.set(true);
     this.error.set(null);
     try {
-      this.grants.set(await this.sharing.grant(this.resourceType(), this.resourceUuid(), recipientUuid));
+      this.grants.set(
+        await this.sharing.grant(this.resourceType(), this.resourceUuid(), recipientUuid),
+      );
       this.selectedRecipient.set('');
     } catch {
       this.error.set('sharing.saveFailed');
@@ -61,7 +63,9 @@ export class ShareAccessComponent implements OnInit {
     this.busy.set(true);
     this.error.set(null);
     try {
-      this.grants.set(await this.sharing.revoke(this.resourceType(), this.resourceUuid(), recipientUuid));
+      this.grants.set(
+        await this.sharing.revoke(this.resourceType(), this.resourceUuid(), recipientUuid),
+      );
     } catch {
       this.error.set('sharing.saveFailed');
     } finally {

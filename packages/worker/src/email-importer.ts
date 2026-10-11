@@ -49,14 +49,16 @@ export async function importEmailMessages(force = false): Promise<void> {
 }
 
 function normalizeImapHost(host: string): string | null {
-  const trimmed = host.trim().replace(/^\[|\]$/gu, '').replace(/\.$/u, '').toLowerCase();
+  const trimmed = host
+    .trim()
+    .replace(/^\[|\]$/gu, '')
+    .replace(/\.$/u, '')
+    .toLowerCase();
   if (isIP(trimmed)) return trimmed;
   const normalized = domainToASCII(trimmed);
   const validHostname =
     normalized.length <= 253 &&
-    normalized
-      .split('.')
-      .every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(label));
+    normalized.split('.').every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(label));
   return validHostname ? normalized.toLowerCase() : null;
 }
 

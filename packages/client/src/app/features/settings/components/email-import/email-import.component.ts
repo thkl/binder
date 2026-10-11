@@ -92,7 +92,8 @@ export class EmailImportComponent implements OnInit {
   }
 
   async approveServer(): Promise<void> {
-    if (!(await this.service.approveServer(this.approvedHost(), Number(this.approvedPort())))) return;
+    if (!(await this.service.approveServer(this.approvedHost(), Number(this.approvedPort()))))
+      return;
     this.approvedHost.set('');
     this.approvedPort.set(993);
   }

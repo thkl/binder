@@ -1,6 +1,15 @@
-import { Column, CreatedAt, DataType, Default, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import {
+  Column,
+  CreatedAt,
+  DataType,
+  Default,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
 
-export type PushNotificationEventType = 'document-added' | 'processing-complete' | 'processing-failed';
+export type PushNotificationEventType =
+  'document-added' | 'processing-complete' | 'processing-failed';
 
 export interface PushNotificationEventAttributes {
   uuid: string;
@@ -33,7 +42,12 @@ export class PushNotificationEvent extends Model<PushNotificationEventAttributes
   @Column({ type: DataType.INTEGER, allowNull: false, defaultValue: 0 })
   declare attempts: number;
 
-  @Column({ field: 'available_at', type: DataType.DATE, allowNull: false, defaultValue: DataType.NOW })
+  @Column({
+    field: 'available_at',
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+  })
   declare availableAt: Date;
 
   @Column({ field: 'delivered_at', type: DataType.DATE, allowNull: true })

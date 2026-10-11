@@ -573,17 +573,19 @@ export class DocumentService {
    * @param {Map<string, Date>} grants - Share grants used to build the recipient response.
    * @returns Shapes a shared document using only metadata available to its recipient.
    */
-  private async sharedDocumentResponse(
-    documentUuids: string[],
-    grants: Map<string, Date>,
-  ) {
+  private async sharedDocumentResponse(documentUuids: string[], grants: Map<string, Date>) {
     const documents = await this.documents.findAccessibleCandidates(documentUuids);
     documents.sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime());
     return SharedDocumentListResponseSchema.parse({
       items: documents.flatMap((document) => {
         const sharedAt = grants.get(document.uuid);
         return sharedAt
-          ? [{ document: this.toSharedDocumentResponse(document), sharedAt: sharedAt.toISOString() }]
+          ? [
+              {
+                document: this.toSharedDocumentResponse(document),
+                sharedAt: sharedAt.toISOString(),
+              },
+            ]
           : [];
       }),
     });
@@ -877,7 +879,9 @@ export class DocumentService {
     const document = await this.findReadableDocument(ownerUuid, uuid);
     const isOwner = document.ownerUuid === ownerUuid;
     const [summaries, calendarEvent] = await Promise.all([
-      isOwner ? this.metadata.getDocumentMetadataSummaries(ownerUuid, [document]) : Promise.resolve(new Map()),
+      isOwner
+        ? this.metadata.getDocumentMetadataSummaries(ownerUuid, [document])
+        : Promise.resolve(new Map()),
       isOwner ? this.calendarEvents.findOwnedByDocument(ownerUuid, uuid) : Promise.resolve(null),
     ]);
     if (!isOwner) return this.toSharedDocumentResponse(document);
@@ -1101,7 +1105,10 @@ export class DocumentService {
     const version = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!version) throw new NotFoundException('Document version not found');
 
-    const family = await this.documents.findOwnedVersionFamily(ownerUuid, version.versionFamilyUuid);
+    const family = await this.documents.findOwnedVersionFamily(
+      ownerUuid,
+      version.versionFamilyUuid,
+    );
     if (family.length <= 1) {
       throw new ConflictException('The only version in a document family cannot be removed');
     }
@@ -1421,9 +1428,16 @@ export class DocumentService {
       input.rotationDegrees,
     );
     const rotatedUuid = randomUUID();
-    const stored = await this.storage.storePdf(rotatedBuffer, rotatedUuid, original.originalFilename);
+    const stored = await this.storage.storePdf(
+      rotatedBuffer,
+      rotatedUuid,
+      original.originalFilename,
+    );
     const malwareScanRequired = await this.isMalwareScanRequired();
-    const family = await this.documents.findOwnedVersionFamily(ownerUuid, original.versionFamilyUuid);
+    const family = await this.documents.findOwnedVersionFamily(
+      ownerUuid,
+      original.versionFamilyUuid,
+    );
     const nextVersion = Math.max(...family.map((version) => version.versionNumber), 0) + 1;
     let documentCreated = false;
 
@@ -1465,7 +1479,11 @@ export class DocumentService {
       await this.addManualUploadToInbox(
         rotated.uuid,
         ownerUuid,
-        { buffer: rotatedBuffer, mimetype: 'application/pdf', originalname: original.originalFilename },
+        {
+          buffer: rotatedBuffer,
+          mimetype: 'application/pdf',
+          originalname: original.originalFilename,
+        },
         stored.checksumSha256,
         stored.sizeBytes,
         false,
@@ -1726,7 +1744,7 @@ export class DocumentService {
     const document = await this.documents.findOwnedByUuid(ownerUuid, uuid);
     if (!document) {
       const sharedDocument = (await this.documents.findAccessibleCandidates([uuid]))[0];
-      if (sharedDocument && await this.sharing.canReadDocument(ownerUuid, uuid)) {
+      if (sharedDocument && (await this.sharing.canReadDocument(ownerUuid, uuid))) {
         return { isNew: sharedDocument.isNew, updatedAt: sharedDocument.updatedAt };
       }
       throw new NotFoundException('Document not found');
@@ -1849,7 +1867,10 @@ export class DocumentService {
    */
   async getExtractedText(ownerUuid: string, uuid: string) {
     const document = await this.findReadableDocument(ownerUuid, uuid);
-    const pages = await DocumentPage.findAll({ where: { documentUuid: uuid }, order: [['pageNumber', 'ASC']] });
+    const pages = await DocumentPage.findAll({
+      where: { documentUuid: uuid },
+      order: [['pageNumber', 'ASC']],
+    });
     this.assertDocumentContentAvailable(document);
     return DocumentExtractedTextResponseSchema.parse({
       text: pages.map((page) => page.text).join('\n\n'),
@@ -1936,10 +1957,7 @@ export class DocumentService {
    * @returns {Promise<void>} - Resolves when the operation completes.
    */
   private async acquireThumbnailGenerationSlot(): Promise<void> {
-    if (
-      this.activeThumbnailGenerations >=
-      DocumentService.MAX_CONCURRENT_THUMBNAIL_GENERATIONS
-    ) {
+    if (this.activeThumbnailGenerations >= DocumentService.MAX_CONCURRENT_THUMBNAIL_GENERATIONS) {
       await new Promise<void>((resolve) => this.thumbnailGenerationWaiters.push(resolve));
       return;
     }
@@ -2076,7 +2094,10 @@ export class DocumentService {
    */
   private async findReadableDocument(ownerUuid: string, uuid: string): Promise<Document> {
     const document = (await this.documents.findAccessibleCandidates([uuid]))[0];
-    if (!document || (document.ownerUuid !== ownerUuid && !(await this.sharing.canReadDocument(ownerUuid, uuid)))) {
+    if (
+      !document ||
+      (document.ownerUuid !== ownerUuid && !(await this.sharing.canReadDocument(ownerUuid, uuid)))
+    ) {
       throw new NotFoundException('Document not found');
     }
     return document;
@@ -2091,7 +2112,8 @@ export class DocumentService {
    */
   async getMetadata(ownerUuid: string, uuid: string) {
     const document = await this.findReadableDocument(ownerUuid, uuid);
-    if (document.ownerUuid !== ownerUuid) throw new NotFoundException('Document metadata not found');
+    if (document.ownerUuid !== ownerUuid)
+      throw new NotFoundException('Document metadata not found');
     return this.metadata.getDocumentMetadata(ownerUuid, uuid);
   }
 
@@ -2220,7 +2242,9 @@ export class DocumentService {
           const issuer = await this.issuers.findOrCreate(ownerUuid, suggestion.suggestedIssuer);
           classification.issuerUuid = issuer.uuid;
         } catch (error) {
-          this.logger.warn(`Unable to create suggested issuer for ${uuid}: ${error instanceof Error ? error.message : String(error)}`);
+          this.logger.warn(
+            `Unable to create suggested issuer for ${uuid}: ${error instanceof Error ? error.message : String(error)}`,
+          );
         }
       }
     }

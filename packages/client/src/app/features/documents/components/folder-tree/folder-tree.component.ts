@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FoldersService, FolderTreeRow } from '../../services/folders.service';
 import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service';
 import { ShareAccessComponent } from '../share-access/share-access.component';
@@ -29,7 +37,10 @@ export class FolderTreeComponent {
   readonly sharingFolder = signal<{ uuid: string; name: string } | null>(null);
   readonly actionMenuUuid = signal<string | null>(null);
 
-  constructor(readonly folders: FoldersService, readonly sharing: SharingService) {}
+  constructor(
+    readonly folders: FoldersService,
+    readonly sharing: SharingService,
+  ) {}
 
   /**
    * Expands or collapses a row and loads its children on first expansion.

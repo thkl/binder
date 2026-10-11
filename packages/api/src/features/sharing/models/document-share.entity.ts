@@ -1,4 +1,12 @@
-import { Column, CreatedAt, DataType, Default, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import {
+  Column,
+  CreatedAt,
+  DataType,
+  Default,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
 
 export interface DocumentShareAttributes {
   uuid: string;
@@ -8,7 +16,10 @@ export interface DocumentShareAttributes {
   createdAt: Date;
 }
 
-export type DocumentShareCreationAttributes = Omit<DocumentShareAttributes, 'uuid' | 'createdAt'> & {
+export type DocumentShareCreationAttributes = Omit<
+  DocumentShareAttributes,
+  'uuid' | 'createdAt'
+> & {
   uuid?: string;
 };
 

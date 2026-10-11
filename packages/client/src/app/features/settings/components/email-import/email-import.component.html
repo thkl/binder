@@ -38,7 +38,9 @@
       @if (auth.user()?.isAdmin) {
         <form class="approved-server-form" (submit)="$event.preventDefault(); approveServer()">
           <label class="text-field">
-            <span class="field-label"><strong>{{ 'emailImport.host' | t }}</strong></span>
+            <span class="field-label"
+              ><strong>{{ 'emailImport.host' | t }}</strong></span
+            >
             <input
               name="approvedHost"
               [value]="approvedHost()"
@@ -48,7 +50,9 @@
             />
           </label>
           <label class="text-field">
-            <span class="field-label"><strong>{{ 'emailImport.port' | t }}</strong></span>
+            <span class="field-label"
+              ><strong>{{ 'emailImport.port' | t }}</strong></span
+            >
             <input
               name="approvedPort"
               type="number"

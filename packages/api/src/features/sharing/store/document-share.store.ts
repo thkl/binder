@@ -13,12 +13,18 @@ export class DocumentShareStore extends BaseCrudStore<DocumentShare> {
   listForOwnerDocument(ownerUuid: string, documentUuid: string): Promise<DocumentShare[]> {
     return this.model.findAll({
       where: { ownerUuid, documentUuid },
-      order: [['createdAt', 'ASC'], ['uuid', 'ASC']],
+      order: [
+        ['createdAt', 'ASC'],
+        ['uuid', 'ASC'],
+      ],
     });
   }
 
   listForOwner(ownerUuid: string): Promise<DocumentShare[]> {
-    return this.model.findAll({ where: { ownerUuid }, attributes: ['documentUuid', 'recipientUserUuid'] });
+    return this.model.findAll({
+      where: { ownerUuid },
+      attributes: ['documentUuid', 'recipientUserUuid'],
+    });
   }
 
   listForOwnerDocuments(ownerUuid: string, documentUuids: string[]): Promise<DocumentShare[]> {
@@ -29,11 +35,18 @@ export class DocumentShareStore extends BaseCrudStore<DocumentShare> {
   listForRecipient(recipientUserUuid: string): Promise<DocumentShare[]> {
     return this.model.findAll({
       where: { recipientUserUuid },
-      order: [['createdAt', 'DESC'], ['uuid', 'ASC']],
+      order: [
+        ['createdAt', 'DESC'],
+        ['uuid', 'ASC'],
+      ],
     });
   }
 
-  async createShare(ownerUuid: string, documentUuid: string, recipientUserUuid: string): Promise<void> {
+  async createShare(
+    ownerUuid: string,
+    documentUuid: string,
+    recipientUserUuid: string,
+  ): Promise<void> {
     await this.model.findOrCreate({
       where: { documentUuid, recipientUserUuid },
       defaults: { ownerUuid, documentUuid, recipientUserUuid },
@@ -45,6 +58,11 @@ export class DocumentShareStore extends BaseCrudStore<DocumentShare> {
   }
 
   async hasShare(recipientUserUuid: string, documentUuid: string): Promise<boolean> {
-    return Boolean(await this.model.findOne({ where: { recipientUserUuid, documentUuid }, attributes: ['uuid'] }));
+    return Boolean(
+      await this.model.findOne({
+        where: { recipientUserUuid, documentUuid },
+        attributes: ['uuid'],
+      }),
+    );
   }
 }

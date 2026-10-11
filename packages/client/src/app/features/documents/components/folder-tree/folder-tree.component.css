@@ -342,8 +342,6 @@
   z-index: 1;
 }
 
-
-
 .folder-actions .folder-menu-trigger:hover,
 .folder-actions .folder-menu-trigger:focus-visible {
   border-color: var(--color-accent);

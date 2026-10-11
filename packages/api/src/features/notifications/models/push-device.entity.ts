@@ -1,4 +1,12 @@
-import { Column, CreatedAt, DataType, Model, PrimaryKey, Table, UpdatedAt } from 'sequelize-typescript';
+import {
+  Column,
+  CreatedAt,
+  DataType,
+  Model,
+  PrimaryKey,
+  Table,
+  UpdatedAt,
+} from 'sequelize-typescript';
 
 export interface PushDeviceAttributes {
   uuid: string;
@@ -10,7 +18,10 @@ export interface PushDeviceAttributes {
   updatedAt: Date;
 }
 
-export type PushDeviceCreationAttributes = Omit<PushDeviceAttributes, 'uuid' | 'createdAt' | 'updatedAt'>;
+export type PushDeviceCreationAttributes = Omit<
+  PushDeviceAttributes,
+  'uuid' | 'createdAt' | 'updatedAt'
+>;
 
 @Table({ tableName: 'push_devices', underscored: true, timestamps: true })
 export class PushDevice extends Model<PushDeviceAttributes, PushDeviceCreationAttributes> {
@@ -24,7 +35,12 @@ export class PushDevice extends Model<PushDeviceAttributes, PushDeviceCreationAt
   @Column({ type: DataType.STRING(200), allowNull: false, unique: true })
   declare token: string;
 
-  @Column({ field: 'device_name', type: DataType.STRING(120), allowNull: false, defaultValue: 'iOS device' })
+  @Column({
+    field: 'device_name',
+    type: DataType.STRING(120),
+    allowNull: false,
+    defaultValue: 'iOS device',
+  })
   declare deviceName: string;
 
   @Column({ type: DataType.STRING(16), allowNull: false })

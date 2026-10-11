@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { AuthenticationGuard } from './authentication.guard.js';
 import type { AuthenticationService } from '../service/authentication.service.js';

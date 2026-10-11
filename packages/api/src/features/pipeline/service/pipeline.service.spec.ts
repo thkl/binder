@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, it } from 'vitest';
 import { PipelineService } from './pipeline.service';
 
 const ownerUuid = '11111111-1111-4111-8111-111111111111';

@@ -16,16 +16,22 @@ export class PushNotificationEventStore extends BaseCrudStore<PushNotificationEv
     return this.sequelize.transaction(async (transaction) => {
       const event = await this.model.findOne({
         where: { deliveredAt: null, availableAt: { [Op.lte]: new Date() } },
-        order: [['createdAt', 'ASC'], ['uuid', 'ASC']],
+        order: [
+          ['createdAt', 'ASC'],
+          ['uuid', 'ASC'],
+        ],
         transaction,
         lock: transaction.LOCK.UPDATE,
         skipLocked: true,
       });
       if (!event) return null;
-      await event.update({
-        attempts: event.attempts + 1,
-        availableAt: new Date(Date.now() + 120_000),
-      }, { transaction });
+      await event.update(
+        {
+          attempts: event.attempts + 1,
+          availableAt: new Date(Date.now() + 120_000),
+        },
+        { transaction },
+      );
       return event;
     });
   }
@@ -37,10 +43,13 @@ export class PushNotificationEventStore extends BaseCrudStore<PushNotificationEv
   async markFailed(uuid: string, attempts: number, error: string): Promise<void> {
     const delaySeconds = Math.min(3600, 10 * 2 ** Math.min(attempts, 8));
     const exhausted = attempts >= 8;
-    await this.model.update({
-      lastError: error.slice(0, 500),
-      availableAt: new Date(Date.now() + delaySeconds * 1000),
-      deliveredAt: exhausted ? new Date() : null,
-    }, { where: { uuid } });
+    await this.model.update(
+      {
+        lastError: error.slice(0, 500),
+        availableAt: new Date(Date.now() + delaySeconds * 1000),
+        deliveredAt: exhausted ? new Date() : null,
+      },
+      { where: { uuid } },
+    );
   }
 }

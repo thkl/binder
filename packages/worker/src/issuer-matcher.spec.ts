@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import type { Issuer } from './models.js';
 import { normalize, scoreIssuer } from './issuer-matcher.js';
 

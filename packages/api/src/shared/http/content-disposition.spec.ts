@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import { createContentDisposition } from './content-disposition';
 
 test('creates an ASCII fallback and UTF-8 filename parameter', () => {

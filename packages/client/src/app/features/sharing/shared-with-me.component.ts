@@ -103,7 +103,9 @@ export class SharedWithMeComponent implements OnInit {
     }
   }
 
-  closeDocument(): void { this.drawerDocument.set(null); }
+  closeDocument(): void {
+    this.drawerDocument.set(null);
+  }
 
   /**
    * Returns rows for the currently selected shared folder or aggregate view.

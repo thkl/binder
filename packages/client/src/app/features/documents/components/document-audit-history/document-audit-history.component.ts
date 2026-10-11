@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
 import type { Document, DocumentAuditEvent, DocumentAuditResponse } from '@binder/common';
 import { TranslatePipe, I18nService } from '../../../../common/i18n/i18n.service';
@@ -95,11 +103,7 @@ export class DocumentAuditHistoryComponent {
   async deleteVersion(version: Document): Promise<void> {
     if (this.versions().length <= 1 || this.deletingVersion()) return;
     const title = version.title?.trim() || version.originalFilename;
-    if (
-      !window.confirm(
-        this.i18n.t('audit.deleteVersionConfirm').replace('{title}', title),
-      )
-    ) {
+    if (!window.confirm(this.i18n.t('audit.deleteVersionConfirm').replace('{title}', title))) {
       return;
     }
 

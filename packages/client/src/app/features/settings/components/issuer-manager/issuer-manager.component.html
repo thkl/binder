@@ -70,7 +70,12 @@
           <select [value]="folderUuid()" (change)="folderUuid.set($any($event.target).value)">
             <option value="">{{ 'issuers.noFolderRouting' | t }}</option>
             @for (folder of sortedFolders(); track folder.uuid) {
-              <option [value]="folder.uuid" [selected]="folder.uuid===folderUuid()?'selected':undefined">{{ folderPath(folder.uuid) }}</option>
+              <option
+                [value]="folder.uuid"
+                [selected]="folder.uuid === folderUuid() ? 'selected' : undefined"
+              >
+                {{ folderPath(folder.uuid) }}
+              </option>
             }
           </select>
         </label>

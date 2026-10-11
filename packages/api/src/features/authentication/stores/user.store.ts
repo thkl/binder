@@ -83,7 +83,10 @@ export class UserStore extends BaseCrudStore<User, IStoreUser, UserStoreQueries>
     return this.model.findAll({
       where: { isActive: true, uuid: { [Op.ne]: excludeUuid } },
       attributes: ['uuid', 'username'],
-      order: [['username', 'ASC'], ['uuid', 'ASC']],
+      order: [
+        ['username', 'ASC'],
+        ['uuid', 'ASC'],
+      ],
     });
   }
 

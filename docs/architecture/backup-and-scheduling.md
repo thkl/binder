@@ -163,8 +163,9 @@ documented restore flow will:
 6. start the services and verify health, authentication, and pipeline access.
 
 Restore must require an explicit target database and confirmation so a normal
-backup job cannot overwrite a live database accidentally. Restore tests belong
-to the P2 hardening phase. The repository includes a guarded operator script at
+backup job cannot overwrite a live database accidentally. The P2 restore test
+is complete: disaster recovery was tested by restoring into an installation
+running in a clean container. The repository includes a guarded operator script at
 `scripts/restore-database.sh`; it requires `BACKUP_FILE`, `TARGET_DATABASE`,
 and `RESTORE_CONFIRM=YES`, and refuses to target the configured live database
 unless `ALLOW_LIVE_RESTORE=YES` is explicitly supplied.

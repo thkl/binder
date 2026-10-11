@@ -1,6 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
-import { CreateIssuerInputSchema, DocumentTitleSuggestion, DocumentTitleSuggestionSchema } from '@binder/common';
+import {
+  CreateIssuerInputSchema,
+  DocumentTitleSuggestion,
+  DocumentTitleSuggestionSchema,
+} from '@binder/common';
 import { ApplicationSettingsService } from '../../settings/service/application-settings.service';
 import { DocumentPage } from '../models/document-page.entity';
 import { DocumentStore } from '../store/document.store';
@@ -273,10 +277,11 @@ function findMatchingIssuer(
   }>,
 ) {
   const normalize = (value: string | null | undefined) => value?.trim().toLocaleLowerCase() ?? '';
-  return issuers.find((issuer) =>
-    normalize(issuer.name) === normalize(candidate.name) &&
-    (['address', 'zipCode', 'city', 'country'] as const).every((field) =>
-      !candidate[field] || normalize(issuer[field]) === normalize(candidate[field]),
-    ),
+  return issuers.find(
+    (issuer) =>
+      normalize(issuer.name) === normalize(candidate.name) &&
+      (['address', 'zipCode', 'city', 'country'] as const).every(
+        (field) => !candidate[field] || normalize(issuer[field]) === normalize(candidate[field]),
+      ),
   );
 }

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import { EncryptionService } from './encryption.service.js';
 
 function service(): EncryptionService {

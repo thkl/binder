@@ -7,7 +7,12 @@ import { NotificationsStoreModule } from './notifications.store.module';
 import { DocumentStoreModule } from '../document/document.store.module';
 
 @Module({
-  imports: [AuthenticationServiceModule, SharedModule, NotificationsStoreModule, DocumentStoreModule],
+  imports: [
+    AuthenticationServiceModule,
+    SharedModule,
+    NotificationsStoreModule,
+    DocumentStoreModule,
+  ],
   controllers: [NotificationsController],
   providers: [NotificationsService],
 })

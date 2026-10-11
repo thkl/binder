@@ -68,7 +68,9 @@ export class EmailImportConfigService {
   async save(ownerUuid: string, input: EmailImportConfigInput): Promise<Record<string, unknown>> {
     const host = input.host.trim() ? normalizeImapHost(input.host) : '';
     if (input.enabled && !(await this.approvedServers.findByHostAndPort(host, input.port))) {
-      throw new ForbiddenException('This IMAP host and port has not been approved by an administrator');
+      throw new ForbiddenException(
+        'This IMAP host and port has not been approved by an administrator',
+      );
     }
 
     const existing = await EmailImportConfig.findOne({ where: { ownerUuid } });
@@ -154,14 +156,16 @@ export class EmailImportConfigService {
 }
 
 function normalizeImapHost(host: string): string {
-  const trimmed = host.trim().replace(/^\[|\]$/gu, '').replace(/\.$/u, '').toLowerCase();
+  const trimmed = host
+    .trim()
+    .replace(/^\[|\]$/gu, '')
+    .replace(/\.$/u, '')
+    .toLowerCase();
   if (isIP(trimmed)) return trimmed;
   const normalized = domainToASCII(trimmed);
   const validHostname =
     normalized.length <= 253 &&
-    normalized
-      .split('.')
-      .every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(label));
+    normalized.split('.').every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(label));
   if (!validHostname) {
     throw new BadRequestException('Enter a valid IMAP server hostname or IP address');
   }

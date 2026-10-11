@@ -70,13 +70,16 @@
         } @else if (selectedFolderUuid() === '__unfiled_shared__') {
           <span>{{ 'sharing.unfiled' | t }}</span>
         } @else {
-            <span>{{ selectedFolderName() }}</span>
+          <span>{{ selectedFolderName() }}</span>
         }
         <small>{{ selectedDocuments().length }} {{ 'sharing.documents' | t }}</small>
       </header>
 
       @if (loading()) {
-        <div class="empty-state"><span class="spinner"></span><p>{{ 'sharing.loading' | t }}</p></div>
+        <div class="empty-state">
+          <span class="spinner"></span>
+          <p>{{ 'sharing.loading' | t }}</p>
+        </div>
       } @else if (selectedDocuments().length === 0) {
         <div class="empty-state">
           <span class="empty-icon">▱</span>
@@ -106,12 +109,26 @@
                 }
               </button>
               <div class="document-name">
-                <div class="title-line"><strong>{{ title(item) }}</strong></div>
+                <div class="title-line">
+                  <strong>{{ title(item) }}</strong>
+                </div>
                 <dl class="document-facts">
-                  <div><dt>{{ 'documents.type' | t }}</dt><dd>PDF</dd></div>
-                  <div><dt>{{ 'documents.size' | t }}</dt><dd>{{ item.document.sizeBytes | number }} bytes</dd></div>
-                  <div><dt>{{ 'documents.pages' | t }}</dt><dd>{{ item.document.pageCount }}</dd></div>
-                  <div><dt>{{ 'documents.modified' | t }}</dt><dd>{{ item.document.updatedAt | date: 'mediumDate' }}</dd></div>
+                  <div>
+                    <dt>{{ 'documents.type' | t }}</dt>
+                    <dd>PDF</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'documents.size' | t }}</dt>
+                    <dd>{{ item.document.sizeBytes | number }} bytes</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'documents.pages' | t }}</dt>
+                    <dd>{{ item.document.pageCount }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'documents.modified' | t }}</dt>
+                    <dd>{{ item.document.updatedAt | date: 'mediumDate' }}</dd>
+                  </div>
                 </dl>
               </div>
               <span class="status ready">{{ 'sharing.readOnly' | t }}</span>
@@ -120,7 +137,9 @@
                 class="shared-open-button"
                 (click)="openDocument(item.document)"
                 [disabled]="openingUuid() === item.document.uuid"
-              >{{ 'sharing.open' | t }} →</button>
+              >
+                {{ 'sharing.open' | t }} →
+              </button>
             </article>
           }
         </div>

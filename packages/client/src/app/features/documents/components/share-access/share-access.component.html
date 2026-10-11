@@ -16,7 +16,9 @@
       (click)="close.emit()"
       [attr.aria-label]="'sharing.close' | t"
       [title]="'sharing.close' | t"
-    >×</button>
+    >
+      ×
+    </button>
   </header>
 
   <form class="share-form" (submit)="$event.preventDefault(); add()">

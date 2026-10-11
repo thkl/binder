@@ -65,7 +65,8 @@
                 routerLink="/shared"
                 routerLinkActive="active"
                 (click)="closeMenu()"
-              >{{ 'nav.sharedWithMe' | t }}</a>
+                >{{ 'nav.sharedWithMe' | t }}</a
+              >
               @if (auth.user()?.isAdmin) {
                 <a
                   class="nav-menu-link"

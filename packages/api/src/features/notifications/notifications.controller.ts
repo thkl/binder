@@ -40,15 +40,24 @@ export class NotificationsController {
    * @returns Registers the caller's APNs token and device environment.
    */
   @Post('devices')
-  async registerDevice(@Body() body: { token?: unknown; environment?: unknown; deviceName?: unknown }, @CurrentUser() user: ScopedUser) {
+  async registerDevice(
+    @Body() body: { token?: unknown; environment?: unknown; deviceName?: unknown },
+    @CurrentUser() user: ScopedUser,
+  ) {
     if (typeof body.token !== 'string' || !/^[a-fA-F0-9]{64,200}$/.test(body.token)) {
       throw new BadRequestException('A valid APNs device token is required');
     }
     if (body.environment !== 'sandbox' && body.environment !== 'production') {
       throw new BadRequestException('APNs environment must be sandbox or production');
     }
-    const deviceName = typeof body.deviceName === 'string' ? body.deviceName.trim().slice(0, 120) : 'iOS device';
-    await this.notifications.registerDevice(user.userId, body.token.toLowerCase(), body.environment, deviceName || 'iOS device');
+    const deviceName =
+      typeof body.deviceName === 'string' ? body.deviceName.trim().slice(0, 120) : 'iOS device';
+    await this.notifications.registerDevice(
+      user.userId,
+      body.token.toLowerCase(),
+      body.environment,
+      deviceName || 'iOS device',
+    );
     return { data: null };
   }
 
@@ -64,7 +73,9 @@ export class NotificationsController {
     if (typeof body.token !== 'string' || !/^[a-fA-F0-9]{64,200}$/.test(body.token)) {
       throw new BadRequestException('A valid APNs device token is required');
     }
-    return { data: await this.notifications.getDeviceRegistration(user.userId, body.token.toLowerCase()) };
+    return {
+      data: await this.notifications.getDeviceRegistration(user.userId, body.token.toLowerCase()),
+    };
   }
 
   /**
@@ -77,7 +88,11 @@ export class NotificationsController {
     const settings = await this.notifications.getPushSettings();
     return {
       data: {
-        enabled: settings.provider === 'apns' && settings.enabled && settings.hasAPNsKey && Boolean(settings.keyId && settings.teamId && settings.topic),
+        enabled:
+          settings.provider === 'apns' &&
+          settings.enabled &&
+          settings.hasAPNsKey &&
+          Boolean(settings.keyId && settings.teamId && settings.topic),
       },
     };
   }
@@ -91,7 +106,8 @@ export class NotificationsController {
    */
   @Delete('devices')
   async unregisterDevice(@Body() body: { token?: unknown }, @CurrentUser() user: ScopedUser) {
-    if (typeof body.token === 'string') await this.notifications.unregisterDevice(user.userId, body.token.toLowerCase());
+    if (typeof body.token === 'string')
+      await this.notifications.unregisterDevice(user.userId, body.token.toLowerCase());
     return { data: null };
   }
 
@@ -185,7 +201,9 @@ export class NotificationsController {
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 64 * 1024, files: 1 } }))
   async uploadAPNsKey(@UploadedFile() file?: UploadFile) {
     if (!file || !file.originalname.toLowerCase().endsWith('.p8')) {
-      throw new BadRequestException('Upload an Apple APNs authentication key with the .p8 extension');
+      throw new BadRequestException(
+        'Upload an Apple APNs authentication key with the .p8 extension',
+      );
     }
     const pem = file.buffer.toString('utf8');
     try {

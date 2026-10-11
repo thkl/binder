@@ -188,14 +188,19 @@ export class DocumentMetadataEditorComponent {
       suggestion?.suggestedIssuer
     ) {
       const candidate = suggestion.suggestedIssuer;
-      const normalize = (value: string | null | undefined) => value?.trim().toLocaleLowerCase() ?? '';
-      const existing = this.metadata.issuers().find((issuer) =>
-        normalize(issuer.name) === normalize(candidate.name) &&
-        (['address', 'zipCode', 'city', 'country'] as const).every((field) =>
-          !candidate[field] || normalize(issuer[field]) === normalize(candidate[field]),
-        ),
-      );
-      const issuer = existing ?? await this.metadata.createIssuer(candidate);
+      const normalize = (value: string | null | undefined) =>
+        value?.trim().toLocaleLowerCase() ?? '';
+      const existing = this.metadata
+        .issuers()
+        .find(
+          (issuer) =>
+            normalize(issuer.name) === normalize(candidate.name) &&
+            (['address', 'zipCode', 'city', 'country'] as const).every(
+              (field) =>
+                !candidate[field] || normalize(issuer[field]) === normalize(candidate[field]),
+            ),
+        );
+      const issuer = existing ?? (await this.metadata.createIssuer(candidate));
       if (!issuer) return false;
       this.issuerUuid.set(issuer.uuid);
     }
@@ -369,7 +374,7 @@ export class DocumentMetadataEditorComponent {
   suggestedIssuerLabel(suggestion: DocumentTitleSuggestion): string {
     return suggestion.issuerUuid
       ? this.suggestedIssuerName(suggestion.issuerUuid)
-      : suggestion.suggestedIssuer?.name ?? 'No suggestion';
+      : (suggestion.suggestedIssuer?.name ?? 'No suggestion');
   }
 
   itemName(item: { name: string; translations: Record<string, string> }): string {

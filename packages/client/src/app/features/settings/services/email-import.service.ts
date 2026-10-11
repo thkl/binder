@@ -45,10 +45,9 @@ export class EmailImportService {
           }),
         ),
         firstValueFrom(
-          this.http.get<{ data: ApprovedImapServer[] }>(
-            '/api/v1/email-import/approved-servers',
-            { withCredentials: true },
-          ),
+          this.http.get<{ data: ApprovedImapServer[] }>('/api/v1/email-import/approved-servers', {
+            withCredentials: true,
+          }),
         ),
       ]);
       this.config.set(response.data);

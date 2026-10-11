@@ -4,7 +4,12 @@ import { EmailImportApprovedServer } from '../models/email-import-approved-serve
 @Injectable()
 export class EmailImportApprovedServerStore {
   findAll(): Promise<EmailImportApprovedServer[]> {
-    return EmailImportApprovedServer.findAll({ order: [['host', 'ASC'], ['port', 'ASC']] });
+    return EmailImportApprovedServer.findAll({
+      order: [
+        ['host', 'ASC'],
+        ['port', 'ASC'],
+      ],
+    });
   }
 
   findByHostAndPort(host: string, port: number): Promise<EmailImportApprovedServer | null> {

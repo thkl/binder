@@ -115,7 +115,7 @@ export class DocumentStorageService {
         const inheritedRotation = pageObject.getInheritable('Rotate');
         try {
           const currentRotation = inheritedRotation.isNumber() ? inheritedRotation.asNumber() : 0;
-          const nextRotation = ((currentRotation + rotationDegrees) % 360 + 360) % 360;
+          const nextRotation = (((currentRotation + rotationDegrees) % 360) + 360) % 360;
           pageObject.put('Rotate', nextRotation);
         } finally {
           inheritedRotation.destroy();

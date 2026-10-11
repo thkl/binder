@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import type { VocabularyItem } from '@binder/common';
 import { preferPersonalVocabulary } from './vocabulary-precedence';
 

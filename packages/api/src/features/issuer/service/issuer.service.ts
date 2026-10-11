@@ -38,11 +38,12 @@ export class IssuerService {
 
   async findOrCreate(ownerUuid: string, input: CreateIssuerInput) {
     const normalize = (value: string | null | undefined) => value?.trim().toLocaleLowerCase() ?? '';
-    const existing = (await this.issuers.listOwned(ownerUuid)).find((issuer) =>
-      normalize(issuer.name) === normalize(input.name) &&
-      (['address', 'zipCode', 'city', 'country'] as const).every((field) =>
-        !input[field] || normalize(issuer[field]) === normalize(input[field]),
-      ),
+    const existing = (await this.issuers.listOwned(ownerUuid)).find(
+      (issuer) =>
+        normalize(issuer.name) === normalize(input.name) &&
+        (['address', 'zipCode', 'city', 'country'] as const).every(
+          (field) => !input[field] || normalize(issuer[field]) === normalize(input[field]),
+        ),
     );
     return existing ? this.toResponse(existing) : this.create(ownerUuid, input);
   }

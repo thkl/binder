@@ -22,7 +22,7 @@ import { matchDocumentIssuer } from './issuer-matcher.js';
 import { MalwareDetectedError, scanDocument } from './malware-scanner.js';
 import { importEmailMessages } from './email-importer.js';
 import { isRecoveryActive, setRecoveryActive } from './recovery-state.js';
-interface ClaimedJob {
+export interface ClaimedJob {
   /** Unique queue row identifier used to finish or retry the claimed work. */
   jobUuid: string;
   /** Document whose file is being processed. */
@@ -77,7 +77,7 @@ export async function startPipelineWorker(): Promise<void> {
       }
       const job = await claimNextJob();
       if (job) {
-        await processJob(job);
+        await processClaimedJob(job);
         continue;
       }
       logger.debug('Pipeline queue is empty; waiting for jobs', {
@@ -334,7 +334,7 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
  * @param {ClaimedJob} job - Claimed pipeline job being processed.
  * @returns {Promise<void>} - Resolves when the operation completes.
  */
-async function processJob(job: ClaimedJob): Promise<void> {
+export async function processClaimedJob(job: ClaimedJob): Promise<void> {
   logger.info('Processing pipeline job', {
     jobUuid: job.jobUuid,
     documentUuid: job.documentUuid,

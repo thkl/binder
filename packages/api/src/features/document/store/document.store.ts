@@ -76,10 +76,7 @@ export class DocumentStore extends BaseCrudStore<Document> {
     versionParentUuid: string | null,
     transaction?: Transaction,
   ): Promise<void> {
-    await this.model.update(
-      { versionParentUuid },
-      { where: { ownerUuid, uuid }, transaction },
-    );
+    await this.model.update({ versionParentUuid }, { where: { ownerUuid, uuid }, transaction });
   }
 
   async assignVersion(

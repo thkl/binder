@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import { createGravatarUrl } from './gravatar';
 
 test('creates a Gravatar URL from a normalized email address', () => {

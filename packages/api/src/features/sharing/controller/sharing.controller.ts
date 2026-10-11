@@ -99,10 +99,7 @@ export class SharingController {
    * @returns Lists grants on a folder owned by the current user.
    */
   @Get('folders/:folderUuid')
-  async listFolderShares(
-    @Param('folderUuid') folderUuid: string,
-    @CurrentUser() user: ScopedUser,
-  ) {
+  async listFolderShares(@Param('folderUuid') folderUuid: string, @CurrentUser() user: ScopedUser) {
     return { data: await this.sharing.listFolderShares(user.userId, folderUuid) };
   }
 

@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "pnpm build && node --test dist/malware-scanner.spec.js dist/ocr.spec.js dist/issuer-matcher.spec.js",
-    "coverage": "pnpm build && node --experimental-test-coverage --test dist/malware-scanner.spec.js dist/ocr.spec.js dist/issuer-matcher.spec.js",
+    "test": "pnpm build && vitest run",
+    "coverage": "pnpm build && vitest run --coverage",
     "dev": "dotenv run -f ../../.env -- node --watch dist/main.js",
     "start": "pnpm build && dotenv run -f ../../.env -- node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -25,6 +25,8 @@
   },
   "devDependencies": {
     "@types/node": "24.0.0",
-    "typescript": "6.0.3"
+    "@vitest/coverage-v8": "5.0.3",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
   }
 }

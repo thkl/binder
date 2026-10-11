@@ -39,11 +39,17 @@ export class SharingService {
     this.summaryPromise = (async () => {
       try {
         const response = await firstValueFrom(
-          this.http.get<ApiResponse<unknown>>(this.url('shares/summary'), { withCredentials: true }),
+          this.http.get<ApiResponse<unknown>>(this.url('shares/summary'), {
+            withCredentials: true,
+          }),
         );
         const summary = OwnedShareSummarySchema.parse(response.data);
-        this.documentShareCounts.set(Object.fromEntries(summary.documents.map((item) => [item.uuid, item.recipientCount])));
-        this.folderShareCounts.set(Object.fromEntries(summary.folders.map((item) => [item.uuid, item.recipientCount])));
+        this.documentShareCounts.set(
+          Object.fromEntries(summary.documents.map((item) => [item.uuid, item.recipientCount])),
+        );
+        this.folderShareCounts.set(
+          Object.fromEntries(summary.folders.map((item) => [item.uuid, item.recipientCount])),
+        );
       } catch {
         // Sharing indicators are supplementary; keep the document and folder lists usable.
       } finally {
@@ -76,7 +82,9 @@ export class SharingService {
    */
   async listGrants(kind: 'documents' | 'folders', uuid: string): Promise<ShareGrant[]> {
     const response = await firstValueFrom(
-      this.http.get<ApiResponse<unknown>>(this.url(`shares/${kind}/${uuid}`), { withCredentials: true }),
+      this.http.get<ApiResponse<unknown>>(this.url(`shares/${kind}/${uuid}`), {
+        withCredentials: true,
+      }),
     );
     return ShareGrantsResponseSchema.parse(response.data).items;
   }
@@ -89,7 +97,11 @@ export class SharingService {
    * @param {string} recipientUuid - UUID of the share recipient.
    * @returns {Promise<ShareGrant[]>} - Grants a recipient access and refreshes the owner's sharing indicators.
    */
-  async grant(kind: 'documents' | 'folders', uuid: string, recipientUuid: string): Promise<ShareGrant[]> {
+  async grant(
+    kind: 'documents' | 'folders',
+    uuid: string,
+    recipientUuid: string,
+  ): Promise<ShareGrant[]> {
     const response = await firstValueFrom(
       this.http.post<ApiResponse<unknown>>(
         this.url(`shares/${kind}/${uuid}`),
@@ -110,12 +122,15 @@ export class SharingService {
    * @param {string} recipientUuid - UUID of the share recipient.
    * @returns {Promise<ShareGrant[]>} - Revokes a recipient's access and refreshes the owner's sharing indicators.
    */
-  async revoke(kind: 'documents' | 'folders', uuid: string, recipientUuid: string): Promise<ShareGrant[]> {
+  async revoke(
+    kind: 'documents' | 'folders',
+    uuid: string,
+    recipientUuid: string,
+  ): Promise<ShareGrant[]> {
     const response = await firstValueFrom(
-      this.http.delete<ApiResponse<unknown>>(
-        this.url(`shares/${kind}/${uuid}/${recipientUuid}`),
-        { withCredentials: true },
-      ),
+      this.http.delete<ApiResponse<unknown>>(this.url(`shares/${kind}/${uuid}/${recipientUuid}`), {
+        withCredentials: true,
+      }),
     );
     const grants = ShareGrantsResponseSchema.parse(response.data).items;
     await this.loadOwnedSummary(true);
@@ -141,7 +156,9 @@ export class SharingService {
    */
   async receivedUnfiledDocuments(): Promise<SharedDocument[]> {
     const response = await firstValueFrom(
-      this.http.get<ApiResponse<unknown>>(this.url('documents/shared/unfiled'), { withCredentials: true }),
+      this.http.get<ApiResponse<unknown>>(this.url('documents/shared/unfiled'), {
+        withCredentials: true,
+      }),
     );
     return SharedDocumentListResponseSchema.parse(response.data).items;
   }
@@ -166,7 +183,9 @@ export class SharingService {
    */
   async folderDocuments(uuid: string): Promise<SharedDocument[]> {
     const response = await firstValueFrom(
-      this.http.get<ApiResponse<unknown>>(this.url(`folders/shared/${uuid}/documents`), { withCredentials: true }),
+      this.http.get<ApiResponse<unknown>>(this.url(`folders/shared/${uuid}/documents`), {
+        withCredentials: true,
+      }),
     );
     return SharedDocumentListResponseSchema.parse(response.data).items;
   }

@@ -54,7 +54,10 @@ export class SharingService {
       this.documentShares.listForOwner(ownerUuid),
       this.folderShares.listForOwner(ownerUuid),
     ]);
-    const countByUuid = (items: Array<{ documentUuid?: string; folderUuid?: string }>, field: 'documentUuid' | 'folderUuid') => {
+    const countByUuid = (
+      items: Array<{ documentUuid?: string; folderUuid?: string }>,
+      field: 'documentUuid' | 'folderUuid',
+    ) => {
       const counts = new Map<string, number>();
       for (const item of items) {
         const uuid = item[field];
@@ -84,12 +87,14 @@ export class SharingService {
       items: shares.flatMap((share) => {
         const recipientUsername = names.get(share.recipientUserUuid);
         return recipientUsername
-          ? [{
-              uuid: share.uuid,
-              recipientUuid: share.recipientUserUuid,
-              recipientUsername,
-              createdAt: share.createdAt.toISOString(),
-            }]
+          ? [
+              {
+                uuid: share.uuid,
+                recipientUuid: share.recipientUserUuid,
+                recipientUsername,
+                createdAt: share.createdAt.toISOString(),
+              },
+            ]
           : [];
       }),
     });
@@ -140,12 +145,14 @@ export class SharingService {
       items: shares.flatMap((share) => {
         const recipientUsername = names.get(share.recipientUserUuid);
         return recipientUsername
-          ? [{
-              uuid: share.uuid,
-              recipientUuid: share.recipientUserUuid,
-              recipientUsername,
-              createdAt: share.createdAt.toISOString(),
-            }]
+          ? [
+              {
+                uuid: share.uuid,
+                recipientUuid: share.recipientUserUuid,
+                recipientUsername,
+                createdAt: share.createdAt.toISOString(),
+              },
+            ]
           : [];
       }),
     });
@@ -195,10 +202,13 @@ export class SharingService {
     for (const share of directShares) sharedAtByDocument.set(share.documentUuid, share.createdAt);
     for (const share of folderShares) {
       const subtree = await this.folders.listSubtree(share.ownerUuid, share.folderUuid);
-      const links = await this.folders.listDocumentLinksForFolders(subtree.map((folder) => folder.uuid));
+      const links = await this.folders.listDocumentLinksForFolders(
+        subtree.map((folder) => folder.uuid),
+      );
       for (const link of links) {
         const existing = sharedAtByDocument.get(link.documentUuid);
-        if (!existing || share.createdAt < existing) sharedAtByDocument.set(link.documentUuid, share.createdAt);
+        if (!existing || share.createdAt < existing)
+          sharedAtByDocument.set(link.documentUuid, share.createdAt);
       }
     }
     return sharedAtByDocument;
@@ -239,18 +249,22 @@ export class SharingService {
       Promise.all(shares.map((share) => this.folders.findOwned(share.ownerUuid, share.folderUuid))),
       this.users.findByUuids(shares.map((share) => share.ownerUuid)),
     ]);
-    const ownerNames = new Map(owners.filter((owner) => owner.isActive).map((owner) => [owner.uuid, owner.username]));
+    const ownerNames = new Map(
+      owners.filter((owner) => owner.isActive).map((owner) => [owner.uuid, owner.username]),
+    );
     return shares.flatMap((share, index) => {
       const folder = folders[index];
       const ownerUsername = ownerNames.get(share.ownerUuid);
       return folder && ownerUsername
-        ? [{
-            uuid: folder.uuid,
-            ownerUuid: folder.ownerUuid,
-            name: folder.name,
-            ownerUsername,
-            sharedAt: share.createdAt.toISOString(),
-          }]
+        ? [
+            {
+              uuid: folder.uuid,
+              ownerUuid: folder.ownerUuid,
+              name: folder.name,
+              ownerUsername,
+              sharedAt: share.createdAt.toISOString(),
+            },
+          ]
         : [];
     });
   }
@@ -274,7 +288,9 @@ export class SharingService {
     }
     if (!sharedOwnerUuid) throw new NotFoundException('Shared folder not found');
     const requestedSubtree = await this.folders.listSubtree(sharedOwnerUuid, folderUuid);
-    const links = await this.folders.listDocumentLinksForFolders(requestedSubtree.map((folder) => folder.uuid));
+    const links = await this.folders.listDocumentLinksForFolders(
+      requestedSubtree.map((folder) => folder.uuid),
+    );
     return [...new Set(links.map((link) => link.documentUuid))];
   }
 
@@ -297,10 +313,12 @@ export class SharingService {
     // A document may be shared directly and through several shared folders;
     // return each readable UUID only once for downstream query filtering.
     const links = await this.folders.listDocumentLinksForFolders([...folderUuids]);
-    return [...new Set([
-      ...directShares.map((share) => share.documentUuid),
-      ...links.map((link) => link.documentUuid),
-    ])];
+    return [
+      ...new Set([
+        ...directShares.map((share) => share.documentUuid),
+        ...links.map((link) => link.documentUuid),
+      ]),
+    ];
   }
 
   /**
@@ -331,7 +349,8 @@ export class SharingService {
   }
 
   private async requireRecipient(ownerUuid: string, recipientUuid: string): Promise<void> {
-    if (recipientUuid === ownerUuid) throw new BadRequestException('You cannot share with yourself');
+    if (recipientUuid === ownerUuid)
+      throw new BadRequestException('You cannot share with yourself');
     const recipient = await this.users.findById(recipientUuid);
     if (!recipient || !recipient.isActive) throw new NotFoundException('Active user not found');
   }

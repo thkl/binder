@@ -29,108 +29,111 @@
             {{ 'documents.download' | t }}
           </a>
           @if (!readOnly()) {
-          <button
-            type="button"
-            class="drawer-download-link share-drawer-button"
-            [attr.aria-expanded]="sharePanelOpen()"
-            (click)="sharePanelOpen.update((open) => !open)"
-          >
-            {{ 'sharing.title' | t }}
-            @if (shareRecipientCount() > 0) {
-              <span
-                class="share-button-count"
-                [attr.aria-label]="'sharing.sharedWithCount' | t: { count: shareRecipientCount() }"
-                [title]="'sharing.sharedWithCount' | t: { count: shareRecipientCount() }"
-              >{{ shareRecipientCount() }}</span>
+            <button
+              type="button"
+              class="drawer-download-link share-drawer-button"
+              [attr.aria-expanded]="sharePanelOpen()"
+              (click)="sharePanelOpen.update((open) => !open)"
+            >
+              {{ 'sharing.title' | t }}
+              @if (shareRecipientCount() > 0) {
+                <span
+                  class="share-button-count"
+                  [attr.aria-label]="
+                    'sharing.sharedWithCount' | t: { count: shareRecipientCount() }
+                  "
+                  [title]="'sharing.sharedWithCount' | t: { count: shareRecipientCount() }"
+                  >{{ shareRecipientCount() }}</span
+                >
+              }
+            </button>
+            @if (archiveReady() && archiveUrl(); as archiveUrl) {
+              <a
+                class="drawer-download-link"
+                [href]="archiveUrl"
+                [attr.download]="(documentData().title || documentData().originalFilename) + '.pdf'"
+              >
+                {{ 'documents.downloadArchive' | t }}
+              </a>
+            } @else {
+              <button
+                type="button"
+                class="drawer-download-link"
+                (click)="archiveRequested.emit()"
+                [disabled]="archiveBusy()"
+              >
+                {{
+                  archiveBusy() ? ('documents.archiveQueued' | t) : ('documents.createArchive' | t)
+                }}
+              </button>
             }
-          </button>
-          @if (archiveReady() && archiveUrl(); as archiveUrl) {
-            <a
-              class="drawer-download-link"
-              [href]="archiveUrl"
-              [attr.download]="(documentData().title || documentData().originalFilename) + '.pdf'"
-            >
-              {{ 'documents.downloadArchive' | t }}
-            </a>
-          } @else {
+            @if (documentData().calendarEventUrl; as calendarEventUrl) {
+              <a
+                class="drawer-download-link"
+                [href]="calendarEventUrl"
+                [attr.download]="(documentData().title || documentData().originalFilename) + '.ics'"
+              >
+                {{ 'documents.calendarEvent' | t }}
+              </a>
+            } @else {
+              <button
+                type="button"
+                class="drawer-download-link"
+                (click)="addCalendarEvent()"
+                [disabled]="calendarSyncing()"
+              >
+                {{
+                  calendarSyncing()
+                    ? ('documents.calendarEventCreating' | t)
+                    : ('documents.addCalendarEvent' | t)
+                }}
+              </button>
+            }
+            @if (calendarError(); as calendarError) {
+              <span class="calendar-error" role="status">{{ calendarError }}</span>
+            }
             <button
               type="button"
               class="drawer-download-link"
-              (click)="archiveRequested.emit()"
-              [disabled]="archiveBusy()"
+              (click)="suggestionRequested.emit()"
+              [disabled]="suggestionLoading() || !contentAvailable()"
             >
-              {{
-                archiveBusy() ? ('documents.archiveQueued' | t) : ('documents.createArchive' | t)
-              }}
+              {{ suggestionLoading() ? ('documents.analyzing' | t) : ('documents.suggest' | t) }}
             </button>
-          }
-          @if (documentData().calendarEventUrl; as calendarEventUrl) {
-            <a
-              class="drawer-download-link"
-              [href]="calendarEventUrl"
-              [attr.download]="(documentData().title || documentData().originalFilename) + '.ics'"
-            >
-              {{ 'documents.calendarEvent' | t }}
-            </a>
-          } @else {
-            <button
-              type="button"
-              class="drawer-download-link"
-              (click)="addCalendarEvent()"
-              [disabled]="calendarSyncing()"
-            >
-              {{
-                calendarSyncing()
-                  ? ('documents.calendarEventCreating' | t)
-                  : ('documents.addCalendarEvent' | t)
-              }}
+            @if (documentData().pageCount > 0) {
+              <button
+                type="button"
+                class="drawer-download-link"
+                (click)="rotateRequested.emit()"
+                [disabled]="!contentAvailable()"
+              >
+                {{ 'documents.rotatePage' | t }}
+              </button>
+            }
+            @if (documentData().pageCount > 1) {
+              <button
+                type="button"
+                class="drawer-download-link"
+                (click)="splitRequested.emit()"
+                [disabled]="!contentAvailable()"
+              >
+                {{ 'documents.split' | t }}
+              </button>
+            }
+            @if (canRequeue()) {
+              <button
+                type="button"
+                class="drawer-download-link"
+                (click)="requeueRequested.emit()"
+                [disabled]="requeueLoading()"
+              >
+                {{ requeueLoading() ? ('documents.requeueing' | t) : ('documents.requeue' | t) }}
+              </button>
+            }
+            <span style="flex: 1"></span>
+            <button type="button" class="drawer-delete-link" (click)="deleteRequested.emit()">
+              {{ 'documents.delete' | t }}
             </button>
-          }
-          @if (calendarError(); as calendarError) {
-            <span class="calendar-error" role="status">{{ calendarError }}</span>
-          }
-          <button
-            type="button"
-            class="drawer-download-link"
-            (click)="suggestionRequested.emit()"
-            [disabled]="suggestionLoading() || !contentAvailable()"
-          >
-            {{ suggestionLoading() ? ('documents.analyzing' | t) : ('documents.suggest' | t) }}
-          </button>
-          @if (documentData().pageCount > 0) {
-            <button
-              type="button"
-              class="drawer-download-link"
-              (click)="rotateRequested.emit()"
-              [disabled]="!contentAvailable()"
-            >
-              {{ 'documents.rotatePage' | t }}
-            </button>
-          }
-          @if (documentData().pageCount > 1) {
-            <button
-              type="button"
-              class="drawer-download-link"
-              (click)="splitRequested.emit()"
-              [disabled]="!contentAvailable()"
-            >
-              {{ 'documents.split' | t }}
-            </button>
-          }
-          @if (canRequeue()) {
-            <button
-              type="button"
-              class="drawer-download-link"
-              (click)="requeueRequested.emit()"
-              [disabled]="requeueLoading()"
-            >
-              {{ requeueLoading() ? ('documents.requeueing' | t) : ('documents.requeue' | t) }}
-            </button>
-          }
-          <span style="flex: 1"></span>
-          <button type="button" class="drawer-delete-link" (click)="deleteRequested.emit()">
-            {{ 'documents.delete' | t }}
-          </button>
           }
         </div>
         @if (sharePanelOpen() && !readOnly()) {
@@ -164,26 +167,26 @@
         {{ 'viewer.document' | t }}
       </button>
       @if (!readOnly()) {
-      <button
-        type="button"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'metadata'"
-        [class.active]="activeTab() === 'metadata'"
-        aria-controls="document-drawer-metadata"
-        (click)="selectTab('metadata')"
-      >
-        {{ 'documents.metadata' | t }}
-      </button>
-      <button
-        type="button"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'history'"
-        [class.active]="activeTab() === 'history'"
-        aria-controls="document-drawer-history"
-        (click)="selectTab('history')"
-      >
-        {{ 'documents.history' | t }}
-      </button>
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="activeTab() === 'metadata'"
+          [class.active]="activeTab() === 'metadata'"
+          aria-controls="document-drawer-metadata"
+          (click)="selectTab('metadata')"
+        >
+          {{ 'documents.metadata' | t }}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="activeTab() === 'history'"
+          [class.active]="activeTab() === 'history'"
+          aria-controls="document-drawer-history"
+          (click)="selectTab('history')"
+        >
+          {{ 'documents.history' | t }}
+        </button>
       }
     </nav>
 

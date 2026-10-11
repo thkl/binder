@@ -1,4 +1,12 @@
-import { Column, CreatedAt, DataType, Default, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import {
+  Column,
+  CreatedAt,
+  DataType,
+  Default,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
 
 export interface FolderShareAttributes {
   uuid: string;

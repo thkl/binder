@@ -36,14 +36,14 @@
   font: inherit;
   font-size: 1.2rem;
   cursor: pointer;
-  padding:0.1rem;
+  padding: 0.1rem;
 }
 
 .share-close:hover,
 .share-close:focus-visible {
   border-color: var(--color-accent);
   color: var(--color-accent);
-  padding:0.1rem;
+  padding: 0.1rem;
 }
 
 .share-access p {
