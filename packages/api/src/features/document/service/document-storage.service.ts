@@ -92,6 +92,46 @@ export class DocumentStorageService {
     }
   }
 
+  async rotatePdfPage(
+    storageKey: string,
+    pageNumber: number,
+    rotationDegrees: -90 | 90,
+  ): Promise<Buffer> {
+    const sourceBuffer = await fs.readFile(await this.resolveStoragePath(storageKey));
+    const mupdf = await import('mupdf');
+    const source = new mupdf.PDFDocument(sourceBuffer);
+    const pageCount = source.countPages();
+    if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > pageCount) {
+      source.destroy();
+      throw new BadRequestException(`The page number must be between 1 and ${pageCount}`);
+    }
+
+    const page = source.loadPage(pageNumber - 1);
+    try {
+      // /Rotate is an inheritable PDF page attribute expressed clockwise.
+      // Read the effective value, then write a normalized override on this page.
+      const pageObject = page.getObject();
+      try {
+        const inheritedRotation = pageObject.getInheritable('Rotate');
+        try {
+          const currentRotation = inheritedRotation.isNumber() ? inheritedRotation.asNumber() : 0;
+          const nextRotation = ((currentRotation + rotationDegrees) % 360 + 360) % 360;
+          pageObject.put('Rotate', nextRotation);
+        } finally {
+          inheritedRotation.destroy();
+        }
+      } finally {
+        pageObject.destroy();
+      }
+
+      const saved = source.saveToBuffer({ garbage: 4 });
+      return Buffer.from(saved.asUint8Array());
+    } finally {
+      page.destroy();
+      source.destroy();
+    }
+  }
+
   async composePdf(
     targetStorageKey: string,
     sourceStorageKey: string,

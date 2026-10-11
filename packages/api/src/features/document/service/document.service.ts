@@ -27,6 +27,8 @@ import {
   DocumentDeleteResponseSchema,
   ComposeDocumentInput,
   ComposeDocumentResponseSchema,
+  RotateDocumentInput,
+  RotateDocumentResponseSchema,
   SplitDocumentInput,
   SplitDocumentResponseSchema,
 } from '@binder/common';
@@ -1317,6 +1319,109 @@ export class DocumentService {
         documentUuid: original.uuid,
         splitAfterPage: input.splitAfterPage,
         documentsCreated,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Rotates one page and stores the result as the next version of the document.
+   *
+   * @param {string} ownerUuid - UUID of the authenticated document owner.
+   * @param {string} uuid - UUID of the document to rotate.
+   * @param {RotateDocumentInput} input - Page number and clockwise rotation step.
+   * @returns The rotated PDF as a new, queued document version.
+   */
+  async rotatePage(ownerUuid: string, uuid: string, input: RotateDocumentInput) {
+    const original = await this.documents.findOwnedByUuid(ownerUuid, uuid);
+    if (!original) throw new NotFoundException('Document not found');
+    this.assertDocumentContentAvailable(original);
+
+    const rotatedBuffer = await this.storage.rotatePdfPage(
+      original.storageKey,
+      input.pageNumber,
+      input.rotationDegrees,
+    );
+    const rotatedUuid = randomUUID();
+    const stored = await this.storage.storePdf(rotatedBuffer, rotatedUuid, original.originalFilename);
+    const malwareScanRequired = await this.isMalwareScanRequired();
+    const family = await this.documents.findOwnedVersionFamily(ownerUuid, original.versionFamilyUuid);
+    const nextVersion = Math.max(...family.map((version) => version.versionNumber), 0) + 1;
+    let documentCreated = false;
+
+    try {
+      const rotated = await this.documents.create({
+        uuid: rotatedUuid,
+        ownerUuid,
+        versionFamilyUuid: original.versionFamilyUuid,
+        versionNumber: nextVersion,
+        versionParentUuid: null,
+        title: original.title,
+        originalFilename: original.originalFilename,
+        mimeType: 'application/pdf',
+        sizeBytes: stored.sizeBytes,
+        checksumSha256: stored.checksumSha256,
+        storageKey: stored.storageKey,
+        thumbnailKey: null,
+        pageCount: original.pageCount,
+        issuerUuid: original.issuerUuid,
+        isNew: true,
+        status: malwareScanRequired ? 'scanning' : 'processing',
+      });
+      documentCreated = true;
+
+      const sourceMetadata = await this.metadata.getDocumentMetadata(ownerUuid, original.uuid);
+      await this.metadata.setDocumentMetadata(ownerUuid, rotated.uuid, {
+        issuerUuid: sourceMetadata.issuer?.uuid ?? null,
+        documentTypeUuid: sourceMetadata.documentType?.uuid ?? null,
+        categoryUuid: sourceMetadata.category?.uuid ?? null,
+        tagUuids: sourceMetadata.tags.map((tag) => tag.uuid),
+        custom: sourceMetadata.custom,
+      });
+      const sourceFolders = await this.folders.listForDocument(ownerUuid, original.uuid);
+      await Promise.all(
+        sourceFolders.map((folder) => this.folders.createLinks(folder.uuid, [rotated.uuid])),
+      );
+
+      await this.documents.update(original.uuid, { versionParentUuid: rotated.uuid });
+      await this.addManualUploadToInbox(
+        rotated.uuid,
+        ownerUuid,
+        { buffer: rotatedBuffer, mimetype: 'application/pdf', originalname: original.originalFilename },
+        stored.checksumSha256,
+        stored.sizeBytes,
+        false,
+        false,
+      );
+      await this.pipeline.enqueue(
+        rotated.uuid,
+        ownerUuid,
+        malwareScanRequired ? 'malware-scan' : 'text-extraction',
+      );
+      await this.recordAudit({
+        documentUuid: rotated.uuid,
+        ownerUuid,
+        actorUuid: ownerUuid,
+        actorType: 'user',
+        eventType: 'document-rotated',
+        summary: 'PDF page rotated; result became a new document version',
+        details: {
+          sourceDocumentUuid: original.uuid,
+          pageNumber: input.pageNumber,
+          rotationDegrees: input.rotationDegrees,
+        },
+      });
+
+      return RotateDocumentResponseSchema.parse({ document: this.toDocumentResponse(rotated) });
+    } catch (error) {
+      if (!documentCreated) await this.storage.remove(stored.storageKey).catch(() => undefined);
+      this.logger.error('Document page rotation failed', {
+        documentUuid: original.uuid,
+        rotatedDocumentUuid: rotatedUuid,
+        pageNumber: input.pageNumber,
+        rotationDegrees: input.rotationDegrees,
+        documentCreated,
         error: error instanceof Error ? error.message : String(error),
       });
       throw error;

@@ -76,6 +76,10 @@ struct BinderSplitDocumentResult: Decodable {
     let extractedDocument: BinderDocumentSummary
 }
 
+struct BinderComposedDocumentResult: Decodable {
+    let document: BinderDocumentSummary
+}
+
 struct BinderAISuggestedIssuer: Decodable {
     let name: String
     let address: String?
@@ -350,6 +354,29 @@ private struct DocumentSplitEnvelope: Decodable {
 private struct DocumentSplitPayload: Encodable {
     let splitAfterPage: Int
     let autoApplySuggestions: Bool
+}
+
+private struct DocumentComposeEnvelope: Decodable {
+    let data: BinderComposedDocumentResult
+}
+
+private struct DocumentComposePayload: Encodable {
+    let sourceDocumentUuid: String
+    let insertAfterPage: Int
+    let copyMetadata: Bool
+    let autoApplySuggestions: Bool
+}
+
+private struct DocumentRotateEnvelope: Decodable {
+    let data: RotatedDocument
+    struct RotatedDocument: Decodable {
+        let document: BinderDocumentSummary
+    }
+}
+
+private struct DocumentRotatePayload: Encodable {
+    let pageNumber: Int
+    let rotationDegrees: Int
 }
 
 private struct DocumentRequeueEnvelope: Decodable {
@@ -764,6 +791,33 @@ final class BinderAPI {
         return try JSONDecoder().decode(DocumentListEnvelope.self, from: data).data
     }
 
+    func ownedDocuments(
+        serverURL: String,
+        query: String,
+        page: Int = 1,
+        pageSize: Int = 50
+    ) async throws -> BinderFolderDocumentPage {
+        var request = try makeRequest(path: "documents", serverURL: serverURL, method: "GET")
+        guard let url = request.url,
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw BinderAPIError.invalidServerURL
+        }
+        components.queryItems = [
+            URLQueryItem(name: "page", value: String(page)),
+            URLQueryItem(name: "pageSize", value: String(pageSize)),
+            URLQueryItem(name: "sort", value: "title"),
+            URLQueryItem(name: "direction", value: "asc"),
+            URLQueryItem(name: "q", value: query.isEmpty ? nil : query),
+        ]
+        guard let documentsURL = components.url else { throw BinderAPIError.invalidServerURL }
+        request.url = documentsURL
+
+        let (data, response) = try await urlSession.data(for: request)
+        try absorbSessionCookie(from: response, for: request)
+        try validate(response, data: data)
+        return try JSONDecoder().decode(DocumentListEnvelope.self, from: data).data
+    }
+
     func metadataEditorOptions(serverURL: String) async throws -> BinderMetadataEditorOptions {
         let (vocabularyData, _) = try await request(path: "metadata/vocabulary", serverURL: serverURL)
         let (issuerData, _) = try await request(path: "issuers", serverURL: serverURL)
@@ -929,6 +983,49 @@ final class BinderAPI {
             )
         )
         return try JSONDecoder().decode(DocumentSplitEnvelope.self, from: data).data
+    }
+
+    func composeDocuments(
+        serverURL: String,
+        targetDocumentUUID: String,
+        sourceDocumentUUID: String,
+        insertAfterPage: Int,
+        copyMetadata: Bool,
+        autoApplySuggestions: Bool
+    ) async throws -> BinderDocumentSummary {
+        let data = try await mutate(
+            path: "documents/\(targetDocumentUUID)/compose",
+            serverURL: serverURL,
+            method: "POST",
+            payload: DocumentComposePayload(
+                sourceDocumentUuid: sourceDocumentUUID,
+                insertAfterPage: insertAfterPage,
+                copyMetadata: copyMetadata,
+                autoApplySuggestions: autoApplySuggestions
+            )
+        )
+        return try JSONDecoder().decode(DocumentComposeEnvelope.self, from: data).data.document
+    }
+
+    func rotateDocumentPage(
+        serverURL: String,
+        documentUUID: String,
+        pageNumber: Int,
+        rotationDegrees: Int
+    ) async throws -> BinderDocumentSummary {
+        guard pageNumber > 0, [-90, 90].contains(rotationDegrees) else {
+            throw BinderAPIError.invalidResponse
+        }
+        let data = try await mutate(
+            path: "documents/\(documentUUID)/rotate",
+            serverURL: serverURL,
+            method: "POST",
+            payload: DocumentRotatePayload(
+                pageNumber: pageNumber,
+                rotationDegrees: rotationDegrees
+            )
+        )
+        return try JSONDecoder().decode(DocumentRotateEnvelope.self, from: data).data.document
     }
 
     func requeueDocument(serverURL: String, documentUUID: String) async throws -> BinderDocumentSummary {

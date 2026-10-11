@@ -1,0 +1,52 @@
+<div class="rotate-backdrop" role="presentation" (click)="closed.emit()">
+  <section
+    class="rotate-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="rotate-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header>
+      <p class="rotate-kicker">{{ 'documents.rotateKicker' | t }}</p>
+      <h2 id="rotate-dialog-title">{{ 'documents.rotateTitle' | t }}</h2>
+      <p class="rotate-copy">
+        {{ 'documents.rotateMessage' | t }} <strong>{{ documentTitle() }}</strong>
+      </p>
+    </header>
+
+    <div class="rotate-body">
+      <label class="rotate-field">
+        <span>{{ 'documents.rotatePage' | t }}</span>
+        <input
+          type="number"
+          min="1"
+          [max]="pageCount()"
+          [value]="pageNumber()"
+          (input)="setPage($event)"
+          [attr.aria-describedby]="error() ? 'rotate-dialog-error' : 'rotate-dialog-hint'"
+        />
+      </label>
+      <p id="rotate-dialog-hint" class="rotate-hint">
+        {{ 'documents.rotateVersionHint' | t }}
+      </p>
+      @if (errorMessage(); as message) {
+        <p class="rotate-error" role="alert">{{ message }}</p>
+      }
+      @if (error(); as errorKey) {
+        <p id="rotate-dialog-error" class="rotate-error" role="alert">{{ errorKey | t }}</p>
+      }
+    </div>
+
+    <footer>
+      <button type="button" class="rotate-cancel" (click)="closed.emit()" [disabled]="busy()">
+        {{ 'common.cancel' | t }}
+      </button>
+      <button type="button" class="rotate-primary" (click)="rotate(-90)" [disabled]="busy()">
+        {{ busy() ? ('documents.rotating' | t) : ('documents.rotateCounterClockwise' | t) }}
+      </button>
+      <button type="button" class="rotate-primary" (click)="rotate(90)" [disabled]="busy()">
+        {{ busy() ? ('documents.rotating' | t) : ('documents.rotateClockwise' | t) }}
+      </button>
+    </footer>
+  </section>
+</div>

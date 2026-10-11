@@ -211,6 +211,15 @@ export const SplitDocumentInputSchema = z.object({
 });
 export type SplitDocumentInput = z.infer<typeof SplitDocumentInputSchema>;
 
+export const RotateDocumentInputSchema = z.object({
+  pageNumber: z.number().int().min(1),
+  rotationDegrees: z.union([z.literal(-90), z.literal(90)]),
+});
+export type RotateDocumentInput = z.infer<typeof RotateDocumentInputSchema>;
+
+export const RotateDocumentResponseSchema = z.object({ document: DocumentSchema });
+export type RotateDocumentResponse = z.infer<typeof RotateDocumentResponseSchema>;
+
 export const ComposeDocumentInputSchema = z.object({
   sourceDocumentUuid: z.uuid(),
   insertAfterPage: z.number().int().min(0),
@@ -413,6 +422,7 @@ export const DocumentAuditEventTypeSchema = z.enum([
   'version-assigned',
   'document-split',
   'document-composed',
+  'document-rotated',
 ]);
 export type DocumentAuditEventType = z.infer<typeof DocumentAuditEventTypeSchema>;
 

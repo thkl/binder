@@ -48,6 +48,10 @@ import {
   DocumentComposeDialogComponent,
   DocumentComposeRequest,
 } from '../document-compose-dialog/document-compose-dialog.component';
+import {
+  DocumentRotateDialogComponent,
+  DocumentRotateRequest,
+} from '../document-rotate-dialog/document-rotate-dialog.component';
 import { InboxService } from '../../../inbox/services/inbox.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -83,6 +87,7 @@ type DocumentFilterValues = {
     ConfirmDialogComponent,
     DocumentSplitDialogComponent,
     DocumentComposeDialogComponent,
+    DocumentRotateDialogComponent,
     TranslatePipe,
   ],
   templateUrl: './documents.component.html',
@@ -216,6 +221,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly versionAssignmentLoading = signal(false);
   readonly splitDocumentUuid = signal<string | null>(null);
   readonly splitLoading = signal(false);
+  readonly rotateDocumentUuid = signal<string | null>(null);
+  readonly rotateLoading = signal(false);
   readonly composeDocuments = signal<{ targetUuid: string; sourceUuid: string } | null>(null);
   readonly composeLoading = signal(false);
   readonly bulkDocumentTypes = computed(() => this.metadata.vocabulary()?.documentTypes ?? []);
@@ -569,6 +576,42 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       }
     } finally {
       this.splitLoading.set(false);
+    }
+  }
+
+  requestRotateDocument(uuid: string): void {
+    const document = this.drawerDocument()?.uuid === uuid
+      ? this.drawerDocument()
+      : this.documents.page()?.items.find((item) => item.uuid === uuid);
+    if (!document || document.pageCount < 1) return;
+    this.documents.error.set(null);
+    this.rotateDocumentUuid.set(uuid);
+  }
+
+  cancelRotateDocument(): void {
+    if (!this.rotateLoading()) this.rotateDocumentUuid.set(null);
+  }
+
+  async rotateDocument(request: DocumentRotateRequest): Promise<void> {
+    const uuid = this.rotateDocumentUuid();
+    if (!uuid || this.rotateLoading()) return;
+    const wasOpenInDrawer = this.drawerDocumentUuid() === uuid;
+    this.rotateLoading.set(true);
+    try {
+      const result = await this.documents.rotatePage(
+        uuid,
+        request.pageNumber,
+        request.rotationDegrees,
+      );
+      if (result) {
+        this.rotateDocumentUuid.set(null);
+        if (wasOpenInDrawer) {
+          this.drawerDocumentUuid.set(result.uuid);
+          this.drawerDocumentSnapshot.set(result);
+        }
+      }
+    } finally {
+      this.rotateLoading.set(false);
     }
   }
 

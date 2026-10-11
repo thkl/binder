@@ -30,6 +30,16 @@ struct DocumentPDFView: View {
         return !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
     }
 
+    private var canComposeDocument: Bool {
+        (document.pageCount ?? 0) > 0 &&
+            !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
+    }
+
+    private var canRotateDocument: Bool {
+        (document.pageCount ?? 0) > 0 &&
+            !["uploaded", "scanning", "quarantined"].contains(document.status ?? "")
+    }
+
     private var canRequeueDocument: Bool {
         !hasRequeued && ["failed", "ready", "quarantined"].contains(document.status ?? "")
     }
@@ -53,51 +63,67 @@ struct DocumentPDFView: View {
         .navigationTitle(displayTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                if canRequeueDocument || canSplitDocument {
-                    Menu {
-                        if canRequeueDocument {
-                            Button {
-                                Task { await requeueDocument() }
-                            } label: {
-                                Label(isRequeuing ? "Requeueing…" : "Requeue", systemImage: "arrow.clockwise")
-                            }
-                            .disabled(isRequeuing)
-                        }
-                        if canSplitDocument {
-                            Button {
-                                activeSheet = .split(document)
-                            } label: {
-                                Label("Split PDF", systemImage: "scissors")
-                            }
-                        }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        if let pdfFileURL { activeSheet = .share(pdfFileURL) }
                     } label: {
-                        Label("Document actions", systemImage: "ellipsis.circle")
+                        Label("Share PDF", systemImage: "square.and.arrow.up")
                     }
-                    .accessibilityIdentifier("document-actions")
-                }
+                    .disabled(pdfFileURL == nil)
+                    .accessibilityIdentifier("share-document-pdf")
 
-                Button {
-                    activeSheet = .metadata(document)
-                } label: {
-                    Label("Metadata", systemImage: "info.circle")
-                }
-                .accessibilityIdentifier("show-document-metadata")
+                    Button {
+                        activeSheet = .metadata(document)
+                    } label: {
+                        Label("Metadata", systemImage: "info.circle")
+                    }
+                    .accessibilityIdentifier("show-document-metadata")
 
-                Button {
-                    activeSheet = .sharing(document.uuid)
-                } label: {
-                    Label("Share access", systemImage: "person.2")
-                }
-                .accessibilityIdentifier("manage-document-sharing")
+                    Button {
+                        activeSheet = .sharing(document.uuid)
+                    } label: {
+                        Label("Share access", systemImage: "person.2")
+                    }
+                    .accessibilityIdentifier("manage-document-sharing")
 
-                Button {
-                    if let pdfFileURL { activeSheet = .share(pdfFileURL) }
+                    if canRequeueDocument || canSplitDocument || canComposeDocument || canRotateDocument {
+                        Divider()
+                    }
+
+                    if canRequeueDocument {
+                        Button {
+                            Task { await requeueDocument() }
+                        } label: {
+                            Label(isRequeuing ? "Requeueing…" : "Requeue", systemImage: "arrow.clockwise")
+                        }
+                        .disabled(isRequeuing)
+                    }
+                    if canRotateDocument {
+                        Button {
+                            activeSheet = .rotate(document)
+                        } label: {
+                            Label("Rotate a page", systemImage: "rotate.right")
+                        }
+                    }
+                    if canSplitDocument {
+                        Button {
+                            activeSheet = .split(document)
+                        } label: {
+                            Label("Split PDF", systemImage: "scissors")
+                        }
+                    }
+                    if canComposeDocument {
+                        Button {
+                            activeSheet = .compose(document)
+                        } label: {
+                            Label("Combine with another PDF", systemImage: "doc.on.doc")
+                        }
+                    }
                 } label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                    Label("Document actions", systemImage: "ellipsis.circle")
                 }
-                .disabled(pdfFileURL == nil)
-                .accessibilityIdentifier("share-document-pdf")
+                .accessibilityIdentifier("document-actions")
             }
         }
         .sheet(item: $activeSheet) { sheet in
@@ -114,6 +140,10 @@ struct DocumentPDFView: View {
                 )
             case .split(let document):
                 DocumentSplitView(document: document, serverURL: serverURL)
+            case .compose(let document):
+                DocumentComposeView(targetDocument: document, serverURL: serverURL)
+            case .rotate(let document):
+                DocumentRotateView(document: document, serverURL: serverURL)
             }
         }
         .alert(item: $actionAlert) { alert in
@@ -205,6 +235,8 @@ private enum DocumentPDFSheet: Identifiable {
     case metadata(BinderDocumentSummary)
     case sharing(String)
     case split(BinderDocumentSummary)
+    case compose(BinderDocumentSummary)
+    case rotate(BinderDocumentSummary)
 
     var id: String {
         switch self {
@@ -212,6 +244,8 @@ private enum DocumentPDFSheet: Identifiable {
         case .metadata(let document): "metadata-\(document.uuid)"
         case .sharing(let uuid): "sharing-\(uuid)"
         case .split(let document): "split-\(document.uuid)"
+        case .compose(let document): "compose-\(document.uuid)"
+        case .rotate(let document): "rotate-\(document.uuid)"
         }
     }
 }

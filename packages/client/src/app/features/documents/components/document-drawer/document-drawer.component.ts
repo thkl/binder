@@ -64,6 +64,7 @@ export class DocumentDrawerComponent {
   readonly archiveRequested = output<void>();
   readonly deleteRequested = output<void>();
   readonly splitRequested = output<void>();
+  readonly rotateRequested = output<void>();
   readonly suggestionRequested = output<void>();
   readonly requeueRequested = output<void>();
   readonly versionSelected = output<string>();

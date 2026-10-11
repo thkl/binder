@@ -30,6 +30,8 @@ import {
   ComposeDocumentResponseSchema,
   SplitDocumentInputSchema,
   SplitDocumentResponseSchema,
+  RotateDocumentInputSchema,
+  RotateDocumentResponseSchema,
   SetDocumentTitleInputSchema,
   DocumentTitleSuggestion,
   DocumentTitleSuggestionSchema,
@@ -233,6 +235,38 @@ export class DocumentsService {
         ),
       );
       const result = ComposeDocumentResponseSchema.parse(response.data);
+      await this.load();
+      return result.document;
+    } catch (error) {
+      this.error.set(this.getErrorMessage(error));
+      return null;
+    }
+  }
+
+  /**
+   * Rotates one page and refreshes the current document list.
+   *
+   * @param {string} documentUuid - UUID of the source document.
+   * @param {number} pageNumber - One-based page number to rotate.
+   * @param {-90 | 90} rotationDegrees - Clockwise or counter-clockwise quarter turn.
+   * @returns {Promise<BinderDocument | null>} - The new version or null on failure.
+   */
+  async rotatePage(
+    documentUuid: string,
+    pageNumber: number,
+    rotationDegrees: -90 | 90,
+  ): Promise<BinderDocument | null> {
+    this.error.set(null);
+    try {
+      const input = RotateDocumentInputSchema.parse({ pageNumber, rotationDegrees });
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          this.appService.getApiUrl('v1', `documents/${documentUuid}/rotate`),
+          input,
+          { withCredentials: true },
+        ),
+      );
+      const result = RotateDocumentResponseSchema.parse(response.data);
       await this.load();
       return result.document;
     } catch (error) {

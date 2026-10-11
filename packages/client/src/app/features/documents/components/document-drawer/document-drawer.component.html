@@ -97,6 +97,16 @@
           >
             {{ suggestionLoading() ? ('documents.analyzing' | t) : ('documents.suggest' | t) }}
           </button>
+          @if (documentData().pageCount > 0) {
+            <button
+              type="button"
+              class="drawer-download-link"
+              (click)="rotateRequested.emit()"
+              [disabled]="!contentAvailable()"
+            >
+              {{ 'documents.rotatePage' | t }}
+            </button>
+          }
           @if (documentData().pageCount > 1) {
             <button
               type="button"

@@ -837,6 +837,7 @@
         (requeueRequested)="requeueDocument(drawerUuid)"
         (archiveRequested)="generateArchive(drawerUuid)"
         (splitRequested)="requestSplitDocument(drawerUuid)"
+        (rotateRequested)="requestRotateDocument(drawerUuid)"
         (deleteRequested)="requestDeleteDocument(drawerUuid)"
         (versionSelected)="selectDrawerVersion($event)"
       />
@@ -916,6 +917,21 @@
         (closed)="cancelSplitDocument()"
         (submitted)="splitDocument($event)"
       />
+    }
+  }
+
+  @if (rotateDocumentUuid(); as rotateUuid) {
+    @if (drawerDocument(); as selectedRotateDocument) {
+      @if (selectedRotateDocument.uuid === rotateUuid) {
+        <binder-document-rotate-dialog
+          [documentTitle]="selectedRotateDocument.title || selectedRotateDocument.originalFilename"
+          [pageCount]="selectedRotateDocument.pageCount"
+          [errorMessage]="documents.error()"
+          [busy]="rotateLoading()"
+          (closed)="cancelRotateDocument()"
+          (submitted)="rotateDocument($event)"
+        />
+      }
     }
   }
 </section>
