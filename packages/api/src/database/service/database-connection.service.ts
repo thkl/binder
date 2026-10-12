@@ -48,6 +48,7 @@ import { PushNotificationEvent } from '../../features/notifications/models/push-
 import { DocumentShare } from '../../features/sharing/models/document-share.entity';
 import { FolderShare } from '../../features/sharing/models/folder-share.entity';
 import { EmailImportApprovedServer } from '../../features/email-import/models/email-import-approved-server.entity';
+import { MetadataWebhookDelivery } from '../../features/workflow/models/metadata-webhook-delivery.entity';
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -112,6 +113,7 @@ export class DatabaseConnectionService {
       DocumentShare,
       FolderShare,
       EmailImportApprovedServer,
+      MetadataWebhookDelivery
     ]);
     await this.initialize();
   }
