@@ -227,10 +227,11 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     const composition = this.selectedComposition();
     return Boolean(
       composition &&
-        [composition.target, ...composition.sources].every((document) =>
+      [composition.target, ...composition.sources].every(
+        (document) =>
           this.documents.supportsMimeCapability(document.mimeType, 'compose') &&
           !['uploaded', 'scanning', 'quarantined'].includes(document.status),
-        ),
+      ),
     );
   });
   readonly compositionDialogDocuments = computed(() => {
@@ -526,7 +527,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   requestComposeDocuments(): void {
     const composition = this.selectedComposition();
-    if (!composition || !this.canComposeSelected() || this.composeLoading() || !this.canLeaveMetadata())
+    if (
+      !composition ||
+      !this.canComposeSelected() ||
+      this.composeLoading() ||
+      !this.canLeaveMetadata()
+    )
       return;
     this.composeDocuments.set({
       targetUuid: composition.target.uuid,
@@ -591,7 +597,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       document.pageCount === null ||
       document.pageCount < 2 ||
       !this.documents.supportsMimeCapability(document.mimeType, 'split')
-    ) return;
+    )
+      return;
     this.documents.error.set(null);
     this.splitDocumentUuid.set(uuid);
   }
@@ -634,7 +641,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       document.pageCount === null ||
       document.pageCount < 1 ||
       !this.documents.supportsMimeCapability(document.mimeType, 'page-rotation')
-    ) return;
+    )
+      return;
     this.documents.error.set(null);
     this.rotateDocumentUuid.set(uuid);
   }
@@ -1035,7 +1043,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   documentLabel(uuid: string): string {
-    const document = this.selectedDocumentRecords().get(uuid) ??
+    const document =
+      this.selectedDocumentRecords().get(uuid) ??
       this.documents.page()?.items.find((item) => item.uuid === uuid) ??
       (this.drawerDocument()?.uuid === uuid ? this.drawerDocument() : null);
     return document?.title || document?.originalFilename || uuid;

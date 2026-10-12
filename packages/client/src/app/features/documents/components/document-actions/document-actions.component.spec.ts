@@ -5,6 +5,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import type { Document } from '@binder/common';
 import { describe, expect, it, beforeEach } from 'vitest';
 import { TranslatePipe } from '../../../../common/i18n/i18n.service';
+import { DocumentsService } from '../../services/documents.service';
 import { DocumentActionsComponent } from './document-actions.component';
 
 @Pipe({ name: 't', standalone: true })
@@ -74,6 +75,15 @@ describe('DocumentActionsComponent', () => {
 
     fixture = TestBed.createComponent(DocumentActionsComponent);
     fixture.componentRef.setInput('document', createDocument());
+    TestBed.inject(DocumentsService).supportedFormats.set([
+      {
+        id: 'pdf',
+        displayName: 'PDF',
+        extensions: ['.pdf'],
+        mimeTypes: ['application/pdf'],
+        capabilities: ['upload', 'download', 'preview', 'pdfa'],
+      },
+    ]);
     fixture.detectChanges();
   });
 

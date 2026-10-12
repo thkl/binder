@@ -8,7 +8,12 @@
 import { z } from 'zod';
 
 /** Stable identifiers used to select document-format implementations. */
-export const DocumentFormatIdSchema = z.string().trim().min(1).max(64).regex(/^[a-z][a-z0-9-]*$/u);
+export const DocumentFormatIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[a-z][a-z0-9-]*$/u);
 export type DocumentFormatId = z.infer<typeof DocumentFormatIdSchema>;
 
 /** Operations that clients and processing services may offer for a format. */
@@ -263,17 +268,18 @@ export const ComposeDocumentSourceSchema = z.object({
 });
 export type ComposeDocumentSource = z.infer<typeof ComposeDocumentSourceSchema>;
 
-export const ComposeDocumentInputSchema = z.object({
-  // Keep the original fields accepted while older web clients are still deployed.
-  sourceDocumentUuid: z.uuid().optional(),
-  sources: z.array(ComposeDocumentSourceSchema).min(1).max(20).optional(),
-  insertAfterPage: z.number().int().min(0),
-  copyMetadata: z.boolean().default(true),
-  autoApplySuggestions: z.boolean().default(false),
-}).refine(
-  (input) => Boolean(input.sourceDocumentUuid) !== Boolean(input.sources?.length),
-  { message: 'Specify either sourceDocumentUuid or sources' },
-);
+export const ComposeDocumentInputSchema = z
+  .object({
+    // Keep the original fields accepted while older web clients are still deployed.
+    sourceDocumentUuid: z.uuid().optional(),
+    sources: z.array(ComposeDocumentSourceSchema).min(1).max(20).optional(),
+    insertAfterPage: z.number().int().min(0),
+    copyMetadata: z.boolean().default(true),
+    autoApplySuggestions: z.boolean().default(false),
+  })
+  .refine((input) => Boolean(input.sourceDocumentUuid) !== Boolean(input.sources?.length), {
+    message: 'Specify either sourceDocumentUuid or sources',
+  });
 export type ComposeDocumentInput = z.infer<typeof ComposeDocumentInputSchema>;
 
 export const ComposeDocumentResponseSchema = z.object({
@@ -626,7 +632,12 @@ export const MetadataWebhookReviewInputSchema = z.object({
 });
 export type MetadataWebhookReviewInput = z.infer<typeof MetadataWebhookReviewInputSchema>;
 
-export const MetadataWebhookDeliveryStatusSchema = z.enum(['pending', 'delivered', 'failed', 'cancelled']);
+export const MetadataWebhookDeliveryStatusSchema = z.enum([
+  'pending',
+  'delivered',
+  'failed',
+  'cancelled',
+]);
 export type MetadataWebhookDeliveryStatus = z.infer<typeof MetadataWebhookDeliveryStatusSchema>;
 
 export const MetadataWebhookDeliverySchema = z.object({

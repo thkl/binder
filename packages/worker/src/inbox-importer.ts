@@ -15,7 +15,10 @@ import {
 } from './models.js';
 import { logger } from './logger.js';
 import { resolveStoragePath } from './storage.js';
-import { detectAndValidateWorkerFormat, WORKER_DOCUMENT_FORMATS } from './document-format.registry.js';
+import {
+  detectAndValidateWorkerFormat,
+  WORKER_DOCUMENT_FORMATS,
+} from './document-format.registry.js';
 
 let lastScanAt = 0;
 
@@ -149,16 +152,14 @@ async function importFile(
     await moveTo(sourcePath, join(inboxPath, 'rejected'), filename);
     await inboxItem.update({
       status: 'rejected',
-      lastError:
-        !supportedExtension
-          ? 'Unsupported file type'
-          : 'File exceeds the configured upload limit',
+      lastError: !supportedExtension
+        ? 'Unsupported file type'
+        : 'File exceeds the configured upload limit',
     });
     logger.warn('Rejected inbox file', {
       filename,
       sizeBytes: initial.size,
-      reason:
-        !supportedExtension ? 'unsupported-file-type' : 'file-too-large',
+      reason: !supportedExtension ? 'unsupported-file-type' : 'file-too-large',
     });
     return 'rejected';
   }

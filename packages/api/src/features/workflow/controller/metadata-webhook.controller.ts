@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
   MetadataWebhookDeliveryListSchema,
@@ -26,14 +36,22 @@ export class MetadataWebhookController {
   /** Lists the caller's workflows, or all workflows when the caller is an admin. */
   @Get()
   async list(@CurrentUser() user: ScopedUser) {
-    return { data: MetadataWebhookWorkflowListSchema.parse(await this.workflows.listWorkflows(user.userId, user.isAdmin)) };
+    return {
+      data: MetadataWebhookWorkflowListSchema.parse(
+        await this.workflows.listWorkflows(user.userId, user.isAdmin),
+      ),
+    };
   }
 
   /** Creates a user-owned workflow that waits for admin approval. */
   @Post()
   async create(@CurrentUser() user: ScopedUser, @Body() body: unknown) {
     const input = MetadataWebhookWorkflowInputSchema.parse(body);
-    return { data: MetadataWebhookWorkflowSchema.parse(await this.workflows.createWorkflow(user.userId, input, user.isAdmin)) };
+    return {
+      data: MetadataWebhookWorkflowSchema.parse(
+        await this.workflows.createWorkflow(user.userId, input, user.isAdmin),
+      ),
+    };
   }
 
   /** Updates an owned workflow; user edits return it to the admin approval queue. */
@@ -44,7 +62,11 @@ export class MetadataWebhookController {
     @Body() body: unknown,
   ) {
     const input = MetadataWebhookWorkflowInputSchema.parse(body);
-    return { data: MetadataWebhookWorkflowSchema.parse(await this.workflows.updateWorkflow(uuid, user.userId, input, user.isAdmin)) };
+    return {
+      data: MetadataWebhookWorkflowSchema.parse(
+        await this.workflows.updateWorkflow(uuid, user.userId, input, user.isAdmin),
+      ),
+    };
   }
 
   /** Deletes one workflow owned by the current user. */
@@ -59,7 +81,11 @@ export class MetadataWebhookController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   async approve(@CurrentUser() user: ScopedUser, @Param('uuid', ParseUUIDPipe) uuid: string) {
-    return { data: MetadataWebhookWorkflowSchema.parse(await this.workflows.reviewWorkflow(uuid, user.userId, true)) };
+    return {
+      data: MetadataWebhookWorkflowSchema.parse(
+        await this.workflows.reviewWorkflow(uuid, user.userId, true),
+      ),
+    };
   }
 
   /** Allows only admins to reject a workflow and optionally leave a reason. */
@@ -72,20 +98,32 @@ export class MetadataWebhookController {
     @Body() body: unknown,
   ) {
     const input = MetadataWebhookReviewInputSchema.parse(body ?? {});
-    return { data: MetadataWebhookWorkflowSchema.parse(await this.workflows.reviewWorkflow(uuid, user.userId, false, input.note)) };
+    return {
+      data: MetadataWebhookWorkflowSchema.parse(
+        await this.workflows.reviewWorkflow(uuid, user.userId, false, input.note),
+      ),
+    };
   }
 
   /** Sends a sample only when the selected workflow has admin approval. */
   @Post(':uuid/test')
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
   async test(@CurrentUser() user: ScopedUser, @Param('uuid', ParseUUIDPipe) uuid: string) {
-    return { data: MetadataWebhookTestResponseSchema.parse(await this.workflows.testWorkflow(uuid, user.userId, user.isAdmin)) };
+    return {
+      data: MetadataWebhookTestResponseSchema.parse(
+        await this.workflows.testWorkflow(uuid, user.userId, user.isAdmin),
+      ),
+    };
   }
 
   /** Lists only the caller's delivery history unless an admin requests it. */
   @Get('deliveries')
   async listDeliveries(@CurrentUser() user: ScopedUser) {
-    return { data: MetadataWebhookDeliveryListSchema.parse(await this.workflows.listDeliveries(user.userId, user.isAdmin)) };
+    return {
+      data: MetadataWebhookDeliveryListSchema.parse(
+        await this.workflows.listDeliveries(user.userId, user.isAdmin),
+      ),
+    };
   }
 
   /** Retries a failed delivery for its owner or an administrator. */

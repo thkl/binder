@@ -20,9 +20,10 @@ export class ImageDocumentFormatAdapter {
   async validate(buffer: Buffer, mimeType?: string): Promise<void> {
     const detectedMimeType: 'image/jpeg' | 'image/png' =
       mimeType === 'image/png' || (!mimeType && buffer[0] !== 0xff) ? 'image/png' : 'image/jpeg';
-    const validSignature = detectedMimeType === 'image/jpeg'
-      ? buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff
-      : buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    const validSignature =
+      detectedMimeType === 'image/jpeg'
+        ? buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff
+        : buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
     if (!validSignature) throw new Error('The file does not match its detected image format');
 
     const mupdf = await import('mupdf');
@@ -40,11 +41,17 @@ export class ImageDocumentFormatAdapter {
         const width = Math.ceil((bounds[2] - bounds[0]) * (4 / 3));
         const height = Math.ceil((bounds[3] - bounds[1]) * (4 / 3));
         if (
-          !Number.isSafeInteger(width) || !Number.isSafeInteger(height) ||
-          width < 1 || height < 1 || width > 20_000 || height > 20_000 ||
+          !Number.isSafeInteger(width) ||
+          !Number.isSafeInteger(height) ||
+          width < 1 ||
+          height < 1 ||
+          width > 20_000 ||
+          height > 20_000 ||
           width * height > 100_000_000
         ) {
-          throw new Error('Image dimensions exceed the supported 20,000-pixel edge or 100-megapixel limit');
+          throw new Error(
+            'Image dimensions exceed the supported 20,000-pixel edge or 100-megapixel limit',
+          );
         }
       } finally {
         page.destroy();
@@ -64,9 +71,10 @@ export class ImageDocumentFormatAdapter {
     createdAt: Date,
     mimeType?: string,
   ): Promise<void> {
-    const detectedMimeType = mimeType === 'image/png' || (!mimeType && storageKey.endsWith('.png'))
-      ? 'image/png'
-      : 'image/jpeg';
+    const detectedMimeType =
+      mimeType === 'image/png' || (!mimeType && storageKey.endsWith('.png'))
+        ? 'image/png'
+        : 'image/jpeg';
     return createImageThumbnail(storageKey, documentUuid, createdAt, detectedMimeType);
   }
 
@@ -126,10 +134,13 @@ async function runTesseract(imagePath: string, languages: string): Promise<strin
     child.stderr.on('data', (chunk: Buffer) => {
       stderr = `${stderr}${chunk.toString('utf8')}`.slice(-4000);
     });
-    child.once('error', (error) => finish(new Error(`Unable to start Tesseract: ${error.message}`)));
+    child.once('error', (error) =>
+      finish(new Error(`Unable to start Tesseract: ${error.message}`)),
+    );
     child.once('close', (code) => {
       if (code === 0) finish();
-      else finish(new Error(`Tesseract failed: ${stderr.trim() || `exit code ${code ?? 'unknown'}`}`));
+      else
+        finish(new Error(`Tesseract failed: ${stderr.trim() || `exit code ${code ?? 'unknown'}`}`));
     });
   });
 }

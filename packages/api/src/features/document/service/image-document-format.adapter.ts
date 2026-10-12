@@ -11,7 +11,13 @@ export class ImageDocumentFormatAdapter {
     extensions: ['.jpg', '.jpeg', '.png'],
     mimeTypes: ['image/jpeg', 'image/png'],
     capabilities: [
-      'upload', 'download', 'preview', 'text-extraction', 'ocr', 'page-count', 'page-rotation',
+      'upload',
+      'download',
+      'preview',
+      'text-extraction',
+      'ocr',
+      'page-count',
+      'page-rotation',
     ],
   };
 

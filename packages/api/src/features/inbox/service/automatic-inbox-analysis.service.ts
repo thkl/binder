@@ -18,7 +18,7 @@ export class AutomaticInboxAnalysisService
   ) {}
 
   onApplicationBootstrap(): void {
-  //  this.startMonitor();
+    //  this.startMonitor();
   }
 
   @OnEvent('database.connected')

@@ -15,9 +15,13 @@ describe('worker document format registry', () => {
   });
 
   it('detects and validates PDF import bytes with the registered adapter', async () => {
-    await expect(detectAndValidateWorkerFormat(createPdfFixture(['worker fixture']))).resolves.toEqual(
-      { descriptor: WORKER_DOCUMENT_FORMATS[0], mimeType: 'application/pdf', extension: '.pdf' },
-    );
+    await expect(
+      detectAndValidateWorkerFormat(createPdfFixture(['worker fixture'])),
+    ).resolves.toEqual({
+      descriptor: WORKER_DOCUMENT_FORMATS[0],
+      mimeType: 'application/pdf',
+      extension: '.pdf',
+    });
   });
 
   it('detects and validates PNG bytes independently of filenames and MIME hints', async () => {
@@ -34,8 +38,12 @@ describe('worker document format registry', () => {
 
   it('rejects unknown content and MIME types without invoking PDF processing', async () => {
     await assert.rejects(detectAndValidateWorkerFormat(Buffer.from('not a PDF')));
-    expect(getWorkerDocumentFormatAdapter('image/png', 'text-extraction').descriptor.id).toBe('image');
-    assert.throws(() => getWorkerDocumentFormatAdapter('image/png', 'page-rotation'),
-      /does not support page-rotation/);
+    expect(getWorkerDocumentFormatAdapter('image/png', 'text-extraction').descriptor.id).toBe(
+      'image',
+    );
+    assert.throws(
+      () => getWorkerDocumentFormatAdapter('image/png', 'page-rotation'),
+      /does not support page-rotation/,
+    );
   });
 });

@@ -16,7 +16,8 @@ import { I18nService, TranslatePipe } from '../../../../common/i18n/i18n.service
 import { MetadataService } from '../../../metadata/services/metadata.service';
 import { AuthService } from '../../../authentication/services/auth.service';
 
-const DEFAULT_TEMPLATE = '{\n  "event": "document.metadata-condition-matched",\n  "workflow": {"uuid": "{{workflow.uuid}}", "name": "{{workflow.name}}"},\n  "document": {"uuid": "{{document.uuid}}", "title": "{{document.title}}"},\n  "condition": {"field": "{{condition.field}}", "operator": "{{condition.operator}}", "expected": "{{condition.expected}}", "actual": "{{condition.actual}}"},\n  "metadata": "{{metadata}}"\n}';
+const DEFAULT_TEMPLATE =
+  '{\n  "event": "document.metadata-condition-matched",\n  "workflow": {"uuid": "{{workflow.uuid}}", "name": "{{workflow.name}}"},\n  "document": {"uuid": "{{document.uuid}}", "title": "{{document.title}}"},\n  "condition": {"field": "{{condition.field}}", "operator": "{{condition.operator}}", "expected": "{{condition.expected}}", "actual": "{{condition.actual}}"},\n  "metadata": "{{metadata}}"\n}';
 
 /** Lets users manage their webhook workflows and lets admins approve submissions. */
 @Component({
@@ -55,8 +56,16 @@ export class MetadataWebhookManagerComponent {
     this.error.set(null);
     try {
       const [workflowResponse, deliveryResponse] = await Promise.all([
-        firstValueFrom(this.http.get<ApiResponse<unknown>>('/api/v1/workflows/metadata-webhook', { withCredentials: true })),
-        firstValueFrom(this.http.get<ApiResponse<unknown>>('/api/v1/workflows/metadata-webhook/deliveries', { withCredentials: true })),
+        firstValueFrom(
+          this.http.get<ApiResponse<unknown>>('/api/v1/workflows/metadata-webhook', {
+            withCredentials: true,
+          }),
+        ),
+        firstValueFrom(
+          this.http.get<ApiResponse<unknown>>('/api/v1/workflows/metadata-webhook/deliveries', {
+            withCredentials: true,
+          }),
+        ),
       ]);
       const workflowData = MetadataWebhookWorkflowListSchema.parse(workflowResponse.data);
       this.workflows.set(workflowData.items);
@@ -104,14 +113,26 @@ export class MetadataWebhookManagerComponent {
     this.message.set(null);
     try {
       const uuid = this.editingUuid();
-      const response = await firstValueFrom(uuid
-        ? this.http.put<ApiResponse<unknown>>(`/api/v1/workflows/metadata-webhook/${uuid}`, this.draft(), { withCredentials: true })
-        : this.http.post<ApiResponse<unknown>>('/api/v1/workflows/metadata-webhook', this.draft(), { withCredentials: true }));
+      const response = await firstValueFrom(
+        uuid
+          ? this.http.put<ApiResponse<unknown>>(
+              `/api/v1/workflows/metadata-webhook/${uuid}`,
+              this.draft(),
+              { withCredentials: true },
+            )
+          : this.http.post<ApiResponse<unknown>>(
+              '/api/v1/workflows/metadata-webhook',
+              this.draft(),
+              { withCredentials: true },
+            ),
+      );
       const saved = MetadataWebhookWorkflowSchema.parse(response.data);
       this.editingUuid.set(null);
       this.editorOpen.set(false);
       this.draft.set(this.emptyDraft());
-      this.message.set(this.i18n.t(saved.approvalStatus === 'approved' ? 'workflow.saved' : 'workflow.submitted'));
+      this.message.set(
+        this.i18n.t(saved.approvalStatus === 'approved' ? 'workflow.saved' : 'workflow.submitted'),
+      );
       await this.load();
     } catch (error) {
       this.error.set(this.errorMessage(error));
@@ -125,7 +146,11 @@ export class MetadataWebhookManagerComponent {
     this.working.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(this.http.delete(`/api/v1/workflows/metadata-webhook/${workflow.uuid}`, { withCredentials: true }));
+      await firstValueFrom(
+        this.http.delete(`/api/v1/workflows/metadata-webhook/${workflow.uuid}`, {
+          withCredentials: true,
+        }),
+      );
       this.message.set(this.i18n.t('workflow.deleted'));
       await this.load();
     } catch (error) {
@@ -151,9 +176,13 @@ export class MetadataWebhookManagerComponent {
     this.error.set(null);
     this.message.set(null);
     try {
-      const response = await firstValueFrom(this.http.post<ApiResponse<unknown>>(
-        `/api/v1/workflows/metadata-webhook/${workflow.uuid}/test`, {}, { withCredentials: true },
-      ));
+      const response = await firstValueFrom(
+        this.http.post<ApiResponse<unknown>>(
+          `/api/v1/workflows/metadata-webhook/${workflow.uuid}/test`,
+          {},
+          { withCredentials: true },
+        ),
+      );
       const result = MetadataWebhookTestResponseSchema.parse(response.data);
       if (result.success) this.message.set(this.i18n.t('workflow.testSucceeded'));
       else this.error.set(`${this.i18n.t('workflow.testFailed')} ${result.message}`);
@@ -169,7 +198,13 @@ export class MetadataWebhookManagerComponent {
     this.working.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(this.http.post(`/api/v1/workflows/metadata-webhook/deliveries/${delivery.uuid}/retry`, {}, { withCredentials: true }));
+      await firstValueFrom(
+        this.http.post(
+          `/api/v1/workflows/metadata-webhook/deliveries/${delivery.uuid}/retry`,
+          {},
+          { withCredentials: true },
+        ),
+      );
       this.message.set(this.i18n.t('workflow.retryQueued'));
       await this.load();
     } catch (error) {
@@ -180,13 +215,22 @@ export class MetadataWebhookManagerComponent {
   }
 
   /** Updates the form model without adding Angular Forms as a dependency. */
-  updateDraft<K extends keyof MetadataWebhookWorkflowInput>(key: K, value: MetadataWebhookWorkflowInput[K]): void {
+  updateDraft<K extends keyof MetadataWebhookWorkflowInput>(
+    key: K,
+    value: MetadataWebhookWorkflowInput[K],
+  ): void {
     this.draft.update((current) => ({ ...current, [key]: value }));
   }
 
   /** Reads a text or selection control and updates its form property. */
-  updateText(key: 'name' | 'field' | 'operator' | 'value' | 'url' | 'payloadTemplate', event: Event): void {
-    this.updateDraft(key, (event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value as never);
+  updateText(
+    key: 'name' | 'field' | 'operator' | 'value' | 'url' | 'payloadTemplate',
+    event: Event,
+  ): void {
+    this.updateDraft(
+      key,
+      (event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value as never,
+    );
   }
 
   /** Returns built-in metadata fields and active custom fields for the selector. */
@@ -196,7 +240,13 @@ export class MetadataWebhookManagerComponent {
       { value: 'documentType', label: this.i18n.t('workflow.field.documentType') },
       { value: 'category', label: this.i18n.t('workflow.field.category') },
       { value: 'tags', label: this.i18n.t('workflow.field.tags') },
-      ...this.metadata.definitions().filter((item) => item.active).map((item) => ({ value: `custom.${item.key}`, label: `${this.i18n.t('workflow.field.custom')}: ${item.label}` })),
+      ...this.metadata
+        .definitions()
+        .filter((item) => item.active)
+        .map((item) => ({
+          value: `custom.${item.key}`,
+          label: `${this.i18n.t('workflow.field.custom')}: ${item.label}`,
+        })),
     ];
   }
 
@@ -234,9 +284,19 @@ export class MetadataWebhookManagerComponent {
     this.working.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(approved
-        ? this.http.post(`/api/v1/workflows/metadata-webhook/${workflow.uuid}/approve`, {}, { withCredentials: true })
-        : this.http.post(`/api/v1/workflows/metadata-webhook/${workflow.uuid}/reject`, { note: this.rejectNote() }, { withCredentials: true }));
+      await firstValueFrom(
+        approved
+          ? this.http.post(
+              `/api/v1/workflows/metadata-webhook/${workflow.uuid}/approve`,
+              {},
+              { withCredentials: true },
+            )
+          : this.http.post(
+              `/api/v1/workflows/metadata-webhook/${workflow.uuid}/reject`,
+              { note: this.rejectNote() },
+              { withCredentials: true },
+            ),
+      );
       this.message.set(this.i18n.t(approved ? 'workflow.approved' : 'workflow.rejected'));
       this.rejectNote.set('');
       await this.load();
@@ -262,7 +322,8 @@ export class MetadataWebhookManagerComponent {
   }
 
   private errorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') return error.error.message;
+    if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string')
+      return error.error.message;
     return this.i18n.t('workflow.requestFailed');
   }
 }

@@ -25,8 +25,17 @@ export class PdfDocumentFormatAdapter {
     extensions: ['.pdf'],
     mimeTypes: ['application/pdf'],
     capabilities: [
-      'upload', 'download', 'preview', 'text-extraction', 'ocr', 'file-analysis',
-      'page-count', 'page-rotation', 'split', 'compose', 'pdfa',
+      'upload',
+      'download',
+      'preview',
+      'text-extraction',
+      'ocr',
+      'file-analysis',
+      'page-count',
+      'page-rotation',
+      'split',
+      'compose',
+      'pdfa',
     ],
   };
 

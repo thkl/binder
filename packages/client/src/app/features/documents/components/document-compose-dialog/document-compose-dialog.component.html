@@ -23,7 +23,9 @@
           <article class="compose-source-card">
             <div class="compose-source-heading">
               <div>
-                <span class="field-label">{{ 'documents.composeSourceOrder' | t:{ order: index + 1 } }}</span>
+                <span class="field-label">{{
+                  'documents.composeSourceOrder' | t: { order: index + 1 }
+                }}</span>
                 <strong>{{ source.document.title || source.document.originalFilename }}</strong>
               </div>
               <div class="compose-source-actions">
@@ -33,21 +35,27 @@
                   [disabled]="index === 0"
                   [attr.aria-label]="'documents.composeMoveUp' | t"
                   (click)="moveSource(index, -1)"
-                >↑</button>
+                >
+                  ↑
+                </button>
                 <button
                   type="button"
                   class="secondary-button"
                   [disabled]="index === sources().length - 1"
                   [attr.aria-label]="'documents.composeMoveDown' | t"
                   (click)="moveSource(index, 1)"
-                >↓</button>
+                >
+                  ↓
+                </button>
                 <button
                   type="button"
                   class="secondary-button"
                   [disabled]="sources().length === 1"
                   [attr.aria-label]="'documents.composeRemoveSource' | t"
                   (click)="removeSource(index)"
-                >×</button>
+                >
+                  ×
+                </button>
               </div>
             </div>
             <div class="compose-range-row">
@@ -71,7 +79,9 @@
                   (input)="setSourcePage(index, 'endPage', $event)"
                 />
               </label>
-              <span class="muted">{{ 'documents.composePageCount' | t:{ pageCount: source.document.pageCount ?? 1 } }}</span>
+              <span class="muted">{{
+                'documents.composePageCount' | t: { pageCount: source.document.pageCount ?? 1 }
+              }}</span>
             </div>
           </article>
         }
@@ -89,7 +99,10 @@
           [attr.aria-describedby]="error() ? 'compose-dialog-error' : 'compose-dialog-hint'"
         />
         <small id="compose-dialog-hint">
-          {{ 'documents.composePageHint' | t:{ pageCount: targetPageCount(), sourcePages: totalSourcePages() } }}
+          {{
+            'documents.composePageHint'
+              | t: { pageCount: targetPageCount(), sourcePages: totalSourcePages() }
+          }}
         </small>
       </label>
 
@@ -123,7 +136,12 @@
       <button type="button" class="secondary-button" (click)="closed.emit()">
         {{ 'common.cancel' | t }}
       </button>
-      <button type="button" class="primary-button" [disabled]="sources().length === 0" (click)="submit()">
+      <button
+        type="button"
+        class="primary-button"
+        [disabled]="sources().length === 0"
+        (click)="submit()"
+      >
         {{ 'documents.compose' | t }}
       </button>
     </footer>

@@ -34,14 +34,27 @@ export interface MetadataWebhookDeliveryAttributes {
 
 export type MetadataWebhookDeliveryCreationAttributes = Omit<
   MetadataWebhookDeliveryAttributes,
-  'uuid' | 'createdAt' | 'updatedAt' | 'attempts' | 'status' | 'availableAt' | 'deliveredAt' | 'lastError'
+  | 'uuid'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'attempts'
+  | 'status'
+  | 'availableAt'
+  | 'deliveredAt'
+  | 'lastError'
 >;
 
 @Table({
   tableName: 'metadata_webhook_deliveries',
   underscored: true,
   timestamps: true,
-  indexes: [{ name: 'metadata_webhook_deliveries_event_workflow_idx', unique: true, fields: ['source_event_id', 'workflow_id'] }],
+  indexes: [
+    {
+      name: 'metadata_webhook_deliveries_event_workflow_idx',
+      unique: true,
+      fields: ['source_event_id', 'workflow_id'],
+    },
+  ],
 })
 export class MetadataWebhookDelivery extends Model<
   MetadataWebhookDeliveryAttributes,
@@ -72,7 +85,12 @@ export class MetadataWebhookDelivery extends Model<
   @Column({ type: DataType.STRING(16), allowNull: false })
   declare operator: string;
 
-  @Column({ field: 'trigger_value', type: DataType.STRING(500), allowNull: false, defaultValue: '' })
+  @Column({
+    field: 'trigger_value',
+    type: DataType.STRING(500),
+    allowNull: false,
+    defaultValue: '',
+  })
   declare triggerValue: string;
 
   @Column({ type: DataType.JSONB, allowNull: false })
@@ -84,7 +102,12 @@ export class MetadataWebhookDelivery extends Model<
   @Column({ type: DataType.INTEGER, allowNull: false, defaultValue: 0 })
   declare attempts: number;
 
-  @Column({ field: 'available_at', type: DataType.DATE, allowNull: false, defaultValue: DataType.NOW })
+  @Column({
+    field: 'available_at',
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+  })
   declare availableAt: Date;
 
   @Column({ field: 'delivered_at', type: DataType.DATE, allowNull: true })

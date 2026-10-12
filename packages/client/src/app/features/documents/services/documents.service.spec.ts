@@ -1,9 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DocumentsService } from './documents.service';
 
@@ -27,51 +24,55 @@ describe('DocumentsService format discovery', () => {
 
   it('loads upload descriptors, builds the picker filter, and checks MIME and extension hints', async () => {
     const loading = service.loadSupportedFormats();
-    http.expectOne((request) => request.url.endsWith('/v1/document-formats')).flush({
-      formats: [
-        {
-          id: 'pdf',
-          displayName: 'PDF',
-          extensions: ['.pdf'],
-          mimeTypes: ['application/pdf'],
-          capabilities: ['upload', 'download', 'preview', 'page-count', 'page-rotation', 'split'],
-        },
-        {
-          id: 'text',
-          displayName: 'Plain text',
-          extensions: ['.txt'],
-          mimeTypes: ['text/plain'],
-          capabilities: ['upload', 'download', 'text-extraction'],
-        },
-        {
-          id: 'image',
-          displayName: 'Image',
-          extensions: ['.jpg', '.jpeg', '.png'],
-          mimeTypes: ['image/jpeg', 'image/png'],
-          capabilities: ['upload', 'download', 'preview', 'text-extraction', 'ocr', 'page-count'],
-        },
-      ],
-    });
+    http
+      .expectOne((request) => request.url.endsWith('/v1/document-formats'))
+      .flush({
+        formats: [
+          {
+            id: 'pdf',
+            displayName: 'PDF',
+            extensions: ['.pdf'],
+            mimeTypes: ['application/pdf'],
+            capabilities: ['upload', 'download', 'preview', 'page-count', 'page-rotation', 'split'],
+          },
+          {
+            id: 'text',
+            displayName: 'Plain text',
+            extensions: ['.txt'],
+            mimeTypes: ['text/plain'],
+            capabilities: ['upload', 'download', 'text-extraction'],
+          },
+          {
+            id: 'image',
+            displayName: 'Image',
+            extensions: ['.jpg', '.jpeg', '.png'],
+            mimeTypes: ['image/jpeg', 'image/png'],
+            capabilities: ['upload', 'download', 'preview', 'text-extraction', 'ocr', 'page-count'],
+          },
+        ],
+      });
     await loading;
 
-    expect(service.uploadAccept()).toBe('application/pdf,.pdf,text/plain,.txt,image/jpeg,image/png,.jpg,.jpeg,.png');
-    expect(service.isLikelySupportedUpload(new File(['x'], 'notes.txt', { type: 'text/plain' }))).toBe(
-      true,
+    expect(service.uploadAccept()).toBe(
+      'application/pdf,.pdf,text/plain,.txt,image/jpeg,image/png,.jpg,.jpeg,.png',
     );
-    expect(service.isLikelySupportedUpload(new File(['x'], 'notes.pdf', { type: 'text/plain' }))).toBe(
-      true,
-    );
-    expect(service.isLikelySupportedUpload(new File(['x'], 'unknown.bin', { type: 'text/csv' }))).toBe(
-      false,
-    );
+    expect(
+      service.isLikelySupportedUpload(new File(['x'], 'notes.txt', { type: 'text/plain' })),
+    ).toBe(true);
+    expect(
+      service.isLikelySupportedUpload(new File(['x'], 'notes.pdf', { type: 'text/plain' })),
+    ).toBe(true);
+    expect(
+      service.isLikelySupportedUpload(new File(['x'], 'unknown.bin', { type: 'text/csv' })),
+    ).toBe(false);
     expect(service.isLikelySupportedUpload(new File(['x'], 'unknown.bin'))).toBe(true);
     expect(service.supportsMimeCapability('application/pdf', 'split')).toBe(true);
     expect(service.supportsMimeCapability('text/plain', 'split')).toBe(false);
     expect(service.hasPreview('text/plain')).toBe(false);
     expect(service.hasPreview('image/png')).toBe(true);
-    expect(JSON.parse(localStorage.getItem('binder.document-formats.v1') ?? '{}').formats).toHaveLength(
-      3,
-    );
+    expect(
+      JSON.parse(localStorage.getItem('binder.document-formats.v1') ?? '{}').formats,
+    ).toHaveLength(3);
   });
 
   it('keeps the validated cached list when discovery is offline', async () => {
@@ -97,25 +98,25 @@ describe('DocumentsService format discovery', () => {
     http = TestBed.inject(HttpTestingController);
 
     const loading = service.loadSupportedFormats();
-    http.expectOne((request) => request.url.endsWith('/v1/document-formats')).error(
-      new ProgressEvent('network-error'),
-    );
+    http
+      .expectOne((request) => request.url.endsWith('/v1/document-formats'))
+      .error(new ProgressEvent('network-error'));
     await loading;
 
     expect(service.uploadAccept()).toBe('text/plain,.txt');
-    expect(service.isLikelySupportedUpload(new File(['x'], 'notes.txt', { type: 'text/plain' }))).toBe(
-      true,
-    );
+    expect(
+      service.isLikelySupportedUpload(new File(['x'], 'notes.txt', { type: 'text/plain' })),
+    ).toBe(true);
   });
 
   it('surfaces the server rejection when a selected file is not actually supported', async () => {
     const upload = service.upload(new File(['not a PDF'], 'report.csv', { type: 'text/csv' }));
-    http.expectOne(
-      (request) => request.method === 'POST' && request.url.endsWith('/v1/documents'),
-    ).flush(
-      { message: 'The file format is not supported.' },
-      { status: 415, statusText: 'Unsupported Media Type' },
-    );
+    http
+      .expectOne((request) => request.method === 'POST' && request.url.endsWith('/v1/documents'))
+      .flush(
+        { message: 'The file format is not supported.' },
+        { status: 415, statusText: 'Unsupported Media Type' },
+      );
 
     expect(await upload).toBe(false);
     expect(service.error()).toBe('The file format is not supported.');

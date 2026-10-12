@@ -37,11 +37,13 @@ export class DocumentComposeDialogComponent implements OnInit {
   readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.sources.set(this.sourceDocuments().map((document) => ({
-      document,
-      startPage: 1,
-      endPage: Math.max(1, document.pageCount ?? 1),
-    })));
+    this.sources.set(
+      this.sourceDocuments().map((document) => ({
+        document,
+        startPage: 1,
+        endPage: Math.max(1, document.pageCount ?? 1),
+      })),
+    );
   }
 
   setPage(event: Event): void {
@@ -52,19 +54,21 @@ export class DocumentComposeDialogComponent implements OnInit {
 
   setSourcePage(index: number, edge: 'startPage' | 'endPage', event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
-    this.sources.update((sources) => sources.map((source, sourceIndex) => {
-      if (sourceIndex !== index) return source;
-      const pageCount = Math.max(1, source.document.pageCount ?? 1);
-      const boundedValue = Math.max(1, Math.min(pageCount, value));
-      if (edge === 'startPage') {
-        return {
-          ...source,
-          startPage: boundedValue,
-          endPage: Math.max(source.endPage, boundedValue),
-        };
-      }
-      return { ...source, endPage: Math.max(source.startPage, boundedValue) };
-    }));
+    this.sources.update((sources) =>
+      sources.map((source, sourceIndex) => {
+        if (sourceIndex !== index) return source;
+        const pageCount = Math.max(1, source.document.pageCount ?? 1);
+        const boundedValue = Math.max(1, Math.min(pageCount, value));
+        if (edge === 'startPage') {
+          return {
+            ...source,
+            startPage: boundedValue,
+            endPage: Math.max(source.endPage, boundedValue),
+          };
+        }
+        return { ...source, endPage: Math.max(source.startPage, boundedValue) };
+      }),
+    );
     this.error.set(null);
   }
 
@@ -83,19 +87,31 @@ export class DocumentComposeDialogComponent implements OnInit {
   }
 
   totalSourcePages(): number {
-    return this.sources().reduce((total, source) => total + source.endPage - source.startPage + 1, 0);
+    return this.sources().reduce(
+      (total, source) => total + source.endPage - source.startPage + 1,
+      0,
+    );
   }
 
   submit(): void {
     const insertAfterPage = this.insertAfterPage();
-    if (!Number.isInteger(insertAfterPage) || insertAfterPage < 0 || insertAfterPage > this.targetPageCount()) {
+    if (
+      !Number.isInteger(insertAfterPage) ||
+      insertAfterPage < 0 ||
+      insertAfterPage > this.targetPageCount()
+    ) {
       this.error.set('documents.composeInvalidPage');
       return;
     }
-    if (this.sources().length === 0 || this.sources().some((source) =>
-      source.startPage < 1 || source.startPage > source.endPage ||
-      source.endPage > Math.max(1, source.document.pageCount ?? 1),
-    )) {
+    if (
+      this.sources().length === 0 ||
+      this.sources().some(
+        (source) =>
+          source.startPage < 1 ||
+          source.startPage > source.endPage ||
+          source.endPage > Math.max(1, source.document.pageCount ?? 1),
+      )
+    ) {
       this.error.set('documents.composeInvalidSourcePages');
       return;
     }

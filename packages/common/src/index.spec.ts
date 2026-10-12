@@ -57,8 +57,17 @@ describe('common document contracts', () => {
       extensions: ['.pdf'],
       mimeTypes: ['application/pdf'],
       capabilities: [
-        'upload', 'download', 'preview', 'text-extraction', 'ocr', 'file-analysis',
-        'page-count', 'page-rotation', 'split', 'compose', 'pdfa',
+        'upload',
+        'download',
+        'preview',
+        'text-extraction',
+        'ocr',
+        'file-analysis',
+        'page-count',
+        'page-rotation',
+        'split',
+        'compose',
+        'pdfa',
       ],
     };
     const image = {
@@ -68,28 +77,25 @@ describe('common document contracts', () => {
       mimeTypes: ['image/jpeg', 'image/png'],
       capabilities: ['upload', 'download', 'preview', 'text-extraction', 'ocr', 'page-count'],
     };
-    assert.deepEqual(
-      DocumentFormatsResponseSchema.parse({ formats: [pdf, image] }).formats[0],
-      {
-        id: 'pdf',
-        displayName: 'PDF',
-        extensions: ['.pdf'],
-        mimeTypes: ['application/pdf'],
-        capabilities: [
-          'upload',
-          'download',
-          'preview',
-          'text-extraction',
-          'ocr',
-          'file-analysis',
-          'page-count',
-          'page-rotation',
-          'split',
-          'compose',
-          'pdfa',
-        ],
-      },
-    );
+    assert.deepEqual(DocumentFormatsResponseSchema.parse({ formats: [pdf, image] }).formats[0], {
+      id: 'pdf',
+      displayName: 'PDF',
+      extensions: ['.pdf'],
+      mimeTypes: ['application/pdf'],
+      capabilities: [
+        'upload',
+        'download',
+        'preview',
+        'text-extraction',
+        'ocr',
+        'file-analysis',
+        'page-count',
+        'page-rotation',
+        'split',
+        'compose',
+        'pdfa',
+      ],
+    });
   });
 
   it('rejects invalid format identifiers, extensions, MIME types, and capabilities', () => {

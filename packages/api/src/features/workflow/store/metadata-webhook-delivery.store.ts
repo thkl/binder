@@ -104,7 +104,9 @@ export class MetadataWebhookDeliveryStore extends BaseCrudStore<MetadataWebhookD
 
   /** Resets only failed deliveries and returns null for any other state. */
   async retry(uuid: string, ownerUuid?: string): Promise<MetadataWebhookDelivery | null> {
-    const delivery = await this.model.findOne({ where: { uuid, status: 'failed', ...(ownerUuid ? { ownerUuid } : {}) } });
+    const delivery = await this.model.findOne({
+      where: { uuid, status: 'failed', ...(ownerUuid ? { ownerUuid } : {}) },
+    });
     if (!delivery) return null;
     await delivery.update({
       status: 'pending',
@@ -119,7 +121,11 @@ export class MetadataWebhookDeliveryStore extends BaseCrudStore<MetadataWebhookD
   /** Stops queued work when a workflow edit sends its approval back for review. */
   async stopPendingForWorkflow(workflowUuid: string): Promise<void> {
     await this.model.update(
-      { status: 'cancelled', attempts: 8, lastError: 'Workflow changed and is awaiting administrator approval.' },
+      {
+        status: 'cancelled',
+        attempts: 8,
+        lastError: 'Workflow changed and is awaiting administrator approval.',
+      },
       { where: { workflowUuid, status: 'pending' } },
     );
   }

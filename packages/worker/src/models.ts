@@ -549,8 +549,10 @@ export class DocumentEmbedding extends Model {
   @ForeignKey(() => Document)
   @Column({ field: 'document_id', type: DataType.UUID })
   declare documentUuid: string;
-  @Column({ field: 'page_number', type: DataType.INTEGER, allowNull: true }) declare pageNumber: number | null;
-  @Column({ field: 'segment_index', type: DataType.INTEGER, allowNull: false }) declare segmentIndex: number;
+  @Column({ field: 'page_number', type: DataType.INTEGER, allowNull: true }) declare pageNumber:
+    number | null;
+  @Column({ field: 'segment_index', type: DataType.INTEGER, allowNull: false })
+  declare segmentIndex: number;
   @Column({ field: 'chunk_index', type: DataType.INTEGER }) declare chunkIndex: number;
   @Column({ type: DataType.TEXT }) declare content: string;
   @Column({ type: DataType.JSONB }) declare embedding: number[];

@@ -73,7 +73,9 @@ export class DocumentsService {
   readonly supportedFormats = signal<DocumentFormatDescriptor[]>(this.readCachedFormats());
   readonly uploadAccept = computed(() => {
     const formats = this.uploadFormats();
-    return [...new Set(formats.flatMap((format) => [...format.mimeTypes, ...format.extensions]))].join(',');
+    return [
+      ...new Set(formats.flatMap((format) => [...format.mimeTypes, ...format.extensions])),
+    ].join(',');
   });
   readonly appService = inject(ApplicationService);
   readonly inboxService = inject(InboxService);
@@ -144,9 +146,11 @@ export class DocumentsService {
    * @returns {string} - Comma-separated format names, with PDF as the offline fallback.
    */
   supportedUploadFormatNames(): string {
-    return this.uploadFormats()
-      .map((format) => format.displayName)
-      .join(', ') || 'PDF';
+    return (
+      this.uploadFormats()
+        .map((format) => format.displayName)
+        .join(', ') || 'PDF'
+    );
   }
 
   private uploadFormats(): DocumentFormatDescriptor[] {
@@ -189,7 +193,9 @@ export class DocumentsService {
 
   private readCachedFormats(): DocumentFormatDescriptor[] {
     try {
-      const raw = this.document.defaultView?.localStorage.getItem(DocumentsService.FORMAT_CACHE_KEY);
+      const raw = this.document.defaultView?.localStorage.getItem(
+        DocumentsService.FORMAT_CACHE_KEY,
+      );
       if (!raw) return [PDF_FALLBACK_FORMAT];
       const parsed = DocumentFormatsResponseSchema.parse(JSON.parse(raw));
       return parsed.formats.length > 0 ? parsed.formats : [PDF_FALLBACK_FORMAT];
@@ -311,14 +317,16 @@ export class DocumentsService {
     );
     const candidates = DocumentListResponseSchema.parse(response.data).items;
     return candidates
-      .filter((candidate) =>
-        candidate.uuid !== document.uuid &&
-        candidate.versionFamilyUuid !== document.versionFamilyUuid &&
-        candidate.mimeType === document.mimeType &&
-        this.versionTitleOverlap(tokens, this.versionTitleTokens(candidate)) > 0,
+      .filter(
+        (candidate) =>
+          candidate.uuid !== document.uuid &&
+          candidate.versionFamilyUuid !== document.versionFamilyUuid &&
+          candidate.mimeType === document.mimeType &&
+          this.versionTitleOverlap(tokens, this.versionTitleTokens(candidate)) > 0,
       )
       .sort((left, right) => {
-        const similarity = this.versionTitleOverlap(tokens, this.versionTitleTokens(right)) -
+        const similarity =
+          this.versionTitleOverlap(tokens, this.versionTitleTokens(right)) -
           this.versionTitleOverlap(tokens, this.versionTitleTokens(left));
         return similarity || Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
       })
@@ -562,7 +570,12 @@ export class DocumentsService {
 
   private versionTitleTokens(document: BinderDocument): Set<string> {
     const title = (document.title || document.originalFilename).replace(/\.[^./]+$/u, '');
-    return new Set(title.toLocaleLowerCase().split(/[^\p{L}\p{N}]+/u).filter((token) => token.length >= 3));
+    return new Set(
+      title
+        .toLocaleLowerCase()
+        .split(/[^\p{L}\p{N}]+/u)
+        .filter((token) => token.length >= 3),
+    );
   }
 
   private versionTitleOverlap(left: Set<string>, right: Set<string>): number {

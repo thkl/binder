@@ -68,12 +68,15 @@ export class DocumentFormatRegistry {
       };
     }
 
-    const imageFormat = this.formats.find((format) => format.id === this.imageAdapter.descriptor.id);
-    const imageMimeType = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff
-      ? 'image/jpeg'
-      : buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-        ? 'image/png'
-        : undefined;
+    const imageFormat = this.formats.find(
+      (format) => format.id === this.imageAdapter.descriptor.id,
+    );
+    const imageMimeType =
+      buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff
+        ? 'image/jpeg'
+        : buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+          ? 'image/png'
+          : undefined;
     if (imageFormat && imageMimeType && imageFormat.mimeTypes.includes(imageMimeType)) {
       await this.imageAdapter.validate(buffer, imageMimeType);
       return {
@@ -110,7 +113,9 @@ export class DocumentFormatRegistry {
       return this.imageAdapter;
     }
     if (descriptor.id !== this.pdfAdapter.descriptor.id) {
-      throw new BadRequestException(`No adapter is registered for the ${descriptor.displayName} format`);
+      throw new BadRequestException(
+        `No adapter is registered for the ${descriptor.displayName} format`,
+      );
     }
     return this.pdfAdapter;
   }

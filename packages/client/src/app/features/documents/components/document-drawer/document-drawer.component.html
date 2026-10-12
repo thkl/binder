@@ -22,13 +22,13 @@
         }
         <div class="drawer-downloads">
           @if (canDownload()) {
-          <a
-            class="drawer-download-link"
-            [href]="fileUrl()"
-            [attr.download]="documentData().originalFilename"
-          >
-            {{ 'documents.download' | t }}
-          </a>
+            <a
+              class="drawer-download-link"
+              [href]="fileUrl()"
+              [attr.download]="documentData().originalFilename"
+            >
+              {{ 'documents.download' | t }}
+            </a>
           }
           @if (!readOnly()) {
             <button
@@ -226,27 +226,31 @@
             [secondMinSize]="20"
           >
             @if (canPreview()) {
-            <div class="pdf-pane" splitPaneFirst>
-              @if (documentData().mimeType.startsWith('image/')) {
-              <img
-                class="image-document-preview"
-                [src]="fileUrl()"
-                [alt]="documentData().title || documentData().originalFilename"
-              />
-              } @else {
-              <iframe
-                class="document-frame"
-                style="height: 100%"
-                [src]="fileUrl()"
-                [title]="'viewer.preview' | t"
-              ></iframe>
-              }
-            </div>
+              <div class="pdf-pane" splitPaneFirst>
+                @if (documentData().mimeType.startsWith('image/')) {
+                  <img
+                    class="image-document-preview"
+                    [src]="fileUrl()"
+                    [alt]="documentData().title || documentData().originalFilename"
+                  />
+                } @else {
+                  <iframe
+                    class="document-frame"
+                    style="height: 100%"
+                    [src]="fileUrl()"
+                    [title]="'viewer.preview' | t"
+                  ></iframe>
+                }
+              </div>
             } @else {
               <div class="pdf-pane preview-unavailable" splitPaneFirst>
                 <p>{{ 'viewer.previewUnavailable' | t }}</p>
                 @if (canDownload()) {
-                  <a class="drawer-download-link" [href]="fileUrl()" [download]="documentData().originalFilename">
+                  <a
+                    class="drawer-download-link"
+                    [href]="fileUrl()"
+                    [download]="documentData().originalFilename"
+                  >
                     {{ 'documents.download' | t }}
                   </a>
                 }
@@ -296,9 +300,16 @@
                   <li>
                     <div>
                       <strong>{{ candidate.title || candidate.originalFilename }}</strong>
-                      <span class="muted">{{ candidate.originalFilename }} · {{ 'documents.versionSuggestionMatch' | t }}</span>
+                      <span class="muted"
+                        >{{ candidate.originalFilename }} ·
+                        {{ 'documents.versionSuggestionMatch' | t }}</span
+                      >
                     </div>
-                    <button type="button" class="secondary-button" (click)="versionLinkRequested.emit(candidate)">
+                    <button
+                      type="button"
+                      class="secondary-button"
+                      (click)="versionLinkRequested.emit(candidate)"
+                    >
                       {{ 'documents.assignVersion' | t }}
                     </button>
                   </li>

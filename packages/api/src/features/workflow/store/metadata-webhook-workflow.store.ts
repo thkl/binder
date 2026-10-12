@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { BaseCrudStore } from '../../../shared/datastore/base-crud.store';
-import { MetadataWebhookWorkflow, MetadataWebhookApprovalStatus } from '../models/metadata-webhook-workflow.entity';
+import {
+  MetadataWebhookWorkflow,
+  MetadataWebhookApprovalStatus,
+} from '../models/metadata-webhook-workflow.entity';
 import { User } from '../../authentication/models/user.entity';
 
 /** Datastore access for user-owned workflow definitions and admin review. */
@@ -15,7 +18,10 @@ export class MetadataWebhookWorkflowStore extends BaseCrudStore<MetadataWebhookW
   list(ownerUuid?: string): Promise<MetadataWebhookWorkflow[]> {
     return this.model.findAll({
       where: ownerUuid ? { ownerUuid } : undefined,
-      order: [['createdAt', 'DESC'], ['uuid', 'ASC']],
+      order: [
+        ['createdAt', 'DESC'],
+        ['uuid', 'ASC'],
+      ],
       include: [{ model: User, as: 'owner', attributes: ['uuid', 'username', 'email'] }],
     });
   }
@@ -54,7 +60,24 @@ export class MetadataWebhookWorkflowStore extends BaseCrudStore<MetadataWebhookW
   async updateOwned(
     uuid: string,
     ownerUuid: string,
-    changes: Partial<Pick<MetadataWebhookWorkflow, 'name' | 'enabled' | 'field' | 'operator' | 'value' | 'url' | 'bearerToken' | 'bearerTokenIv' | 'payloadTemplate' | 'approvalStatus' | 'reviewedBy' | 'reviewedAt' | 'reviewNote'>>,
+    changes: Partial<
+      Pick<
+        MetadataWebhookWorkflow,
+        | 'name'
+        | 'enabled'
+        | 'field'
+        | 'operator'
+        | 'value'
+        | 'url'
+        | 'bearerToken'
+        | 'bearerTokenIv'
+        | 'payloadTemplate'
+        | 'approvalStatus'
+        | 'reviewedBy'
+        | 'reviewedAt'
+        | 'reviewNote'
+      >
+    >,
   ): Promise<MetadataWebhookWorkflow | null> {
     const workflow = await this.findOwned(uuid, ownerUuid);
     if (!workflow) return null;
@@ -89,7 +112,10 @@ export class MetadataWebhookWorkflowStore extends BaseCrudStore<MetadataWebhookW
   findRunnable(ownerUuid: string): Promise<MetadataWebhookWorkflow[]> {
     return this.model.findAll({
       where: { ownerUuid, enabled: true, approvalStatus: 'approved' },
-      order: [['createdAt', 'ASC'], ['uuid', 'ASC']],
+      order: [
+        ['createdAt', 'ASC'],
+        ['uuid', 'ASC'],
+      ],
     });
   }
 
@@ -97,7 +123,10 @@ export class MetadataWebhookWorkflowStore extends BaseCrudStore<MetadataWebhookW
   findPendingReview(): Promise<MetadataWebhookWorkflow[]> {
     return this.model.findAll({
       where: { approvalStatus: 'pending' },
-      order: [['createdAt', 'ASC'], ['uuid', 'ASC']],
+      order: [
+        ['createdAt', 'ASC'],
+        ['uuid', 'ASC'],
+      ],
       include: [{ model: User, as: 'owner', attributes: ['uuid', 'username', 'email'] }],
     });
   }

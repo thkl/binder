@@ -68,7 +68,12 @@ export class MetadataWebhookWorkflow extends Model {
   @Column({ field: 'payload_template', type: DataType.TEXT, allowNull: false })
   declare payloadTemplate: string;
 
-  @Column({ field: 'approval_status', type: DataType.STRING(16), allowNull: false, defaultValue: 'pending' })
+  @Column({
+    field: 'approval_status',
+    type: DataType.STRING(16),
+    allowNull: false,
+    defaultValue: 'pending',
+  })
   declare approvalStatus: MetadataWebhookApprovalStatus;
 
   @AllowNull

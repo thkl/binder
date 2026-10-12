@@ -260,12 +260,15 @@ export class DocumentStorageService {
   ): Promise<{ buffer: Buffer; pageCount: number }> {
     // Keep the original storage helper signature usable by internal callers
     // while the adapter passes explicit source page ranges.
-    const sourceSelections = typeof sources === 'string'
-      ? [{ storageKey: sources, startPage: 1, endPage: undefined }]
-      : sources;
+    const sourceSelections =
+      typeof sources === 'string'
+        ? [{ storageKey: sources, startPage: 1, endPage: undefined }]
+        : sources;
     const [targetBuffer, ...sourceBuffers] = await Promise.all([
       fs.readFile(await this.resolveStoragePath(targetStorageKey)),
-      ...sourceSelections.map(async (source) => fs.readFile(await this.resolveStoragePath(source.storageKey))),
+      ...sourceSelections.map(async (source) =>
+        fs.readFile(await this.resolveStoragePath(source.storageKey)),
+      ),
     ]);
     const mupdf = await import('mupdf');
     const target = new mupdf.PDFDocument(targetBuffer);

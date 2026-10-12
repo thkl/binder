@@ -162,10 +162,17 @@ async function pollMailbox(mailbox: EmailImportConfig): Promise<void> {
 
         const parsed = await simpleParser(source, { skipHtmlToText: true, skipTextToHtml: true });
         const documents = parsed.attachments.filter((attachment) => {
-          const extension = attachment.filename?.slice(attachment.filename.lastIndexOf('.')).toLowerCase();
-          return attachment.size <= config.maxUploadBytes && WORKER_DOCUMENT_FORMATS.some((format) =>
-            format.mimeTypes.includes(attachment.contentType.toLowerCase()) &&
-            extension !== undefined && format.extensions.includes(extension),
+          const extension = attachment.filename
+            ?.slice(attachment.filename.lastIndexOf('.'))
+            .toLowerCase();
+          return (
+            attachment.size <= config.maxUploadBytes &&
+            WORKER_DOCUMENT_FORMATS.some(
+              (format) =>
+                format.mimeTypes.includes(attachment.contentType.toLowerCase()) &&
+                extension !== undefined &&
+                format.extensions.includes(extension),
+            )
           );
         });
         if (documents.length === 0) {

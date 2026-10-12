@@ -45,7 +45,9 @@ describe('document format adapter registry', () => {
 
     expect(adapter.descriptor.id).toBe('pdf');
     expect(imageAdapter.descriptor.id).toBe('image');
-    assert.throws(() => registry.getAdapterForMimeType('image/png', 'compose'),
-      (error: unknown) => error instanceof BadRequestException);
+    assert.throws(
+      () => registry.getAdapterForMimeType('image/png', 'compose'),
+      (error: unknown) => error instanceof BadRequestException,
+    );
   });
 });

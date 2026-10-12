@@ -56,7 +56,10 @@ describe('document PDF storage', () => {
       'image/png',
     );
     assert.equal(await service.exists(thumbnailKey), true);
-    await assert.rejects(service.validateImage(Buffer.from('not an image'), 'image/png'), /valid JPEG or PNG/);
+    await assert.rejects(
+      service.validateImage(Buffer.from('not an image'), 'image/png'),
+      /valid JPEG or PNG/,
+    );
   });
 
   it('validates a readable PDF and rejects invalid signatures or malformed files', async () => {

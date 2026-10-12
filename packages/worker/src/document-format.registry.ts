@@ -10,12 +10,15 @@ const pdfAdapter = new PdfDocumentFormatAdapter();
 const imageAdapter = new ImageDocumentFormatAdapter();
 
 /** Format metadata known to the worker build; processing operations stay local to worker adapters. */
-export const WORKER_DOCUMENT_FORMATS: readonly DocumentFormatDescriptor[] =
-  [pdfAdapter.descriptor, imageAdapter.descriptor];
+export const WORKER_DOCUMENT_FORMATS: readonly DocumentFormatDescriptor[] = [
+  pdfAdapter.descriptor,
+  imageAdapter.descriptor,
+];
 
 /** Stable format identifiers the worker is built to process. */
-export const WORKER_DOCUMENT_FORMAT_IDS: readonly DocumentFormatId[] =
-  WORKER_DOCUMENT_FORMATS.map((format) => format.id);
+export const WORKER_DOCUMENT_FORMAT_IDS: readonly DocumentFormatId[] = WORKER_DOCUMENT_FORMATS.map(
+  (format) => format.id,
+);
 
 export interface DetectedWorkerFormat {
   descriptor: DocumentFormatDescriptor;
@@ -52,9 +55,7 @@ export function getWorkerDocumentFormatAdapter(
  * @param {Buffer} buffer - Full file contents supplied by an import source.
  * @returns The canonical shared descriptor for the validated file.
  */
-export async function detectAndValidateWorkerFormat(
-  buffer: Buffer,
-): Promise<DetectedWorkerFormat> {
+export async function detectAndValidateWorkerFormat(buffer: Buffer): Promise<DetectedWorkerFormat> {
   if (buffer.length === 0) throw new Error('The uploaded document is empty');
   const header = buffer.subarray(0, Math.min(buffer.length, 1024));
   const descriptor = WORKER_DOCUMENT_FORMATS.find((format) => {
@@ -76,8 +77,9 @@ export async function detectAndValidateWorkerFormat(
   return {
     descriptor,
     mimeType: canonicalMimeType,
-    extension: descriptor.id === 'image' && canonicalMimeType === 'image/png'
-      ? '.png'
-      : descriptor.extensions[0]!,
+    extension:
+      descriptor.id === 'image' && canonicalMimeType === 'image/png'
+        ? '.png'
+        : descriptor.extensions[0]!,
   };
 }

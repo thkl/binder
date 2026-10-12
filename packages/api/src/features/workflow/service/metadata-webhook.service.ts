@@ -1,11 +1,23 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import type { ClientRequest, RequestOptions } from 'node:http';
-import type { MetadataWebhookOperator, MetadataWebhookWorkflowInput, PluginDocumentEvent } from '@binder/common';
+import type {
+  MetadataWebhookOperator,
+  MetadataWebhookWorkflowInput,
+  PluginDocumentEvent,
+} from '@binder/common';
 import { BinderLogger } from '../../../shared/service/logger.helper';
 import { EncryptionService } from '../../../shared/util/encryption.service';
 import { DocumentStore } from '../../document/store/document.store';
@@ -32,7 +44,8 @@ type WebhookConfig = {
 type RequestResult = { success: boolean; statusCode: number; message: string };
 
 const WORKFLOW_EVENTS = new Set(['document.metadata-changed', 'document.ai-suggestion-applied']);
-const DEFAULT_TEMPLATE = '{\n  "event": "document.metadata-condition-matched",\n  "workflow": {"uuid": "{{workflow.uuid}}", "name": "{{workflow.name}}"},\n  "document": {\n    "uuid": "{{document.uuid}}",\n    "title": "{{document.title}}"\n  },\n  "condition": {\n    "field": "{{condition.field}}",\n    "operator": "{{condition.operator}}",\n    "expected": "{{condition.expected}}",\n    "actual": "{{condition.actual}}"\n  },\n  "metadata": "{{metadata}}"\n}';
+const DEFAULT_TEMPLATE =
+  '{\n  "event": "document.metadata-condition-matched",\n  "workflow": {"uuid": "{{workflow.uuid}}", "name": "{{workflow.name}}"},\n  "document": {\n    "uuid": "{{document.uuid}}",\n    "title": "{{document.title}}"\n  },\n  "condition": {\n    "field": "{{condition.field}}",\n    "operator": "{{condition.operator}}",\n    "expected": "{{condition.expected}}",\n    "actual": "{{condition.actual}}"\n  },\n  "metadata": "{{metadata}}"\n}';
 
 /** Queues and delivers webhooks when document metadata matches the configured condition. */
 @Injectable()
@@ -56,7 +69,8 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
         id: 'metadata-webhook',
         name: 'Metadata condition webhook',
         version: '1.0.0',
-        description: 'Sends document metadata to approved user webhooks when a metadata condition matches.',
+        description:
+          'Sends document metadata to approved user webhooks when a metadata condition matches.',
         capabilities: ['document-events'],
         enabled: true,
       },
@@ -76,7 +90,10 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
       this.workflowStore.list(isAdmin ? undefined : ownerUuid),
       isAdmin ? this.workflowStore.findPendingReview() : Promise.resolve([]),
     ]);
-    return { items: items.map((item) => this.toWorkflowResponse(item)), pending: pending.map((item) => this.toWorkflowResponse(item)) };
+    return {
+      items: items.map((item) => this.toWorkflowResponse(item)),
+      pending: pending.map((item) => this.toWorkflowResponse(item)),
+    };
   }
 
   /** Creates a rule owned by the current user; only admin-created rules start approved. */
@@ -100,7 +117,12 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Updates an owned rule; user edits revoke approval and stop its queued work. */
-  async updateWorkflow(uuid: string, ownerUuid: string, input: MetadataWebhookWorkflowInput, isAdmin: boolean) {
+  async updateWorkflow(
+    uuid: string,
+    ownerUuid: string,
+    input: MetadataWebhookWorkflowInput,
+    isAdmin: boolean,
+  ) {
     this.validateWorkflowInput(input);
     const workflow = await this.workflowStore.findOwned(uuid, ownerUuid);
     if (!workflow) throw new NotFoundException('Workflow not found');
@@ -126,7 +148,8 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
 
   /** Deletes an owned workflow and cascades its delivery history. */
   async deleteWorkflow(uuid: string, ownerUuid: string): Promise<void> {
-    if (!(await this.workflowStore.deleteOwned(uuid, ownerUuid))) throw new NotFoundException('Workflow not found');
+    if (!(await this.workflowStore.deleteOwned(uuid, ownerUuid)))
+      throw new NotFoundException('Workflow not found');
   }
 
   /** Records an admin decision for a pending user workflow. */
@@ -135,7 +158,7 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
       uuid,
       approved ? 'approved' : 'rejected',
       reviewerUuid,
-      approved ? null : (note?.trim() || null),
+      approved ? null : note?.trim() || null,
     );
     if (!workflow) throw new NotFoundException('Workflow not found');
     if (!approved) await this.deliveries.stopPendingForWorkflow(uuid);
@@ -144,18 +167,38 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
 
   /** Sends a sample only after the workflow has passed administrator review. */
   async testWorkflow(uuid: string, ownerUuid: string, isAdmin: boolean): Promise<RequestResult> {
-    const workflow = isAdmin ? await this.workflowStore.findByUuid(uuid) : await this.workflowStore.findOwned(uuid, ownerUuid);
+    const workflow = isAdmin
+      ? await this.workflowStore.findByUuid(uuid)
+      : await this.workflowStore.findOwned(uuid, ownerUuid);
     if (!workflow) throw new NotFoundException('Workflow not found');
-    if (workflow.approvalStatus !== 'approved') throw new ForbiddenException('An administrator must approve this workflow before it can be tested');
+    if (workflow.approvalStatus !== 'approved')
+      throw new ForbiddenException(
+        'An administrator must approve this workflow before it can be tested',
+      );
     const config = await this.toWebhookConfig(workflow);
     this.assertReady(config);
     const sampleValue = config.value || 'Example value';
     const body = this.renderTemplate(config.payloadTemplate, {
       event: 'document.metadata-webhook.test',
       workflow: { uuid: workflow.uuid, name: workflow.name },
-      document: { uuid: '00000000-0000-4000-8000-000000000000', title: 'Binder webhook test', originalFilename: 'webhook-test.pdf' },
-      metadata: { issuer: 'Example issuer', documentType: 'Example document type', category: 'Example category', tags: ['example'], custom: {} },
-      condition: { field: config.field, operator: config.operator, expected: config.value, actual: sampleValue },
+      document: {
+        uuid: '00000000-0000-4000-8000-000000000000',
+        title: 'Binder webhook test',
+        originalFilename: 'webhook-test.pdf',
+      },
+      metadata: {
+        issuer: 'Example issuer',
+        documentType: 'Example document type',
+        category: 'Example category',
+        tags: ['example'],
+        custom: {},
+      },
+      condition: {
+        field: config.field,
+        operator: config.operator,
+        expected: config.value,
+        actual: sampleValue,
+      },
     });
     return this.postJson(config.url, config.bearerToken, body);
   }
@@ -167,21 +210,23 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
       this.workflowStore.list(isAdmin ? undefined : ownerUuid),
     ]);
     const names = new Map(workflows.map((item) => [item.uuid, item.name]));
-    return { items: items.map((item) => ({
-      uuid: item.uuid,
-      documentUuid: item.documentUuid,
-      workflowUuid: item.workflowUuid,
-      workflowName: item.workflowUuid ? names.get(item.workflowUuid) ?? null : null,
-      field: item.field,
-      operator: item.operator,
-      triggerValue: item.triggerValue,
-      status: item.status,
-      attempts: item.attempts,
-      availableAt: item.availableAt.toISOString(),
-      deliveredAt: item.deliveredAt?.toISOString() ?? null,
-      lastError: item.lastError,
-      createdAt: item.createdAt.toISOString(),
-    })) };
+    return {
+      items: items.map((item) => ({
+        uuid: item.uuid,
+        documentUuid: item.documentUuid,
+        workflowUuid: item.workflowUuid,
+        workflowName: item.workflowUuid ? (names.get(item.workflowUuid) ?? null) : null,
+        field: item.field,
+        operator: item.operator,
+        triggerValue: item.triggerValue,
+        status: item.status,
+        attempts: item.attempts,
+        availableAt: item.availableAt.toISOString(),
+        deliveredAt: item.deliveredAt?.toISOString() ?? null,
+        lastError: item.lastError,
+        createdAt: item.createdAt.toISOString(),
+      })),
+    };
   }
 
   /** Requeues a failed delivery only for its owner or an administrator. */
@@ -190,13 +235,17 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
     if (!existing || (!isAdmin && existing.ownerUuid !== ownerUuid)) {
       throw new NotFoundException('Delivery not found');
     }
-    if (!existing.workflowUuid) throw new ConflictException('This delivery is not associated with a current workflow');
+    if (!existing.workflowUuid)
+      throw new ConflictException('This delivery is not associated with a current workflow');
     const workflow = await this.workflowStore.findByUuid(existing.workflowUuid);
     if (!workflow || !workflow.enabled || workflow.approvalStatus !== 'approved') {
-      throw new ForbiddenException('The workflow must be enabled and approved before delivery can be retried');
+      throw new ForbiddenException(
+        'The workflow must be enabled and approved before delivery can be retried',
+      );
     }
     const delivery = await this.deliveries.retry(uuid, isAdmin ? undefined : ownerUuid);
-    if (!delivery) throw new ConflictException('Only failed deliveries owned by you can be retried');
+    if (!delivery)
+      throw new ConflictException('Only failed deliveries owned by you can be retried');
   }
 
   /** Queues each approved owner rule whose condition matches the changed metadata. */
@@ -205,14 +254,25 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
     const workflows = await this.workflowStore.findRunnable(event.ownerUuid);
     if (workflows.length === 0) return;
     const details = event.payload['details'];
-    const fields = details && typeof details === 'object' ? (details as Record<string, unknown>)['fields'] : undefined;
+    const fields =
+      details && typeof details === 'object'
+        ? (details as Record<string, unknown>)['fields']
+        : undefined;
     const document = await this.documents.findOwnedByUuid(event.ownerUuid, event.documentUuid);
     if (!document) return;
     const metadata = await this.metadata.getDocumentMetadata(event.ownerUuid, event.documentUuid);
     for (const workflow of workflows) {
-      if (Array.isArray(fields) && !fields.includes(workflow.field) && !(workflow.field.startsWith('custom.') && fields.includes('custom'))) continue;
+      if (
+        Array.isArray(fields) &&
+        !fields.includes(workflow.field) &&
+        !(workflow.field.startsWith('custom.') && fields.includes('custom'))
+      )
+        continue;
       const actual = this.readMetadataField(metadata, workflow.field);
-      if (!this.matchesCondition(actual, workflow.operator as MetadataWebhookOperator, workflow.value)) continue;
+      if (
+        !this.matchesCondition(actual, workflow.operator as MetadataWebhookOperator, workflow.value)
+      )
+        continue;
       const config = await this.toWebhookConfig(workflow);
       const triggerValue = this.valueForDisplay(actual);
       const renderedPayload = this.renderTemplate(config.payloadTemplate, {
@@ -235,9 +295,18 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
           tags: metadata.tags.map((tag) => tag.name),
           custom: metadata.custom,
         },
-        condition: { field: config.field, operator: config.operator, expected: config.value, actual },
+        condition: {
+          field: config.field,
+          operator: config.operator,
+          expected: config.value,
+          actual,
+        },
       });
-      if (!renderedPayload || typeof renderedPayload !== 'object' || Array.isArray(renderedPayload)) {
+      if (
+        !renderedPayload ||
+        typeof renderedPayload !== 'object' ||
+        Array.isArray(renderedPayload)
+      ) {
         throw new BadRequestException('Webhook body template must have a JSON object at its root');
       }
       await this.deliveries.enqueue({
@@ -264,7 +333,10 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
         if (!delivery.workflowUuid) throw new Error('Delivery has no associated workflow');
         const workflow = await this.workflowStore.findByUuid(delivery.workflowUuid);
         if (!workflow || !workflow.enabled || workflow.approvalStatus !== 'approved') {
-          await this.deliveries.cancel(delivery.uuid, 'Workflow is disabled or awaiting administrator approval.');
+          await this.deliveries.cancel(
+            delivery.uuid,
+            'Workflow is disabled or awaiting administrator approval.',
+          );
           return;
         }
         const config = await this.toWebhookConfig(workflow);
@@ -291,13 +363,21 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
   }
 
   private validateWorkflowInput(input: MetadataWebhookWorkflowInput): void {
-    if (!/^(issuer|documentType|category|tags|custom\.[A-Za-z0-9_.-]+)$/u.test(input.field.trim())) {
-      throw new BadRequestException('Choose issuer, document type, category, tags, or a custom metadata field');
+    if (
+      !/^(issuer|documentType|category|tags|custom\.[A-Za-z0-9_.-]+)$/u.test(input.field.trim())
+    ) {
+      throw new BadRequestException(
+        'Choose issuer, document type, category, tags, or a custom metadata field',
+      );
     }
     if (!['is-set', 'is-not-set'].includes(input.operator) && !input.value.trim()) {
       throw new BadRequestException('Enter a comparison value for this condition');
     }
-    const config = { url: input.url.trim(), bearerToken: input.bearerToken?.trim() ?? '', payloadTemplate: input.payloadTemplate };
+    const config = {
+      url: input.url.trim(),
+      bearerToken: input.bearerToken?.trim() ?? '',
+      payloadTemplate: input.payloadTemplate,
+    };
     this.assertReady(config);
   }
 
@@ -306,18 +386,25 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
       const encrypted = this.encryption.encrypt(token.trim());
       return { bearerToken: encrypted.encrypted, bearerTokenIv: encrypted.iv };
     }
-    return { bearerToken: existing?.bearerToken ?? null, bearerTokenIv: existing?.bearerTokenIv ?? null };
+    return {
+      bearerToken: existing?.bearerToken ?? null,
+      bearerTokenIv: existing?.bearerTokenIv ?? null,
+    };
   }
 
-  private resolveUpdatedToken(workflow: MetadataWebhookWorkflow, input: MetadataWebhookWorkflowInput) {
+  private resolveUpdatedToken(
+    workflow: MetadataWebhookWorkflow,
+    input: MetadataWebhookWorkflowInput,
+  ) {
     if (input.clearBearerToken) return { bearerToken: null, bearerTokenIv: null };
     return this.encryptToken(input.bearerToken, workflow);
   }
 
   private async toWebhookConfig(workflow: MetadataWebhookWorkflow): Promise<WebhookConfig> {
-    const bearerToken = workflow.bearerToken && workflow.bearerTokenIv
-      ? this.encryption.decrypt(workflow.bearerToken, workflow.bearerTokenIv)
-      : '';
+    const bearerToken =
+      workflow.bearerToken && workflow.bearerTokenIv
+        ? this.encryption.decrypt(workflow.bearerToken, workflow.bearerTokenIv)
+        : '';
     return {
       uuid: workflow.uuid,
       ownerUuid: workflow.ownerUuid,
@@ -339,7 +426,8 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
       ownerUuid: workflow.ownerUuid,
       ownerLabel: (workflow.owner?.email
         ? `${workflow.owner.username} (${workflow.owner.email})`
-        : workflow.owner?.username ?? workflow.ownerUuid).slice(0, 400),
+        : (workflow.owner?.username ?? workflow.ownerUuid)
+      ).slice(0, 400),
       name: workflow.name,
       enabled: workflow.enabled,
       field: workflow.field,
@@ -355,7 +443,9 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private assertReady(config: Pick<WebhookConfig, 'url' | 'bearerToken' | 'payloadTemplate'>): void {
+  private assertReady(
+    config: Pick<WebhookConfig, 'url' | 'bearerToken' | 'payloadTemplate'>,
+  ): void {
     if (!config.url) throw new BadRequestException('Set a webhook URL first');
     if (config.bearerToken.length > 4_096 || /[\r\n]/.test(config.bearerToken)) {
       throw new BadRequestException('Webhook bearer token is invalid or too long');
@@ -364,7 +454,10 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
     this.parseTemplate(config.payloadTemplate);
   }
 
-  private readMetadataField(metadata: Awaited<ReturnType<MetadataService['getDocumentMetadata']>>, field: string): unknown {
+  private readMetadataField(
+    metadata: Awaited<ReturnType<MetadataService['getDocumentMetadata']>>,
+    field: string,
+  ): unknown {
     if (field === 'issuer') return metadata.issuer?.name ?? null;
     if (field === 'documentType') return metadata.documentType?.name ?? null;
     if (field === 'category') return metadata.category?.name ?? null;
@@ -373,8 +466,14 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
     return null;
   }
 
-  private matchesCondition(actual: unknown, operator: MetadataWebhookOperator, expected: string): boolean {
-    const hasValue = Array.isArray(actual) ? actual.length > 0 : actual !== null && actual !== undefined && String(actual).trim() !== '';
+  private matchesCondition(
+    actual: unknown,
+    operator: MetadataWebhookOperator,
+    expected: string,
+  ): boolean {
+    const hasValue = Array.isArray(actual)
+      ? actual.length > 0
+      : actual !== null && actual !== undefined && String(actual).trim() !== '';
     if (operator === 'is-set') return hasValue;
     if (operator === 'is-not-set') return !hasValue;
     if (!hasValue) return operator === 'not-equals';
@@ -383,8 +482,9 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
         ? actual.some((item) => String(item).toLocaleLowerCase() === expected.toLocaleLowerCase())
         : String(actual).toLocaleLowerCase().includes(expected.toLocaleLowerCase());
     }
-    const equal = (Array.isArray(actual) ? actual : [actual])
-      .some((item) => String(item).trim().toLocaleLowerCase() === expected.toLocaleLowerCase());
+    const equal = (Array.isArray(actual) ? actual : [actual]).some(
+      (item) => String(item).trim().toLocaleLowerCase() === expected.toLocaleLowerCase(),
+    );
     return operator === 'equals' ? equal : !equal;
   }
 
@@ -394,7 +494,8 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
   }
 
   private parseTemplate(template: string): unknown {
-    if (template.length > 20_000) throw new BadRequestException('Webhook JSON template is too large');
+    if (template.length > 20_000)
+      throw new BadRequestException('Webhook JSON template is too large');
     let parsed: unknown;
     try {
       parsed = JSON.parse(template) as unknown;
@@ -422,7 +523,9 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
         const resolved = this.resolveVariable(context, path);
         return resolved === null || resolved === undefined
           ? ''
-          : typeof resolved === 'string' ? resolved : JSON.stringify(resolved);
+          : typeof resolved === 'string'
+            ? resolved
+            : JSON.stringify(resolved);
       });
     };
     return render(parsed);
@@ -443,17 +546,27 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
       throw new BadRequestException('Webhook URL must be a valid HTTP or HTTPS URL');
     }
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
-      throw new BadRequestException('Webhook URL must use HTTP or HTTPS and cannot contain credentials');
+      throw new BadRequestException(
+        'Webhook URL must use HTTP or HTTPS and cannot contain credentials',
+      );
     }
     const hostname = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
-    if (hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.local')) {
+    if (
+      hostname === 'localhost' ||
+      hostname.endsWith('.localhost') ||
+      hostname.endsWith('.local')
+    ) {
       throw new BadRequestException('Webhook URL must point to a public host');
     }
     return url;
   }
 
   /** Posts JSON to a validated public address without following redirects. */
-  private async postJson(urlValue: string, bearerToken: string, payload: unknown): Promise<RequestResult> {
+  private async postJson(
+    urlValue: string,
+    bearerToken: string,
+    payload: unknown,
+  ): Promise<RequestResult> {
     const url = this.assertPublicWebhookURL(urlValue);
     const hostname = url.hostname.replace(/^\[|\]$/g, '');
     const addresses = await lookup(hostname, { all: true, verbatim: true }).catch(() => []);
@@ -489,9 +602,10 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
           resolve({
             success: statusCode >= 200 && statusCode < 300,
             statusCode,
-            message: statusCode >= 200 && statusCode < 300
-              ? `Webhook accepted the request (HTTP ${statusCode}).`
-              : `Webhook returned HTTP ${statusCode}.`,
+            message:
+              statusCode >= 200 && statusCode < 300
+                ? `Webhook accepted the request (HTTP ${statusCode}).`
+                : `Webhook returned HTTP ${statusCode}.`,
           });
         });
       });
@@ -521,7 +635,13 @@ export class MetadataWebhookService implements OnModuleInit, OnModuleDestroy {
       if (normalized.startsWith('::ffff:')) return this.isPublicAddress(normalized.slice(7));
       const firstHextet = Number.parseInt(normalized.split(':')[0] || '0', 16);
       if (firstHextet < 0x2000 || firstHextet > 0x3fff) return false;
-      if (normalized.startsWith('2001:0:') || normalized.startsWith('2001:2:') || normalized.startsWith('2001:db8:') || normalized.startsWith('2002:')) return false;
+      if (
+        normalized.startsWith('2001:0:') ||
+        normalized.startsWith('2001:2:') ||
+        normalized.startsWith('2001:db8:') ||
+        normalized.startsWith('2002:')
+      )
+        return false;
       return true;
     }
     return false;

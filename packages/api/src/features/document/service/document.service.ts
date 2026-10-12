@@ -282,7 +282,8 @@ export class DocumentService {
     }
 
     const extractionDirectory = await mkdtemp(join(tmpdir(), 'binder-api-batch-'));
-    const extractedFiles: Array<{ index: number; fileName: string; path: string; size: number }> = [];
+    const extractedFiles: Array<{ index: number; fileName: string; path: string; size: number }> =
+      [];
     let totalExpandedBytes = 0;
 
     try {
@@ -312,8 +313,11 @@ export class DocumentService {
           }
 
           if (
-            !fileName || fileName.length > 255 || basename(fileName) !== fileName ||
-            fileName.includes('\\') || /[\u0000-\u001f\u007f]/u.test(fileName)
+            !fileName ||
+            fileName.length > 255 ||
+            basename(fileName) !== fileName ||
+            fileName.includes('\\') ||
+            /[\u0000-\u001f\u007f]/u.test(fileName)
           ) {
             throw new BadRequestException('ZIP entries must use safe, flat filenames');
           }
@@ -321,13 +325,22 @@ export class DocumentService {
             throw new BadRequestException('ZIP archives can contain regular files only');
           }
           if (entry.isEncrypted() || !entry.canDecodeFileData()) {
-            throw new BadRequestException(`The ZIP entry '${fileName}' is encrypted or unsupported`);
+            throw new BadRequestException(
+              `The ZIP entry '${fileName}' is encrypted or unsupported`,
+            );
           }
           if (![0, 8].includes(entry.compressionMethod)) {
-            throw new BadRequestException(`The ZIP entry '${fileName}' uses unsupported compression`);
+            throw new BadRequestException(
+              `The ZIP entry '${fileName}' uses unsupported compression`,
+            );
           }
-          if (entry.uncompressedSize <= 0 || entry.uncompressedSize > DocumentService.MAX_BATCH_ENTRY_BYTES) {
-            throw new BadRequestException(`The ZIP entry '${fileName}' exceeds the per-document size limit`);
+          if (
+            entry.uncompressedSize <= 0 ||
+            entry.uncompressedSize > DocumentService.MAX_BATCH_ENTRY_BYTES
+          ) {
+            throw new BadRequestException(
+              `The ZIP entry '${fileName}' exceeds the per-document size limit`,
+            );
           }
           if (entry.compressedSize < 0 || entry.uncompressedSize < 0) {
             throw new BadRequestException(`The ZIP entry '${fileName}' has invalid size metadata`);
@@ -347,9 +360,15 @@ export class DocumentService {
               entryBytes += chunk.length;
               totalExpandedBytes += chunk.length;
               if (entryBytes > DocumentService.MAX_BATCH_ENTRY_BYTES) {
-                callback(new BadRequestException(`The ZIP entry '${fileName}' exceeds the per-document size limit`));
+                callback(
+                  new BadRequestException(
+                    `The ZIP entry '${fileName}' exceeds the per-document size limit`,
+                  ),
+                );
               } else if (totalExpandedBytes > DocumentService.MAX_BATCH_UPLOAD_BYTES) {
-                callback(new BadRequestException('The ZIP archive exceeds the expanded size limit'));
+                callback(
+                  new BadRequestException('The ZIP archive exceeds the expanded size limit'),
+                );
               } else {
                 callback(null, chunk);
               }
@@ -357,7 +376,11 @@ export class DocumentService {
           });
 
           try {
-            await pipeline(input, sizeGuard, createWriteStream(destinationPath, { flags: 'wx', mode: 0o600 }));
+            await pipeline(
+              input,
+              sizeGuard,
+              createWriteStream(destinationPath, { flags: 'wx', mode: 0o600 }),
+            );
           } catch (error) {
             await rm(destinationPath, { force: true }).catch(() => undefined);
             throw error;
@@ -365,9 +388,16 @@ export class DocumentService {
 
           const fileStat = await stat(destinationPath);
           if (fileStat.size !== entry.uncompressedSize) {
-            throw new BadRequestException(`The ZIP entry '${fileName}' has inconsistent size metadata`);
+            throw new BadRequestException(
+              `The ZIP entry '${fileName}' has inconsistent size metadata`,
+            );
           }
-          extractedFiles.push({ index: extractedFiles.length, fileName, path: destinationPath, size: fileStat.size });
+          extractedFiles.push({
+            index: extractedFiles.length,
+            fileName,
+            path: destinationPath,
+            size: fileStat.size,
+          });
           if (totalExpandedBytes > DocumentService.MAX_BATCH_UPLOAD_BYTES) {
             throw new BadRequestException('The ZIP archive exceeds the expanded size limit');
           }
@@ -380,7 +410,8 @@ export class DocumentService {
         throw new BadRequestException('The ZIP archive contains no documents');
       }
 
-      const items: Array<{ index: number; fileName: string; success: boolean; message?: string }> = [];
+      const items: Array<{ index: number; fileName: string; success: boolean; message?: string }> =
+        [];
       for (const file of extractedFiles) {
         try {
           await this.upload(ownerUuid, {
@@ -395,12 +426,18 @@ export class DocumentService {
             this.logger.error(`Batch upload failed for ZIP entry '${file.fileName}'`, error);
           }
           const response = error instanceof HttpException ? error.getResponse() : undefined;
-          const message = typeof response === 'string'
-            ? response
-            : typeof response === 'object' && response !== null && 'message' in response
-              ? String(response.message)
-              : 'The document could not be uploaded';
-          items.push({ index: file.index, fileName: file.fileName, success: false, message: message.slice(0, 300) });
+          const message =
+            typeof response === 'string'
+              ? response
+              : typeof response === 'object' && response !== null && 'message' in response
+                ? String(response.message)
+                : 'The document could not be uploaded';
+          items.push({
+            index: file.index,
+            fileName: file.fileName,
+            success: false,
+            message: message.slice(0, 300),
+          });
         }
       }
 
@@ -1722,13 +1759,18 @@ export class DocumentService {
     if (requestedSources.some((source) => source.documentUuid === uuid)) {
       throw new BadRequestException('A document cannot be inserted into itself');
     }
-    if (new Set(requestedSources.map((source) => source.documentUuid)).size !== requestedSources.length) {
+    if (
+      new Set(requestedSources.map((source) => source.documentUuid)).size !==
+      requestedSources.length
+    ) {
       throw new BadRequestException('A source document can only be added once');
     }
 
     const [target, ...sourceDocuments] = await Promise.all([
       this.documents.findOwnedByUuid(ownerUuid, uuid),
-      ...requestedSources.map((source) => this.documents.findOwnedByUuid(ownerUuid, source.documentUuid)),
+      ...requestedSources.map((source) =>
+        this.documents.findOwnedByUuid(ownerUuid, source.documentUuid),
+      ),
     ]);
     if (!target || sourceDocuments.some((source) => !source)) {
       throw new NotFoundException('Document not found');
@@ -1744,7 +1786,9 @@ export class DocumentService {
       const startPage = selection.startPage ?? 1;
       const endPage = selection.endPage ?? pageCount;
       if (startPage > endPage || endPage > pageCount) {
-        throw new BadRequestException(`The selected pages must be between page 1 and page ${pageCount}`);
+        throw new BadRequestException(
+          `The selected pages must be between page 1 and page ${pageCount}`,
+        );
       }
       return { document: source, startPage, endPage };
     });
@@ -1884,9 +1928,10 @@ export class DocumentService {
       const sourceExtension = extname(filename);
       return sourceExtension ? filename.slice(0, -sourceExtension.length) : filename;
     });
-    const suffix = sourceBases.length > 1
-      ? `${sourceBases[0]} + ${sourceBases.length - 1} more`
-      : sourceBases[0]!;
+    const suffix =
+      sourceBases.length > 1
+        ? `${sourceBases[0]} + ${sourceBases.length - 1} more`
+        : sourceBases[0]!;
     return `${targetBase} + ${suffix}${extension}`.slice(0, 255);
   }
 
