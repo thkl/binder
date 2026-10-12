@@ -271,6 +271,9 @@
           @if (activeSection() === 'ai') {
             <binder-ai-provider-manager />
           }
+          @if (activeSection() === 'workflows') {
+            <binder-metadata-webhook-manager />
+          }
         }
       </div>
     </div>

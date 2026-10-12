@@ -1,0 +1,180 @@
+.webhook-card {
+  margin-top: 1.25rem;
+  padding: 1.5rem;
+}
+
+.workflow-editor {
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  margin-bottom: 1.5rem;
+}
+
+.workflow-editor .section-kicker {
+  margin: 0;
+}
+
+.rule-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.workflow-editor label:not(.toggle-row) {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.workflow-editor label > span {
+  color: var(--text-muted, #737b88);
+  font-size: 0.85rem;
+}
+
+.workflow-editor input:not([type='checkbox']),
+.workflow-editor select,
+.workflow-editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.16));
+  border-radius: 0.65rem;
+  color: var(--text-primary, inherit);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.06));
+  font: inherit;
+}
+
+.workflow-editor textarea {
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.template-help {
+  margin: -0.5rem 0 0;
+  font-size: 0.82rem;
+}
+
+.webhook-card > header,
+.webhook-actions,
+.delivery-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.webhook-card h3 {
+  margin: 0;
+}
+
+.webhook-card header .muted {
+  margin: 0.4rem 0 0;
+}
+
+.webhook-actions {
+  flex-shrink: 0;
+}
+
+.webhook-message,
+.webhook-error,
+.webhook-empty {
+  margin: 1rem 0 0;
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--surface-raised, rgba(255, 255, 255, 0.06));
+}
+
+.webhook-message {
+  color: var(--success, #18794e);
+}
+
+.webhook-error,
+.delivery-error {
+  color: var(--danger, #b42318);
+}
+
+.delivery-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.delivery-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: 0.85rem;
+}
+
+.delivery-main {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.delivery-heading {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.delivery-heading time,
+.delivery-main small,
+.delivery-main code {
+  color: var(--text-muted, #737b88);
+  font-size: 0.8rem;
+}
+
+.delivery-main code {
+  overflow-wrap: anywhere;
+}
+
+.delivery-status {
+  width: fit-content;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--surface-raised, rgba(255, 255, 255, 0.08));
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.delivery-status.delivered {
+  color: var(--success, #18794e);
+}
+
+.delivery-status.failed {
+  color: var(--danger, #b42318);
+}
+
+.delivery-error {
+  margin: 0;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 680px) {
+  .rule-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .webhook-card > header,
+  .delivery-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .webhook-actions {
+    justify-content: flex-start;
+  }
+}

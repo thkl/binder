@@ -549,6 +549,7 @@ export const PluginManifestSchema = z.object({
 export type PluginManifest = z.infer<typeof PluginManifestSchema>;
 
 export const PluginDocumentEventSchema = z.object({
+  eventUuid: z.uuid().optional(),
   name: z
     .string()
     .trim()
@@ -562,6 +563,66 @@ export const PluginDocumentEventSchema = z.object({
   occurredAt: z.iso.datetime(),
 });
 export type PluginDocumentEvent = z.infer<typeof PluginDocumentEventSchema>;
+
+/** Operators supported by a metadata-triggered webhook workflow. */
+export const MetadataWebhookOperatorSchema = z.enum([
+  'equals',
+  'not-equals',
+  'contains',
+  'is-set',
+  'is-not-set',
+]);
+export type MetadataWebhookOperator = z.infer<typeof MetadataWebhookOperatorSchema>;
+
+/** Editable webhook rule. The token field is write-only; the API returns only its configured state. */
+export const MetadataWebhookConfigSchema = z.object({
+  enabled: z.boolean(),
+  field: z.string().trim().min(1).max(200),
+  operator: MetadataWebhookOperatorSchema,
+  value: z.string().max(500),
+  url: z.string().max(2048),
+  bearerToken: z.string().max(4096).optional(),
+  clearBearerToken: z.boolean().optional(),
+  hasBearerToken: z.boolean().optional(),
+  payloadTemplate: z.string().max(20_000),
+});
+export type MetadataWebhookConfig = z.infer<typeof MetadataWebhookConfigSchema>;
+
+/** Safe configuration response that never includes a saved bearer token. */
+export const MetadataWebhookConfigResponseSchema = MetadataWebhookConfigSchema
+  .omit({ bearerToken: true, clearBearerToken: true })
+  .extend({ hasBearerToken: z.boolean() });
+export type MetadataWebhookConfigResponse = z.infer<typeof MetadataWebhookConfigResponseSchema>;
+
+export const MetadataWebhookDeliveryStatusSchema = z.enum(['pending', 'delivered', 'failed']);
+export type MetadataWebhookDeliveryStatus = z.infer<typeof MetadataWebhookDeliveryStatusSchema>;
+
+export const MetadataWebhookDeliverySchema = z.object({
+  uuid: z.uuid(),
+  documentUuid: z.uuid(),
+  field: z.string().min(1).max(200),
+  operator: MetadataWebhookOperatorSchema,
+  triggerValue: z.string().max(500),
+  status: MetadataWebhookDeliveryStatusSchema,
+  attempts: z.number().int().nonnegative(),
+  availableAt: z.iso.datetime(),
+  deliveredAt: z.iso.datetime().nullable(),
+  lastError: z.string().max(500).nullable(),
+  createdAt: z.iso.datetime(),
+});
+export type MetadataWebhookDelivery = z.infer<typeof MetadataWebhookDeliverySchema>;
+
+export const MetadataWebhookDeliveryListSchema = z.object({
+  items: z.array(MetadataWebhookDeliverySchema),
+});
+export type MetadataWebhookDeliveryList = z.infer<typeof MetadataWebhookDeliveryListSchema>;
+
+export const MetadataWebhookTestResponseSchema = z.object({
+  success: z.boolean(),
+  statusCode: z.number().int().nullable(),
+  message: z.string().max(500),
+});
+export type MetadataWebhookTestResponse = z.infer<typeof MetadataWebhookTestResponseSchema>;
 
 export const PluginListResponseSchema = z.object({
   items: z.array(PluginManifestSchema),

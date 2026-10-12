@@ -33,6 +33,7 @@ This folder contains the living documentation for the lightweight document manag
 - [Extensions and plugins](./architecture/extensions.md) — versioned extension points, calendar automation, and email import
 - [Email integration](./architecture/email.md) — SMTP configuration, IMAP import configuration, and the mailbox adapter boundary
 - [Calendar integration](./architecture/calendar.md) — owner-scoped iCalendar events from due-date metadata
+- [Webhook workflows](./architecture/workflows.md) — configured due-date triggers, metadata templates, durable delivery retries, and endpoint safeguards
 - [iOS app](./int/ios-app-mvp.md) — native SwiftUI app direction and MVP scope
 - [Document format adapters](./int/document-format-adapter-plan.md) — phased plan for a universal format boundary with PDF as the baseline
 - [AI assistance](./architecture/ai-assistance.md) — user-confirmed hosted title suggestions

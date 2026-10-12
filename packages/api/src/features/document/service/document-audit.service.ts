@@ -44,6 +44,7 @@ export class DocumentAuditService {
     });
 
     this.plugins.publishDocumentEvent({
+      eventUuid: event.uuid,
       name: `document.${event.eventType}`,
       documentUuid: event.documentUuid,
       ownerUuid: event.ownerUuid,

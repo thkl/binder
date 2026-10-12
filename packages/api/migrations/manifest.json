@@ -488,6 +488,15 @@
                     "document_pages",
                     "document_embeddings"
                ]
+          },
+          "76": {
+               "created": [
+                    "metadata_webhook_deliveries"
+               ],
+               "required": [
+                    "users",
+                    "documents"
+               ]
           }
      }
 }

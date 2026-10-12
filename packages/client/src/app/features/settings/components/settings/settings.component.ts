@@ -24,6 +24,7 @@ import { MaintenanceService } from '../../../maintenance/services/maintenance.se
 import { ApiTokenManagerComponent } from '../api-token-manager/api-token-manager.component';
 import { IssuerManagerComponent } from '../issuer-manager/issuer-manager.component';
 import { PushNotificationsComponent } from '../push-notifications/push-notifications.component';
+import { MetadataWebhookManagerComponent } from '../metadata-webhook-manager/metadata-webhook-manager.component';
 
 @Component({
   selector: 'binder-settings',
@@ -35,6 +36,7 @@ import { PushNotificationsComponent } from '../push-notifications/push-notificat
     ApiTokenManagerComponent,
     IssuerManagerComponent,
     PushNotificationsComponent,
+    MetadataWebhookManagerComponent,
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
@@ -136,10 +138,12 @@ export class SettingsComponent implements OnInit {
   }
 
   description(item: SettingsMapItem): string {
-    return (
-      this.settingsService.settings()?.data.find((setting) => setting.key === item.key)
-        ?.description ?? item.key
-    );
+    const key = `setting.${item.key}.description`;
+    const translated = this.i18n.t(key);
+    return translated === key
+      ? (this.settingsService.settings()?.data.find((setting) => setting.key === item.key)
+          ?.description ?? item.key)
+      : translated;
   }
 
   patternHint(item: SettingsMapItem): string {

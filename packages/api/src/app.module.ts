@@ -28,6 +28,7 @@ import { EmailImportModule } from './features/email-import/email-import.module';
 import { LocalizationModule } from './features/localization/localization.module';
 import { NotificationsModule } from './features/notifications/notifications.module';
 import { SharingModule } from './features/sharing/sharing.module';
+import { WorkflowModule } from './features/workflow/workflow.module';
 
 @Module({
   controllers: [HealthController],
@@ -57,6 +58,7 @@ import { SharingModule } from './features/sharing/sharing.module';
     LocalizationModule,
     NotificationsModule,
     SharingModule,
+    WorkflowModule,
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

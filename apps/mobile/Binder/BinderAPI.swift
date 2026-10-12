@@ -641,6 +641,49 @@ private struct SetDocumentMetadataPayload: Encodable {
     let custom: [String: BinderMetadataValue]
 }
 
+struct BinderBulkMetadataPayload: Encodable {
+    let documentUuids: [String]
+    let policy: String
+    let metadata: [String: BinderMetadataValue]
+    let folderUuids: [String]?
+}
+
+struct BinderBulkMetadataPreview: Decodable {
+    let requested: Int
+    let eligible: Int
+    let skipped: Int
+    let conflicts: Int
+}
+
+struct BinderBulkMetadataResult: Decodable {
+    let changeSet: BinderMetadataChangeSet
+    let requested: Int
+    let applied: Int
+    let skipped: Int
+    let conflicts: Int
+}
+
+struct BinderMetadataChangeSet: Decodable {
+    let uuid: String
+    let status: String
+}
+
+struct BinderMetadataRollbackResult: Decodable {
+    let rolledBack: Int
+}
+
+private struct BulkMetadataPreviewEnvelope: Decodable {
+    let data: BinderBulkMetadataPreview
+}
+
+private struct BulkMetadataApplyEnvelope: Decodable {
+    let data: BinderBulkMetadataResult
+}
+
+private struct BulkMetadataRollbackEnvelope: Decodable {
+    let data: BinderMetadataRollbackResult
+}
+
 private struct SetDocumentTitlePayload: Encodable {
     let title: String
 }
@@ -1040,6 +1083,26 @@ final class BinderAPI {
         let (data, response) = try await urlSession.data(for: request)
         try absorbSessionCookie(from: response, for: request)
         try validate(response, data: data)
+    }
+
+    func previewBulkMetadata(serverURL: String, payload: BinderBulkMetadataPayload) async throws -> BinderBulkMetadataPreview {
+        let data = try await mutate(path: "documents/bulk-metadata/preview", serverURL: serverURL, method: "POST", payload: payload)
+        return try JSONDecoder().decode(BulkMetadataPreviewEnvelope.self, from: data).data
+    }
+
+    func applyBulkMetadata(serverURL: String, payload: BinderBulkMetadataPayload) async throws -> BinderBulkMetadataResult {
+        let data = try await mutate(path: "documents/bulk-metadata", serverURL: serverURL, method: "POST", payload: payload)
+        return try JSONDecoder().decode(BulkMetadataApplyEnvelope.self, from: data).data
+    }
+
+    func rollbackBulkMetadata(serverURL: String, changeSetUUID: String) async throws -> BinderMetadataRollbackResult {
+        let data = try await mutate(
+            path: "documents/change-sets/\(changeSetUUID)/rollback",
+            serverURL: serverURL,
+            method: "POST",
+            payload: EmptyMutationPayload()
+        )
+        return try JSONDecoder().decode(BulkMetadataRollbackEnvelope.self, from: data).data
     }
 
     func updateDocumentTitle(serverURL: String, documentUUID: String, title: String) async throws {

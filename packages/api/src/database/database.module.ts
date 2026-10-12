@@ -45,6 +45,7 @@ import { PasswordResetToken } from '../features/authentication/models/password-r
 import { DocumentShare } from '../features/sharing/models/document-share.entity';
 import { FolderShare } from '../features/sharing/models/folder-share.entity';
 import { EmailImportApprovedServer } from '../features/email-import/models/email-import-approved-server.entity';
+import { MetadataWebhookDelivery } from '../features/workflow/models/metadata-webhook-delivery.entity';
 
 @Global()
 @Module({
@@ -129,6 +130,7 @@ import { EmailImportApprovedServer } from '../features/email-import/models/email
       DocumentShare,
       FolderShare,
       EmailImportApprovedServer,
+      MetadataWebhookDelivery,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],

@@ -38,6 +38,10 @@ export const settingsSections: SettingsSection[] = [
     label: 'Calendar integration',
   },
   {
+    key: 'workflows',
+    label: 'Workflows',
+  },
+  {
     key: 'pushnotifications',
     label: 'Push notifications',
   },

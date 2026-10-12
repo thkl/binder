@@ -2601,7 +2601,7 @@ export class DocumentService {
     if (suggestion.categoryUuid) fields.push('category');
     if (suggestion.issuerUuid || suggestion.suggestedIssuer) fields.push('issuer');
     if (suggestion.tagUuids.length > 0) fields.push('tags');
-    if (Object.keys(suggestion.custom).length > 0) fields.push('custom');
+    fields.push(...Object.keys(suggestion.custom).map((key) => `custom.${key}`));
     return fields;
   }
 

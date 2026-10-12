@@ -448,6 +448,11 @@ private struct FolderContentsView: View {
     @State private var compositionTarget: BinderDocumentSummary?
     @State private var compositionSources: [BinderDocumentSummary] = []
     @State private var composeRequest: FolderComposeRequest?
+    @State private var isSelectingDocuments = false
+    @State private var selectedDocumentUUIDs: Set<String> = []
+    @State private var showingBulkMetadataEditor = false
+    @State private var recentBulkMetadataChange: BinderBulkMetadataResult?
+    @State private var isRollingBackBulkMetadata = false
     @AppStorage("binder.compose-selection-help.dismissed") private var hasDismissedComposeHelp = false
 
     private var isSelectingComposeSources: Bool { compositionTarget != nil }
@@ -525,6 +530,26 @@ private struct FolderContentsView: View {
                             ErrorBanner(message: errorMessage) {
                                 Task { await loadContents() }
                             }
+                        }
+                    }
+
+                    if let recentBulkMetadataChange {
+                        Section {
+                            HStack(spacing: 12) {
+                                Label("Updated metadata for \(recentBulkMetadataChange.applied) documents", systemImage: "checkmark.circle.fill")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Spacer(minLength: 4)
+                                Button {
+                                    Task { await undoBulkMetadataChange() }
+                                } label: {
+                                    if isRollingBackBulkMetadata { ProgressView() }
+                                    else { Text("Undo") }
+                                }
+                                .disabled(isRollingBackBulkMetadata)
+                                .fontWeight(.semibold)
+                            }
+                            .accessibilityElement(children: .contain)
                         }
                     }
 
@@ -608,27 +633,46 @@ private struct FolderContentsView: View {
                         }
 
                         Menu {
-                            Picker("Group by", selection: $sortOptions.groupBy) {
-                                ForEach(BinderGroupMode.allCases) { mode in
-                                    Text(mode.label).tag(mode)
+                            if isSelectingDocuments {
+                                Button {
+                                    selectedDocumentUUIDs = Set(documents.prefix(100).map(\.uuid))
+                                    if documents.count > 100 {
+                                        managementError = "The API supports editing up to 100 documents at a time. The first 100 loaded documents are selected."
+                                    }
+                                } label: {
+                                    Label("Select all loaded documents", systemImage: "checkmark.circle")
+                                }
+                                Button {
+                                    showingBulkMetadataEditor = true
+                                } label: {
+                                    Label("Edit metadata for \(selectedDocumentUUIDs.count) documents…", systemImage: "pencil")
+                                }
+                                .disabled(selectedDocumentUUIDs.isEmpty)
+                                Button("Cancel selection", systemImage: "xmark") {
+                                    leaveDocumentSelection()
+                                }
+                            } else {
+                                Button("Select documents", systemImage: "checkmark.circle") {
+                                    isSelectingDocuments = true
+                                    selectedDocumentUUIDs = []
                                 }
                             }
+                            Divider()
+                            Picker("Group by", selection: $sortOptions.groupBy) {
+                                ForEach(BinderGroupMode.allCases) { mode in Text(mode.label).tag(mode) }
+                            }
                             Picker("Sort order", selection: $sortOptions.direction) {
-                                ForEach(BinderSortDirection.allCases) { direction in
-                                    Text(direction.label).tag(direction)
-                                }
+                                ForEach(BinderSortDirection.allCases) { direction in Text(direction.label).tag(direction) }
                             }
                             if sortOptions.groupBy != .none {
                                 Picker("Group order", selection: $sortOptions.groupDirection) {
-                                    ForEach(BinderSortDirection.allCases) { direction in
-                                        Text(direction.label).tag(direction)
-                                    }
+                                    ForEach(BinderSortDirection.allCases) { direction in Text(direction.label).tag(direction) }
                                 }
                             }
                         } label: {
-                            Label("Sort", systemImage: "arrow.up.arrow.down")
+                            Label(isSelectingDocuments ? "\(selectedDocumentUUIDs.count) selected" : "Options", systemImage: isSelectingDocuments ? "checkmark.circle.fill" : "ellipsis.circle")
                         }
-                        .accessibilityLabel("Sort and group documents")
+                        .accessibilityLabel("Folder options")
                     }
                 }
             }
@@ -658,6 +702,20 @@ private struct FolderContentsView: View {
                 serverURL: model.serverURL,
                 initialSources: request.sources
             )
+        }
+        .sheet(isPresented: $showingBulkMetadataEditor) {
+            NavigationStack {
+                BulkMetadataEditorView(
+                    documentUUIDs: documents.map(\.uuid).filter { selectedDocumentUUIDs.contains($0) },
+                    folders: allFolders,
+                    serverURL: model.serverURL,
+                    onApplied: { result in
+                        recentBulkMetadataChange = result
+                        leaveDocumentSelection()
+                        await loadDocuments(reset: true)
+                    }
+                )
+            }
         }
         .confirmationDialog(
             "Delete folder?",
@@ -780,6 +838,28 @@ private struct FolderContentsView: View {
         compositionSources = []
     }
 
+    private func leaveDocumentSelection() {
+        isSelectingDocuments = false
+        selectedDocumentUUIDs = []
+    }
+
+    @MainActor
+    private func undoBulkMetadataChange() async {
+        guard let change = recentBulkMetadataChange else { return }
+        isRollingBackBulkMetadata = true
+        defer { isRollingBackBulkMetadata = false }
+        do {
+            _ = try await BinderAPI.shared.rollbackBulkMetadata(
+                serverURL: model.serverURL,
+                changeSetUUID: change.changeSet.uuid
+            )
+            recentBulkMetadataChange = nil
+            await loadDocuments(reset: true)
+        } catch {
+            managementError = "Couldn’t undo the metadata update: \(error.localizedDescription)"
+        }
+    }
+
     private func toggleComposeSource(_ document: BinderDocumentSummary) {
         guard isSelectableComposeSource(document) else { return }
         if let index = compositionSources.firstIndex(where: { $0.uuid == document.uuid }) {
@@ -854,6 +934,24 @@ private struct FolderContentsView: View {
                     .buttonStyle(.plain)
                     .disabled(!isSelectableComposeSource(document))
                     .accessibilityLabel(isComposeSourceSelected(document) ? "Remove from composition" : "Add to composition")
+                } else if isSelectingDocuments {
+                    Button {
+                        if selectedDocumentUUIDs.contains(document.uuid) {
+                            selectedDocumentUUIDs.remove(document.uuid)
+                        } else if selectedDocumentUUIDs.count < 100 {
+                            selectedDocumentUUIDs.insert(document.uuid)
+                        } else {
+                            managementError = "Select up to 100 documents at a time."
+                        }
+                    } label: {
+                        Image(systemName: selectedDocumentUUIDs.contains(document.uuid) ? "checkmark.circle.fill" : "circle")
+                            .font(.title3)
+                            .foregroundStyle(selectedDocumentUUIDs.contains(document.uuid) ? Color.accentColor : Color.secondary)
+                            .frame(width: 36, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(selectedDocumentUUIDs.contains(document.uuid) ? "Deselect document" : "Select document")
                 }
             }
             .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
@@ -995,6 +1093,318 @@ private struct FolderDocumentGroup: Identifiable {
     var documents: [BinderDocumentSummary]
 
     var id: String { key }
+}
+
+private enum BulkMetadataPolicy: String, CaseIterable, Identifiable {
+    case fillEmpty = "fill-empty"
+    case skipExisting = "skip-existing"
+    case replaceSelected = "replace-selected"
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .fillEmpty: "Fill empty fields"
+        case .skipExisting: "Skip documents with values"
+        case .replaceSelected: "Replace selected fields"
+        }
+    }
+}
+
+private struct BulkMetadataEditorView: View {
+    let documentUUIDs: [String]
+    let folders: [BinderFolder]
+    let serverURL: String
+    let onApplied: (BinderBulkMetadataResult) async -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var options: BinderMetadataEditorOptions?
+    @State private var isLoading = true
+    @State private var isWorking = false
+    @State private var errorMessage: String?
+    @State private var policy: BulkMetadataPolicy = .fillEmpty
+    @State private var enabledFields: Set<String> = []
+    @State private var documentTypeUUID = ""
+    @State private var categoryUUID = ""
+    @State private var issuerUUID = ""
+    @State private var folderUUID = ""
+    @State private var tagUUIDs: Set<String> = []
+    @State private var customValues: [String: String] = [:]
+    @State private var preview: BinderBulkMetadataPreview?
+    @State private var showingReplaceConfirmation = false
+
+    var body: some View {
+        Group {
+            if isLoading {
+                ProgressView("Loading metadata options…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let options {
+                form(options)
+            } else {
+                ContentUnavailableView {
+                    Label("Couldn’t load metadata options", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(errorMessage ?? "Try again in a moment.")
+                } actions: {
+                    Button("Retry") { Task { await loadOptions() } }
+                }
+            }
+        }
+        .navigationTitle("Edit \(documentUUIDs.count) documents")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Cancel") { dismiss() }.disabled(isWorking)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    Task { await reviewOrApply() }
+                } label: {
+                    if isWorking { ProgressView() }
+                    else { Text(preview == nil ? "Review" : "Apply").fontWeight(.semibold) }
+                }
+                .disabled(isWorking || isLoading || enabledFields.isEmpty || documentUUIDs.isEmpty)
+            }
+        }
+        .alert("Replace existing metadata?", isPresented: $showingReplaceConfirmation) {
+            Button("Replace", role: .destructive) { Task { await applyChanges() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will overwrite selected fields on documents that already have values.")
+        }
+        .task { await loadOptions() }
+    }
+
+    private func form(_ options: BinderMetadataEditorOptions) -> some View {
+        Form {
+            Section {
+                Text("Choose only the fields you want to change. Other metadata will be left as it is.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Picker("Apply policy", selection: $policy) {
+                    ForEach(BulkMetadataPolicy.allCases) { item in Text(item.title).tag(item) }
+                }
+                .onChange(of: policy) { _, _ in preview = nil }
+            }
+
+            Section("Classification") {
+                fieldToggle("Document type", key: "documentTypeUuid")
+                if enabledFields.contains("documentTypeUuid") {
+                    Picker("Document type", selection: stringBinding({ documentTypeUUID }, { documentTypeUUID = $0 })) {
+                        Text("Clear").tag("")
+                        ForEach(options.vocabulary.documentTypes) { Text($0.name).tag($0.uuid) }
+                    }
+                }
+                fieldToggle("Category", key: "categoryUuid")
+                if enabledFields.contains("categoryUuid") {
+                    Picker("Category", selection: stringBinding({ categoryUUID }, { categoryUUID = $0 })) {
+                        Text("Clear").tag("")
+                        ForEach(options.vocabulary.categories) { Text($0.name).tag($0.uuid) }
+                    }
+                }
+                fieldToggle("Issuer", key: "issuerUuid")
+                if enabledFields.contains("issuerUuid") {
+                    Picker("Issuer", selection: stringBinding({ issuerUUID }, { issuerUUID = $0 })) {
+                        Text("Clear").tag("")
+                        ForEach(options.issuers) { Text($0.name).tag($0.uuid) }
+                    }
+                }
+                fieldToggle("Folder", key: "folders")
+                if enabledFields.contains("folders") {
+                    Picker("Folder", selection: stringBinding({ folderUUID }, { folderUUID = $0 })) {
+                        Text("Remove from all folders").tag("")
+                        ForEach(folders.sorted { $0.path(in: folders).localizedStandardCompare($1.path(in: folders)) == .orderedAscending }) {
+                            Text($0.path(in: folders)).tag($0.uuid)
+                        }
+                    }
+                }
+            }
+
+            Section("Tags") {
+                Toggle("Set tags", isOn: enabledBinding("tagUuids"))
+                if enabledFields.contains("tagUuids") {
+                    ForEach(options.vocabulary.tags) { tag in
+                        Toggle(tag.name, isOn: tagBinding(tag.uuid))
+                    }
+                }
+            }
+
+            if !options.definitions.isEmpty {
+                Section("Custom fields") {
+                    ForEach(options.definitions) { definition in
+                        Toggle(definition.label, isOn: enabledBinding("custom.\(definition.key)"))
+                        if enabledFields.contains("custom.\(definition.key)") {
+                            if definition.type == "boolean" {
+                                Toggle("Value", isOn: boolCustomBinding(definition.key))
+                            } else {
+                                TextField(definition.type == "date" ? "YYYY-MM-DD" : "Value", text: customBinding(definition.key))
+                                    .keyboardType(definition.type == "number" ? .decimalPad : .default)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if let preview {
+                Section("Review") {
+                    LabeledContent("Eligible", value: "\(preview.eligible)")
+                    LabeledContent("Conflicts", value: "\(preview.conflicts)")
+                    if preview.skipped > 0 { LabeledContent("Skipped", value: "\(preview.skipped)") }
+                    if preview.conflicts > 0 && policy == .replaceSelected {
+                        Label("Existing values will be overwritten.", systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+
+            if let errorMessage {
+                Section { Label(errorMessage, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red) }
+            }
+        }
+        .onChange(of: enabledFields) { _, _ in preview = nil }
+        .onChange(of: documentTypeUUID) { _, _ in preview = nil }
+        .onChange(of: categoryUUID) { _, _ in preview = nil }
+        .onChange(of: issuerUUID) { _, _ in preview = nil }
+        .onChange(of: folderUUID) { _, _ in preview = nil }
+        .onChange(of: tagUUIDs) { _, _ in preview = nil }
+        .onChange(of: customValues) { _, _ in preview = nil }
+    }
+
+    private func fieldToggle(_ title: String, key: String) -> some View {
+        Toggle(title, isOn: enabledBinding(key))
+    }
+
+    private func enabledBinding(_ key: String) -> Binding<Bool> {
+        Binding(
+            get: { enabledFields.contains(key) },
+            set: { enabled in
+                if enabled { enabledFields.insert(key) } else { enabledFields.remove(key) }
+                preview = nil
+            }
+        )
+    }
+
+    private func stringBinding(_ get: @escaping () -> String, _ set: @escaping (String) -> Void) -> Binding<String> {
+        Binding(get: get, set: { set($0); preview = nil })
+    }
+
+    private func tagBinding(_ uuid: String) -> Binding<Bool> {
+        Binding(
+            get: { tagUUIDs.contains(uuid) },
+            set: { if $0 { tagUUIDs.insert(uuid) } else { tagUUIDs.remove(uuid) }; preview = nil }
+        )
+    }
+
+    private func customBinding(_ key: String) -> Binding<String> {
+        Binding(get: { customValues[key] ?? "" }, set: { customValues[key] = $0; preview = nil })
+    }
+
+    private func boolCustomBinding(_ key: String) -> Binding<Bool> {
+        Binding(
+            get: { customValues[key] == "true" },
+            set: { customValues[key] = $0 ? "true" : "false"; preview = nil }
+        )
+    }
+
+    @MainActor
+    private func loadOptions() async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            options = try await BinderAPI.shared.metadataEditorOptions(serverURL: serverURL)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func reviewOrApply() async {
+        errorMessage = nil
+        if let preview {
+            if policy == .replaceSelected && preview.conflicts > 0 {
+                showingReplaceConfirmation = true
+            } else {
+                await applyChanges()
+            }
+            return
+        }
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            let result = try await BinderAPI.shared.previewBulkMetadata(serverURL: serverURL, payload: makePayload())
+            preview = result
+            if result.eligible == 0 { errorMessage = "No documents can be updated with these settings." }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func applyChanges() async {
+        errorMessage = nil
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            let result = try await BinderAPI.shared.applyBulkMetadata(serverURL: serverURL, payload: makePayload())
+            await onApplied(result)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func makePayload() throws -> BinderBulkMetadataPayload {
+        var metadata: [String: BinderMetadataValue] = [:]
+        if enabledFields.contains("documentTypeUuid") {
+            metadata["documentTypeUuid"] = documentTypeUUID.isEmpty ? .null : .string(documentTypeUUID)
+        }
+        if enabledFields.contains("categoryUuid") {
+            metadata["categoryUuid"] = categoryUUID.isEmpty ? .null : .string(categoryUUID)
+        }
+        if enabledFields.contains("issuerUuid") {
+            metadata["issuerUuid"] = issuerUUID.isEmpty ? .null : .string(issuerUUID)
+        }
+        if enabledFields.contains("tagUuids") {
+            metadata["tagUuids"] = .array(tagUUIDs.sorted().map(BinderMetadataValue.string))
+        }
+        var custom: [String: BinderMetadataValue] = [:]
+        if let options {
+            for definition in options.definitions where enabledFields.contains("custom.\(definition.key)") {
+                let raw = customValues[definition.key] ?? ""
+                switch definition.type {
+                case "number":
+                    if raw.isEmpty {
+                        custom[definition.key] = .null
+                    } else if let number = Double(raw) {
+                        custom[definition.key] = .number(number)
+                    } else {
+                        throw BulkMetadataInputError.invalidNumber(definition.label)
+                    }
+                case "boolean": custom[definition.key] = .boolean(raw == "true")
+                case "multi-select":
+                    custom[definition.key] = .array(raw.split(separator: ",").map { .string($0.trimmingCharacters(in: .whitespaces)) })
+                default: custom[definition.key] = .string(raw)
+                }
+            }
+        }
+        if !custom.isEmpty { metadata["custom"] = .object(custom) }
+        return BinderBulkMetadataPayload(
+            documentUuids: documentUUIDs,
+            policy: policy.rawValue,
+            metadata: metadata,
+            folderUuids: enabledFields.contains("folders") ? (folderUUID.isEmpty ? [] : [folderUUID]) : nil
+        )
+    }
+}
+
+private enum BulkMetadataInputError: LocalizedError {
+    case invalidNumber(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidNumber(let label): "Enter a valid number for \(label)."
+        }
+    }
 }
 
 private struct FolderComposeRequest: Identifiable {
