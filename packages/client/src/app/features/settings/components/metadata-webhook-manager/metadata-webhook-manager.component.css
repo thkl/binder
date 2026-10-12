@@ -15,6 +15,95 @@
   margin: 0;
 }
 
+.workflow-editor h4,
+.workflow-list h4,
+.delivery-section h4 {
+  margin: 0;
+}
+
+.workflow-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.workflow-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: 0.85rem;
+}
+
+.workflow-main {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.workflow-main p {
+  margin: 0;
+}
+
+.workflow-main code {
+  color: var(--text-muted, #737b88);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.workflow-main details {
+  max-width: 48rem;
+  color: var(--text-muted, #737b88);
+  font-size: 0.85rem;
+}
+
+.workflow-main pre {
+  max-height: 14rem;
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: 0.65rem;
+  background: var(--surface-raised, rgba(255, 255, 255, 0.06));
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.workflow-status {
+  width: fit-content;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--surface-raised, rgba(255, 255, 255, 0.08));
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.workflow-status.approved {
+  color: var(--success, #18794e);
+}
+
+.workflow-status.rejected {
+  color: var(--danger, #b42318);
+}
+
+.delivery-section > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.delivery-section > header p {
+  margin: 0.35rem 0 0;
+}
+
 .rule-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -169,12 +258,18 @@
   }
 
   .webhook-card > header,
-  .delivery-row {
+  .delivery-row,
+  .workflow-row,
+  .delivery-section > header {
     align-items: stretch;
     flex-direction: column;
   }
 
   .webhook-actions {
+    justify-content: flex-start;
+  }
+
+  .workflow-actions {
     justify-content: flex-start;
   }
 }

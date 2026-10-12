@@ -75,6 +75,11 @@ export class SettingsComponent implements OnInit {
   }
 
   async loadSettings(): Promise<void> {
+    if (this.activeSection() === 'workflows') {
+      this.settingsService.error.set(null);
+      return;
+    }
+
     if (this.activeSection() === 'mcpaccess' && this.auth.user()?.mcpEnabled === false) {
       await this.router.navigate(['/settings/common'], { replaceUrl: true });
       return;

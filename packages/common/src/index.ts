@@ -575,7 +575,8 @@ export const MetadataWebhookOperatorSchema = z.enum([
 export type MetadataWebhookOperator = z.infer<typeof MetadataWebhookOperatorSchema>;
 
 /** Editable webhook rule. The token field is write-only; the API returns only its configured state. */
-export const MetadataWebhookConfigSchema = z.object({
+export const MetadataWebhookWorkflowInputSchema = z.object({
+  name: z.string().trim().min(1).max(120),
   enabled: z.boolean(),
   field: z.string().trim().min(1).max(200),
   operator: MetadataWebhookOperatorSchema,
@@ -586,20 +587,53 @@ export const MetadataWebhookConfigSchema = z.object({
   hasBearerToken: z.boolean().optional(),
   payloadTemplate: z.string().max(20_000),
 });
-export type MetadataWebhookConfig = z.infer<typeof MetadataWebhookConfigSchema>;
+export type MetadataWebhookWorkflowInput = z.infer<typeof MetadataWebhookWorkflowInputSchema>;
 
-/** Safe configuration response that never includes a saved bearer token. */
-export const MetadataWebhookConfigResponseSchema = MetadataWebhookConfigSchema
-  .omit({ bearerToken: true, clearBearerToken: true })
-  .extend({ hasBearerToken: z.boolean() });
-export type MetadataWebhookConfigResponse = z.infer<typeof MetadataWebhookConfigResponseSchema>;
+/** Review state for a user-submitted workflow. */
+export const MetadataWebhookApprovalStatusSchema = z.enum(['pending', 'approved', 'rejected']);
+export type MetadataWebhookApprovalStatus = z.infer<typeof MetadataWebhookApprovalStatusSchema>;
 
-export const MetadataWebhookDeliveryStatusSchema = z.enum(['pending', 'delivered', 'failed']);
+/** Safe workflow response that never includes a saved bearer token. */
+export const MetadataWebhookWorkflowSchema = z.object({
+  uuid: z.uuid(),
+  ownerUuid: z.uuid(),
+  ownerLabel: z.string().max(400),
+  name: z.string().min(1).max(120),
+  enabled: z.boolean(),
+  field: z.string().min(1).max(200),
+  operator: MetadataWebhookOperatorSchema,
+  value: z.string().max(500),
+  url: z.string().max(2048),
+  hasBearerToken: z.boolean(),
+  payloadTemplate: z.string().max(20_000),
+  approvalStatus: MetadataWebhookApprovalStatusSchema,
+  reviewNote: z.string().max(500).nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export type MetadataWebhookWorkflow = z.infer<typeof MetadataWebhookWorkflowSchema>;
+
+/** Workflow lists include a user's rules or the administrator review queue. */
+export const MetadataWebhookWorkflowListSchema = z.object({
+  items: z.array(MetadataWebhookWorkflowSchema),
+  pending: z.array(MetadataWebhookWorkflowSchema).default([]),
+});
+export type MetadataWebhookWorkflowList = z.infer<typeof MetadataWebhookWorkflowListSchema>;
+
+/** Optional note included when an administrator rejects a submitted workflow. */
+export const MetadataWebhookReviewInputSchema = z.object({
+  note: z.string().trim().max(500).optional(),
+});
+export type MetadataWebhookReviewInput = z.infer<typeof MetadataWebhookReviewInputSchema>;
+
+export const MetadataWebhookDeliveryStatusSchema = z.enum(['pending', 'delivered', 'failed', 'cancelled']);
 export type MetadataWebhookDeliveryStatus = z.infer<typeof MetadataWebhookDeliveryStatusSchema>;
 
 export const MetadataWebhookDeliverySchema = z.object({
   uuid: z.uuid(),
   documentUuid: z.uuid(),
+  workflowUuid: z.uuid().nullable(),
+  workflowName: z.string().max(120).nullable(),
   field: z.string().min(1).max(200),
   operator: MetadataWebhookOperatorSchema,
   triggerValue: z.string().max(500),

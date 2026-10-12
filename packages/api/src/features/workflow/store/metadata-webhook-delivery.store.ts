@@ -17,13 +17,14 @@ export class MetadataWebhookDeliveryStore extends BaseCrudStore<MetadataWebhookD
     ownerUuid: string;
     documentUuid: string;
     sourceEventUuid: string;
+    workflowUuid: string;
     field: string;
     operator: string;
     triggerValue: string;
     payload: Record<string, unknown>;
   }): Promise<[MetadataWebhookDelivery, boolean]> {
     return this.model.findOrCreate({
-      where: { sourceEventUuid: input.sourceEventUuid },
+      where: { sourceEventUuid: input.sourceEventUuid, workflowUuid: input.workflowUuid },
       defaults: input,
     });
   }
@@ -62,6 +63,14 @@ export class MetadataWebhookDeliveryStore extends BaseCrudStore<MetadataWebhookD
     );
   }
 
+  /** Records a terminal state for work that is no longer approved for delivery. */
+  async cancel(uuid: string, reason: string): Promise<void> {
+    await this.model.update(
+      { status: 'cancelled', lastError: reason.slice(0, 500) },
+      { where: { uuid } },
+    );
+  }
+
   /** Schedules exponential retry or marks the delivery exhausted after eight attempts. */
   async markFailed(uuid: string, attempts: number, error: string): Promise<void> {
     const exhausted = attempts >= 8;
@@ -77,8 +86,9 @@ export class MetadataWebhookDeliveryStore extends BaseCrudStore<MetadataWebhookD
   }
 
   /** Returns the newest delivery rows for the workflow management screen. */
-  findRecent(limit = 25): Promise<MetadataWebhookDelivery[]> {
+  findRecent(ownerUuid?: string, limit = 25): Promise<MetadataWebhookDelivery[]> {
     return this.model.findAll({
+      where: ownerUuid ? { ownerUuid } : undefined,
       order: [
         ['createdAt', 'DESC'],
         ['uuid', 'DESC'],
@@ -87,9 +97,14 @@ export class MetadataWebhookDeliveryStore extends BaseCrudStore<MetadataWebhookD
     });
   }
 
+  /** Finds one delivery so service logic can validate workflow ownership and approval. */
+  findByUuid(uuid: string): Promise<MetadataWebhookDelivery | null> {
+    return this.model.findByPk(uuid);
+  }
+
   /** Resets only failed deliveries and returns null for any other state. */
-  async retry(uuid: string): Promise<MetadataWebhookDelivery | null> {
-    const delivery = await this.model.findOne({ where: { uuid, status: 'failed' } });
+  async retry(uuid: string, ownerUuid?: string): Promise<MetadataWebhookDelivery | null> {
+    const delivery = await this.model.findOne({ where: { uuid, status: 'failed', ...(ownerUuid ? { ownerUuid } : {}) } });
     if (!delivery) return null;
     await delivery.update({
       status: 'pending',
@@ -99,5 +114,13 @@ export class MetadataWebhookDeliveryStore extends BaseCrudStore<MetadataWebhookD
       lastError: null,
     });
     return delivery;
+  }
+
+  /** Stops queued work when a workflow edit sends its approval back for review. */
+  async stopPendingForWorkflow(workflowUuid: string): Promise<void> {
+    await this.model.update(
+      { status: 'cancelled', attempts: 8, lastError: 'Workflow changed and is awaiting administrator approval.' },
+      { where: { workflowUuid, status: 'pending' } },
+    );
   }
 }

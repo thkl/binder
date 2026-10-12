@@ -127,6 +127,13 @@
               }
               <a
                 class="nav-menu-link"
+                routerLink="/settings/workflows"
+                routerLinkActive="active"
+                (click)="closeMenu()"
+                >{{ 'nav.workflows' | t }}</a
+              >
+              <a
+                class="nav-menu-link"
                 routerLink="/settings/email-import"
                 routerLinkActive="active"
                 (click)="closeMenu()"

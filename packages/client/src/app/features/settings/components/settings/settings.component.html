@@ -7,7 +7,9 @@
     </div>
   </div>
 
-  @if (auth.user()?.mcpEnabled !== false && activeSection() === 'mcpaccess') {
+  @if (activeSection() === 'workflows') {
+    <div class="settings-content"><binder-metadata-webhook-manager /></div>
+  } @else if (auth.user()?.mcpEnabled !== false && activeSection() === 'mcpaccess') {
     <binder-api-token-manager />
   } @else if (settingsService.loading()) {
     <div class="settings-status glass-card">
@@ -270,9 +272,6 @@
 
           @if (activeSection() === 'ai') {
             <binder-ai-provider-manager />
-          }
-          @if (activeSection() === 'workflows') {
-            <binder-metadata-webhook-manager />
           }
         }
       </div>

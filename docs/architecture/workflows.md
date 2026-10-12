@@ -1,7 +1,8 @@
 # Webhook workflows
 
-Administrators can configure one metadata condition that sends a document to a
-webhook when that field changes and matches the rule. The trigger supports the
+Each user can create multiple metadata conditions that send their document to
+webhooks when a selected field changes and matches the rule. An administrator
+must approve every workflow before it can run. The trigger supports the
 built-in issuer, document type, category, and tags fields, plus custom metadata
 fields.
 
@@ -12,12 +13,17 @@ Unapplied AI suggestions do not trigger a webhook.
 
 ## Configuration
 
-Administrators configure the rule under **Settings → Workflows**:
+Users create and manage their rules under **Settings → Workflows**. Each new
+workflow and each user edit returns to pending approval. Administrators review
+the condition, endpoint, and request template in the same screen and approve or
+reject submissions. A rejected workflow can be edited and resubmitted.
 
-- enable or disable the workflow;
+Each workflow has its own:
+
+- name and enable or disable state;
 - select a metadata field, operator, and comparison value;
 - set the HTTP or HTTPS endpoint;
-- optionally set a Bearer token, encrypted at rest;
+- optional Bearer token, encrypted at rest;
 - edit a JSON request body template and send a test request.
 
 The endpoint must resolve only to public IP addresses. Redirects are not
@@ -42,7 +48,9 @@ original JSON value type. Available values include:
 
 ## Delivery and retries
 
-Document audit events enqueue a durable delivery record with a rendered payload.
+Document audit events are matched only against enabled, approved workflows
+owned by that document's user. Matching events enqueue a durable delivery
+record with a rendered payload.
 The API dispatches pending records in the background. Failed requests retry with
 an increasing delay, up to eight attempts. Administrators can inspect recent
 attempts and manually retry exhausted deliveries from the workflow settings

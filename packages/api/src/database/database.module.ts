@@ -46,6 +46,7 @@ import { DocumentShare } from '../features/sharing/models/document-share.entity'
 import { FolderShare } from '../features/sharing/models/folder-share.entity';
 import { EmailImportApprovedServer } from '../features/email-import/models/email-import-approved-server.entity';
 import { MetadataWebhookDelivery } from '../features/workflow/models/metadata-webhook-delivery.entity';
+import { MetadataWebhookWorkflow } from '../features/workflow/models/metadata-webhook-workflow.entity';
 
 @Global()
 @Module({
@@ -131,6 +132,7 @@ import { MetadataWebhookDelivery } from '../features/workflow/models/metadata-we
       FolderShare,
       EmailImportApprovedServer,
       MetadataWebhookDelivery,
+      MetadataWebhookWorkflow,
     ]),
   ],
   providers: [DatabaseConnectionService, DatabaseMigrationService],

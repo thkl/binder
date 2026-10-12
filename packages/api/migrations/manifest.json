@@ -497,6 +497,16 @@
                     "users",
                     "documents"
                ]
+          },
+          "77": {
+               "created": [
+                    "metadata_webhook_workflows"
+               ],
+               "required": [
+                    "users",
+                    "settings",
+                    "metadata_webhook_deliveries"
+               ]
           }
      }
 }

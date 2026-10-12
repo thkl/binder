@@ -1,20 +1,24 @@
 import {
+  AllowNull,
   Column,
   CreatedAt,
   DataType,
   Default,
+  ForeignKey,
   Model,
   PrimaryKey,
   Table,
   UpdatedAt,
 } from 'sequelize-typescript';
 import type { MetadataWebhookDeliveryStatus } from '@binder/common';
+import { MetadataWebhookWorkflow } from './metadata-webhook-workflow.entity';
 
 export interface MetadataWebhookDeliveryAttributes {
   uuid: string;
   ownerUuid: string;
   documentUuid: string;
   sourceEventUuid: string;
+  workflowUuid: string;
   field: string;
   operator: string;
   triggerValue: string;
@@ -37,7 +41,7 @@ export type MetadataWebhookDeliveryCreationAttributes = Omit<
   tableName: 'metadata_webhook_deliveries',
   underscored: true,
   timestamps: true,
-  indexes: [{ name: 'metadata_webhook_deliveries_source_event_idx', unique: true, fields: ['source_event_id'] }],
+  indexes: [{ name: 'metadata_webhook_deliveries_event_workflow_idx', unique: true, fields: ['source_event_id', 'workflow_id'] }],
 })
 export class MetadataWebhookDelivery extends Model<
   MetadataWebhookDeliveryAttributes,
@@ -54,8 +58,13 @@ export class MetadataWebhookDelivery extends Model<
   @Column({ field: 'document_id', type: DataType.UUID, allowNull: false })
   declare documentUuid: string;
 
-  @Column({ field: 'source_event_id', type: DataType.UUID, allowNull: false, unique: true })
+  @Column({ field: 'source_event_id', type: DataType.UUID, allowNull: false })
   declare sourceEventUuid: string;
+
+  @AllowNull
+  @ForeignKey(() => MetadataWebhookWorkflow)
+  @Column({ field: 'workflow_id', type: DataType.UUID, allowNull: true })
+  declare workflowUuid: string | null;
 
   @Column({ type: DataType.STRING(200), allowNull: false })
   declare field: string;

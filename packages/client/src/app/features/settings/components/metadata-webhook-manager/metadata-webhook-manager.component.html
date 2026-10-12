@@ -1,32 +1,53 @@
 <section class="webhook-card glass-card">
-  @if (config(); as rule) {
-    <div class="workflow-editor">
-      <p class="section-kicker">{{ 'workflow.ruleTitle' | t }}</p>
+  <header>
+    <div>
+      <p class="section-kicker">{{ 'workflow.kicker' | t }}</p>
+      <h3>{{ 'workflow.title' | t }}</h3>
+      <p class="muted">{{ 'workflow.intro' | t }}</p>
+    </div>
+    <div class="webhook-actions">
+      <button type="button" class="secondary-button" (click)="load()" [disabled]="loading() || working()">
+        {{ 'workflow.refresh' | t }}
+      </button>
+      <button type="button" class="primary-button" (click)="create()" [disabled]="working()">
+        {{ 'workflow.create' | t }}
+      </button>
+    </div>
+  </header>
+
+  @if (message(); as messageText) { <p class="webhook-message" role="status">{{ messageText }}</p> }
+  @if (error(); as errorText) { <p class="webhook-error" role="alert">{{ errorText }}</p> }
+
+  @if (editorOpen()) {
+    <section class="workflow-editor">
+      <h4>{{ editingUuid() ? ('workflow.editTitle' | t) : ('workflow.createTitle' | t) }}</h4>
       <label class="toggle-row">
-        <input type="checkbox" [checked]="rule.enabled" (change)="updateEnabled($event)" />
+        <input type="checkbox" [checked]="draft().enabled" (change)="updateDraft('enabled', $any($event.target).checked)" />
         <span>{{ 'workflow.enabled' | t }}</span>
       </label>
       <div class="rule-grid">
         <label>
+          <span>{{ 'workflow.nameLabel' | t }}</span>
+          <input [value]="draft().name" (input)="updateText('name', $event)" required maxlength="120" />
+        </label>
+        <label>
           <span>{{ 'workflow.fieldLabel' | t }}</span>
-          <select [value]="rule.field" (change)="updateText('field', $event)">
-            @for (option of fieldOptions(); track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
-            }
+          <select [value]="draft().field" (change)="updateText('field', $event)">
+            @for (option of fieldOptions(); track option.value) { <option [value]="option.value">{{ option.label }}</option> }
           </select>
         </label>
         <label>
           <span>{{ 'workflow.operatorLabel' | t }}</span>
-          <select [value]="rule.operator" (change)="updateText('operator', $event)">
+          <select [value]="draft().operator" (change)="updateText('operator', $event)">
             @for (operator of ['equals', 'not-equals', 'contains', 'is-set', 'is-not-set']; track operator) {
               <option [value]="operator">{{ operatorLabel(operator) }}</option>
             }
           </select>
         </label>
-        @if (rule.operator !== 'is-set' && rule.operator !== 'is-not-set') {
+        @if (draft().operator !== 'is-set' && draft().operator !== 'is-not-set') {
           <label>
             <span>{{ 'workflow.valueLabel' | t }}</span>
-            <input list="workflow-values" [value]="rule.value" (input)="updateText('value', $event)" />
+            <input list="workflow-values" [value]="draft().value" (input)="updateText('value', $event)" />
             <datalist id="workflow-values">
               @for (value of valueOptions(); track value) { <option [value]="value"></option> }
             </datalist>
@@ -35,81 +56,125 @@
       </div>
       <label class="wide-field">
         <span>{{ 'workflow.urlLabel' | t }}</span>
-        <input type="url" [value]="rule.url" (input)="updateText('url', $event)" />
+        <input type="url" [value]="draft().url" (input)="updateText('url', $event)" required />
       </label>
       <label class="wide-field">
         <span>{{ 'workflow.tokenLabel' | t }}</span>
-        <input type="password" autocomplete="new-password" [placeholder]="rule.hasBearerToken ? ('workflow.tokenSaved' | t) : ''" [value]="bearerToken()" (input)="bearerToken.set(($any($event.target)).value)" />
+        <input type="password" autocomplete="new-password" [placeholder]="'workflow.tokenHint' | t" [value]="draft().bearerToken ?? ''" (input)="updateDraft('bearerToken', $any($event.target).value)" />
       </label>
-      @if (rule.hasBearerToken) {
+      @if (editingUuid()) {
         <label class="toggle-row">
-          <input type="checkbox" [checked]="clearBearerToken()" (change)="clearBearerToken.set(($any($event.target)).checked)" />
+          <input type="checkbox" [checked]="draft().clearBearerToken" (change)="updateDraft('clearBearerToken', $any($event.target).checked)" />
           <span>{{ 'workflow.clearToken' | t }}</span>
         </label>
       }
       <label class="wide-field">
         <span>{{ 'workflow.templateLabel' | t }}</span>
-        <textarea rows="9" spellcheck="false" [value]="rule.payloadTemplate" (input)="updateText('payloadTemplate', $event)"></textarea>
+        <textarea rows="9" spellcheck="false" [value]="draft().payloadTemplate" (input)="updateText('payloadTemplate', $event)"></textarea>
       </label>
       <p class="muted template-help">{{ 'workflow.templateHelp' | t }}</p>
-      <button type="button" class="primary-button" (click)="saveConfig()" [disabled]="working()">
-        {{ working() ? ('workflow.working' | t) : ('workflow.save' | t) }}
-      </button>
-    </div>
+      <div class="webhook-actions">
+        <button type="button" class="primary-button" (click)="save()" [disabled]="working()">
+          {{ working() ? ('workflow.working' | t) : ('workflow.save' | t) }}
+        </button>
+        <button type="button" class="secondary-button" (click)="editorOpen.set(false)" [disabled]="working()">
+          {{ 'common.cancel' | t }}
+        </button>
+      </div>
+    </section>
   }
 
-  <header>
-    <div>
-      <p class="section-kicker">{{ 'workflow.kicker' | t }}</p>
-      <h3>{{ 'workflow.deliveriesTitle' | t }}</h3>
-      <p class="muted">{{ 'workflow.deliveriesCopy' | t }}</p>
-    </div>
-    <div class="webhook-actions">
-      <button type="button" class="secondary-button" (click)="load()" [disabled]="loading() || working()">
-        {{ 'workflow.refresh' | t }}
-      </button>
-      <button type="button" class="primary-button" (click)="sendTest()" [disabled]="loading() || working()">
-        {{ working() ? ('workflow.working' | t) : ('workflow.sendTest' | t) }}
-      </button>
-    </div>
-  </header>
-
-  @if (message(); as messageText) {
-    <p class="webhook-message" role="status">{{ messageText }}</p>
+  @if (auth.user()?.isAdmin && pendingReview().length > 0) {
+    <section class="workflow-list review-list">
+      <h4>{{ 'workflow.reviewTitle' | t }} ({{ pendingReview().length }})</h4>
+      @for (workflow of pendingReview(); track workflow.uuid) {
+        <article class="workflow-row">
+          <div class="workflow-main">
+            <div class="delivery-heading">
+              <strong>{{ workflow.name }}</strong>
+              <span class="workflow-status pending">{{ statusLabel(workflow.approvalStatus) }}</span>
+            </div>
+            <small>{{ 'workflow.owner' | t }}: {{ workflow.ownerLabel }}</small>
+            <p>{{ workflow.field }} {{ operatorLabel(workflow.operator) }} {{ workflow.value }}</p>
+            <code>{{ workflow.url }}</code>
+            <details>
+              <summary>{{ 'workflow.reviewPayload' | t }}</summary>
+              <pre>{{ workflow.payloadTemplate }}</pre>
+            </details>
+            <label class="wide-field">
+              <span>{{ 'workflow.reviewNote' | t }}</span>
+              <input [value]="rejectNote()" (input)="rejectNote.set($any($event.target).value)" maxlength="500" />
+            </label>
+          </div>
+          <div class="workflow-actions">
+            <button type="button" class="primary-button" (click)="approve(workflow)" [disabled]="working()">{{ 'workflow.approve' | t }}</button>
+            <button type="button" class="danger-button" (click)="reject(workflow)" [disabled]="working()">{{ 'workflow.reject' | t }}</button>
+          </div>
+        </article>
+      }
+    </section>
   }
-  @if (error(); as errorText) {
-    <p class="webhook-error" role="alert">{{ errorText }}</p>
-  }
 
-  @if (loading() && deliveries().length === 0) {
-    <p class="webhook-empty">{{ 'workflow.loading' | t }}</p>
-  } @else if (deliveries().length === 0) {
-    <p class="webhook-empty">{{ 'workflow.noDeliveries' | t }}</p>
-  } @else {
-    <div class="delivery-list">
+  <section class="workflow-list">
+    <h4>{{ 'workflow.myWorkflows' | t }}</h4>
+    @if (loading() && workflows().length === 0) {
+      <p class="webhook-empty">{{ 'workflow.loading' | t }}</p>
+    } @else if (visibleWorkflows().length === 0) {
+      <p class="webhook-empty">{{ 'workflow.noWorkflows' | t }}</p>
+    } @else {
+      @for (workflow of visibleWorkflows(); track workflow.uuid) {
+        <article class="workflow-row">
+          <div class="workflow-main">
+            <div class="delivery-heading">
+              <strong>{{ workflow.name }}</strong>
+              <span class="workflow-status" [class]="'workflow-status ' + workflow.approvalStatus">{{ statusLabel(workflow.approvalStatus) }}</span>
+              @if (!workflow.enabled) { <span class="muted">{{ 'workflow.disabled' | t }}</span> }
+            </div>
+            <p>{{ workflow.field }} {{ operatorLabel(workflow.operator) }} {{ workflow.value || '—' }}</p>
+            <code>{{ workflow.url }}</code>
+            @if (workflow.reviewNote) { <p class="delivery-error">{{ workflow.reviewNote }}</p> }
+          </div>
+          <div class="workflow-actions">
+            @if (workflow.approvalStatus === 'approved') {
+              <button type="button" class="secondary-button" (click)="test(workflow)" [disabled]="working()">{{ 'workflow.sendTest' | t }}</button>
+            }
+            <button type="button" class="secondary-button" (click)="edit(workflow)" [disabled]="working()">{{ 'workflow.edit' | t }}</button>
+            <button type="button" class="danger-button" (click)="remove(workflow)" [disabled]="working()">{{ 'workflow.delete' | t }}</button>
+          </div>
+        </article>
+      }
+    }
+  </section>
+
+  <section class="workflow-list delivery-section">
+    <header>
+      <div>
+        <h4>{{ 'workflow.deliveriesTitle' | t }}</h4>
+        <p class="muted">{{ 'workflow.deliveriesCopy' | t }}</p>
+      </div>
+      <button type="button" class="secondary-button" (click)="load()" [disabled]="loading() || working()">{{ 'workflow.refresh' | t }}</button>
+    </header>
+    @if (deliveries().length === 0) {
+      <p class="webhook-empty">{{ 'workflow.noDeliveries' | t }}</p>
+    } @else {
       @for (delivery of deliveries(); track delivery.uuid) {
         <article class="delivery-row">
           <div class="delivery-main">
             <div class="delivery-heading">
-              <span class="delivery-status" [class]="'delivery-status ' + delivery.status">
-                {{ statusLabel(delivery) }}
-              </span>
-              <strong>{{ delivery.field }} {{ operatorLabel(delivery.operator) }} {{ delivery.triggerValue }}</strong>
+              <span class="delivery-status" [class]="'delivery-status ' + delivery.status">{{ deliveryStatusLabel(delivery) }}</span>
+              <strong>{{ delivery.workflowName ?? ('workflow.deletedWorkflow' | t) }}</strong>
               <time>{{ delivery.createdAt | date: 'medium' }}</time>
             </div>
+            <p>{{ delivery.field }} {{ operatorLabel(delivery.operator) }} {{ delivery.triggerValue }}</p>
             <code>{{ delivery.documentUuid }}</code>
             <small>{{ 'workflow.attempts' | t }}: {{ delivery.attempts }}</small>
-            @if (delivery.lastError) {
-              <p class="delivery-error">{{ delivery.lastError }}</p>
-            }
+            @if (delivery.lastError) { <p class="delivery-error">{{ delivery.lastError }}</p> }
           </div>
           @if (delivery.status === 'failed') {
-            <button type="button" class="secondary-button" (click)="retry(delivery)" [disabled]="working()">
-              {{ 'workflow.retry' | t }}
-            </button>
+            <button type="button" class="secondary-button" (click)="retry(delivery)" [disabled]="working()">{{ 'workflow.retry' | t }}</button>
           }
         </article>
       }
-    </div>
-  }
+    }
+  </section>
 </section>
