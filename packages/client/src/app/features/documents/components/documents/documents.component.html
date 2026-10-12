@@ -301,7 +301,6 @@
         @if (selectedCount() > 0) {
           <div class="bulk-actions" role="group" [attr.aria-label]="'documents.bulkActions' | t">
             @if (selectedVersionPair(); as versionPair) {
-              @if (canComposeSelected()) {
               <button
                 type="button"
                 class="bulk-action-button primary"
@@ -310,6 +309,12 @@
               >
                 {{ 'documents.assignVersion' | t }}
               </button>
+              <span class="version-selection-hint" aria-live="polite">
+                {{ versionPair.source.originalFilename }} →
+                {{ versionPair.target.originalFilename }}
+              </span>
+            }
+            @if (canComposeSelected()) {
               <button
                 type="button"
                 class="primary-button"
@@ -318,11 +323,6 @@
               >
                 {{ 'documents.compose' | t }}
               </button>
-              }
-              <span class="version-selection-hint" aria-live="polite">
-                {{ versionPair.source.originalFilename }} →
-                {{ versionPair.target.originalFilename }}
-              </span>
             }
             <button
               type="button"
@@ -826,6 +826,7 @@
         [suggestionLoading]="titleSuggestionLoading()[drawerUuid] === true"
         [requeueLoading]="requeueLoading()[drawerUuid] === true"
         [externalClosePrompt]="metadataClosePrompt()"
+        [versionsRefreshKey]="versionRefreshKey()"
         (tabChange)="drawerTab.set($event)"
         (dirtyChange)="metadataDirtyChanged($event)"
         (manuallySaved)="metadataSaved(drawerUuid)"
@@ -842,6 +843,7 @@
         (rotateRequested)="requestRotateDocument(drawerUuid)"
         (deleteRequested)="requestDeleteDocument(drawerUuid)"
         (versionSelected)="selectDrawerVersion($event)"
+        (versionLinkRequested)="requestSuggestedVersionLink(drawerUuid, $event)"
       />
     }
   }
@@ -891,20 +893,15 @@
     />
   }
 
-  @if (composeDocuments(); as composition) {
-    @if (selectedDocumentRecords().get(composition.targetUuid); as targetDocument) {
-      @if (selectedDocumentRecords().get(composition.sourceUuid); as sourceDocument) {
-        <binder-document-compose-dialog
-          [targetTitle]="targetDocument.title || targetDocument.originalFilename"
-          [sourceTitle]="sourceDocument.title || sourceDocument.originalFilename"
-          [targetPageCount]="targetDocument.pageCount ?? 0"
-          [sourcePageCount]="sourceDocument.pageCount ?? 0"
-          [errorMessage]="documents.error()"
-          (closed)="cancelComposeDocuments()"
-          (submitted)="composeDocumentsFromRequest($event)"
-        />
-      }
-    }
+  @if (compositionDialogDocuments(); as composition) {
+    <binder-document-compose-dialog
+      [targetTitle]="composition.target.title || composition.target.originalFilename"
+      [sourceDocuments]="composition.sources"
+      [targetPageCount]="composition.target.pageCount ?? 0"
+      [errorMessage]="documents.error()"
+      (closed)="cancelComposeDocuments()"
+      (submitted)="composeDocumentsFromRequest($event)"
+    />
   }
 
   @if (splitDocumentUuid(); as splitUuid) {

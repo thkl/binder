@@ -286,6 +286,46 @@ export class DocumentsService {
   }
 
   /**
+   * Finds same-owner documents with similar names that could belong to this version family.
+   *
+   * @param {BinderDocument} document - Document whose version family needs candidates.
+   * @returns {Promise<BinderDocument[]>} - Ranked, same-format documents outside the current family.
+   */
+  async findVersionSuggestions(document: BinderDocument): Promise<BinderDocument[]> {
+    const tokens = this.versionTitleTokens(document);
+    const queryToken = [...tokens].sort((left, right) => right.length - left.length)[0];
+    if (!queryToken) return [];
+
+    const query = DocumentListQuerySchema.parse({
+      page: 1,
+      pageSize: 100,
+      q: queryToken.slice(0, 200),
+      sort: 'updatedAt',
+      direction: 'desc',
+    });
+    const response = await firstValueFrom(
+      this.http.get<ApiResponse<unknown>>(
+        this.appService.getApiUrl('v1', 'documents', `?${this.buildParams(query).toString()}`),
+        { withCredentials: true },
+      ),
+    );
+    const candidates = DocumentListResponseSchema.parse(response.data).items;
+    return candidates
+      .filter((candidate) =>
+        candidate.uuid !== document.uuid &&
+        candidate.versionFamilyUuid !== document.versionFamilyUuid &&
+        candidate.mimeType === document.mimeType &&
+        this.versionTitleOverlap(tokens, this.versionTitleTokens(candidate)) > 0,
+      )
+      .sort((left, right) => {
+        const similarity = this.versionTitleOverlap(tokens, this.versionTitleTokens(right)) -
+          this.versionTitleOverlap(tokens, this.versionTitleTokens(left));
+        return similarity || Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
+      })
+      .slice(0, 5);
+  }
+
+  /**
    * Deletes a version from a family and returns the version that remains current.
    *
    * @param {string} documentUuid - UUID of the historical document version.
@@ -361,18 +401,18 @@ export class DocumentsService {
   }
 
   /**
-   * Inserts one PDF into another at the requested page and refreshes the current list.
+   * Inserts selected page ranges from multiple PDFs and refreshes the current list.
    *
    * @param {string} targetDocumentUuid - UUID of the target document.
-   * @param {string} sourceDocumentUuid - UUID of the source document.
+   * @param {Array<{ documentUuid: string; startPage: number; endPage: number }>} sources - Ordered source page ranges.
    * @param {number} insertAfterPage - Target page after which source PDF pages are inserted.
    * @param {boolean} copyMetadata - Whether metadata should be copied to the resulting document.
    * @param {boolean} autoApplySuggestions - Whether AI suggestions should be applied to the new document.
-   * @returns {Promise<BinderDocument | null>} - Inserts one PDF into another at the requested page and refreshes the current list.
+   * @returns {Promise<BinderDocument | null>} - The new composed version, or null when the request fails.
    */
   async composeDocument(
     targetDocumentUuid: string,
-    sourceDocumentUuid: string,
+    sources: Array<{ documentUuid: string; startPage: number; endPage: number }>,
     insertAfterPage: number,
     copyMetadata: boolean,
     autoApplySuggestions: boolean,
@@ -380,7 +420,7 @@ export class DocumentsService {
     this.error.set(null);
     try {
       const input = ComposeDocumentInputSchema.parse({
-        sourceDocumentUuid,
+        sources,
         insertAfterPage,
         copyMetadata,
         autoApplySuggestions,
@@ -518,6 +558,17 @@ export class DocumentsService {
    */
   private setArrayParam(params: URLSearchParams, key: string, values: string[] | undefined): void {
     if (values !== undefined) params.set(key, values.join(','));
+  }
+
+  private versionTitleTokens(document: BinderDocument): Set<string> {
+    const title = (document.title || document.originalFilename).replace(/\.[^./]+$/u, '');
+    return new Set(title.toLocaleLowerCase().split(/[^\p{L}\p{N}]+/u).filter((token) => token.length >= 3));
+  }
+
+  private versionTitleOverlap(left: Set<string>, right: Set<string>): number {
+    const smaller = Math.min(left.size, right.size);
+    if (smaller === 0) return 0;
+    return [...left].filter((token) => right.has(token)).length / smaller;
   }
 
   /**

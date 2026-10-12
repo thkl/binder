@@ -8,23 +8,74 @@
     <header class="compose-header">
       <p class="section-kicker">{{ 'documents.composeKicker' | t }}</p>
       <h2 id="compose-dialog-title">{{ 'documents.composeTitle' | t }}</h2>
-      <p class="muted">
-        {{ 'documents.composeMessage' | t }}
-      </p>
+      <p class="muted">{{ 'documents.composeMessageMulti' | t }}</p>
     </header>
 
     <div class="compose-body">
       <div class="compose-documents" aria-live="polite">
-        <div>
-          <span class="field-label">{{ 'documents.composeTarget' | t }}</span>
-          <strong>{{ targetTitle() }}</strong>
-        </div>
-        <span aria-hidden="true">＋</span>
-        <div>
-          <span class="field-label">{{ 'documents.composeSource' | t }}</span>
-          <strong>{{ sourceTitle() }}</strong>
-        </div>
+        <span class="field-label">{{ 'documents.composeTarget' | t }}</span>
+        <strong>{{ targetTitle() }}</strong>
       </div>
+
+      <section class="compose-source-list" aria-label="{{ 'documents.composeSources' | t }}">
+        <h3>{{ 'documents.composeSources' | t }}</h3>
+        @for (source of sources(); track source.document.uuid; let index = $index) {
+          <article class="compose-source-card">
+            <div class="compose-source-heading">
+              <div>
+                <span class="field-label">{{ 'documents.composeSourceOrder' | t:{ order: index + 1 } }}</span>
+                <strong>{{ source.document.title || source.document.originalFilename }}</strong>
+              </div>
+              <div class="compose-source-actions">
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="index === 0"
+                  [attr.aria-label]="'documents.composeMoveUp' | t"
+                  (click)="moveSource(index, -1)"
+                >↑</button>
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="index === sources().length - 1"
+                  [attr.aria-label]="'documents.composeMoveDown' | t"
+                  (click)="moveSource(index, 1)"
+                >↓</button>
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="sources().length === 1"
+                  [attr.aria-label]="'documents.composeRemoveSource' | t"
+                  (click)="removeSource(index)"
+                >×</button>
+              </div>
+            </div>
+            <div class="compose-range-row">
+              <label class="text-field">
+                <span class="field-label">{{ 'documents.composeFirstPage' | t }}</span>
+                <input
+                  type="number"
+                  min="1"
+                  [max]="source.document.pageCount ?? 1"
+                  [value]="source.startPage"
+                  (input)="setSourcePage(index, 'startPage', $event)"
+                />
+              </label>
+              <label class="text-field">
+                <span class="field-label">{{ 'documents.composeLastPage' | t }}</span>
+                <input
+                  type="number"
+                  [min]="source.startPage"
+                  [max]="source.document.pageCount ?? 1"
+                  [value]="source.endPage"
+                  (input)="setSourcePage(index, 'endPage', $event)"
+                />
+              </label>
+              <span class="muted">{{ 'documents.composePageCount' | t:{ pageCount: source.document.pageCount ?? 1 } }}</span>
+            </div>
+          </article>
+        }
+      </section>
 
       <label class="text-field" for="compose-insert-page">
         <span class="field-label">{{ 'documents.composeInsertAfter' | t }}</span>
@@ -38,10 +89,7 @@
           [attr.aria-describedby]="error() ? 'compose-dialog-error' : 'compose-dialog-hint'"
         />
         <small id="compose-dialog-hint">
-          {{
-            'documents.composePageHint'
-              | t: { pageCount: targetPageCount(), sourcePages: sourcePageCount() }
-          }}
+          {{ 'documents.composePageHint' | t:{ pageCount: targetPageCount(), sourcePages: totalSourcePages() } }}
         </small>
       </label>
 
@@ -75,7 +123,7 @@
       <button type="button" class="secondary-button" (click)="closed.emit()">
         {{ 'common.cancel' | t }}
       </button>
-      <button type="button" class="primary-button" (click)="submit()">
+      <button type="button" class="primary-button" [disabled]="sources().length === 0" (click)="submit()">
         {{ 'documents.compose' | t }}
       </button>
     </footer>

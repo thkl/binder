@@ -216,13 +216,31 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       .filter((document): document is Document => document !== undefined);
     return selected.length === 2 ? { source: selected[0], target: selected[1] } : null;
   });
+  readonly selectedComposition = computed(() => {
+    const selected = this.selectedDocumentUuidList()
+      .map((uuid) => this.selectedDocumentRecords().get(uuid))
+      .filter((document): document is Document => document !== undefined);
+    if (selected.length < 2 || selected.length > 21) return null;
+    return { target: selected[selected.length - 1], sources: selected.slice(0, -1) };
+  });
   readonly canComposeSelected = computed(() => {
-    const pair = this.selectedVersionPair();
+    const composition = this.selectedComposition();
     return Boolean(
-      pair &&
-        this.documents.supportsMimeCapability(pair.source.mimeType, 'compose') &&
-        this.documents.supportsMimeCapability(pair.target.mimeType, 'compose'),
+      composition &&
+        [composition.target, ...composition.sources].every((document) =>
+          this.documents.supportsMimeCapability(document.mimeType, 'compose') &&
+          !['uploaded', 'scanning', 'quarantined'].includes(document.status),
+        ),
     );
+  });
+  readonly compositionDialogDocuments = computed(() => {
+    const composition = this.composeDocuments();
+    if (!composition) return null;
+    const records = this.selectedDocumentRecords();
+    const target = records.get(composition.targetUuid);
+    const sources = composition.sourceUuids.map((uuid) => records.get(uuid));
+    if (!target || sources.some((source) => !source)) return null;
+    return { target, sources: sources as Document[] };
   });
   readonly versionAssignment = signal<{ sourceUuid: string; targetUuid: string } | null>(null);
   readonly copyVersionMetadata = signal(true);
@@ -231,8 +249,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   readonly splitLoading = signal(false);
   readonly rotateDocumentUuid = signal<string | null>(null);
   readonly rotateLoading = signal(false);
-  readonly composeDocuments = signal<{ targetUuid: string; sourceUuid: string } | null>(null);
+  readonly composeDocuments = signal<{ targetUuid: string; sourceUuids: string[] } | null>(null);
   readonly composeLoading = signal(false);
+  readonly versionRefreshKey = signal(0);
   readonly bulkDocumentTypes = computed(() => this.metadata.vocabulary()?.documentTypes ?? []);
   readonly bulkCategories = computed(() => this.metadata.vocabulary()?.categories ?? []);
   readonly bulkTags = computed(() => this.metadata.vocabulary()?.tags ?? []);
@@ -498,11 +517,21 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.versionAssignment.set({ sourceUuid: pair.source.uuid, targetUuid: pair.target.uuid });
   }
 
+  requestSuggestedVersionLink(targetUuid: string, source: Document): void {
+    if (this.versionAssignmentLoading()) return;
+    this.selectedDocumentRecords.update((records) => new Map(records).set(source.uuid, source));
+    this.copyVersionMetadata.set(true);
+    this.versionAssignment.set({ sourceUuid: source.uuid, targetUuid });
+  }
+
   requestComposeDocuments(): void {
-    const pair = this.selectedVersionPair();
-    if (!pair || !this.canComposeSelected() || this.composeLoading() || !this.canLeaveMetadata())
+    const composition = this.selectedComposition();
+    if (!composition || !this.canComposeSelected() || this.composeLoading() || !this.canLeaveMetadata())
       return;
-    this.composeDocuments.set({ targetUuid: pair.target.uuid, sourceUuid: pair.source.uuid });
+    this.composeDocuments.set({
+      targetUuid: composition.target.uuid,
+      sourceUuids: composition.sources.map((source) => source.uuid),
+    });
   }
 
   cancelComposeDocuments(): void {
@@ -516,7 +545,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     try {
       const result = await this.documents.composeDocument(
         composition.targetUuid,
-        composition.sourceUuid,
+        request.sources,
         request.insertAfterPage,
         request.copyMetadata,
         request.autoApplySuggestions,
@@ -547,6 +576,7 @@ export class DocumentsComponent implements OnInit, OnDestroy {
         assignment.targetUuid,
         this.copyVersionMetadata(),
       );
+      this.versionRefreshKey.update((key) => key + 1);
       this.clearSelection();
       await this.documents.load();
     } finally {
@@ -1005,7 +1035,9 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   }
 
   documentLabel(uuid: string): string {
-    const document = this.documents.page()?.items.find((item) => item.uuid === uuid);
+    const document = this.selectedDocumentRecords().get(uuid) ??
+      this.documents.page()?.items.find((item) => item.uuid === uuid) ??
+      (this.drawerDocument()?.uuid === uuid ? this.drawerDocument() : null);
     return document?.title || document?.originalFilename || uuid;
   }
 

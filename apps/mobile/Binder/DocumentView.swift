@@ -8,6 +8,7 @@ struct DocumentView: View {
     let serverURL: String
     private let onCurrentVersionDeleted: (BinderDocumentSummary) -> Void
     private let onDocumentDeleted: (String) -> Void
+    private let onDocumentOpened: ((String, Bool) -> Void)?
     private let onComposeRequested: ((BinderDocumentSummary) -> Void)?
     private let isCombineModeActive: Bool
     @Environment(\.dismiss) private var dismiss
@@ -31,6 +32,7 @@ struct DocumentView: View {
         serverURL: String,
         onCurrentVersionDeleted: @escaping (BinderDocumentSummary) -> Void = { _ in },
         onDocumentDeleted: @escaping (String) -> Void = { _ in },
+        onDocumentOpened: ((String, Bool) -> Void)? = nil,
         onComposeRequested: ((BinderDocumentSummary) -> Void)? = nil,
         isCombineModeActive: Bool = false
     ) {
@@ -38,6 +40,7 @@ struct DocumentView: View {
         self.serverURL = serverURL
         self.onCurrentVersionDeleted = onCurrentVersionDeleted
         self.onDocumentDeleted = onDocumentDeleted
+        self.onDocumentOpened = onDocumentOpened
         self.onComposeRequested = onComposeRequested
         self.isCombineModeActive = isCombineModeActive
     }
@@ -267,6 +270,16 @@ struct DocumentView: View {
         do {
             // Let the navigation push finish before starting network and PDF work.
             try await Task.sleep(for: .milliseconds(450))
+            do {
+                let isNew = try await BinderAPI.shared.markDocumentOpened(
+                    serverURL: serverURL,
+                    documentUUID: document.uuid
+                )
+                document.isNew = isNew
+                onDocumentOpened?(document.uuid, isNew)
+            } catch {
+                // Opening the document remains useful even if review-state sync fails.
+            }
             documentCapabilities = await BinderAPI.shared.documentCapabilities(
                 serverURL: serverURL,
                 mimeType: document.mimeType

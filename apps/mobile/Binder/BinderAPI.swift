@@ -103,7 +103,7 @@ struct BinderDocumentSummary: Decodable, Identifiable {
     let pageCount: Int?
     let metadataSummary: BinderDocumentMetadataSummary?
     let status: String?
-    let isNew: Bool?
+    var isNew: Bool?
     let versionNumber: Int?
     let versionParentUuid: String?
     let createdAt: String?
@@ -377,6 +377,14 @@ private struct DocumentListEnvelope: Decodable {
 
 private struct DocumentSummaryEnvelope: Decodable {
     let data: BinderDocumentSummary
+}
+
+private struct DocumentOpenEnvelope: Decodable {
+    let data: OpenState
+
+    struct OpenState: Decodable {
+        let isNew: Bool
+    }
 }
 
 private struct DocumentVersionListEnvelope: Decodable {
@@ -1050,6 +1058,16 @@ final class BinderAPI {
     func documentSummary(serverURL: String, documentUUID: String) async throws -> BinderDocumentSummary {
         let (data, _) = try await request(path: "documents/\(documentUUID)", serverURL: serverURL)
         return try JSONDecoder().decode(DocumentSummaryEnvelope.self, from: data).data
+    }
+
+    func markDocumentOpened(serverURL: String, documentUUID: String) async throws -> Bool {
+        let data = try await mutate(
+            path: "documents/\(documentUUID)/open",
+            serverURL: serverURL,
+            method: "POST",
+            payload: EmptyMutationPayload()
+        )
+        return try JSONDecoder().decode(DocumentOpenEnvelope.self, from: data).data.isNew
     }
 
     func deleteDocument(serverURL: String, documentUUID: String) async throws {

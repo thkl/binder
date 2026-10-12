@@ -278,6 +278,14 @@ private struct BrowseDocumentListView: View {
                                     serverURL: model.serverURL,
                                     onDocumentDeleted: { deletedUUID in
                                         documents.removeAll { $0.uuid == deletedUUID }
+                                    },
+                                    onDocumentOpened: { openedUUID, isNew in
+                                        if let index = documents.firstIndex(where: { $0.uuid == openedUUID }) {
+                                            documents[index].isNew = isNew
+                                        }
+                                        if kind == .new && !isNew {
+                                            documents.removeAll { $0.uuid == openedUUID }
+                                        }
                                     }
                                 )
                             } label: {
@@ -819,6 +827,11 @@ private struct FolderContentsView: View {
                         serverURL: model.serverURL,
                         onDocumentDeleted: { deletedUUID in
                             documents.removeAll { $0.uuid == deletedUUID }
+                        },
+                        onDocumentOpened: { openedUUID, isNew in
+                            if let index = documents.firstIndex(where: { $0.uuid == openedUUID }) {
+                                documents[index].isNew = isNew
+                            }
                         },
                         onComposeRequested: beginComposeSelection,
                         isCombineModeActive: isSelectingComposeSources

@@ -50,6 +50,7 @@ export class DocumentDrawerComponent {
   readonly suggestionLoading = input(false);
   readonly requeueLoading = input(false);
   readonly externalClosePrompt = input(false);
+  readonly versionsRefreshKey = input(0);
   readonly sharePanelOpen = signal(false);
 
   readonly closeRequest = output<void>();
@@ -68,7 +69,10 @@ export class DocumentDrawerComponent {
   readonly suggestionRequested = output<void>();
   readonly requeueRequested = output<void>();
   readonly versionSelected = output<string>();
+  readonly versionLinkRequested = output<Document>();
   readonly versions = signal<Document[]>([]);
+  readonly versionSuggestions = signal<Document[]>([]);
+  readonly versionSuggestionsLoading = signal(false);
 
   readonly activeTab = signal<DocumentDrawerTab>('preview');
   readonly dirty = signal(false);
@@ -124,7 +128,14 @@ export class DocumentDrawerComponent {
   });
   private readonly versionsEffect = effect(() => {
     const uuid = this.documentUuid();
+    this.versionsRefreshKey();
     void this.loadVersions(uuid);
+  });
+  private versionSuggestionRequest = 0;
+  private readonly versionSuggestionsEffect = effect(() => {
+    const document = this.documentData();
+    this.versionsRefreshKey();
+    if (!this.readOnly()) void this.loadVersionSuggestions(document);
   });
 
   constructor() {
@@ -136,6 +147,19 @@ export class DocumentDrawerComponent {
       this.versions.set(await this.documents.loadVersions(uuid));
     } catch {
       this.versions.set([]);
+    }
+  }
+
+  private async loadVersionSuggestions(document: Document): Promise<void> {
+    const request = ++this.versionSuggestionRequest;
+    this.versionSuggestionsLoading.set(true);
+    try {
+      const suggestions = await this.documents.findVersionSuggestions(document);
+      if (request === this.versionSuggestionRequest) this.versionSuggestions.set(suggestions);
+    } catch {
+      if (request === this.versionSuggestionRequest) this.versionSuggestions.set([]);
+    } finally {
+      if (request === this.versionSuggestionRequest) this.versionSuggestionsLoading.set(false);
     }
   }
 

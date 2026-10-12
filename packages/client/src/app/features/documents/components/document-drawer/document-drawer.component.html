@@ -281,6 +281,31 @@
       }
       @if (!readOnly() && activeTab() === 'history') {
         <section id="document-drawer-history" class="history-panel" role="tabpanel">
+          <section class="version-suggestions" aria-labelledby="version-suggestions-title">
+            <header>
+              <h2 id="version-suggestions-title">{{ 'documents.versionSuggestionsTitle' | t }}</h2>
+              <p>{{ 'documents.versionSuggestionsMessage' | t }}</p>
+            </header>
+            @if (versionSuggestionsLoading()) {
+              <p class="muted" role="status">{{ 'documents.versionSuggestionsLoading' | t }}</p>
+            } @else if (versionSuggestions().length === 0) {
+              <p class="muted">{{ 'documents.versionSuggestionsEmpty' | t }}</p>
+            } @else {
+              <ul>
+                @for (candidate of versionSuggestions(); track candidate.uuid) {
+                  <li>
+                    <div>
+                      <strong>{{ candidate.title || candidate.originalFilename }}</strong>
+                      <span class="muted">{{ candidate.originalFilename }} · {{ 'documents.versionSuggestionMatch' | t }}</span>
+                    </div>
+                    <button type="button" class="secondary-button" (click)="versionLinkRequested.emit(candidate)">
+                      {{ 'documents.assignVersion' | t }}
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
           <binder-document-audit-history
             [documentUuid]="documentUuid()"
             [refreshKey]="documentData().updatedAt"

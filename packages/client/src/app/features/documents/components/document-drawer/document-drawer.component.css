@@ -315,6 +315,67 @@
   overflow: auto;
 }
 
+.version-suggestions {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.8rem;
+  background: var(--color-surface);
+}
+
+.version-suggestions header h2,
+.version-suggestions header p {
+  margin: 0;
+}
+
+.version-suggestions header h2 {
+  font-size: 0.95rem;
+}
+
+.version-suggestions header p {
+  margin-top: 0.25rem;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.version-suggestions ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.version-suggestions li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.version-suggestions li > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.version-suggestions strong,
+.version-suggestions .muted {
+  overflow-wrap: anywhere;
+}
+
+.version-suggestions .muted {
+  font-size: 0.75rem;
+}
+
+.version-suggestions button {
+  flex: 0 0 auto;
+}
+
 .metadata-panel binder-document-metadata-editor {
   display: block;
   margin: 0;
