@@ -3,10 +3,27 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var model: AuthViewModel
     @ObservedObject private var pushNotifications = PushNotificationManager.shared
+    @State private var queuedDocumentCount = 0
 
     var body: some View {
         NavigationStack {
             List {
+                Section("Uploads") {
+                    NavigationLink {
+                        UploadQueueView(serverURL: model.serverURL)
+                    } label: {
+                        HStack {
+                            Label("Upload queue", systemImage: "tray.and.arrow.up")
+                            Spacer()
+                            if queuedDocumentCount > 0 {
+                                Text("\(queuedDocumentCount)")
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityLabel("\(queuedDocumentCount) queued documents")
+                            }
+                        }
+                    }
+                }
+
                 Section("Document data") {
                     NavigationLink {
                         IssuerManagerView(model: model)
@@ -43,6 +60,11 @@ struct SettingsView: View {
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Settings")
+            .onAppear(perform: refreshQueueCount)
         }
+    }
+
+    private func refreshQueueCount() {
+        queuedDocumentCount = (try? SharedPDFQueue.pendingFiles().count) ?? 0
     }
 }

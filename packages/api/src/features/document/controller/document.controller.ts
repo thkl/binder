@@ -47,6 +47,7 @@ import { DocumentBulkMetadataService } from '../service/document-bulk-metadata.s
 import { createContentDisposition } from '../../../shared/http/content-disposition';
 
 const HARD_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024;
+const HARD_BATCH_UPLOAD_LIMIT_BYTES = 200 * 1024 * 1024;
 // mkdtemp creates a private (0700) directory so buffered PDF contents are never
 // exposed through a shared, world-readable temporary directory.
 const UPLOAD_TEMP_DIRECTORY = mkdtempSync(join(tmpdir(), 'binder-api-upload-'));
@@ -79,6 +80,38 @@ export class DocumentController implements OnModuleDestroy {
    */
   async onModuleDestroy(): Promise<void> {
     await rm(UPLOAD_TEMP_DIRECTORY, { recursive: true, force: true });
+  }
+
+  /**
+   * Accepts one ZIP request and uploads its validated entries independently.
+   *
+   * @param {UploadedDocumentFile | undefined} archive - ZIP file supplied by the client.
+   * @param {ScopedUser} user - Authenticated document owner.
+   * @returns Per-file success or failure outcomes for queue reconciliation.
+   */
+  @Post('batch')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      dest: UPLOAD_TEMP_DIRECTORY,
+      limits: {
+        fileSize: HARD_BATCH_UPLOAD_LIMIT_BYTES,
+        files: 1,
+        fields: 4,
+        parts: 5,
+      },
+    }),
+  )
+  async uploadBatch(
+    @UploadedFile() archive: UploadedDocumentFile | undefined,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    if (!archive) throw new BadRequestException('A ZIP archive is required');
+    try {
+      return { data: await this.documents.uploadArchive(user.userId, archive) };
+    } finally {
+      await rm(archive.path, { force: true }).catch(() => undefined);
+    }
   }
 
   /**

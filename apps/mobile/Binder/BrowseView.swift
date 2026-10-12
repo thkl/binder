@@ -192,12 +192,8 @@ struct BrowseView: View {
 
     @MainActor
     private func uploadQueuedDocuments() async {
-        do {
-            let uploaded = try await DocumentIntakeQueue.uploadPending(serverURL: model.serverURL)
-            intakeMessage = "Uploaded \(uploaded) document(s)."
-        } catch {
-            intakeMessage = "The document is queued for upload. \(error.localizedDescription)"
-        }
+        let report = await DocumentUploadQueue.uploadPending(serverURL: model.serverURL)
+        intakeMessage = report.summary
     }
 
     @MainActor
@@ -383,13 +379,9 @@ private struct BrowseDocumentListView: View {
 
     @MainActor
     private func uploadQueuedDocuments() async {
-        do {
-            let uploaded = try await DocumentIntakeQueue.uploadPending(serverURL: model.serverURL)
-            intakeMessage = "Uploaded \(uploaded) document(s)."
-            if kind == .new { await load(reset: true) }
-        } catch {
-            intakeMessage = "The document is queued for upload. \(error.localizedDescription)"
-        }
+        let report = await DocumentUploadQueue.uploadPending(serverURL: model.serverURL)
+        intakeMessage = report.summary
+        if kind == .new && report.uploadedCount > 0 { await load(reset: true) }
     }
 
     @MainActor
@@ -760,13 +752,9 @@ private struct FolderContentsView: View {
 
     @MainActor
     private func uploadQueuedDocuments() async {
-        do {
-            let uploaded = try await DocumentIntakeQueue.uploadPending(serverURL: model.serverURL)
-            intakeMessage = "Uploaded \(uploaded) document(s)."
-            await loadDocuments(reset: true)
-        } catch {
-            intakeMessage = "The document is queued for upload. \(error.localizedDescription)"
-        }
+        let report = await DocumentUploadQueue.uploadPending(serverURL: model.serverURL)
+        intakeMessage = report.summary
+        if report.uploadedCount > 0 { await loadDocuments(reset: true) }
     }
 
     private var documentsForCurrentMode: [BinderDocumentSummary] {
@@ -1149,14 +1137,4 @@ private enum DocumentIntakeQueue {
         }
     }
 
-    static func uploadPending(serverURL: String) async throws -> Int {
-        let files = try SharedPDFQueue.pendingFiles()
-        var uploaded = 0
-        for file in files {
-            try await BinderAPI.shared.uploadDocument(serverURL: serverURL, fileURL: file)
-            try SharedPDFQueue.remove(fileAt: file)
-            uploaded += 1
-        }
-        return uploaded
-    }
 }

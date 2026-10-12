@@ -207,38 +207,13 @@ struct SignedInView: View {
     @MainActor
     private func uploadQueuedPDFs() async {
         guard !isUploadingQueuedPDFs else { return }
-        do {
-            let files = try SharedPDFQueue.pendingFiles()
-            guard !files.isEmpty else {
-                queuedUploadMessage = nil
-                canRetryQueuedPDFs = false
-                return
-            }
-
-            isUploadingQueuedPDFs = true
-            queuedUploadMessage = nil
-            canRetryQueuedPDFs = false
-            defer { isUploadingQueuedPDFs = false }
-            var uploaded = 0
-
-            for file in files {
-                do {
-                    try await BinderAPI.shared.uploadDocument(serverURL: model.serverURL, fileURL: file)
-                    try SharedPDFQueue.remove(fileAt: file)
-                    uploaded += 1
-                } catch {
-                    let remaining = files.count - uploaded
-                    queuedUploadMessage = "\(remaining) document(s) remain queued. Check the server connection and retry."
-                    canRetryQueuedPDFs = true
-                    return
-                }
-            }
-
-            queuedUploadMessage = "Uploaded \(uploaded) queued document(s)."
-        } catch {
-            queuedUploadMessage = error.localizedDescription
-            canRetryQueuedPDFs = true
-        }
+        isUploadingQueuedPDFs = true
+        queuedUploadMessage = nil
+        canRetryQueuedPDFs = false
+        defer { isUploadingQueuedPDFs = false }
+        let report = await DocumentUploadQueue.uploadPending(serverURL: model.serverURL)
+        queuedUploadMessage = report.remainingCount > 0 || report.uploadedCount > 0 ? report.summary : nil
+        canRetryQueuedPDFs = report.remainingCount > 0
     }
 
     @MainActor

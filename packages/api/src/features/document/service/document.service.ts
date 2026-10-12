@@ -42,8 +42,13 @@ import {
   ClassificationFeedbackField,
 } from '@binder/common';
 import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import { extname } from 'node:path';
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, extname, join } from 'node:path';
+import { Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import * as yauzl from 'yauzl';
 import type { Readable } from 'node:stream';
 import type { Express } from 'express';
 import { DocumentStore } from '../store/document.store';
@@ -100,6 +105,9 @@ export class DocumentService {
   private activeThumbnailGenerations = 0;
   private readonly thumbnailGenerationWaiters: Array<() => void> = [];
   private static readonly MAX_CONCURRENT_UPLOADS = 2;
+  private static readonly MAX_BATCH_UPLOAD_FILES = 20;
+  private static readonly MAX_BATCH_UPLOAD_BYTES = 200 * 1024 * 1024;
+  private static readonly MAX_BATCH_ENTRY_BYTES = 50 * 1024 * 1024;
   private static readonly MAX_CONCURRENT_THUMBNAIL_GENERATIONS = 3;
 
   /**
@@ -254,6 +262,151 @@ export class DocumentService {
       }
     } finally {
       this.activeUploads -= 1;
+    }
+  }
+
+  /**
+   * Extracts a bounded, flat ZIP archive and uploads each supported file independently.
+   *
+   * Extraction always uses random temporary names, so archive paths never become
+   * filesystem paths. Per-file failures are returned alongside successful uploads
+   * so a mobile client can remove only the queue entries the server accepted.
+   *
+   * @param {string} ownerUuid - UUID of the authenticated document owner.
+   * @param {UploadedDocumentFile} archiveFile - Uploaded ZIP archive.
+   * @returns Per-entry upload outcomes in archive order, with each entry's index and filename.
+   */
+  async uploadArchive(ownerUuid: string, archiveFile: UploadedDocumentFile) {
+    if (!archiveFile?.path) {
+      throw new BadRequestException('A ZIP archive is required');
+    }
+
+    const extractionDirectory = await mkdtemp(join(tmpdir(), 'binder-api-batch-'));
+    const extractedFiles: Array<{ index: number; fileName: string; path: string; size: number }> = [];
+    let totalExpandedBytes = 0;
+
+    try {
+      const zipFile = await yauzl.openPromise(archiveFile.path, {
+        autoClose: false,
+        decodeStrings: true,
+        lazyEntries: true,
+        strictFileNames: true,
+        validateEntrySizes: true,
+      });
+
+      try {
+        if (zipFile.entryCount > DocumentService.MAX_BATCH_UPLOAD_FILES) {
+          throw new BadRequestException(
+            `A ZIP archive can contain at most ${DocumentService.MAX_BATCH_UPLOAD_FILES} documents`,
+          );
+        }
+        for await (const entry of zipFile.eachEntry()) {
+          const fileName = entry.fileName;
+          const unixFileType = (entry.externalFileAttributes >>> 16) & 0o170000;
+          if (unixFileType === 0o120000) {
+            throw new BadRequestException('ZIP archives cannot contain symbolic links');
+          }
+
+          if (fileName.endsWith('/')) {
+            throw new BadRequestException('ZIP archives must contain flat files only');
+          }
+
+          if (
+            !fileName || fileName.length > 255 || basename(fileName) !== fileName ||
+            fileName.includes('\\') || /[\u0000-\u001f\u007f]/u.test(fileName)
+          ) {
+            throw new BadRequestException('ZIP entries must use safe, flat filenames');
+          }
+          if (unixFileType !== 0 && unixFileType !== 0o100000) {
+            throw new BadRequestException('ZIP archives can contain regular files only');
+          }
+          if (entry.isEncrypted() || !entry.canDecodeFileData()) {
+            throw new BadRequestException(`The ZIP entry '${fileName}' is encrypted or unsupported`);
+          }
+          if (![0, 8].includes(entry.compressionMethod)) {
+            throw new BadRequestException(`The ZIP entry '${fileName}' uses unsupported compression`);
+          }
+          if (entry.uncompressedSize <= 0 || entry.uncompressedSize > DocumentService.MAX_BATCH_ENTRY_BYTES) {
+            throw new BadRequestException(`The ZIP entry '${fileName}' exceeds the per-document size limit`);
+          }
+          if (entry.compressedSize < 0 || entry.uncompressedSize < 0) {
+            throw new BadRequestException(`The ZIP entry '${fileName}' has invalid size metadata`);
+          }
+
+          if (extractedFiles.length >= DocumentService.MAX_BATCH_UPLOAD_FILES) {
+            throw new BadRequestException(
+              `A ZIP archive can contain at most ${DocumentService.MAX_BATCH_UPLOAD_FILES} documents`,
+            );
+          }
+
+          const destinationPath = join(extractionDirectory, randomUUID());
+          const input = await zipFile.openReadStreamPromise(entry);
+          let entryBytes = 0;
+          const sizeGuard = new Transform({
+            transform(chunk: Buffer, _encoding, callback) {
+              entryBytes += chunk.length;
+              totalExpandedBytes += chunk.length;
+              if (entryBytes > DocumentService.MAX_BATCH_ENTRY_BYTES) {
+                callback(new BadRequestException(`The ZIP entry '${fileName}' exceeds the per-document size limit`));
+              } else if (totalExpandedBytes > DocumentService.MAX_BATCH_UPLOAD_BYTES) {
+                callback(new BadRequestException('The ZIP archive exceeds the expanded size limit'));
+              } else {
+                callback(null, chunk);
+              }
+            },
+          });
+
+          try {
+            await pipeline(input, sizeGuard, createWriteStream(destinationPath, { flags: 'wx', mode: 0o600 }));
+          } catch (error) {
+            await rm(destinationPath, { force: true }).catch(() => undefined);
+            throw error;
+          }
+
+          const fileStat = await stat(destinationPath);
+          if (fileStat.size !== entry.uncompressedSize) {
+            throw new BadRequestException(`The ZIP entry '${fileName}' has inconsistent size metadata`);
+          }
+          extractedFiles.push({ index: extractedFiles.length, fileName, path: destinationPath, size: fileStat.size });
+          if (totalExpandedBytes > DocumentService.MAX_BATCH_UPLOAD_BYTES) {
+            throw new BadRequestException('The ZIP archive exceeds the expanded size limit');
+          }
+        }
+      } finally {
+        zipFile.close();
+      }
+
+      if (extractedFiles.length === 0) {
+        throw new BadRequestException('The ZIP archive contains no documents');
+      }
+
+      const items: Array<{ index: number; fileName: string; success: boolean; message?: string }> = [];
+      for (const file of extractedFiles) {
+        try {
+          await this.upload(ownerUuid, {
+            path: file.path,
+            size: file.size,
+            mimetype: 'application/octet-stream',
+            originalname: file.fileName,
+          });
+          items.push({ index: file.index, fileName: file.fileName, success: true });
+        } catch (error) {
+          if (!(error instanceof HttpException)) {
+            this.logger.error(`Batch upload failed for ZIP entry '${file.fileName}'`, error);
+          }
+          const response = error instanceof HttpException ? error.getResponse() : undefined;
+          const message = typeof response === 'string'
+            ? response
+            : typeof response === 'object' && response !== null && 'message' in response
+              ? String(response.message)
+              : 'The document could not be uploaded';
+          items.push({ index: file.index, fileName: file.fileName, success: false, message: message.slice(0, 300) });
+        }
+      }
+
+      return { items };
+    } finally {
+      await rm(extractionDirectory, { recursive: true, force: true });
     }
   }
 

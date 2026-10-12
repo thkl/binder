@@ -39,6 +39,8 @@
 		A10000000000000000000044 /* DocumentSplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000044 /* DocumentSplitView.swift */; };
 		A10000000000000000000045 /* DocumentComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000045 /* DocumentComposeView.swift */; };
 		A10000000000000000000046 /* DocumentRotateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000046 /* DocumentRotateView.swift */; };
+		A10000000000000000000047 /* DocumentUploadQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000047 /* DocumentUploadQueue.swift */; };
+		A10000000000000000000048 /* UploadQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000048 /* UploadQueueView.swift */; };
 		F75494FF307A69AC00908E01 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F75494FD307A68EB00908E01 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -100,6 +102,8 @@
 		A20000000000000000000044 /* DocumentSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSplitView.swift; sourceTree = "<group>"; };
 		A20000000000000000000045 /* DocumentComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentComposeView.swift; sourceTree = "<group>"; };
 		A20000000000000000000046 /* DocumentRotateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentRotateView.swift; sourceTree = "<group>"; };
+		A20000000000000000000047 /* DocumentUploadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentUploadQueue.swift; sourceTree = "<group>"; };
+		A20000000000000000000048 /* UploadQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadQueueView.swift; sourceTree = "<group>"; };
 		F75494FD307A68EB00908E01 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -158,6 +162,8 @@
 				A20000000000000000000044 /* DocumentSplitView.swift */,
 				A20000000000000000000045 /* DocumentComposeView.swift */,
 				A20000000000000000000046 /* DocumentRotateView.swift */,
+				A20000000000000000000047 /* DocumentUploadQueue.swift */,
+				A20000000000000000000048 /* UploadQueueView.swift */,
 				A20000000000000000000014 /* ShareViewController.swift */,
 				A20000000000000000000015 /* SharedPDFQueue.swift */,
 				A20000000000000000000016 /* ShareExtension-Info.plist */,
@@ -306,6 +312,8 @@
 				A10000000000000000000044 /* DocumentSplitView.swift in Sources */,
 				A10000000000000000000045 /* DocumentComposeView.swift in Sources */,
 				A10000000000000000000046 /* DocumentRotateView.swift in Sources */,
+				A10000000000000000000047 /* DocumentUploadQueue.swift in Sources */,
+				A10000000000000000000048 /* UploadQueueView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

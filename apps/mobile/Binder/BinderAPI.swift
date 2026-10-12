@@ -23,6 +23,21 @@ private struct DocumentFormatsResponse: Decodable {
     let formats: [BinderDocumentFormat]
 }
 
+struct BinderBatchUploadItem: Decodable {
+    let index: Int
+    let fileName: String
+    let success: Bool
+    let message: String?
+}
+
+private struct BinderBatchUploadEnvelope: Decodable {
+    let data: BatchData
+
+    struct BatchData: Decodable {
+        let items: [BinderBatchUploadItem]
+    }
+}
+
 struct BinderUser: Decodable {
     let uuid: String?
     let username: String?
@@ -1232,16 +1247,6 @@ final class BinderAPI {
     }
 
     func uploadDocument(serverURL: String, fileURL: URL) async throws {
-        var hasSession = false
-        do {
-            hasSession = try await currentUser(serverURL: serverURL) != nil
-        } catch let error as URLError {
-            throw error
-        } catch {
-            // The server rejected the session; try the opted-in password below.
-        }
-        if !hasSession { try await signInWithSavedPassword(serverURL: serverURL) }
-
         let formats: [BinderDocumentFormat]
         do {
             formats = try await supportedDocumentFormats(serverURL: serverURL)
@@ -1262,13 +1267,50 @@ final class BinderAPI {
             $0.supportsUpload && $0.mimeTypes.contains(where: { $0.caseInsensitiveCompare(mimeType) == .orderedSame })
         }) else { throw BinderAPIError.unsupportedDocumentFormat }
 
+        _ = try await uploadMultipartFile(
+            serverURL: serverURL,
+            fileURL: fileURL,
+            endpoint: "documents",
+            filename: fileURL.lastPathComponent,
+            mimeType: mimeType
+        )
+    }
+
+    func uploadDocumentArchive(serverURL: String, archiveURL: URL) async throws -> [BinderBatchUploadItem] {
+        guard let items = try await uploadMultipartFile(
+            serverURL: serverURL,
+            fileURL: archiveURL,
+            endpoint: "documents/batch",
+            filename: "binder-batch.zip",
+            mimeType: "application/zip"
+        ) else { throw BinderAPIError.invalidResponse }
+        return items
+    }
+
+    private func uploadMultipartFile(
+        serverURL: String,
+        fileURL: URL,
+        endpoint: String,
+        filename: String,
+        mimeType: String
+    ) async throws -> [BinderBatchUploadItem]? {
+        var hasSession = false
+        do {
+            hasSession = try await currentUser(serverURL: serverURL) != nil
+        } catch let error as URLError {
+            throw error
+        } catch {
+            // Try saved password credentials if the session is no longer valid.
+        }
+        if !hasSession { try await signInWithSavedPassword(serverURL: serverURL) }
+
         guard let cookie = KeychainStore.sessionCookie(origin: origin(for: serverURL)),
               let csrfToken = csrfToken ?? KeychainStore.csrfToken(origin: origin(for: serverURL)) else {
             throw BinderAPIError.loginRequired
         }
 
         let boundary = "Binder-\(UUID().uuidString)"
-        let safeFilename = fileURL.lastPathComponent
+        let safeFilename = filename
             .replacingOccurrences(of: "\"", with: "_")
             .replacingOccurrences(of: "\r", with: "_")
             .replacingOccurrences(of: "\n", with: "_")
@@ -1291,7 +1333,7 @@ final class BinderAPI {
         try output.write(contentsOf: Data("\r\n--\(boundary)--\r\n".utf8))
         try output.synchronize()
 
-        var request = try makeRequest(path: "documents", serverURL: serverURL, method: "POST")
+        var request = try makeRequest(path: endpoint, serverURL: serverURL, method: "POST")
         request.timeoutInterval = 120
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.setValue(csrfToken, forHTTPHeaderField: "X-CSRF-Token")
@@ -1299,6 +1341,11 @@ final class BinderAPI {
         let (data, response) = try await urlSession.upload(for: request, fromFile: bodyURL)
         try absorbSessionCookie(from: response, for: request)
         try validate(response, data: data)
+        if endpoint == "documents/batch" {
+            let envelope = try JSONDecoder().decode(BinderBatchUploadEnvelope.self, from: data)
+            return envelope.data.items
+        }
+        return nil
     }
 
     private func detectedDocumentMimeType(at fileURL: URL) -> String? {
