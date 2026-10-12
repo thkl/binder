@@ -14,7 +14,7 @@ struct SignedInView: View {
     @State private var errorMessage: String?
     @State private var isUploadingQueuedPDFs = false
     @State private var queuedUploadMessage: String?
-    @State private var canRetryQueuedPDFs = false
+    @State private var canShowUploadQueue = false
     @State private var documentEntryError: String?
 
     var body: some View {
@@ -56,8 +56,13 @@ struct SignedInView: View {
                         Label(queuedUploadMessage, systemImage: "doc.badge.arrow.up")
                             .font(.footnote)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        if canRetryQueuedPDFs {
-                            Button("Retry") { Task { await uploadQueuedPDFs() } }
+                        if canShowUploadQueue {
+                            NavigationLink("Show") {
+                                UploadQueueView(
+                                    serverURL: model.serverURL,
+                                    onQueueChanged: refreshQueuedUploadBanner
+                                )
+                            }
                                 .font(.footnote.weight(.semibold))
                         }
                     }
@@ -209,11 +214,11 @@ struct SignedInView: View {
         guard !isUploadingQueuedPDFs else { return }
         isUploadingQueuedPDFs = true
         queuedUploadMessage = nil
-        canRetryQueuedPDFs = false
+        canShowUploadQueue = false
         defer { isUploadingQueuedPDFs = false }
         let report = await DocumentUploadQueue.uploadPending(serverURL: model.serverURL)
         queuedUploadMessage = report.remainingCount > 0 || report.uploadedCount > 0 ? report.summary : nil
-        canRetryQueuedPDFs = report.remainingCount > 0
+        canShowUploadQueue = report.remainingCount > 0
     }
 
     @MainActor
@@ -221,7 +226,7 @@ struct SignedInView: View {
         do {
             _ = try ScannedDocumentQueue.enqueue(pages: pages)
             queuedUploadMessage = "Scan saved. Uploading PDF…"
-            canRetryQueuedPDFs = false
+            canShowUploadQueue = false
             Task { await uploadQueuedPDFs() }
         } catch {
             documentEntryError = error.localizedDescription
@@ -244,15 +249,28 @@ struct SignedInView: View {
                 return
             }
             queuedUploadMessage = "Added \(queuedCount) of \(files.count) documents. Uploading the queued files…"
-            canRetryQueuedPDFs = true
+            canShowUploadQueue = true
             await uploadQueuedPDFs()
             documentEntryError = error.localizedDescription
             return
         }
 
         queuedUploadMessage = "Added \(queuedCount) document(s). Uploading…"
-        canRetryQueuedPDFs = false
+        canShowUploadQueue = false
         await uploadQueuedPDFs()
+    }
+
+    @MainActor
+    private func refreshQueuedUploadBanner() {
+        let queuedCount = (try? SharedPDFQueue.pendingFiles().count) ?? 0
+        guard queuedCount > 0 else {
+            queuedUploadMessage = nil
+            canShowUploadQueue = false
+            return
+        }
+
+        queuedUploadMessage = "\(queuedCount) document(s) remain queued."
+        canShowUploadQueue = true
     }
 
     private func enqueueSelectedDocument(_ file: URL) throws {

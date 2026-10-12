@@ -2,6 +2,7 @@ import SwiftUI
 
 struct UploadQueueView: View {
     let serverURL: String
+    var onQueueChanged: (() -> Void)? = nil
 
     @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var uploadState = DocumentUploadQueue.state
@@ -62,6 +63,7 @@ struct UploadQueueView: View {
             }
         }
         .task { refresh() }
+        .onDisappear { onQueueChanged?() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { refresh() }
         }
