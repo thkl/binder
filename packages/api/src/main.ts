@@ -51,17 +51,21 @@ async function bootstrap(): Promise<void> {
   const secureCookies = rootUri.startsWith('https://');
   const trustedProxies = nestConfigService
     .get<string>(ConfigKeys.TRUST_PROXY)
-    ?.split(',')
-    .map((proxy) => proxy.trim())
-    .filter(Boolean);
-  if (secureCookies && !trustedProxies?.length) {
-    throw new Error(
-      `${ConfigKeys.TRUST_PROXY} must list the trusted reverse proxy IPs/CIDRs when ROOT_URI uses HTTPS`,
-    );
-  }
-  if (trustedProxies?.length) {
-    // Only accept forwarded headers from explicitly configured proxy addresses.
-    app.getHttpAdapter().getInstance().set('trust proxy', trustedProxies);
+  if (trustedProxies === 'true') {
+    app.getHttpAdapter().getInstance().set('trust proxy', true);
+  } else {
+    const tp = trustedProxies?.split(',')
+      .map((proxy) => proxy.trim()).filter(Boolean);
+    if (secureCookies && !tp?.length) {
+      throw new Error(
+        `${ConfigKeys.TRUST_PROXY} must list the trusted reverse proxy IPs/CIDRs when ROOT_URI uses HTTPS`,
+      );
+    }
+    if (tp?.length) {
+      // Only accept forwarded headers from explicitly configured proxy addresses.
+      app.getHttpAdapter().getInstance().set('trust proxy', tp);
+    }
+
   }
 
   const developmentOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
