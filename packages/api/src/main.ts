@@ -51,7 +51,10 @@ async function bootstrap(): Promise<void> {
   const rootUri = nestConfigService.get<string>(ConfigKeys.ROOT_URI)!;
   const secureCookies = rootUri.startsWith('https://');
   const trustedProxies = nestConfigService.get<string>(ConfigKeys.TRUST_PROXY);
-  const tp = trustedProxies?.split(',').map((proxy) => proxy.trim()).filter(Boolean);
+  const tp = trustedProxies
+    ?.split(',')
+    .map((proxy) => proxy.trim())
+    .filter(Boolean);
   if (secureCookies && !tp?.length) {
     throw new Error(
       `${ConfigKeys.TRUST_PROXY} must list the trusted reverse proxy IPs/CIDRs when ROOT_URI uses HTTPS`,
