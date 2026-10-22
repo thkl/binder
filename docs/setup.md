@@ -159,14 +159,17 @@ example `http://localhost:4200` when the Angular development server is used.
 When `ROOT_URI` uses HTTPS, set `TRUST_PROXY` to the IP address or CIDR of the
 reverse proxy that connects directly to the API. This must be the peer address
 the API sees on its connection, which can differ from the proxy's LAN address.
-For example, in a Docker network the API may see Traefik's container IP rather
-than the host IP. If the API logs an IPv4-mapped IPv6 peer such as
+For example, if a Docker Swarm proxy network uses `10.42.1.0/24`, set
+`TRUST_PROXY=10.42.1.0/24` to trust addresses from that subnet. This covers the
+`10.42.1.*` range; use CIDR notation because wildcard notation is not supported.
+The API may see a proxy task's container IP rather than the host IP. If it logs
+an IPv4-mapped IPv6 peer such as
 `::ffff:10.42.1.2`, use its IPv4 address (`10.42.1.2`) in `TRUST_PROXY`.
 Multiple trusted proxies can be comma-separated. The API rejects HTTPS
 configuration without this setting and ignores forwarded headers from other
-peers. After changing it, restart the API and verify that an HTTPS login is
-recognized as secure and returns a session cookie. Keep the API port reachable
-only from the configured proxy; do not use a wildcard trust range.
+peers. Only use a subnet dedicated to trusted proxies, and keep the API port
+reachable only from that proxy network. After changing it, restart the API and
+verify that an HTTPS login is recognized as secure and returns a session cookie.
 For Docker Compose, the service environment overrides `DATABASE_HOST` with
 the internal hostname `postgres`; the other database values still come from
 `.env`.
