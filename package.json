@@ -1,7 +1,7 @@
 {
   "name": "binder",
   "private": true,
-  "packageManager": "pnpm@11.21.0",
+  "packageManager": "pnpm@11.28.8",
   "engines": {
     "node": ">=24.0.0"
   },
@@ -21,10 +21,12 @@
     "coverage": "pnpm -r --if-present run coverage",
     "typecheck": "pnpm -r --workspace-concurrency=1 --if-present run typecheck",
     "start:debug": "pnpm -r --workspace-concurrency=1 --if-present run start:debug",
-    "start:client": "pnpm --filter @binder/client start"
+    "start:client": "pnpm --filter @binder/client start",
+    "checkupdates": "npx npm-check-updates --target minor --removeRange",
+    "doupdates": "npx npm-check-updates --target minor --removeRange -u"
   },
   "devDependencies": {
-    "prettier": "3.9.9",
-    "typescript": "^6.0.0"
+    "prettier": "3.9.10",
+    "typescript": "6.0.3"
   }
 }
