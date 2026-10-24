@@ -55,6 +55,11 @@ interface RecoveryRequestPayload {
   accessTokenIv?: string;
 }
 
+interface ScheduledBackupDecision {
+  due: boolean;
+  missedRunAt: Date | null;
+}
+
 interface TargetSettingSnapshot {
   key: string;
   value: string;
@@ -211,15 +216,25 @@ export class MaintenanceScheduler {
       }
 
       const now = new Date();
-      if (
-        settings.enabled &&
-        this.shouldTrigger('backup', settings.schedule, now, settings.timezone)
-      ) {
-        this.markTriggered('backup', now);
-        const schedule = new CronSchedule(settings.schedule);
-        const nextRunAt = schedule.nextOccurrence(now, settings.timezone);
-        await this.runBackup(settings, nextRunAt);
-        await this.runRetention(settings, nextRunAt);
+      if (settings.enabled) {
+        const decision = await this.scheduledBackupDecision(
+          settings.schedule,
+          now,
+          settings.timezone,
+        );
+        if (decision.due) {
+          this.markTriggered('backup', now);
+          if (decision.missedRunAt) {
+            logger.warn('Running missed backup and retention schedule once now', {
+              missedRunAt: decision.missedRunAt.toISOString(),
+            });
+          }
+          const schedule = new CronSchedule(settings.schedule);
+          const nextRunAt = schedule.nextOccurrence(now, settings.timezone);
+          if (await this.runBackup(settings, nextRunAt)) {
+            await this.runRetention(settings, nextRunAt);
+          }
+        }
       }
 
       if (
@@ -242,10 +257,14 @@ export class MaintenanceScheduler {
     }
   }
 
-  private async runBackup(settings: MaintenanceSettings, nextRunAt: Date | null): Promise<void> {
-    if (await this.hasRunning('backup')) return;
+  private async runBackup(
+    settings: MaintenanceSettings,
+    nextRunAt: Date | null,
+  ): Promise<boolean> {
+    if (await this.hasRunning('backup')) return false;
     const run = await this.startRun('backup', nextRunAt);
     await this.executeBackup(run, settings);
+    return true;
   }
 
   private async executeBackup(run: MaintenanceRun, settings: MaintenanceSettings): Promise<void> {
@@ -862,6 +881,36 @@ export class MaintenanceScheduler {
     const schedule = new CronSchedule(expression);
     const minute = Math.floor(now.getTime() / 60_000);
     return schedule.matches(now, timezone) && this.lastTriggeredMinutes.get(jobKey) !== minute;
+  }
+
+  private async scheduledBackupDecision(
+    expression: string,
+    now: Date,
+    timezone: string,
+  ): Promise<ScheduledBackupDecision> {
+    const minute = Math.floor(now.getTime() / 60_000);
+    if (this.lastTriggeredMinutes.get('backup') === minute) {
+      return { due: false, missedRunAt: null };
+    }
+
+    if (new CronSchedule(expression).matches(now, timezone)) {
+      return { due: true, missedRunAt: null };
+    }
+
+    const latestScheduledRun = await MaintenanceRun.findOne({
+      attributes: ['nextRunAt'],
+      where: {
+        jobKey: 'backup',
+        nextRunAt: { [Op.ne]: null },
+      },
+      order: [['createdAt', 'DESC']],
+    });
+    const missedRunAt = latestScheduledRun?.nextRunAt ?? null;
+    if (missedRunAt && missedRunAt.getTime() <= now.getTime()) {
+      return { due: true, missedRunAt };
+    }
+
+    return { due: false, missedRunAt: null };
   }
 
   private markTriggered(jobKey: string, now: Date): void {

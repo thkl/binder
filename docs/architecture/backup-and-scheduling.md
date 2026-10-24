@@ -193,6 +193,8 @@ The worker maintenance loop will:
 - use an explicit timezone;
 - prevent overlapping executions of the same job;
 - persist the last run, next run, status, duration, and error;
+- run one catch-up cycle for an overdue backup/retention schedule after a missed cron time,
+  then resume from the next future occurrence;
 - emit structured Winston logs and expose an admin-only status view;
 - shut down cleanly and mark interrupted runs as failed for operator review.
 

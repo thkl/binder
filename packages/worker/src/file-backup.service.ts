@@ -14,6 +14,7 @@ import { FileProvider } from './file-provider/file-provider.js';
 import { logger } from './logger.js';
 
 const execFileAsync = promisify(execFile);
+const PG_DUMP_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 
 export interface FileBackupSettings {
   root: string;
@@ -390,6 +391,7 @@ export class FileBackupService {
       {
         env: { ...process.env, PGPASSWORD: readRequiredEnvironment('DATABASE_PASSWORD') },
         maxBuffer: 1024 * 1024,
+        timeout: PG_DUMP_TIMEOUT_MS,
       },
     );
     if (stderr.trim())
