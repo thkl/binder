@@ -18,6 +18,7 @@ import { ApplicationSettingsService } from '../../settings/service/application-s
 import { EncryptionService } from '../../../shared/util/encryption.service';
 import { AiProviderProfile } from '../models/ai-provider.entity';
 import { AiProviderStore } from '../store/ai-provider.store';
+import { parseAiProviderError } from './provider-error';
 
 const ASSISTANT_PROVIDER_SETTING = 'ai.assistantProviderUuid';
 const EMBEDDING_PROVIDER_SETTING = 'ai.embeddingProviderUuid';
@@ -30,6 +31,7 @@ export interface ResolvedAiProvider {
   apiKey: string;
   assistantEndpoint: string;
   assistantModel: string;
+  temperature: number;
   fileUploadEndpoint: string;
   fileAnalysisEndpoint: string;
   fileAnalysisModel: string;
@@ -61,6 +63,7 @@ export class AiProviderService {
       providerType: input.providerType,
       assistantEndpoint: this.toNullable(input.assistantEndpoint),
       assistantModel: this.toNullable(input.assistantModel),
+      temperature: input.temperature,
       fileUploadEndpoint: this.toNullable(input.fileUploadEndpoint),
       fileAnalysisEndpoint: this.toNullable(input.fileAnalysisEndpoint),
       fileAnalysisModel: this.toNullable(input.fileAnalysisModel),
@@ -85,6 +88,7 @@ export class AiProviderService {
       changes.assistantEndpoint = this.toNullable(input.assistantEndpoint);
     if (input.assistantModel !== undefined)
       changes.assistantModel = this.toNullable(input.assistantModel);
+    if (input.temperature !== undefined) changes.temperature = input.temperature;
     if (input.fileUploadEndpoint !== undefined)
       changes.fileUploadEndpoint = this.toNullable(input.fileUploadEndpoint);
     if (input.fileAnalysisEndpoint !== undefined)
@@ -177,18 +181,29 @@ export class AiProviderService {
             ? {
                 model,
                 messages: [{ role: 'user', content: 'Reply with the word OK.' }],
+                temperature: runtime.temperature,
                 max_tokens: 8,
               }
             : { model, input: ['Binder provider connectivity test'] },
         ),
       });
 
+      if (response.ok) {
+        return AiProviderTestResponseSchema.parse({
+          success: true,
+          status: response.status,
+          message: 'Provider responded successfully',
+        });
+      }
+
+      const providerError = parseAiProviderError(
+        await response.text(),
+        `Provider returned HTTP ${response.status}`,
+      );
       return AiProviderTestResponseSchema.parse({
-        success: response.ok,
+        success: false,
         status: response.status,
-        message: response.ok
-          ? 'Provider responded successfully'
-          : `Provider returned HTTP ${response.status}`,
+        message: providerError.message.slice(0, 500),
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Provider request failed';
@@ -259,6 +274,7 @@ export class AiProviderService {
       apiKey: apiKey ?? '',
       assistantEndpoint: assistantEndpoint ?? '',
       assistantModel: assistantModel ?? '',
+      temperature: 0.2,
       fileUploadEndpoint: fileUploadEndpoint ?? '',
       fileAnalysisEndpoint: fileAnalysisEndpoint ?? '',
       fileAnalysisModel: assistantModel ?? '',
@@ -335,6 +351,7 @@ export class AiProviderService {
           : '',
       assistantEndpoint: provider.assistantEndpoint ?? '',
       assistantModel: provider.assistantModel ?? '',
+      temperature: provider.temperature,
       fileUploadEndpoint: provider.fileUploadEndpoint ?? '',
       fileAnalysisEndpoint: provider.fileAnalysisEndpoint ?? '',
       fileAnalysisModel: provider.fileAnalysisModel ?? '',
@@ -355,6 +372,7 @@ export class AiProviderService {
       providerType: provider.providerType,
       assistantEndpoint: provider.assistantEndpoint,
       assistantModel: provider.assistantModel,
+      temperature: provider.temperature,
       fileUploadEndpoint: provider.fileUploadEndpoint,
       fileAnalysisEndpoint: provider.fileAnalysisEndpoint,
       fileAnalysisModel: provider.fileAnalysisModel,

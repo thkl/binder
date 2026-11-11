@@ -11,6 +11,7 @@ interface AiProviderDraft {
   name: string;
   assistantEndpoint: string;
   assistantModel: string;
+  temperature: string;
   fileUploadEndpoint: string;
   fileAnalysisEndpoint: string;
   fileAnalysisModel: string;
@@ -24,6 +25,7 @@ const EMPTY_DRAFT: AiProviderDraft = {
   name: '',
   assistantEndpoint: 'https://api.openai.com/v1/chat/completions',
   assistantModel: 'gpt-4o-mini',
+  temperature: '0.2',
   fileUploadEndpoint: 'https://api.openai.com/v1/files',
   fileAnalysisEndpoint: 'https://api.openai.com/v1/responses',
   fileAnalysisModel: 'gpt-4o-mini',
@@ -64,9 +66,18 @@ export class AiProviderManagerComponent implements OnInit {
       : (selection?.embeddingProviderUuid ?? '');
   }
 
-  updateText(field: Exclude<keyof AiProviderDraft, 'enabled'>, event: Event): void {
+  updateText(
+    field: Exclude<keyof AiProviderDraft, 'enabled' | 'temperature'>,
+    event: Event,
+  ): void {
     const value = (event.target as HTMLInputElement).value;
     this.draft.update((current) => ({ ...current, [field]: value }));
+    this.formError.set(null);
+  }
+
+  updateTemperature(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.draft.update((current) => ({ ...current, temperature: value }));
     this.formError.set(null);
   }
 
@@ -83,6 +94,16 @@ export class AiProviderManagerComponent implements OnInit {
       this.formError.set(this.i18n.t('aiProviders.nameRequired'));
       return;
     }
+    const temperature = Number(value.temperature);
+    if (
+      !value.temperature.trim() ||
+      !Number.isFinite(temperature) ||
+      temperature < 0 ||
+      temperature > 2
+    ) {
+      this.formError.set(this.i18n.t('aiProviders.temperatureRange'));
+      return;
+    }
     if (!this.hasTaskConfiguration(value)) {
       this.formError.set(this.i18n.t('aiProviders.taskRequired'));
       return;
@@ -91,7 +112,7 @@ export class AiProviderManagerComponent implements OnInit {
     this.formError.set(null);
     const editingUuid = this.editingUuid();
     if (editingUuid) {
-      const input: Record<string, unknown> = { ...value };
+      const input: Record<string, unknown> = { ...value, temperature };
       if (!value.apiKey.trim()) delete input['apiKey'];
       if (await this.aiProviders.update(editingUuid, input)) this.resetForm();
       return;
@@ -99,6 +120,7 @@ export class AiProviderManagerComponent implements OnInit {
 
     const input: CreateAiProviderProfileInput = {
       ...value,
+      temperature,
       providerType: 'openai-compatible',
     };
     if (await this.aiProviders.create(input)) this.resetForm();
@@ -110,6 +132,7 @@ export class AiProviderManagerComponent implements OnInit {
       name: provider.name,
       assistantEndpoint: provider.assistantEndpoint ?? '',
       assistantModel: provider.assistantModel ?? '',
+      temperature: String(provider.temperature),
       fileUploadEndpoint: provider.fileUploadEndpoint ?? '',
       fileAnalysisEndpoint: provider.fileAnalysisEndpoint ?? '',
       fileAnalysisModel: provider.fileAnalysisModel ?? '',

@@ -1596,6 +1596,7 @@ export const AiProviderProfileSchema = z.object({
   providerType: AiProviderTypeSchema,
   assistantEndpoint: z.string().trim().max(500).nullable(),
   assistantModel: z.string().trim().max(150).nullable(),
+  temperature: z.number().min(0).max(2),
   fileUploadEndpoint: z.string().trim().max(500).nullable(),
   fileAnalysisEndpoint: z.string().trim().max(500).nullable(),
   fileAnalysisModel: z.string().trim().max(150).nullable(),
@@ -1610,12 +1611,14 @@ export type AiProviderProfile = z.infer<typeof AiProviderProfileSchema>;
 
 const AiProviderEndpointSchema = z.string().trim().max(500).default('');
 const AiProviderModelSchema = z.string().trim().max(150).default('');
+const AiProviderTemperatureSchema = z.number().min(0).max(2).default(0.2);
 
 export const CreateAiProviderProfileInputSchema = z.object({
   name: z.string().trim().min(1).max(100),
   providerType: AiProviderTypeSchema.default('openai-compatible'),
   assistantEndpoint: AiProviderEndpointSchema,
   assistantModel: AiProviderModelSchema,
+  temperature: AiProviderTemperatureSchema,
   fileUploadEndpoint: AiProviderEndpointSchema,
   fileAnalysisEndpoint: AiProviderEndpointSchema,
   fileAnalysisModel: AiProviderModelSchema,

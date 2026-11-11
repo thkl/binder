@@ -21,8 +21,10 @@ The analysis prompt is editable by administrators in the AI assistance settings.
 Provider profiles are managed by administrators through the AI settings screen.
 The first adapter is OpenAI-compatible and each profile can define an assistant
 endpoint/model, an embedding endpoint/model, and an encrypted API key. The
-assistant and embedding tasks select profiles independently. Existing single-
-provider settings remain a compatibility fallback until a profile is selected.
+assistant temperature can be set from 0 to 2 and defaults to 0.2. The assistant
+and embedding tasks select profiles independently. Existing single-provider
+settings remain a compatibility fallback until a profile is selected, using a
+temperature of 0.2.
 
 ## P3 file-aware PDF analysis
 

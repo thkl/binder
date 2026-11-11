@@ -13,6 +13,7 @@ import { MetadataService } from '../../metadata/service/metadata.service';
 import { IssuerService } from '../../issuer/service/issuer.service';
 import { AiProviderService } from '../../ai-provider/service/ai-provider.service';
 import { ClassificationFeedbackService } from '../../classification-feedback/service/classification-feedback.service';
+import { parseAiProviderError } from '../../ai-provider/service/provider-error';
 
 const ProviderResponseSchema = z.object({
   choices: z.array(z.object({ message: z.object({ content: z.string() }) })).min(1),
@@ -87,7 +88,7 @@ export class TitleSuggestionService {
     });
     const requestBody = JSON.stringify({
         model,
-        temperature: 0.2,
+        temperature: provider.temperature,
         messages: [
           {
             role: 'system',
@@ -102,10 +103,23 @@ export class TitleSuggestionService {
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-      body:requestBody
+      body: requestBody,
     });
 
     if (!response.ok) {
+      const providerError = parseAiProviderError(
+        await response.text(),
+        `AI provider returned HTTP ${response.status}`,
+      );
+      this.logger.error(
+        `AI provider request failed: ${JSON.stringify({
+          documentUuid,
+          provider: provider.name,
+          model,
+          status: response.status,
+          error: providerError,
+        })}`,
+      );
       throw new Error(`AI provider returned HTTP ${response.status}`);
     }
     const body = ProviderResponseSchema.parse(await response.json());

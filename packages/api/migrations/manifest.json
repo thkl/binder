@@ -507,6 +507,11 @@
                     "settings",
                     "metadata_webhook_deliveries"
                ]
+          },
+          "78": {
+               "required": [
+                    "ai_provider_profiles"
+               ]
           }
      }
 }

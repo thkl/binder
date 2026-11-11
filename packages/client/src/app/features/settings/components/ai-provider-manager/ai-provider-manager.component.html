@@ -178,6 +178,18 @@
           />
         </label>
         <label class="provider-field">
+          <span>{{ 'aiProviders.temperature' | t }}</span>
+          <input
+            type="number"
+            min="0"
+            max="2"
+            step="0.01"
+            required
+            [value]="draft().temperature"
+            (input)="updateTemperature($event)"
+          />
+        </label>
+        <label class="provider-field">
           <span>{{ 'aiProviders.fileUploadEndpoint' | t }}</span>
           <input
             type="url"

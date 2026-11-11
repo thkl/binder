@@ -18,6 +18,7 @@ export interface AiProviderAttributes {
   providerType: AiProviderType;
   assistantEndpoint: string | null;
   assistantModel: string | null;
+  temperature: number;
   fileUploadEndpoint: string | null;
   fileAnalysisEndpoint: string | null;
   fileAnalysisModel: string | null;
@@ -55,6 +56,10 @@ export class AiProviderProfile extends Model<AiProviderAttributes, AiProviderCre
   @AllowNull
   @Column({ field: 'assistant_model', type: DataType.STRING(150), allowNull: true })
   declare assistantModel: string | null;
+
+  @Default(0.2)
+  @Column({ type: DataType.DOUBLE, allowNull: false })
+  declare temperature: number;
 
   @AllowNull
   @Column({ field: 'file_upload_endpoint', type: DataType.STRING(500), allowNull: true })

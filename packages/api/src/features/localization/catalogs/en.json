@@ -905,6 +905,8 @@
     "aiProviders.namePlaceholder": "e.g. OpenAI production",
     "aiProviders.assistantEndpoint": "Assistant endpoint",
     "aiProviders.assistantModel": "Assistant model",
+    "aiProviders.temperature": "Assistant temperature (0–2)",
+    "aiProviders.temperatureRange": "Enter a temperature between 0 and 2.",
     "aiProviders.fileUploadEndpoint": "File upload endpoint",
     "aiProviders.fileAnalysisEndpoint": "File analysis endpoint",
     "aiProviders.fileAnalysisModel": "File analysis model",
