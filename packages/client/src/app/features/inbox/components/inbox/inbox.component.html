@@ -49,18 +49,21 @@
 
   <div class="summary-grid" [attr.aria-label]="'inbox.title' | t">
     <article class="summary-card glass-card">
-      <span class="summary-label">{{ 'inbox.summary.new' | t }}</span
-      ><strong>{{ newCount() }}</strong
+      <span class="summary-label">{{ 'inbox.summary.new' | t }}</span><strong>{{
+        newCount()
+      }}</strong
       ><small>{{ 'inbox.summary.waiting' | t }}</small>
     </article>
     <article class="summary-card glass-card">
-      <span class="summary-label">{{ 'inbox.summary.processing' | t }}</span
-      ><strong>{{ processingCount() }}</strong
+      <span class="summary-label">{{ 'inbox.summary.processing' | t }}</span><strong>{{
+        processingCount()
+      }}</strong
       ><small>{{ 'inbox.summary.worker' | t }}</small>
     </article>
     <article class="summary-card glass-card">
-      <span class="summary-label">{{ 'inbox.summary.imported' | t }}</span
-      ><strong>{{ importedCount() }}</strong
+      <span class="summary-label">{{ 'inbox.summary.imported' | t }}</span><strong>{{
+        importedCount()
+      }}</strong
       ><small>{{ inbox.aiCandidates() }} {{ 'inbox.summary.aiReady' | t }}</small>
     </article>
   </div>

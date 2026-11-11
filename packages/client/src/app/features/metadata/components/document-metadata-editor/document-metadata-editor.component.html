@@ -14,8 +14,9 @@
       <section class="ai-suggestion" [attr.aria-label]="'editor.aiReview' | t">
         <div class="suggestion-heading">
           <div>
-            <span class="section-kicker">{{ 'editor.aiReview' | t }}</span
-            ><strong>{{ 'editor.suggested' | t }}</strong>
+            <span class="section-kicker">{{ 'editor.aiReview' | t }}</span><strong>{{
+              'editor.suggested' | t
+            }}</strong>
           </div>
           <small>{{ pending.confidence * 100 | number: '1.0-0' }}% confidence</small>
         </div>
@@ -109,8 +110,7 @@
     </section>
     <section class="issuer-section">
       <div class="tag-label">
-        <span>{{ 'editor.issuer' | t }}</span
-        ><small>{{ 'editor.issuerHint' | t }}</small>
+        <span>{{ 'editor.issuer' | t }}</span><small>{{ 'editor.issuerHint' | t }}</small>
       </div>
       <div class="issuer-picker">
         <select [value]="issuerUuid()" (change)="setIssuerUuid($any($event.target).value)">
@@ -236,8 +236,9 @@
     </div>
     <div class="tag-section">
       <div class="tag-label">
-        <span>{{ 'editor.tags' | t }}</span
-        ><small>{{ selectedTags().size }} {{ 'editor.selected' | t }}</small>
+        <span>{{ 'editor.tags' | t }}</span><small
+          >{{ selectedTags().size }} {{ 'editor.selected' | t }}</small
+        >
       </div>
       <input
         class="tag-search"
@@ -273,8 +274,7 @@
     @if (metadata.definitions().length > 0) {
       <div class="custom-fields">
         <div class="tag-label">
-          <span>{{ 'editor.additional' | t }}</span
-          ><small>{{ 'editor.customFields' | t }}</small>
+          <span>{{ 'editor.additional' | t }}</span><small>{{ 'editor.customFields' | t }}</small>
         </div>
         @for (definition of metadata.definitions(); track definition.uuid) {
           <label class="field custom-field"
@@ -330,8 +330,9 @@
     @if (folderOptions().length > 0) {
       <section class="folder-section">
         <div class="tag-label">
-          <span>{{ 'editor.folders' | t }}</span
-          ><small>{{ selectedFolderUuids().size }} {{ 'editor.selected' | t }}</small>
+          <span>{{ 'editor.folders' | t }}</span><small
+            >{{ selectedFolderUuids().size }} {{ 'editor.selected' | t }}</small
+          >
         </div>
         <p class="folder-hint">{{ 'editor.folderHint' | t }}</p>
         <div class="folder-options">

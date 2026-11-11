@@ -257,10 +257,7 @@ export class MaintenanceScheduler {
     }
   }
 
-  private async runBackup(
-    settings: MaintenanceSettings,
-    nextRunAt: Date | null,
-  ): Promise<boolean> {
+  private async runBackup(settings: MaintenanceSettings, nextRunAt: Date | null): Promise<boolean> {
     if (await this.hasRunning('backup')) return false;
     const run = await this.startRun('backup', nextRunAt);
     await this.executeBackup(run, settings);

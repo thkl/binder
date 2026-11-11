@@ -68,10 +68,7 @@ export class AiProviderManagerComponent implements OnInit {
       : (selection?.embeddingProviderUuid ?? '');
   }
 
-  updateText(
-    field: Exclude<keyof AiProviderDraft, 'enabled' | 'temperature'>,
-    event: Event,
-  ): void {
+  updateText(field: Exclude<keyof AiProviderDraft, 'enabled' | 'temperature'>, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.draft.update((current) => ({ ...current, [field]: value }));
     this.formError.set(null);

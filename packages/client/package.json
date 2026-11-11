@@ -8,7 +8,9 @@
     "coverage": "ng test --watch=false --coverage",
     "dev": "pnpm --filter @binder/common build && ng serve",
     "start": "pnpm --filter @binder/common build && ng serve",
-    "typecheck": "ngc -p tsconfig.app.json --noEmit"
+    "typecheck": "ngc -p tsconfig.app.json --noEmit",
+    "checkupdates": "npx npm-check-updates --target minor --removeRange",
+    "doupdates": "npx npm-check-updates --target minor --removeRange -u"
   },
   "dependencies": {
     "@angular/common": "22.2.3",

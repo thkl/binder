@@ -9,7 +9,9 @@
     "coverage": "pnpm build && vitest run --coverage",
     "dev": "dotenv run -f ../../.env -- node --watch dist/main.js",
     "start": "pnpm build && dotenv run -f ../../.env -- node dist/main.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "checkupdates": "npx npm-check-updates --target minor --removeRange",
+    "doupdates": "npx npm-check-updates --target minor --removeRange -u"
   },
   "dependencies": {
     "@binder/common": "workspace:*",

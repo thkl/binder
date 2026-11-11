@@ -84,8 +84,9 @@
       @if (showCreate()) {
         <form class="create-form" (submit)="$event.preventDefault(); create()">
           <div class="form-title">
-            <strong>{{ 'metadata.create' | t }}</strong
-            ><small>{{ 'metadata.createCopy' | t }}</small>
+            <strong>{{ 'metadata.create' | t }}</strong><small>{{
+              'metadata.createCopy' | t
+            }}</small>
           </div>
           <label
             ><span>{{ 'metadata.name' | t }}</span
@@ -133,8 +134,9 @@
                 [checked]="systemScope() || currentScope() === 'system'"
                 (change)="systemScope.set($any($event.target).checked)"
               /><span>
-                <strong>{{ 'metadata.workspaceValue' | t }}</strong
-                ><small>{{ 'metadata.workspaceValueCopy' | t }}</small>
+                <strong>{{ 'metadata.workspaceValue' | t }}</strong><small>{{
+                  'metadata.workspaceValueCopy' | t
+                }}</small>
               </span></label
             >
           }
@@ -159,8 +161,7 @@
           }
           <div class="form-actions">
             <button type="button" class="secondary-button" (click)="showCreate.set(false)">
-              {{ 'metadata.cancel' | t }}</button
-            ><button
+              {{ 'metadata.cancel' | t }}</button><button
               type="submit"
               class="primary-button"
               [disabled]="metadata.saving() || !name().trim()"
@@ -270,8 +271,9 @@
                 </div>
               } @else {
                 <div class="value-copy">
-                  <strong>{{ itemName(item) }}</strong
-                  ><small>{{ item.description || ('metadata.noDescription' | t) }}</small>
+                  <strong>{{ itemName(item) }}</strong><small>{{
+                    item.description || ('metadata.noDescription' | t)
+                  }}</small>
                   @if (item.folderUuid) {
                     <small class="routing-note">→ {{ folderPath(item.folderUuid) }}</small>
                   }

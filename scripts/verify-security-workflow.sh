@@ -14,7 +14,7 @@ if [[ "$node_major" != "24" ]]; then
 fi
 
 pnpm_run() {
-  corepack pnpm@11.21.0 "$@"
+  corepack pnpm@12.18.0 "$@"
 }
 
 run_step() {
