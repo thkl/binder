@@ -87,19 +87,20 @@ export class TitleSuggestionService {
       issuerCount: allowedIssuers.length,
     });
     const requestBody = JSON.stringify({
-        model,
-        temperature: provider.temperature,
-        messages: [
-          {
-            role: 'system',
-            content: `${analysisPrompt}\n\nReturn one valid JSON object with exactly these keys: suggestedTitle, confidence, issuerUuid, suggestedIssuer, documentTypeUuid, categoryUuid, tagUuids, and custom. confidence must be a JSON number between 0 and 1 representing how strongly the document evidence supports the complete suggestion; use higher values for clear evidence and use 0 only when there is no useful evidence. Do not return a percentage. The title must be at most 255 characters. If a supplied issuer clearly matches the document, return its UUID in issuerUuid and set suggestedIssuer to null. If no supplied issuer matches and the document provides clear issuer evidence, set issuerUuid to null and return suggestedIssuer with name, address, zipCode, city, country, and custom; use null for unknown text fields and {} for custom when none is supported. Never invent issuer details. If the issuer is unclear, use null for both issuer fields. Select issuerUuid only from the supplied issuers. Use only supplied UUIDs and metadata keys. Never include markdown.`,
-          },
-          {
-            role: 'user',
-            content: `Original filename: ${document.originalFilename}\nCurrent title: ${document.title ?? ''}\nAllowed issuers: ${JSON.stringify(allowedIssuers)}\nAllowed document types: ${JSON.stringify(vocabulary.documentTypes.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed categories: ${JSON.stringify(vocabulary.categories.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed tags: ${JSON.stringify(vocabulary.tags.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed custom metadata definitions: ${JSON.stringify(definitions.items.map((item) => ({ key: item.key, label: item.label, type: item.type, options: item.options })))}\nExtracted document text:\n${extractedText}`,
-          },
-        ],
-      });
+      ...provider.assistantRequestOptions,
+      model,
+      temperature: provider.temperature,
+      messages: [
+        {
+          role: 'system',
+          content: `${analysisPrompt}\n\nReturn one valid JSON object with exactly these keys: suggestedTitle, confidence, issuerUuid, suggestedIssuer, documentTypeUuid, categoryUuid, tagUuids, and custom. confidence must be a JSON number between 0 and 1 representing how strongly the document evidence supports the complete suggestion; use higher values for clear evidence and use 0 only when there is no useful evidence. Do not return a percentage. The title must be at most 255 characters. If a supplied issuer clearly matches the document, return its UUID in issuerUuid and set suggestedIssuer to null. If no supplied issuer matches and the document provides clear issuer evidence, set issuerUuid to null and return suggestedIssuer with name, address, zipCode, city, country, and custom; use null for unknown text fields and {} for custom when none is supported. Never invent issuer details. If the issuer is unclear, use null for both issuer fields. Select issuerUuid only from the supplied issuers. Use only supplied UUIDs and metadata keys. Never include markdown.`,
+        },
+        {
+          role: 'user',
+          content: `Original filename: ${document.originalFilename}\nCurrent title: ${document.title ?? ''}\nAllowed issuers: ${JSON.stringify(allowedIssuers)}\nAllowed document types: ${JSON.stringify(vocabulary.documentTypes.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed categories: ${JSON.stringify(vocabulary.categories.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed tags: ${JSON.stringify(vocabulary.tags.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed custom metadata definitions: ${JSON.stringify(definitions.items.map((item) => ({ key: item.key, label: item.label, type: item.type, options: item.options })))}\nExtracted document text:\n${extractedText}`,
+        },
+      ],
+    });
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },

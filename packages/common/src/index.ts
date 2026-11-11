@@ -1590,6 +1590,28 @@ export type AiProviderType = z.infer<typeof AiProviderTypeSchema>;
 export const AiProviderTaskSchema = z.enum(['assistant', 'embedding']);
 export type AiProviderTask = z.infer<typeof AiProviderTaskSchema>;
 
+export const AiProviderRequestOptionsSchema = z
+  .record(z.string(), z.unknown())
+  .default({})
+  .superRefine((options, context) => {
+    if (JSON.stringify(options).length > 5000) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Assistant request options must be at most 5000 characters',
+      });
+    }
+    for (const key of ['model', 'messages', 'temperature']) {
+      if (Object.prototype.hasOwnProperty.call(options, key)) {
+        context.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `${key} is configured by the provider profile and cannot be overridden`,
+        });
+      }
+    }
+  });
+export type AiProviderRequestOptions = z.infer<typeof AiProviderRequestOptionsSchema>;
+
 export const AiProviderProfileSchema = z.object({
   uuid: z.uuid(),
   name: z.string().trim().min(1).max(100),
@@ -1597,6 +1619,7 @@ export const AiProviderProfileSchema = z.object({
   assistantEndpoint: z.string().trim().max(500).nullable(),
   assistantModel: z.string().trim().max(150).nullable(),
   temperature: z.number().min(0).max(2),
+  assistantRequestOptions: AiProviderRequestOptionsSchema,
   fileUploadEndpoint: z.string().trim().max(500).nullable(),
   fileAnalysisEndpoint: z.string().trim().max(500).nullable(),
   fileAnalysisModel: z.string().trim().max(150).nullable(),
@@ -1619,6 +1642,7 @@ export const CreateAiProviderProfileInputSchema = z.object({
   assistantEndpoint: AiProviderEndpointSchema,
   assistantModel: AiProviderModelSchema,
   temperature: AiProviderTemperatureSchema,
+  assistantRequestOptions: AiProviderRequestOptionsSchema,
   fileUploadEndpoint: AiProviderEndpointSchema,
   fileAnalysisEndpoint: AiProviderEndpointSchema,
   fileAnalysisModel: AiProviderModelSchema,

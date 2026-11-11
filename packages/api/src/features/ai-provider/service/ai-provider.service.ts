@@ -32,6 +32,7 @@ export interface ResolvedAiProvider {
   assistantEndpoint: string;
   assistantModel: string;
   temperature: number;
+  assistantRequestOptions: Record<string, unknown>;
   fileUploadEndpoint: string;
   fileAnalysisEndpoint: string;
   fileAnalysisModel: string;
@@ -64,6 +65,7 @@ export class AiProviderService {
       assistantEndpoint: this.toNullable(input.assistantEndpoint),
       assistantModel: this.toNullable(input.assistantModel),
       temperature: input.temperature,
+      assistantRequestOptions: input.assistantRequestOptions,
       fileUploadEndpoint: this.toNullable(input.fileUploadEndpoint),
       fileAnalysisEndpoint: this.toNullable(input.fileAnalysisEndpoint),
       fileAnalysisModel: this.toNullable(input.fileAnalysisModel),
@@ -89,6 +91,8 @@ export class AiProviderService {
     if (input.assistantModel !== undefined)
       changes.assistantModel = this.toNullable(input.assistantModel);
     if (input.temperature !== undefined) changes.temperature = input.temperature;
+    if (input.assistantRequestOptions !== undefined)
+      changes.assistantRequestOptions = input.assistantRequestOptions;
     if (input.fileUploadEndpoint !== undefined)
       changes.fileUploadEndpoint = this.toNullable(input.fileUploadEndpoint);
     if (input.fileAnalysisEndpoint !== undefined)
@@ -179,10 +183,10 @@ export class AiProviderService {
         body: JSON.stringify(
           task === 'assistant'
             ? {
+                ...runtime.assistantRequestOptions,
                 model,
                 messages: [{ role: 'user', content: 'Reply with the word OK.' }],
                 temperature: runtime.temperature,
-                max_tokens: 8,
               }
             : { model, input: ['Binder provider connectivity test'] },
         ),
@@ -275,6 +279,7 @@ export class AiProviderService {
       assistantEndpoint: assistantEndpoint ?? '',
       assistantModel: assistantModel ?? '',
       temperature: 0.2,
+      assistantRequestOptions: {},
       fileUploadEndpoint: fileUploadEndpoint ?? '',
       fileAnalysisEndpoint: fileAnalysisEndpoint ?? '',
       fileAnalysisModel: assistantModel ?? '',
@@ -352,6 +357,7 @@ export class AiProviderService {
       assistantEndpoint: provider.assistantEndpoint ?? '',
       assistantModel: provider.assistantModel ?? '',
       temperature: provider.temperature,
+      assistantRequestOptions: provider.assistantRequestOptions ?? {},
       fileUploadEndpoint: provider.fileUploadEndpoint ?? '',
       fileAnalysisEndpoint: provider.fileAnalysisEndpoint ?? '',
       fileAnalysisModel: provider.fileAnalysisModel ?? '',
@@ -373,6 +379,7 @@ export class AiProviderService {
       assistantEndpoint: provider.assistantEndpoint,
       assistantModel: provider.assistantModel,
       temperature: provider.temperature,
+      assistantRequestOptions: provider.assistantRequestOptions ?? {},
       fileUploadEndpoint: provider.fileUploadEndpoint,
       fileAnalysisEndpoint: provider.fileAnalysisEndpoint,
       fileAnalysisModel: provider.fileAnalysisModel,

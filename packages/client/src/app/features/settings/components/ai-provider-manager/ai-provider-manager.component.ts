@@ -12,6 +12,7 @@ interface AiProviderDraft {
   assistantEndpoint: string;
   assistantModel: string;
   temperature: string;
+  assistantRequestOptions: string;
   fileUploadEndpoint: string;
   fileAnalysisEndpoint: string;
   fileAnalysisModel: string;
@@ -26,6 +27,7 @@ const EMPTY_DRAFT: AiProviderDraft = {
   assistantEndpoint: 'https://api.openai.com/v1/chat/completions',
   assistantModel: 'gpt-4o-mini',
   temperature: '0.2',
+  assistantRequestOptions: '{}',
   fileUploadEndpoint: 'https://api.openai.com/v1/files',
   fileAnalysisEndpoint: 'https://api.openai.com/v1/responses',
   fileAnalysisModel: 'gpt-4o-mini',
@@ -94,6 +96,11 @@ export class AiProviderManagerComponent implements OnInit {
       this.formError.set(this.i18n.t('aiProviders.nameRequired'));
       return;
     }
+    const assistantRequestOptions = parseAssistantRequestOptions(value.assistantRequestOptions);
+    if (!assistantRequestOptions) {
+      this.formError.set(this.i18n.t('aiProviders.requestOptionsInvalid'));
+      return;
+    }
     const temperature = Number(value.temperature);
     if (
       !value.temperature.trim() ||
@@ -112,7 +119,11 @@ export class AiProviderManagerComponent implements OnInit {
     this.formError.set(null);
     const editingUuid = this.editingUuid();
     if (editingUuid) {
-      const input: Record<string, unknown> = { ...value, temperature };
+      const input: Record<string, unknown> = {
+        ...value,
+        temperature,
+        assistantRequestOptions,
+      };
       if (!value.apiKey.trim()) delete input['apiKey'];
       if (await this.aiProviders.update(editingUuid, input)) this.resetForm();
       return;
@@ -121,6 +132,7 @@ export class AiProviderManagerComponent implements OnInit {
     const input: CreateAiProviderProfileInput = {
       ...value,
       temperature,
+      assistantRequestOptions,
       providerType: 'openai-compatible',
     };
     if (await this.aiProviders.create(input)) this.resetForm();
@@ -133,6 +145,7 @@ export class AiProviderManagerComponent implements OnInit {
       assistantEndpoint: provider.assistantEndpoint ?? '',
       assistantModel: provider.assistantModel ?? '',
       temperature: String(provider.temperature),
+      assistantRequestOptions: JSON.stringify(provider.assistantRequestOptions, null, 2),
       fileUploadEndpoint: provider.fileUploadEndpoint ?? '',
       fileAnalysisEndpoint: provider.fileAnalysisEndpoint ?? '',
       fileAnalysisModel: provider.fileAnalysisModel ?? '',
@@ -178,5 +191,24 @@ export class AiProviderManagerComponent implements OnInit {
     const hasAssistant = Boolean(value.assistantEndpoint.trim() && value.assistantModel.trim());
     const hasEmbedding = Boolean(value.embeddingEndpoint.trim() && value.embeddingModel.trim());
     return hasAssistant || hasEmbedding;
+  }
+}
+
+function parseAssistantRequestOptions(value: string): Record<string, unknown> | null {
+  try {
+    const parsed: unknown = JSON.parse(value.trim() || '{}');
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+    const options = parsed as Record<string, unknown>;
+    if (JSON.stringify(options).length > 5000) return null;
+    if (
+      ['model', 'messages', 'temperature'].some((key) =>
+        Object.prototype.hasOwnProperty.call(options, key),
+      )
+    ) {
+      return null;
+    }
+    return options;
+  } catch {
+    return null;
   }
 }

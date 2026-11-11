@@ -189,6 +189,16 @@
             (input)="updateTemperature($event)"
           />
         </label>
+        <label class="provider-field full-width">
+          <span>{{ 'aiProviders.requestOptions' | t }}</span>
+          <textarea
+            rows="5"
+            spellcheck="false"
+            [value]="draft().assistantRequestOptions"
+            (input)="updateText('assistantRequestOptions', $event)"
+          ></textarea>
+          <small class="field-hint">{{ 'aiProviders.requestOptionsHint' | t }}</small>
+        </label>
         <label class="provider-field">
           <span>{{ 'aiProviders.fileUploadEndpoint' | t }}</span>
           <input

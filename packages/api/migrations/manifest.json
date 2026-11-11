@@ -512,6 +512,11 @@
                "required": [
                     "ai_provider_profiles"
                ]
+          },
+          "79": {
+               "required": [
+                    "ai_provider_profiles"
+               ]
           }
      }
 }

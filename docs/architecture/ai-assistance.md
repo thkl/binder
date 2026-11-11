@@ -22,9 +22,13 @@ Provider profiles are managed by administrators through the AI settings screen.
 The first adapter is OpenAI-compatible and each profile can define an assistant
 endpoint/model, an embedding endpoint/model, and an encrypted API key. The
 assistant temperature can be set from 0 to 2 and defaults to 0.2. The assistant
-and embedding tasks select profiles independently. Existing single-provider
-settings remain a compatibility fallback until a profile is selected, using a
-temperature of 0.2.
+request also accepts up to 5000 characters of additional JSON parameters, which
+are merged into assistant chat requests and connectivity tests. For example,
+`{"max_completion_tokens": 8}` configures the token limit for models that do
+not accept `max_tokens`. The profile's model, messages, and temperature remain
+managed separately. Assistant and embedding tasks select profiles independently.
+Existing single-provider settings remain a compatibility fallback until a
+profile is selected, using a temperature of 0.2.
 
 ## P3 file-aware PDF analysis
 
