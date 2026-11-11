@@ -106,8 +106,6 @@ export class TitleSuggestionService {
     });
 
     if (!response.ok) {
-      this.logger.error(JSON.stringify(response));
-      this.logger.debug(`${endpoint} Bearer ${apiKey} ${requestBody}`);
       throw new Error(`AI provider returned HTTP ${response.status}`);
     }
     const body = ProviderResponseSchema.parse(await response.json());
