@@ -85,11 +85,7 @@ export class TitleSuggestionService {
       textLength: extractedText.length,
       issuerCount: allowedIssuers.length,
     });
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
+    const requestBody = JSON.stringify({
         model,
         temperature: 0.2,
         messages: [
@@ -102,9 +98,18 @@ export class TitleSuggestionService {
             content: `Original filename: ${document.originalFilename}\nCurrent title: ${document.title ?? ''}\nAllowed issuers: ${JSON.stringify(allowedIssuers)}\nAllowed document types: ${JSON.stringify(vocabulary.documentTypes.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed categories: ${JSON.stringify(vocabulary.categories.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed tags: ${JSON.stringify(vocabulary.tags.map((item) => ({ uuid: item.uuid, name: item.name, translations: item.translations })))}\nAllowed custom metadata definitions: ${JSON.stringify(definitions.items.map((item) => ({ key: item.key, label: item.label, type: item.type, options: item.options })))}\nExtracted document text:\n${extractedText}`,
           },
         ],
-      }),
+      });
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      body:requestBody
     });
-    if (!response.ok) throw new Error(`AI provider returned HTTP ${response.status}`);
+
+    if (!response.ok) {
+      this.logger.error(JSON.stringify(response));
+      this.logger.debug(`${endpoint} Bearer ${apiKey} ${requestBody}`);
+      throw new Error(`AI provider returned HTTP ${response.status}`);
+    }
     const body = ProviderResponseSchema.parse(await response.json());
     const content = body.choices[0].message.content
       .trim()
